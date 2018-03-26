@@ -1,0 +1,38 @@
+version: '3'
+services:
+
+  glpk:
+    build:
+      context: ../.
+      dockerfile: docker/Glpk/Dockerfile
+    image: myapp-glpk
+    volumes:
+      - ./volumes/pyomoglpk:/usr/src/app/pyomoglpk
+
+  ipopt:
+    build:
+      context: ../.
+      dockerfile: docker/Ipopt/Dockerfile
+    image: myapp-ipopt
+  bonmin:
+    build:
+      context: ../.
+      dockerfile: docker/Bonmin/Dockerfile
+    image: myapp-bonmin
+
+  ofw:
+    build:
+      context: ../
+      dockerfile: ../Dockerfile
+    image: myapp-ofw
+   # depends_on:
+    #  - glpk
+   #   - ipopt
+   #   - bonmin
+    volumes:
+      - .:/usr/src/app/data
+
+    #restart: unless-stopped
+#    command: ["-conf", "/conf/myconf.json"]
+
+

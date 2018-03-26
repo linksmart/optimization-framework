@@ -1,0 +1,7 @@
+
+"scripts": {
+    "dev:install": "./script/00-install.sh",
+    "dev:up": "docker-compose -f docker-compose.yml up",
+    "dev:down": "docker-compose -f docker-compose.yml down",
+    "dev:uninstall": "./script/uninstall.sh",
+  }
