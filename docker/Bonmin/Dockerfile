@@ -4,7 +4,8 @@
 # Based on Ubuntu
 ###################################################################################################
 # Set the base image to Ubuntu
-FROM ubuntu:16.04
+#FROM ubuntu:16.04
+FROM python:3.6.4-jessie
 
 # Switch to root for install
 USER root
@@ -30,7 +31,7 @@ WORKDIR /usr/src/app/share
 # Install ipopt from http
 RUN wget https://www.coin-or.org/download/source/Bonmin/Bonmin-1.8.6.tgz
 RUN gunzip Bonmin-1.8.6.tgz
-RUN tar xvf Bonmin-1.8.6.tgz
+RUN tar xvf Bonmin-1.8.6.tar
 
 RUN mv Bonmin-1.8.6 CoinBonmin
 ## Verify package contents
