@@ -2,7 +2,7 @@
 set -e
 
 # Build the containers
-docker-compose -f docker-compose.yml up
+docker-compose -f docker-compose.yml up #--remove-orphans
 
 # Launch the db alone once and give it time to create db user and database
 # This is a quickfix to avoid waiting for database to startup on first execution (more details [here](https://docs.docker.com/compose/startup-order/))
