@@ -1,0 +1,84 @@
+{
+    "Name": "PRODUCT_TYPE",
+    "Descriptors": [
+      {
+        "Name": "measurements",
+        "Type": "OBJECT"
+      },
+      {
+        "Name": "type",
+        "Type": "OBJECT"
+      },
+      {
+        "Name": "id",
+        "Type": "OBJECT"
+      },
+      {
+        "Name": "label",
+        "Type": "NOMINAL_CLASSES",
+        "isTarget": true,
+        "Classes": [
+          "true",
+          "false"
+        ]
+      }
+    ],
+    "Model": {
+      "Name": "ExternPythonPyro",
+      "Targets": [
+        {
+          "Name": "MatthewsCorrelationCoefficient",
+          "Threshold": 0.8
+        },
+        {
+          "Name": "SlideAfter",
+          "Threshold": 100
+        }
+      ],
+      "Parameters": {
+        "RetrainEvery": 100,
+        "Backend": {
+          "Lookup": true,
+          "NameServer": "pyro-ns",
+          "RegisteredName": "python-agent-0",
+          "ModuleName": "Agent",
+          "ModulePath": "path_to_python_script"
+        },
+        "Classifier": {
+          "name": "random_forest",
+          "conf": {
+            "n_estimators": 100,
+            "class_weight": {
+              "true": 1.0,
+              "false": 0.05
+            },
+            "max_depth": 90,
+            "n_jobs": 4
+          },
+          "dir": "/model/",
+          "production_layout": {}
+        }
+      }
+    },
+    "AuxiliaryStreams": [
+      {
+        "statement": "insert into buffer<id> select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements from pattern[ every begin=SenML(last.n='Source/ProdType' and last.sv='<id>') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='AOI1/PosY6' and begin.bn=bn)] "
+      },
+      {
+        "statement": "insert into buffer<id> select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements from pattern[ every begin=SenML(last.n='Source/ProdType' and last.sv='<id>') -> entries=SenML(begin.bn=bn) until fin=SenML(last.n='AOI2/PosY6' and begin.bn=bn)] "
+      }
+    ],
+    "LearningStreams": [
+      {
+        "statement": "select begin.last.sv as type, begin.bn as id, entries.selectFrom(i=>new{n=i.last.n, v=i.last.v, u=i.last.u, t=i.bt}) as measurements, String.valueOf(fin.last.bv) as label from pattern[ every begin=SenML(last.n='Source/ProdType' and last.sv='<id>') -> entries=SenML(begin.bn=bn) until ( fin=SenML(last.n='FunctionTest/Quality_OK' and begin.bn=bn) and not fin2=SenML(last.n='DefectHandler/Quality_OK' and begin.bn=bn and fin.last.bv=false) )] "
+      }
+    ],
+    "DeploymentStreams": [
+      {
+        "statement": "select <id>.predict(*) from buffer<id>"
+      }
+    ],
+    "Settings": {
+      "AlwaysDeploy": true
+    }
+}
