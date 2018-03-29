@@ -1,37 +1,64 @@
-version: '3'
+version: '3.2'
 services:
-  glpk:
-    build:
-      context: ""
-      dockerfile: docker/Glpk/Dockerfile
-    image: myapp-glpk
-    volumes:
-      - ./volumes/pyomoglpk:/usr/src/app/pyomoglpk
+  #glpk:
+  #  build:
+  #    context: ""
+  #    dockerfile: docker/Glpk/Dockerfile
+  #  image: glpk
+  #  #command: /bin/bash
+  #  restart: always
+  #  #command: ["cat","/etc/ld.so.conf"]
+  #  volumes:
+  #    - volume-glpsol:/usr/local/bin
+  #    #- volume-glpsol:/user/local/glpk-4.57
+  #    - volume-glpk:/usr/local/lib
+      #- /var/run/docker.sock:/docker.sock
+    #pid: host
+    #environment:
+    #    - run_mode=batch,daemon
+    #    - host_routes=true
+    #    - route_add_delay=1
+     # - /usr/src/app:/usr/src/app/glpk
+      #- type: bind
+      #  source: /usr/src/app/glpk
+      #  target: /usr/bin/glpsol
+    #restart: unless-stopped
 
-  ipopt:
-    build:
-      context: ""
-      dockerfile: docker/Ipopt/Dockerfile
-    image: myapp-ipopt
-  bonmin:
-    build:
-      context: ""
-      dockerfile: docker/Bonmin/Dockerfile
-    image: myapp-bonmin
-
+ # ipopt:
+ #   build:
+ #     context: ""
+ #     dockerfile: docker/Ipopt/Dockerfile
+ #   image: garagon/ipopt:V0.1
+ # bonmin:
+ #   build:
+ #     context: ""
+ #     dockerfile: docker/Bonmin/Dockerfile
+ #   image: garagon/bonmin:V0.1
+  #mosquitto:
+  #  image: eclipse-mosquitto
+  #  ports:
+  #    - 1883:1883
+  #pyro:
+  #  image: farshidtz/pyro4-ns
+  #  command: ["--host=pyro-ns"]
   ofw:
     build:
       context: ""
       dockerfile: Dockerfile
      # ../docker/App/Dockerfile
     image: myapp-ofw
-   # depends_on:
-    #  - glpk
-   #   - ipopt
-   #   - bonmin
-    volumes:
-      - .:/usr/src/app/data
-
+ #   depends_on:
+ #     - glpk
+ #     - ipopt
+ #     - bonmin
+    #volumes:
+      #- volume-glpsol:/usr/bin
+      #- volume-glpk:/usr/local/lib
     #restart: unless-stopped
-#    command: ["-conf", "/conf/myconf.json"]
+    #command: ["echo", "que sera sera"]
+    command: ["python3", "-u", "ofw.py"]
+    #command: ["ls","/usr/bin"]
 
+volumes:
+  volume-glpsol:
+  volume-glpk:
