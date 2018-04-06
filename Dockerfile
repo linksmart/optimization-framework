@@ -12,7 +12,7 @@ COPY ofw.py /usr/src/app/
 COPY optimization /usr/src/app/optimization
 COPY utils /usr/src/app/utils
 COPY prediction /usr/src/app/prediction
-COPY webServices /usr/src/app/webServices
+COPY swagger_server /usr/src/app/swagger_server
 #COPY myAgent /usr/src/app/myAgent
 
 # Install any needed packages specified in requirements.txt
@@ -26,6 +26,7 @@ RUN pyomo install-extras
 
 #VOLUME /usr/src/app/optimization
 #ENTRYPOINT ["python3", "prediction/training/pyroAdapter.py"]
+#ENTRYPOINT ["python3", "webServices/webcontroller.py"]
 
 
 
