@@ -1,0 +1,215 @@
+---
+swagger: "2.0"
+info:
+  version: "0.0.1"
+  title: "Optimization framework service"
+  license:
+    name: "MIT"
+host: "192.168.99.100:8080"
+basePath: "/v1"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /model:
+    post:
+      tags:
+      - "model"
+      summary: "Mathematical model for the optimization solver"
+      description: ""
+      operationId: "optimization_model"
+      consumes:
+      - "text/plain"
+      parameters:
+      - in: "body"
+        name: "upModel"
+        description: "Mathematical model that needs to be added to the optimization\
+          \ framework"
+        required: true
+        schema:
+          $ref: "#/definitions/Model"
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.model_controller"
+  /model/url:
+    post:
+      tags:
+      - "model"
+      summary: "Url for the mathematical model for the optimization solver"
+      description: ""
+      operationId: "optimization_model_url"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "upModelUrl"
+        description: "Url of the mathematical model that needs to be added to the\
+          \ optimization framework"
+        required: true
+        schema:
+          $ref: "#/definitions/Model_url"
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.model_controller"
+  /registry/data_input:
+    post:
+      tags:
+      - "registry"
+      summary: "Creates a new data source as input"
+      description: ""
+      operationId: "set_input_channel"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "setInputSource"
+        description: "Data source to be created"
+        required: true
+        schema:
+          $ref: "#/definitions/Datainput"
+      responses:
+        200:
+          description: "Created succesfully"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
+  /registry/data_input/{id}:
+    post:
+      tags:
+      - "registry"
+      summary: "Change the parameters of a data source by id"
+      description: ""
+      operationId: "change_input_channel_by_id"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Setting of the input channels for the optimization framework"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "name"
+        description: "Updated name of the channel"
+        required: false
+        schema:
+          $ref: "#/definitions/Datainput"
+      responses:
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
+  /command/start:
+    post:
+      tags:
+      - "command"
+      summary: "Command for starting the framework"
+      description: ""
+      operationId: "framework_start"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "startOFW"
+        description: "Start command for the optimization framework"
+        required: true
+        schema:
+          $ref: "#/definitions/Start"
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.command_controller"
+  /command/stop:
+    post:
+      tags:
+      - "command"
+      summary: "Command for stoping the framework"
+      description: ""
+      operationId: "framework_stop"
+      consumes:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.command_controller"
+definitions:
+  Start:
+    type: "object"
+    required:
+    - "frequency"
+    - "solver_name"
+    properties:
+      frequency:
+        type: "integer"
+      solver_name:
+        type: "string"
+    example:
+      solver_name: "solver_name"
+      frequency: 0
+  Datainput:
+    type: "object"
+    required:
+    - "model_name"
+    - "name"
+    properties:
+      name:
+        type: "string"
+      model_name:
+        type: "string"
+      mqtt:
+        $ref: "#/definitions/MQTT"
+    example:
+      model_name: "model_name"
+      mqtt:
+        qos: 0
+        topic: "topic"
+        url: "url"
+      name: "name"
+  MQTT:
+    type: "object"
+    properties:
+      url:
+        type: "string"
+      topic:
+        type: "string"
+      qos:
+        type: "integer"
+        format: "int32"
+    example:
+      qos: 0
+      topic: "topic"
+      url: "url"
+  Model:
+    type: "object"
+    xml:
+      name: "Model"
+  Model_url:
+    type: "object"
+    required:
+    - "upModelUrl"
+    properties:
+      upModelUrl:
+        type: "string"
+    xml:
+      name: "ModelUrl"
+      wrapped: true
