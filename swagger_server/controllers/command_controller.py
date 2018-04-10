@@ -15,8 +15,8 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 def getFilePath(dir,file_name):
-    print(os.path.sep)
-    print(os.environ.get("HOME"))
+    #print(os.path.sep)
+    #print(os.environ.get("HOME"))
     project_dir = os.path.dirname(os.path.realpath(__file__))
     data_file = os.path.join("/usr/src/app",dir,file_name)
     return data_file
@@ -39,20 +39,20 @@ def framework_start(startOFW):  # noqa: E501
     """
     if connexion.request.is_json:
         logger.info("URL JSON received")
-        startOFW = Start.from_dict(connexion.request.get_json())  # noqa: E501
+        startOFW = Start.from_dict(connexion.request.get_json())
 
         try:
             frequency = getDataJSON(startOFW,"frequency")
             solverName= getDataJSON(startOFW,"solver_name")
-            print("Frequency: "+str(frequency))
-            print("Solver: "+solverName)
+            logger.info("Frequency: "+str(frequency))
+            logger.info("Solver: "+solverName)
 
             # Creating an object of the configuration file
             config = configparser.RawConfigParser()
-            print(getFilePath("utils","ConfigFile.properties"))
             config.read(getFilePath("utils","ConfigFile.properties"))
-            print(config.sections())
             model_name = config.get("SolverSection", "model.name")
+            logger.info("This is the solver name: "+model_name)
+            model_path= os.path.join(config.get("SolverSection", "model.base.path"),model_name)+".py"
 
             # Taking the data file name from the configuration file
             data_file_name = config.get("SolverSection", "data.file")
@@ -60,9 +60,8 @@ def framework_start(startOFW):  # noqa: E501
 
             # Taking
             solver_name = config.get("SolverSection", "solver.name")
-            print("Problem solved with: " + solver_name)
 
-            opt = OptController("obj1", solver_name, data_path, model_name)
+            opt = OptController("obj1", solver_name, data_path, model_path)
 
             while True:
                 results = opt.start()
