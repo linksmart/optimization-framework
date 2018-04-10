@@ -9,6 +9,9 @@ from swagger_server import util
 from flask import json
 import os
 import logging
+import configparser
+
+from swagger_server.controllers.command_controller import getFilePath
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -18,7 +21,7 @@ def getDataJSON(object, key):
     data2=json.loads(data)
     return data2[key]
 
-def optimization_model(upModel):  # noqa: E501
+def optimization_model(name, upModel):  # noqa: E501
     """Mathematical model for the optimization solver
 
      # noqa: E501
@@ -32,8 +35,24 @@ def optimization_model(upModel):  # noqa: E501
         upModel = Model.from_dict(connexion.request.get_json())  # noqa: E501
 
     try:
-        with open("/usr/src/app/optimization/models/model_2.py", mode='wb') as localfile:
+        #writes thw data into a file with the given name
+        print("This is the file name: " + name)
+        data_file = os.path.join("/usr/src/app/optimization/models", name)+".py"
+        #print("File name: "+data_file)
+        with open(data_file, mode='wb') as localfile:
             localfile.write(upModel)
+
+        # Creating an object of the configuration file in order to change the model.name into the SolverSection
+        config = configparser.RawConfigParser()
+        config.read(getFilePath("utils", "ConfigFile.properties"))
+        config.set('SolverSection', 'model.name', name)
+        with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
+            config.write(configfile)
+        config.read(getFilePath("utils", "ConfigFile.properties"))
+        logger.info("Se cambio el nombre?: "+config['SolverSection']['model.name'])
+        #print("Config solver name: "+config.get("SolverSection", "model.name"))
+
+
     except Exception as e:
         logger.error(e)
     #upModel=Model.from_dict(connexion.request)
