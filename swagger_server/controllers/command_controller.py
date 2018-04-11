@@ -42,10 +42,14 @@ def framework_start(startOFW):  # noqa: E501
         startOFW = Start.from_dict(connexion.request.get_json())
 
         try:
-            frequency = getDataJSON(startOFW,"frequency")
-            solverName= getDataJSON(startOFW,"solver_name")
-            logger.info("Frequency: "+str(frequency))
-            logger.info("Solver: "+solverName)
+            repetition = getDataJSON(startOFW,"repetition")
+            time_step= getDataJSON(startOFW,"time_step")
+            horizon = getDataJSON(startOFW, "horizon")
+            model_name = getDataJSON(startOFW,"model_name")
+            logger.info("Number of repetitions: "+str(repetition))
+            logger.info("Output with the following time steps: "+time_step)
+            logger.info("Optimization calculated with the following horizon: " + horizon)
+            logger.info("Optimization calculated with the following model: " + model_name)
 
             # Creating an object of the configuration file
             config = configparser.RawConfigParser()
