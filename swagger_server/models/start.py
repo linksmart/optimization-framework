@@ -15,26 +15,36 @@ class Start(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, frequency: int=None, solver_name: str=None):  # noqa: E501
+    def __init__(self, repetition: int=None, time_step: int=None, horizon: int=None, model_name: str=None):  # noqa: E501
         """Start - a model defined in Swagger
 
-        :param frequency: The frequency of this Start.  # noqa: E501
-        :type frequency: int
-        :param solver_name: The solver_name of this Start.  # noqa: E501
-        :type solver_name: str
+        :param repetition: The repetition of this Start.  # noqa: E501
+        :type repetition: int
+        :param time_step: The time_step of this Start.  # noqa: E501
+        :type time_step: int
+        :param horizon: The horizon of this Start.  # noqa: E501
+        :type horizon: int
+        :param model_name: The model_name of this Start.  # noqa: E501
+        :type model_name: str
         """
         self.swagger_types = {
-            'frequency': int,
-            'solver_name': str
+            'repetition': int,
+            'time_step': int,
+            'horizon': int,
+            'model_name': str
         }
 
         self.attribute_map = {
-            'frequency': 'frequency',
-            'solver_name': 'solver_name'
+            'repetition': 'repetition',
+            'time_step': 'time_step',
+            'horizon': 'horizon',
+            'model_name': 'model_name'
         }
 
-        self._frequency = frequency
-        self._solver_name = solver_name
+        self._repetition = repetition
+        self._time_step = time_step
+        self._horizon = horizon
+        self._model_name = model_name
 
     @classmethod
     def from_dict(cls, dikt) -> 'Start':
@@ -48,47 +58,91 @@ class Start(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def frequency(self) -> int:
-        """Gets the frequency of this Start.
+    def repetition(self) -> int:
+        """Gets the repetition of this Start.
 
 
-        :return: The frequency of this Start.
+        :return: The repetition of this Start.
         :rtype: int
         """
-        return self._frequency
+        return self._repetition
 
-    @frequency.setter
-    def frequency(self, frequency: int):
-        """Sets the frequency of this Start.
+    @repetition.setter
+    def repetition(self, repetition: int):
+        """Sets the repetition of this Start.
 
 
-        :param frequency: The frequency of this Start.
-        :type frequency: int
+        :param repetition: The repetition of this Start.
+        :type repetition: int
         """
-        if frequency is None:
-            raise ValueError("Invalid value for `frequency`, must not be `None`")  # noqa: E501
+        if repetition is None:
+            raise ValueError("Invalid value for `repetition`, must not be `None`")  # noqa: E501
 
-        self._frequency = frequency
+        self._repetition = repetition
 
     @property
-    def solver_name(self) -> str:
-        """Gets the solver_name of this Start.
+    def time_step(self) -> int:
+        """Gets the time_step of this Start.
 
 
-        :return: The solver_name of this Start.
+        :return: The time_step of this Start.
+        :rtype: int
+        """
+        return self._time_step
+
+    @time_step.setter
+    def time_step(self, time_step: int):
+        """Sets the time_step of this Start.
+
+
+        :param time_step: The time_step of this Start.
+        :type time_step: int
+        """
+        if time_step is None:
+            raise ValueError("Invalid value for `time_step`, must not be `None`")  # noqa: E501
+
+        self._time_step = time_step
+
+    @property
+    def horizon(self) -> int:
+        """Gets the horizon of this Start.
+
+
+        :return: The horizon of this Start.
+        :rtype: int
+        """
+        return self._horizon
+
+    @horizon.setter
+    def horizon(self, horizon: int):
+        """Sets the horizon of this Start.
+
+
+        :param horizon: The horizon of this Start.
+        :type horizon: int
+        """
+        if horizon is None:
+            raise ValueError("Invalid value for `horizon`, must not be `None`")  # noqa: E501
+
+        self._horizon = horizon
+
+    @property
+    def model_name(self) -> str:
+        """Gets the model_name of this Start.
+
+
+        :return: The model_name of this Start.
         :rtype: str
         """
-        return self._solver_name
+        return self._model_name
 
-    @solver_name.setter
-    def solver_name(self, solver_name: str):
-        """Sets the solver_name of this Start.
+    @model_name.setter
+    def model_name(self, model_name: str):
+        """Sets the model_name of this Start.
 
 
-        :param solver_name: The solver_name of this Start.
-        :type solver_name: str
+        :param model_name: The model_name of this Start.
+        :type model_name: str
         """
-        if solver_name is None:
-            raise ValueError("Invalid value for `solver_name`, must not be `None`")  # noqa: E501
 
-        self._solver_name = solver_name
+        self._model_name = model_name
