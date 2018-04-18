@@ -54,7 +54,7 @@ class OptController:
 
         try:
             #Creating an optimization instance with the referenced model
-            from optimization.models.ReferenceModel import Model
+            #from optimization.models.ReferenceModel import Model
             instance = self.my_class.model.create_instance(self.data_path)
             # instance.pprint()
 
