@@ -20,7 +20,7 @@ class TestCommandController(BaseTestCase):
         startOFW = Start()
         response = self.client.open(
             '/v1/command/start',
-            method='POST',
+            method='PUT',
             data=json.dumps(startOFW),
             content_type='application/json')
         self.assert200(response,
@@ -33,7 +33,7 @@ class TestCommandController(BaseTestCase):
         """
         response = self.client.open(
             '/v1/command/stop',
-            method='POST',
+            method='PUT',
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
