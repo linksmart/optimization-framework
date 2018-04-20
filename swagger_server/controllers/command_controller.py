@@ -1,15 +1,16 @@
 import connexion
-import six
+# import six
 import logging
 import configparser
 
 from swagger_server.models.start import Start  # noqa: E501
-from swagger_server import util
+# from swagger_server import util
 from flask import json
 
-from optparse import OptionParser
+# from optparse import OptionParser
 from optimization.controller import OptController
-import os, time
+import os
+import time
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -18,12 +19,14 @@ def getFilePath(dir,file_name):
     #print(os.path.sep)
     #print(os.environ.get("HOME"))
     project_dir = os.path.dirname(os.path.realpath(__file__))
-    data_file = os.path.join("/usr/src/app",dir,file_name)
+    #data_file = os.path.join("/usr/src/app",dir,file_name)
+    data_file = os.path.join(dir, file_name)
     return data_file
 
-def getDataJSON(object, key):
-    data=json.dumps(object)
-    data2=json.loads(data)
+
+def get_data_json(json_text, key):
+    data = json.dumps(json_text)
+    data2 = json.loads(data)
     return data2[key]
 
 
@@ -32,31 +35,31 @@ def framework_start(startOFW):  # noqa: E501
 
      # noqa: E501
 
-    :param startOFW: Start command for the optimization framework
-    :type startOFW: dict | bytes
+    :param json_request: Start command for the optimization framework
+    :type json_request: dict | bytes
 
     :rtype: None
     """
     if connexion.request.is_json:
         logger.info("URL JSON received")
-        startOFW = Start.from_dict(connexion.request.get_json())
+        json_request = Start.from_dict(connexion.request.get_json())
 
         try:
-            frequency = getDataJSON(startOFW,"frequency")
-            solverName= getDataJSON(startOFW,"solver_name")
+            frequency = get_data_json(json_request, "frequency")
+            solver_name_request = get_data_json(json_request, "solver_name")
             logger.info("Frequency: "+str(frequency))
-            logger.info("Solver: "+solverName)
+            logger.info("Solver: "+solver_name_request)
 
             # Creating an object of the configuration file
             config = configparser.RawConfigParser()
-            config.read(getFilePath("utils","ConfigFile.properties"))
+            config.read(getFilePath("utils", "ConfigFile.properties"))
             model_name = config.get("SolverSection", "model.name")
             logger.info("This is the solver name: "+model_name)
-            model_path= os.path.join(config.get("SolverSection", "model.base.path"),model_name)+".py"
+            model_path = os.path.join(config.get("SolverSection", "model.base.path"), model_name)+".py"
 
             # Taking the data file name from the configuration file
             data_file_name = config.get("SolverSection", "data.file")
-            data_path = getFilePath("optimization",data_file_name)
+            data_path = getFilePath("optimization", data_file_name)
 
             # Taking
             solver_name = config.get("SolverSection", "solver.name")
@@ -68,12 +71,11 @@ def framework_start(startOFW):  # noqa: E501
                 logger.info(results)
                 time.sleep(frequency)
 
-
         except Exception as e:
             logger.error(e)
     else:
         logger.error("Wrong Content-Type")
-    return 'System started succesfully'
+    return 'System started successfully'
 
 
 def framework_stop():  # noqa: E501

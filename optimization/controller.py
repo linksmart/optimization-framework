@@ -10,6 +10,7 @@ import optimization.models as models
 import os, logging
 import importlib
 import importlib.util
+import optimization
 #from optimization.models.ReferenceModel import Model
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)

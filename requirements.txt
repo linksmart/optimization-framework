@@ -6,4 +6,5 @@ numpy
 scipy
 sklearn
 connexion
+flask
 
