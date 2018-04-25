@@ -67,7 +67,9 @@ RUN make test
 RUN echo "Make test finished"
 RUN make install
 RUN echo "Install finished"
+RUN make distclean
+RUN ldconfig
 # Cleanup
 RUN rm -rf /usr/src/app/share/Ipopt-3.12.9.tgz
 #RUN apk add clean
-ENV PATH "$PATH:/usr/src/app/share/CoinIpopt"
+ENV PATH "$PATH:/usr/src/app/share/CoinIpopt/build/bin"
