@@ -11,7 +11,7 @@ import os
 import logging
 import configparser
 
-from swagger_server.controllers.command_controller import getFilePath
+
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -20,6 +20,13 @@ def getDataJSON(object, key):
     data=json.dumps(object)
     data2=json.loads(data)
     return data2[key]
+
+def getFilePath(dir, file_name):
+    # print(os.path.sep)
+    # print(os.environ.get("HOME"))
+    project_dir = os.path.dirname(os.path.realpath(__file__))
+    data_file = os.path.join("/usr/src/app", dir, file_name)
+    return data_file
 
 def optimization_model(name, upModel):  # noqa: E501
     """Mathematical model for the optimization solver
