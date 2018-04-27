@@ -67,17 +67,9 @@ class OptController(threading.Thread):
 
     #Start the optimization process and gives back a result
     def run(self):
-
-
-        #Takimg the mathematical model from the configuration file
-        #from pyomo.environ import SolverFactory
-
-
-
-
         logger.info("Starting optimization controller")
 
-
+        ###Starts name server, dispatcher server and pyro_mip_server
         name_server=subprocess.Popen(["/usr/local/bin/pyomo_ns"])
         dispatch_server=subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
         pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
@@ -93,14 +85,14 @@ class OptController(threading.Thread):
             ###create a solver manager
             solver_manager=SolverManagerFactory('pyro')
             if solver_manager is None:
-                logger.info("Failed to create a solver manager")
+                logger.error("Failed to create a solver manager")
 
             while not self.stopRequest.isSet():
                 # Creating an optimization instance with the referenced model
                 instance = self.my_class.model.create_instance(self.data_path)
                 logger.info("Instance created with pyomo")
 
-                # instance.pprint()
+                #logger.info(instance.pprint())
 
                 action_handle = solver_manager.queue(instance, opt=optsolver)
                 action_handle_map[action_handle] = "myOptimizationModel_1"
@@ -131,6 +123,15 @@ class OptController(threading.Thread):
                     logger.info("Solver status and termination condition ok")
                     logger.info("Results for " + self.solved_name)
                     logger.info(self.results)
+                    instance.solutions.load_from(self.results)
+                    try:
+                        for v in instance.component_objects(Var, active=True):
+                            logger.info("Variable: "+ str(v))
+                            varobject = getattr(instance, str(v))
+                            for index in varobject:
+                                logger.info(str(index)+", "+ str(varobject[index].value))
+                    except Exception as e:
+                        logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:
                     # do something about it? or exit?
                     logger.info("Termination condition is infeasible")
@@ -139,6 +140,7 @@ class OptController(threading.Thread):
                     #print(self.results.solver)
                     logger.info("Nothing fits")
 
+                logger.info("Optimization thread going to sleep")
                 time.sleep(self.time_step)
 
             #ToDo
