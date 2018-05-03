@@ -42,13 +42,17 @@ def framework_start(startOFW):  # noqa: E501
     """
     if connexion.request.is_json:
         logger.info("URL JSON received")
-        json_request = Start.from_dict(connexion.request.get_json())
+        # json_request = Start.from_dict(connexion.request.get_json())
 
         try:
-            frequency = get_data_json(json_request, "frequency")
-            solver_name_request = get_data_json(json_request, "solver_name")
-            logger.info("Frequency: "+str(frequency))
-            logger.info("Solver: "+solver_name_request)
+            repetition = get_data_json(startOFW, "repetition")
+            time_step = get_data_json(startOFW, "time_step")
+            horizon = get_data_json(startOFW, "horizon")
+            model_name = get_data_json(startOFW, "model_name")
+            logger.info("Number of repetitions: " + str(repetition))
+            logger.info("Output with the following time steps: " + str(time_step))
+            logger.info("Optimization calculated with the following horizon: " + str(horizon))
+            logger.info("Optimization calculated with the following model: " + model_name)
 
             # Creating an object of the configuration file
             config = configparser.RawConfigParser()
@@ -69,7 +73,7 @@ def framework_start(startOFW):  # noqa: E501
             while True:
                 results = opt.start()
                 logger.info(results)
-                time.sleep(frequency)
+                time.sleep(20)
 
         except Exception as e:
             logger.error(e)
