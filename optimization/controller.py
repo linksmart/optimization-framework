@@ -5,30 +5,40 @@ Created on Fri Mar 16 15:05:36 2018
 @author: garagon
 """
 
-from pyomo.environ import SolverFactory
+
 # import optimization.models as models
 # import os,
 import logging
 import importlib
 import importlib.util
-# import optimization
-# from optimization.models.ReferenceModel import Model
+import threading
+from pyomo.environ import *
+from pyomo.opt import SolverFactory
+from pyomo.opt.parallel import SolverManagerFactory
+from pyomo.opt import SolverStatus, TerminationCondition
+import subprocess
+import time
+
+#from optimization.models.ReferenceModel import Model
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+class OptController(threading.Thread):
 
-class OptController:
-
-    def __init__(self, object_name,solver_name,data_path, model_path):
+    def __init__(self, object_name,solver_name,data_path, model_path, time_step):
+        #threading.Thread.__init__(self)
+        super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
-
-        # Loading variables
+        #Loading variables
         self.name = object_name
         self.results = ""
         self.model_path = model_path
         self.data_path = data_path
         self.solver_name = solver_name
+        self.time_step=time_step
+
+        self.stopRequest=threading.Event()
 
         try:
             # dynamic load of a class
@@ -46,22 +56,91 @@ class OptController:
         module = spec.loader.load_module(spec.name)
         return module
 
+    def join(self, timeout=None):
+        self.stopRequest.set()
+        super(OptController, self).join(timeout)
+
+    def Stop(self):
+        if self.isAlive():
+            self.join()
 
     # Start the optimization process and gives back a result
-    def start(self):
+    def run(self):
+        # Takimg the mathematical model from the configuration file
+        # from pyomo.environ import SolverFactory
 
         logger.info("Starting optimization controller")
-        # Takimg the mathematical model from the configuration file
+
+        # name_server=subprocess.Popen(["/usr/local/bin/pyomo_ns"])
+        name_server = subprocess.Popen(["pyomo_ns"])
+        # dispatch_server=subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
+        dispatch_server = subprocess.Popen(["dispatch_srvr"])
+        # pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
+        pyro_mip_server = subprocess.Popen(["pyro_mip_server"])
 
         try:
-            # Creating an optimization instance with the referenced model
-            # from optimization.models.ReferenceModel import Model
-            instance = self.my_class.model.create_instance(self.data_path)
-            # instance.pprint()
+            ###maps action handles to instances
+            action_handle_map={}
 
-            opt = SolverFactory(self.solver_name)
-            self.results = opt.solve(instance)
-            return self.results
+            #####create a solver
+            optsolver = SolverFactory(self.solver_name)
+            logger.info("solver instantiated")
+
+            ###create a solver manager
+            solver_manager=SolverManagerFactory('pyro')
+            if solver_manager is None:
+                logger.info("Failed to create a solver manager")
+
+            while not self.stopRequest.isSet():
+                # Creating an optimization instance with the referenced model
+                instance = self.my_class.model.create_instance(self.data_path)
+                logger.info("Instance created with pyomo")
+
+                # instance.pprint()
+
+                action_handle = solver_manager.queue(instance, opt=optsolver)
+                action_handle_map[action_handle] = "myOptimizationModel_1"
+
+                ###retrieve the solutions
+                for i in range(1):
+                    this_action_handle=solver_manager.wait_any()
+                    self.solved_name=action_handle_map[this_action_handle]
+                    self.results=solver_manager.get_results(this_action_handle)
+
+
+                #logger.info("The solver returned a status of:" + str(self.results.Solution.Status))
+
+                ####Test getting constraints
+                #logger.info("Constraints")
+                #from pyomo.core import Constraint
+                #for c in instance.component_objects(Constraint, active=True):
+                    #logger.info("Constraint: ",c)
+                    #cobject=getattr(instance,str(c))
+                    #for index in cobject:
+                        #print("      ", index, instance.dual[cobject[index]])
+
+                ###   Testing solver status and termination condition
+
+
+                if (self.results.solver.status == SolverStatus.ok) and (self.results.solver.termination_condition == TerminationCondition.optimal):
+                    # this is feasible and optimal
+                    logger.info("Solver status and termination condition ok")
+                    logger.info("Results for " + self.solved_name)
+                    logger.info(self.results)
+                elif self.results.solver.termination_condition == TerminationCondition.infeasible:
+                    # do something about it? or exit?
+                    logger.info("Termination condition is infeasible")
+                else:
+                    # something else is wrong
+                    #print(self.results.solver)
+                    logger.info("Nothing fits")
+
+                time.sleep(self.time_step)
+
+            #ToDo
+            ###close subprocesses
+
+
         except Exception as e:
             logger.error(e)
             return e

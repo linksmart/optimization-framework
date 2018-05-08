@@ -78,4 +78,47 @@ class Model:
         return model.FirstStageCost + summation(model.LaterStageCost)
 
 
-    model.Obj = Objective(rule=objective_rule)
+
+    ###########################################################################
+    #######                         CONSTRAINTS                         #######
+    #######                Rule1: P_power demand meeting                #######
+    #######                Rule2: Q_power demand meeting                #######
+    #######                Rule3: State of charge consistency           #######
+    #######                Rule4: Initial State of charge               #######
+    #######                Rule5: ppv+j.qpv <= PB                       #######
+    #######                Rule6: Voltage drop                          #######
+    ###########################################################################
+    def con_rule1(model,t):
+        return model.P_Load_Forecast[t]==model.P_PV_Output[t]+ model.P_Grid_Output[t] + sum(model.P_ESS_Output[n,t] for n in model.N)
+    def con_rule2(model,t):
+        return model.Q_Load_Forecast[t]==model.Q_PV_Output[t]+ model.Q_Grid_Output[t]
+    def con_rule3(model,n,t):
+        return model.SoC_ESS[n,t+1]==model.SoC_ESS[n,t] - model.P_ESS_Output[n,t]*model.dT/model.ESS_Capacity[n]
+    def con_rule4(model,n):
+        return model.SoC_ESS[n,0]==model.ESS_SoC_Value[n]
+    def con_rule5(model,t):
+        return model.P_PV_Output[t]*model.P_PV_Output[t]+model.Q_PV_Output[t]*model.Q_PV_Output[t] <= model.P_PV_Forecast[t]*model.P_PV_Forecast[t]
+    def con_rule6(model,t):
+        return model.dV[t]==(model.Grid_R*model.P_Grid_Output[t]+model.Grid_X*model.Q_Grid_Output[t])/model.Grid_VGEN
+
+    model.con1=Constraint(model.T,rule=con_rule1)
+    model.con2=Constraint(model.T,rule=con_rule2)
+    model.con3=Constraint(model.N,model.T,rule=con_rule3)
+    model.con4=Constraint(model.N,rule=con_rule4)
+    model.con5=Constraint(model.T,rule=con_rule5)
+    model.con6=Constraint(model.T,rule=con_rule6)
+
+
+    ###########################################################################
+    #######                         OBJECTIVE                           #######
+    ###########################################################################
+    def obj_rule(model):
+        if model.Target==1:   #Minimum exchange with grid
+            return sum(model.P_Grid_Output[t]*model.P_Grid_Output[t]+model.Q_Grid_Output[t]*model.Q_Grid_Output[t] for t in model.T)
+        elif model.Target==2: #Maximum utilization of PV potential
+            return sum(model.P_PV_Forecast[m]-model.P_PV_Output[m] for t in model.T)
+        elif model.Target==3: #Minimum electricity bill
+            return sum(model.Price[t]*model.P_Grid_Output[t] for t in model.T)
+        elif model.Target==4: #Minimum voltage drop
+            return sum(model.dV[t]*model.dV[t] for t in model.T)
+    model.obj=Objective(rule=obj_rule, sense = minimize)

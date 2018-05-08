@@ -2,38 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1a11ca96-8676-422f-9907-c5cc127f7c15" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/Helpers/Threadfactory.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/controllers/data_controller.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/dataset.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/e.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/ess.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/ess_output.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/grid.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/grid_output.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/input_source.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/load.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/meta_ess.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/meta_grid.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/meta_load.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/meta_pv.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/output_source.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/pv.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/pv_output.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/source.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/swagger_server/models/weather.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/schell.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/schell.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/swagger_server/controllers/threadFactory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker/Bonmin/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/docker/Bonmin/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker/Ipopt/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/docker/Ipopt/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/optimization/controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/optimization/controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/optimization/data.dat" beforeDir="false" afterPath="$PROJECT_DIR$/optimization/data.dat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/optimization/models/ReferenceModel.py" beforeDir="false" afterPath="$PROJECT_DIR$/optimization/models/ReferenceModel.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/swagger_server/controllers/command_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/controllers/command_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/controllers/model_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/controllers/models_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/controllers/registry_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/controllers/registry_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/models/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/models/datainput.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/models/start.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/models/start.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/swagger/swagger.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/swagger/swagger.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/test/test_command_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/test/test_command_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/swagger_server/test/test_registry_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/test/test_registry_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/swagger_server/controllers/models_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/swagger_server/controllers/models_controller.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -48,14 +25,35 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="command_controller.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="command_controller.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/swagger_server/controllers/command_controller.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1190">
-              <caret line="70" column="31" selection-start-line="70" selection-start-column="18" selection-end-line="70" selection-end-column="31" />
+            <state relative-caret-position="523">
+              <caret line="60" selection-start-line="60" selection-end-line="60" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
+                <element signature="e#421#502#0" />
+                <element signature="e#541#613#0" />
+                <element signature="e#1599#2165#0" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="threadFactory.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/swagger_server/controllers/threadFactory.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="357">
+              <caret line="30" column="83" lean-forward="true" selection-start-line="30" selection-start-column="83" selection-end-line="30" selection-end-column="83" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ConfigFile.properties" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/utils/ConfigFile.properties">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret column="11" lean-forward="true" selection-start-column="11" selection-end-column="11" />
             </state>
           </provider>
         </entry>
@@ -65,6 +63,15 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="391">
               <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="controller.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/optimization/controller.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="510">
+              <caret line="138" lean-forward="true" selection-start-line="138" selection-end-line="138" />
             </state>
           </provider>
         </entry>
@@ -102,9 +109,10 @@
         <option value="$PROJECT_DIR$/utils/ConfigFile.properties" />
         <option value="$PROJECT_DIR$/requirements.txt" />
         <option value="$PROJECT_DIR$/swagger_server/controllers/command_controller.py" />
-        <option value="$PROJECT_DIR$/optimization/controller.py" />
         <option value="$PROJECT_DIR$/optimization/models/ReferenceModel.py" />
         <option value="$PROJECT_DIR$/Helpers/Threadfactory.py" />
+        <option value="$PROJECT_DIR$/swagger_server/controllers/threadFactory.py" />
+        <option value="$PROJECT_DIR$/optimization/controller.py" />
       </list>
     </option>
   </component>
@@ -136,6 +144,11 @@
             <path>
               <item name="optimization-framework" type="b2602c69:ProjectViewProjectNode" />
               <item name="optimization-framework" type="462c0819:PsiDirectoryNode" />
+              <item name="Helpers" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="optimization-framework" type="b2602c69:ProjectViewProjectNode" />
+              <item name="optimization-framework" type="462c0819:PsiDirectoryNode" />
               <item name="swagger_server" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -149,6 +162,11 @@
               <item name="optimization-framework" type="462c0819:PsiDirectoryNode" />
               <item name="swagger_server" type="462c0819:PsiDirectoryNode" />
               <item name="swagger" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="optimization-framework" type="b2602c69:ProjectViewProjectNode" />
+              <item name="optimization-framework" type="462c0819:PsiDirectoryNode" />
+              <item name="utils" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -232,14 +250,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1216" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1216" extended-state="7" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16666667" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.16666667" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.50625" side_tool="true" visible="true" weight="0.2813067" />
+      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.5083333" side_tool="true" visible="true" weight="0.2813067" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49375" visible="true" weight="0.2813067" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49166667" visible="true" weight="0.2813067" />
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -269,7 +287,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/.virtualenvs/OptiFramework-ntzRiYlE/Lib/imp.py" />
     <entry file="file://$PROJECT_DIR$/myAgent/main.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="221">
@@ -317,13 +334,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="408">
           <caret line="25" column="31" lean-forward="true" selection-start-line="25" selection-start-column="31" selection-end-line="25" selection-end-column="31" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://D:/Programme/python35/Lib/configparser.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="598" column="8" selection-start-line="598" selection-start-column="8" selection-end-line="598" selection-end-column="8" />
         </state>
       </provider>
     </entry>
@@ -443,22 +453,8 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/swagger_server/swagger/swagger.yaml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
-          <caret line="38" column="27" lean-forward="true" selection-end-line="686" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/swagger_server/models/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/ConfigFile.properties">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" column="18" selection-start-line="10" selection-start-column="18" selection-end-line="10" selection-end-column="18" />
-        </state>
-      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/swagger_server/util.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -520,13 +516,44 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/swagger_server/controllers/command_controller.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="523">
+          <caret line="60" selection-start-line="60" selection-end-line="60" />
+          <folding>
+            <element signature="e#0#16#0" expanded="true" />
+            <element signature="e#421#502#0" />
+            <element signature="e#541#613#0" />
+            <element signature="e#1599#2165#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://D:/Programme/python35/Lib/configparser.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="761" column="28" lean-forward="true" selection-start-line="761" selection-start-column="28" selection-end-line="761" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/ConfigFile.properties">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="11" lean-forward="true" selection-start-column="11" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/swagger_server/swagger/swagger.yaml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="43" column="9" lean-forward="true" selection-end-line="686" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/optimization/controller.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="268">
-          <caret line="47" lean-forward="true" selection-start-line="47" selection-end-line="47" />
-          <folding>
-            <element signature="e#87#126#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="510">
+          <caret line="138" lean-forward="true" selection-start-line="138" selection-end-line="138" />
         </state>
       </provider>
     </entry>
@@ -537,13 +564,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/swagger_server/controllers/command_controller.py">
+    <entry file="file://$PROJECT_DIR$/swagger_server/controllers/threadFactory.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1190">
-          <caret line="70" column="31" selection-start-line="70" selection-start-column="18" selection-end-line="70" selection-end-column="31" />
-          <folding>
-            <element signature="e#0#16#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="357">
+          <caret line="30" column="83" lean-forward="true" selection-start-line="30" selection-start-column="83" selection-end-line="30" selection-end-column="83" />
         </state>
       </provider>
     </entry>

@@ -68,7 +68,9 @@ RUN make test
 RUN echo "Make test finished"
 RUN make install
 RUN echo "Install finished"
+RUN make distclean
+RUN ldconfig
 # Cleanup
 RUN rm -rf /usr/src/app/share/Bonmin-1.8.6.tgz
 #RUN apk add clean
-ENV PATH "$PATH:/usr/src/app/share/CoinBonmin"
+ENV PATH "$PATH:/usr/src/app/share/CoinBonmin/build/bin"
