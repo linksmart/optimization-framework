@@ -13,6 +13,7 @@ COPY optimization /usr/src/app/optimization
 COPY utils /usr/src/app/utils
 COPY prediction /usr/src/app/prediction
 COPY swagger_server /usr/src/app/swagger_server
+COPY IO /usr/src/app/IO
 #COPY myAgent /usr/src/app/myAgent
 
 # Install any needed packages specified in requirements.txt
