@@ -24,20 +24,20 @@ services:
       #  target: /usr/bin/glpsol
     #restart: unless-stopped
 
- # ipopt:
- #   build:
- #     context: ""
- #     dockerfile: docker/Ipopt/Dockerfile
- #   image: garagon/ipopt:V0.1
+  #ipopt:
+    #build:
+      #context: ""
+      #dockerfile: docker/Ipopt/Dockerfile
+    #image: garagon/ipopt:V0.2
  # bonmin:
  #   build:
  #     context: ""
  #     dockerfile: docker/Bonmin/Dockerfile
  #   image: garagon/bonmin:V0.1
-  #mosquitto:
-  #  image: eclipse-mosquitto
-  #  ports:
-  #    - 1883:1883
+  mosquitto:
+    image: eclipse-mosquitto
+    ports:
+      - 1883:1883
   #pyro:
   #  image: farshidtz/pyro4-ns
   #  command: ["--host=pyro-ns"]
@@ -46,7 +46,7 @@ services:
       context: ""
       dockerfile: Dockerfile
      # ../docker/App/Dockerfile
-    image: myapp-ofw
+    image: myapp-ofw-ipopt
     ports:
       - "8080:8080"
  #   depends_on:
