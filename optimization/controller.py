@@ -17,6 +17,10 @@ from pyomo.opt.parallel import SolverManagerFactory
 from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
+#from objdict import ObjDict
+from IO.outputController import OutputController
+
+
 
 #from optimization.models.ReferenceModel import Model
 
@@ -49,6 +53,7 @@ class OptController(threading.Thread):
         except Exception as e:
             logger.error(e)
 
+        self.output = OutputController()
 
     # Importint a class dynamically
     def path_import2(self,absolute_path):
@@ -86,6 +91,15 @@ class OptController(threading.Thread):
             solver_manager=SolverManagerFactory('pyro')
             if solver_manager is None:
                 logger.error("Failed to create a solver manager")
+
+            key_P_PV_Potential = 'P_PV_Potential'
+            key_Q_PV_Output = 'Q_PV_Output'
+            key_P_ESS_Output = 'P_ESS_Output'
+            key_P_Grid_Output = 'P_Grid_Output'
+            key_Q_Grid_Output = 'Q_Grid_Output'
+            key_P_EV_Output= 'P_EV_Output'
+            key_SoC_ESS = 'SoC_ESS'
+            key_Soc_EV = 'Soc_EV'
 
             while not self.stopRequest.isSet():
                 # Creating an optimization instance with the referenced model
@@ -125,11 +139,34 @@ class OptController(threading.Thread):
                     logger.info(self.results)
                     instance.solutions.load_from(self.results)
                     try:
+                        my_dict={}
                         for v in instance.component_objects(Var, active=True):
                             logger.info("Variable: "+ str(v))
                             varobject = getattr(instance, str(v))
+                            #if str(v) == "P_PV_Output":
+                                #logger.info("Este es P_PV_Output")
+                                #my_dict[str(v)]='2'
+                                #logger.info("A ver "+ str(my_dict))
                             for index in varobject:
-                                logger.info(str(index)+", "+ str(varobject[index].value))
+                                #logger.info(str(index)+", "+ str(varobject[index].value))
+                                if index==0:
+                                    #logger.info("Estoy aqui")
+                                    #logger.info(str(index) + ", " + str(varobject[index].value))
+
+                                    list=[{index,varobject[index].value}]
+                                    #logger.info("Estaes la lista"+str(list))
+                                    try:
+                                        # Try and add to the dictionary by key ref
+                                        my_dict[str(v)]=list
+
+                                    except KeyError:
+                                        # Append new index to currently existing items
+                                        my_dict = {**my_dict, **{v: list}}
+
+
+                        #logger.info("Este es mi dict"+str(my_dict))
+
+                        self.output.publishController(my_dict)
                     except Exception as e:
                         logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:
