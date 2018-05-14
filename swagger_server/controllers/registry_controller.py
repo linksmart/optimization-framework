@@ -72,8 +72,31 @@ def output_source(Output_Source):  # noqa: E501
         # if file is true then mqtt is false
         # limitation of qos
         # topic just base name
-        # check with the model
+        # check with the model. Each output variable of the model should have a definition here *******IMPORTANT**************
+        try:
+            ess=Output_Source.ess.to_dict()
+            logger.info(str(Output_Source.ess.to_dict()))
 
+            #logger.info("ESS output: "+str(ess["p_ess_output"]))
+            #logger.info("ESS ouput file: "+str(ess["p_ess_output"]["file"]))
+            #logger.info("ESS ouput mqtt: " + str(ess["p_ess_output"]["mqtt"]))
+            #logger.info("ESS ouput mqtt url: " + str(ess["p_ess_output"]["mqtt"]["url"]))
+            #logger.info("ESS ouput mqtt topic: " + str(ess["p_ess_output"]["mqtt"]["topic"]))
+            #logger.info("ESS ouput mqtt qos: " + str(ess["p_ess_output"]["mqtt"]["qos"]))
+            #logger.info("Not: "+str(not ess["p_ess_output"]["mqtt"]["url"]))
+            #logger.info("Isspace: " + str(ess["p_ess_output"]["mqtt"]["url"].isspace()))
+
+        except Exception as e:
+            logger.error(e)
+
+        try:
+            check=error_check_output_ambiguity(Output_Source)
+            if check != 0:
+                message = "Definition Error "+ check +": File and MQTT options chosen at the same time"
+                logger.error(message)
+                return message
+        except Exception as e:
+            logger.error(e)
         #Writes the registry/output to a txt file in ordner utils
         path = getFilePath("utils", "Output_registry.txt")
         with open(path, 'w') as outfile:
@@ -83,7 +106,26 @@ def output_source(Output_Source):  # noqa: E501
 
     return 'Operation succeded'
 
-def getDataJSON(object, key):
-    data=json.dumps(object)
-    data2=json.loads(data)
-    return data2[key]
+
+def error_check_output_ambiguity(object):
+    ess=object.ess.to_dict()
+    if (ess["p_ess_output"]["mqtt"]["url"] or ess["p_ess_output"]["mqtt"]["url"].isspace()) and str(ess["p_ess_output"]["file"]) == "True":
+        return "ess"
+
+    grid=object.grid.to_dict()
+    if (grid["p_grid_export_output"]["mqtt"]["url"] or grid["p_grid_export_output"]["mqtt"]["url"].isspace()) and str(grid["p_grid_export_output"]["file"]) == "True":
+        return "grid"
+    elif (grid["p_grid_import_output"]["mqtt"]["url"] or grid["p_grid_import_output"]["mqtt"]["url"].isspace()) and str(grid["p_grid_import_output"]["file"]) == "True":
+        return "grid"
+    elif (grid["q_grid_export_output"]["mqtt"]["url"] or grid["q_grid_export_output"]["mqtt"]["url"].isspace()) and str(grid["q_grid_export_output"]["file"]) == "True":
+        return "grid"
+    elif (grid["q_grid_import_output"]["mqtt"]["url"] or grid["q_grid_import_output"]["mqtt"]["url"].isspace()) and str(grid["q_grid_import_output"]["file"]) == "True":
+        return "grid"
+
+    pv = object.photovoltaic.to_dict()
+    if (pv["p_pv_output"]["mqtt"]["url"] or pv["p_pv_output"]["mqtt"]["url"].isspace()) and str(pv["p_pv_output"]["file"]) == "True":
+        return "photovoltaic"
+    elif (pv["q_pv_output"]["mqtt"]["url"] or pv["q_pv_output"]["mqtt"]["url"].isspace()) and str(pv["q_pv_output"]["file"]) == "True":
+        return "photovoltaic"
+    else:
+        return 0
