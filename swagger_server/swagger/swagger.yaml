@@ -69,14 +69,14 @@ paths:
       - "registry"
       summary: "Creates a new data source as input"
       description: ""
-      operationId: "load_source"
+      operationId: "input_source"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
       - in: "body"
-        name: "InputSource"
+        name: "Input_Source"
         description: "Data source to be created"
         required: true
         schema:
@@ -104,7 +104,7 @@ paths:
       - "application/json"
       parameters:
       - in: "body"
-        name: "OutputSource"
+        name: "Output_Source"
         description: "Output data source to be created"
         required: true
         schema:
@@ -684,3 +684,4 @@ definitions:
             qos: 0
             topic: "topic"
             url: "url"
+
