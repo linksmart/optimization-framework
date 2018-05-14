@@ -72,7 +72,9 @@ def output_source(Output_Source):  # noqa: E501
         # if file is true then mqtt is false
         # limitation of qos
         # topic just base name
+        # check if there is another name other than host
         # check with the model. Each output variable of the model should have a definition here *******IMPORTANT**************
+        # Check for nontype objects
         try:
             ess=Output_Source.ess.to_dict()
             logger.info(str(Output_Source.ess.to_dict()))
@@ -87,6 +89,7 @@ def output_source(Output_Source):  # noqa: E501
             #logger.info("Isspace: " + str(ess["p_ess_output"]["mqtt"]["url"].isspace()))
 
         except Exception as e:
+            logger.info("This error")
             logger.error(e)
 
         try:
@@ -109,23 +112,23 @@ def output_source(Output_Source):  # noqa: E501
 
 def error_check_output_ambiguity(object):
     ess=object.ess.to_dict()
-    if (ess["p_ess_output"]["mqtt"]["url"] or ess["p_ess_output"]["mqtt"]["url"].isspace()) and str(ess["p_ess_output"]["file"]) == "True":
+    if (ess["p_ess_output"]["mqtt"]["host"] or ess["p_ess_output"]["mqtt"]["host"].isspace()) and str(ess["p_ess_output"]["file"]) == "True":
         return "ess"
 
     grid=object.grid.to_dict()
-    if (grid["p_grid_export_output"]["mqtt"]["url"] or grid["p_grid_export_output"]["mqtt"]["url"].isspace()) and str(grid["p_grid_export_output"]["file"]) == "True":
+    if (grid["p_grid_export_output"]["mqtt"]["host"] or grid["p_grid_export_output"]["mqtt"]["host"].isspace()) and str(grid["p_grid_export_output"]["file"]) == "True":
         return "grid"
-    elif (grid["p_grid_import_output"]["mqtt"]["url"] or grid["p_grid_import_output"]["mqtt"]["url"].isspace()) and str(grid["p_grid_import_output"]["file"]) == "True":
+    elif (grid["p_grid_import_output"]["mqtt"]["host"] or grid["p_grid_import_output"]["mqtt"]["host"].isspace()) and str(grid["p_grid_import_output"]["file"]) == "True":
         return "grid"
-    elif (grid["q_grid_export_output"]["mqtt"]["url"] or grid["q_grid_export_output"]["mqtt"]["url"].isspace()) and str(grid["q_grid_export_output"]["file"]) == "True":
+    elif (grid["q_grid_export_output"]["mqtt"]["host"] or grid["q_grid_export_output"]["mqtt"]["host"].isspace()) and str(grid["q_grid_export_output"]["file"]) == "True":
         return "grid"
-    elif (grid["q_grid_import_output"]["mqtt"]["url"] or grid["q_grid_import_output"]["mqtt"]["url"].isspace()) and str(grid["q_grid_import_output"]["file"]) == "True":
+    elif (grid["q_grid_import_output"]["mqtt"]["host"] or grid["q_grid_import_output"]["mqtt"]["host"].isspace()) and str(grid["q_grid_import_output"]["file"]) == "True":
         return "grid"
 
     pv = object.photovoltaic.to_dict()
-    if (pv["p_pv_output"]["mqtt"]["url"] or pv["p_pv_output"]["mqtt"]["url"].isspace()) and str(pv["p_pv_output"]["file"]) == "True":
+    if (pv["p_pv_output"]["mqtt"]["host"] or pv["p_pv_output"]["mqtt"]["host"].isspace()) and str(pv["p_pv_output"]["file"]) == "True":
         return "photovoltaic"
-    elif (pv["q_pv_output"]["mqtt"]["url"] or pv["q_pv_output"]["mqtt"]["url"].isspace()) and str(pv["q_pv_output"]["file"]) == "True":
+    elif (pv["q_pv_output"]["mqtt"]["host"] or pv["q_pv_output"]["mqtt"]["host"].isspace()) and str(pv["q_pv_output"]["file"]) == "True":
         return "photovoltaic"
     else:
         return 0
