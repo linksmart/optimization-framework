@@ -115,10 +115,10 @@ class Model:
     def obj_rule(model):
         if model.Target==1:   #Minimum exchange with grid
             return sum(model.P_Grid_Output[t]*model.P_Grid_Output[t]+model.Q_Grid_Output[t]*model.Q_Grid_Output[t] for t in model.T)
-        elif model.Target==2: #Maximum utilization of PV potential
-            return sum(model.P_PV_Forecast[m]-model.P_PV_Output[m] for t in model.T)
-        elif model.Target==3: #Minimum electricity bill
-            return sum(model.Price[t]*model.P_Grid_Output[t] for t in model.T)
-        elif model.Target==4: #Minimum voltage drop
-            return sum(model.dV[t]*model.dV[t] for t in model.T)
+        #elif model.Target==2: #Maximum utilization of PV potential
+            #return sum(model.P_PV_Forecast[m]-model.P_PV_Output[m] for t in model.T)
+        #elif model.Target==3: #Minimum electricity bill
+            #return sum(model.Price[t]*model.P_Grid_Output[t] for t in model.T)
+        #elif model.Target==4: #Minimum voltage drop
+            #return sum(model.dV[t]*model.dV[t] for t in model.T)
     model.obj=Objective(rule=obj_rule, sense = minimize)
