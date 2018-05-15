@@ -5,20 +5,23 @@ from swagger_server.models.input_source import InputSource  # noqa: E501
 from swagger_server.models.output_source import OutputSource  # noqa: E501
 from swagger_server import util
 
+from flask import json
 
-def load_source(InputSource):  # noqa: E501
+
+def load_source(inputsource):
     """Creates a new data source as input
 
-     # noqa: E501
-
-    :param InputSource: Data source to be created
-    :type InputSource: dict | bytes
+    :return:
+    :param inputsource: Data source to be created
+    :type inputsource: dict | bytes
 
     :rtype: None
     """
     if connexion.request.is_json:
-        InputSource = InputSource.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        text = json.loads(json.dumps(inputsource))
+        print(text)
+        # InputSource = InputSource.from_dict(connexion.request.get_json())
+    return 'Created succesfully'
 
 
 def output_source(OutputSource):  # noqa: E501
