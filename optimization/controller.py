@@ -17,6 +17,7 @@ from pyomo.opt.parallel import SolverManagerFactory
 from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
+import sys
 #from objdict import ObjDict
 from IO.outputController import OutputController
 
@@ -77,9 +78,13 @@ class OptController(threading.Thread):
         logger.info("Starting optimization controller")
 
         ###Starts name server, dispatcher server and pyro_mip_server
+
         name_server=subprocess.Popen(["/usr/local/bin/pyomo_ns"])
+        logger.debug("Name server started: "+str(name_server))
         dispatch_server=subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
+        logger.debug("Dispatch server started: "+str(dispatch_server))
         pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
+        logger.debug("Pyro mip server started: "+str(pyro_mip_server))
 
         try:
             ###maps action handles to instances
@@ -91,8 +96,11 @@ class OptController(threading.Thread):
 
             ###create a solver manager
             solver_manager=SolverManagerFactory('pyro')
+
             if solver_manager is None:
                 logger.error("Failed to create a solver manager")
+            else:
+                logger.debug("Solver manager created: "+str(solver_manager))
 
             key_P_PV_Potential = 'P_PV_Potential'
             key_Q_PV_Output = 'Q_PV_Output'
@@ -179,9 +187,20 @@ class OptController(threading.Thread):
                     #print(self.results.solver)
                     logger.info("Nothing fits")
 
-                logger.info("Optimization thread going to sleep for "+self.time_step+" seconds")
+                logger.info("Optimization thread going to sleep for "+str(self.time_step)+" seconds")
                 time.sleep(self.time_step)
 
+            #Closing the pyomo servers
+            logger.debug("Deactivating pyro servers")
+            solver_manager.deactivate()
+            logger.debug("Pyro servers deactivated: "+str(solver_manager))
+            logger.debug("name server: "+str(name_server))
+            name_server.kill()
+            logger.debug("Exit name server")
+            dispatch_server.kill()
+            logger.debug("Exit dispatch server")
+            pyro_mip_server.kill()
+            logger.debug("Exit pyro-mip-server server")
             #If Stop signal arrives it tries to disconnect all mqtt clients
             for key,object in self.output.mqtt.items():
                 object.MQTTExit()
