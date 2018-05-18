@@ -1,0 +1,64 @@
+{
+  "ESS": {
+    "P_ESS_Output": {
+      "file": false,
+      "mqtt": {
+        "qos": 1,
+        "topic": "",
+        "host":  "optiframework_mosquitto_1"
+      }
+    }
+  },
+  "grid": {
+    "P_Grid_Export_Output": {
+      "file": false,
+      "mqtt": {
+        "qos": 0,
+        "topic": "",
+        "host": "optiframework_mosquitto_1"
+      }
+    },
+    "Q_Grid_Export_Output": {
+      "file": false,
+      "mqtt": {
+        "qos": 0,
+        "topic": "",
+        "host": "optiframework_mosquitto_1"
+      }
+    },
+    "P_Grid_Import_Output": {
+      "file": false,
+      "mqtt": {
+        "qos": 0,
+        "topic": "",
+        "host": "optiframework_mosquitto_1"
+      }
+    },
+    "Q_Grid_Import_Output": {
+      "file": false,
+      "mqtt": {
+        "qos": 0,
+        "topic": "",
+        "host": "optiframework_mosquitto_1"
+      }
+    }
+  },
+  "photovoltaic": {
+    "Q_PV_Output": {
+      "file": false,
+      "mqtt": {
+        "qos": 0,
+        "topic": "",
+        "host": "optiframework_mosquitto_1"
+      }
+    },
+    "P_PV_Output": {
+      "file": false,
+      "mqtt": {
+        "qos": 0,
+        "topic": "",
+        "host": "optiframework_mosquitto_1"
+      }
+    }
+  }
+}
