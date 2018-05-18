@@ -42,7 +42,7 @@ def input_source(Input_Source):  # noqa: E501
         # check with the model
 
         # Writes the registry/output to a txt file in ordner utils
-        path = getFilePath("utils", "Input_registry.txt")
+        path = getFilePath("utils", "Input.registry")
         with open(path, 'w') as outfile:
             json.dump(Input_Source, outfile, ensure_ascii=False)
         logger.info("registry/input saved into memory")
@@ -101,7 +101,7 @@ def output_source(Output_Source):  # noqa: E501
         except Exception as e:
             logger.error(e)
         #Writes the registry/output to a txt file in ordner utils
-        path = getFilePath("utils", "Output_registry.txt")
+        path = getFilePath("utils", "Output.registry")
         with open(path, 'w') as outfile:
             json.dump(Output_Source, outfile, ensure_ascii=False)
         logger.info("registry/output saved into memory")
