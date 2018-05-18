@@ -63,6 +63,7 @@ class Load(Model):
     def forecast(self) -> bool:
         """Gets the forecast of this Load.
 
+        Is it forecasted data? Or row data  # noqa: E501
 
         :return: The forecast of this Load.
         :rtype: bool
@@ -73,6 +74,7 @@ class Load(Model):
     def forecast(self, forecast: bool):
         """Sets the forecast of this Load.
 
+        Is it forecasted data? Or row data  # noqa: E501
 
         :param forecast: The forecast of this Load.
         :type forecast: bool
