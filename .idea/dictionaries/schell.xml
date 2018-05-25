@@ -1,8 +1,13 @@
 <component name="ProjectDictionaryState">
   <dictionary name="schell">
     <words>
+      <w>geocoordinate</w>
+      <w>googleapikey</w>
+      <w>googlekey</w>
       <w>inputsource</w>
+      <w>startdate</w>
       <w>threadfactory</w>
+      <w>weatherclass</w>
     </words>
   </dictionary>
 </component>

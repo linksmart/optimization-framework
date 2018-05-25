@@ -1,10 +1,10 @@
 ---
 swagger: "2.0"
 info:
-  version: "0.0.1"
+  version: "0.0.2"
   title: "Optimization framework service"
   license:
-    name: "MIT"
+    name: "Apache"
 host: "192.168.99.100:8080"
 basePath: "/v1"
 consumes:
@@ -69,14 +69,14 @@ paths:
       - "registry"
       summary: "Creates a new data source as input"
       description: ""
-      operationId: "load_source"
+      operationId: "input_source"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
       - in: "body"
-        name: "InputSource"
+        name: "Input_Source"
         description: "Data source to be created"
         required: true
         schema:
@@ -104,13 +104,13 @@ paths:
       - "application/json"
       parameters:
       - in: "body"
-        name: "OutputSource"
+        name: "Output_Source"
         description: "Output data source to be created"
         required: true
         schema:
           $ref: "#/definitions/OutputSource"
       responses:
-        201:
+        200:
           description: "Created succesfully"
         400:
           description: "Bad request"
@@ -248,7 +248,7 @@ definitions:
       time_step: 6
       horizon: 1
       model_name: "model_name"
-      repetition: 0
+      repetition: -1
   Load:
     type: "object"
     required:
@@ -257,6 +257,7 @@ definitions:
     properties:
       Forecast:
         type: "boolean"
+        description: "Is it forecasted data? Or row data"
       P_Load:
         $ref: "#/definitions/Source"
       Q_Load:
@@ -265,20 +266,20 @@ definitions:
         $ref: "#/definitions/metaLoad"
     example:
       Q_Load:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
       meta:
-        pf_Load: 6.0274563
-      Forecast: true
+        pf_Load: 6.02745629999999987802539180847816169261932373046875
+      Forecast: false
       P_Load:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
   metaLoad:
     type: "object"
     properties:
@@ -286,7 +287,7 @@ definitions:
         type: "number"
         format: "float"
     example:
-      pf_Load: 6.0274563
+      pf_Load: 6.02745629999999987802539180847816169261932373046875
   PV:
     type: "object"
     required:
@@ -295,20 +296,22 @@ definitions:
     properties:
       Forecast:
         type: "boolean"
+        description: "Is it forecasted data? Or row data"
       P_PV:
         $ref: "#/definitions/Source"
       meta:
         $ref: "#/definitions/metaPV"
+    description: "Definition of a PV element as input for the optimizer"
     example:
       P_PV:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
       meta:
         PV_Inv_Max_Power: 1
-      Forecast: true
+      Forecast: false
   PV_Output:
     type: "object"
     required:
@@ -320,17 +323,17 @@ definitions:
         $ref: "#/definitions/Source"
     example:
       Q_PV_Output:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
       P_PV_Output:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
   metaPV:
     type: "object"
     properties:
@@ -350,18 +353,18 @@ definitions:
         $ref: "#/definitions/metaESS"
     example:
       SoC_Value:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
       meta:
         Max_SoC: 5
         ESS_Max_Discharge_Power: 9
-        ESS_Charging_Eff: 3.6160767
+        ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
         ESS_Max_Charge_Power: 7
         Min_SoC: 5
-        ESS_Discharging_Eff: 2.027123
+        ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
         ESS_Capacity: 2
   ESS_Output:
     type: "object"
@@ -369,14 +372,15 @@ definitions:
     - "P_ESS_Output"
     properties:
       P_ESS_Output:
+        description: "Setting power of the ESS"
         $ref: "#/definitions/Source"
     example:
       P_ESS_Output:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
   metaESS:
     type: "object"
     properties:
@@ -404,10 +408,10 @@ definitions:
     example:
       Max_SoC: 5
       ESS_Max_Discharge_Power: 9
-      ESS_Charging_Eff: 3.6160767
+      ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
       ESS_Max_Charge_Power: 7
       Min_SoC: 5
-      ESS_Discharging_Eff: 2.027123
+      ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
       ESS_Capacity: 2
   grid:
     type: "object"
@@ -417,9 +421,9 @@ definitions:
     example:
       meta:
         Q_Grid_Max_Export_Power: 7
-        Min_Voltage_Drop: 1.0246457
+        Min_Voltage_Drop: 1.0246456999999999926131977190379984676837921142578125
         P_Grid_Max_Export_Power: 4
-        Max_Voltage_Drop: 1.2315135
+        Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
   grid_Output:
     type: "object"
     required:
@@ -435,29 +439,29 @@ definitions:
         $ref: "#/definitions/Source"
     example:
       P_Grid_Export_Output:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
       Q_Grid_Export_Output:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
       P_Grid_Import_Output:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
           url: "url"
       Q_Grid_Import_Output:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
   metaGrid:
     type: "object"
     properties:
@@ -475,9 +479,9 @@ definitions:
         format: "float"
     example:
       Q_Grid_Max_Export_Power: 7
-      Min_Voltage_Drop: 1.0246457
+      Min_Voltage_Drop: 1.0246456999999999926131977190379984676837921142578125
       P_Grid_Max_Export_Power: 4
-      Max_Voltage_Drop: 1.2315135
+      Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
   Source:
     type: "object"
     properties:
@@ -485,26 +489,29 @@ definitions:
         type: "boolean"
       mqtt:
         $ref: "#/definitions/MQTT"
+    description: "Selection between MQTT or file mode inputs or outputs"
     example:
-      file: true
+      file: false
       mqtt:
         qos: 0
         topic: "topic"
-        url: "url"
+        host: "url"
   MQTT:
     type: "object"
     properties:
-      url:
+      host:
         type: "string"
       topic:
         type: "string"
       qos:
         type: "integer"
         format: "int32"
+        minimum: 0
+        maximum: 2
     example:
       qos: 0
       topic: "topic"
-      url: "url"
+      host: "url"
   weather:
     type: "object"
     properties:
@@ -575,58 +582,58 @@ definitions:
         $ref: "#/definitions/weather"
     example:
       market:
-        file: true
+        file: false
         mqtt:
           qos: 0
           topic: "topic"
-          url: "url"
+          host: "url"
       load:
         Q_Load:
-          file: true
+          file: false
           mqtt:
             qos: 0
             topic: "topic"
-            url: "url"
+            host: "url"
         meta:
-          pf_Load: 6.0274563
-        Forecast: true
+          pf_Load: 6.02745629999999987802539180847816169261932373046875
+        Forecast: false
         P_Load:
-          file: true
+          file: false
           mqtt:
             qos: 0
             topic: "topic"
-            url: "url"
+            host: "url"
       ESS:
         SoC_Value:
-          file: true
+          file: false
           mqtt:
             qos: 0
             topic: "topic"
-            url: "url"
+            host: "url"
         meta:
           Max_SoC: 5
           ESS_Max_Discharge_Power: 9
-          ESS_Charging_Eff: 3.6160767
+          ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
           ESS_Max_Charge_Power: 7
           Min_SoC: 5
-          ESS_Discharging_Eff: 2.027123
+          ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
           ESS_Capacity: 2
       grid:
         meta:
           Q_Grid_Max_Export_Power: 7
-          Min_Voltage_Drop: 1.0246457
+          Min_Voltage_Drop: 1.0246456999999999926131977190379984676837921142578125
           P_Grid_Max_Export_Power: 4
-          Max_Voltage_Drop: 1.2315135
+          Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
       photovoltaic:
         P_PV:
-          file: true
+          file: false
           mqtt:
             qos: 0
             topic: "topic"
-            url: "url"
+            host: "url"
         meta:
           PV_Inv_Max_Power: 1
-        Forecast: true
+        Forecast: false
       weather:
         url: "url"
   OutputSource:
@@ -640,47 +647,56 @@ definitions:
         $ref: "#/definitions/grid_Output"
     example:
       ESS:
+        description: "Control registration for Energy Storage Systems"
         P_ESS_Output:
-          file: true
+          file: false
           mqtt:
-            qos: 0
+            qos: 1
             topic: "topic"
-            url: "url"
+            host: "url"
       grid:
+        description: "Control registration for power from/to the grid"
         P_Grid_Export_Output:
-          file: true
+          description: "Control of the active power injected to the grid"
+          file: false
           mqtt:
-            qos: 0
+            qos: 1
             topic: "topic"
-            url: "url"
+            host: "url"
         Q_Grid_Export_Output:
-          file: true
+          description: "Control of the reactive power injected to the grid"
+          file: false
           mqtt:
-            qos: 0
+            qos: 1
             topic: "topic"
-            url: "url"
+            host: "url"
         P_Grid_Import_Output:
-          file: true
+          description: "Control of the active power taken from the grid"
+          file: false
           mqtt:
-            qos: 0
+            qos: 1
             topic: "topic"
-            url: "url"
+            host: "url"
         Q_Grid_Import_Output:
-          file: true
+          description: "Control of the reactive power taken from the grid"
+          file: false
           mqtt:
-            qos: 0
+            qos: 1
             topic: "topic"
-            url: "url"
+            host: "url"
       photovoltaic:
+        description: "Control registration for Photovoltaic Systems"
         Q_PV_Output:
-          file: true
+          description: "Control of the reactive power of a photovoltaic system"
+          file: false
           mqtt:
-            qos: 0
+            qos: 1
             topic: "topic"
-            url: "url"
+            host: "url"
         P_PV_Output:
-          file: true
+          description: "Control of the active power of a photovoltaic system"
+          file: false
           mqtt:
-            qos: 0
+            qos: 1
             topic: "topic"
-            url: "url"
+            host: "url"
