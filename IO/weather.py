@@ -7,8 +7,9 @@ import json
 from IO.MQTTClient import MQTTClient
 
 
-class Weatherdata:
-    def __init__(self, temp=0, hum=0, wind_dir=0, wind_speed=0, pressure=0, cloudy=0, date=0):
+class WeatherData:
+    def __init__(self, temp=0.0, hum=0.0, wind_dir=0.0, wind_speed=0.0, pressure=0.0, cloudy=0.0,
+                 date=datetime.datetime.now()):
         self.temp = temp
         self.hum = hum
         self.wind_dir = wind_dir
@@ -40,18 +41,19 @@ class Weather:
         weather_data = []
         coord = Weather.get_coordinate(city)
         weather = requests.get("https://api.met.no/weatherapi/locationforecast/1.9/?lat=" +
-                               "{:.3f}".format(coord['lat']) + "&lon=" + "{:.3f}".format(coord['lng']) + "&msl=70")
+                               "{:.3f}".format(coord["lat"]) + "&lon=" + "{:.3f}".format(coord['lng']) + "&msl=70")
         tree = Et.fromstring(weather.content)
         for child in tree[1]:
             date = datetime.datetime.strptime(child.attrib['from'], "%Y-%m-%dT%H:%M:%SZ")
             if child.attrib['from'] == child.attrib['to'] and date <= datetime.datetime.now() + \
                     datetime.timedelta(days=1):
-                weather_data.append(Weatherdata(child[0][0].attrib["value"], child[0][3].attrib["value"],
-                                                child[0][1].attrib["deg"], child[0][2].attrib["mps"],
-                                                child[0][4].attrib["value"], child[0][5].attrib["percent"],
+                weather_data.append(WeatherData(float(child[0][0].attrib["value"]), float(child[0][3].attrib["value"]),
+                                                float(child[0][1].attrib["deg"]), float(child[0][2].attrib["mps"]),
+                                                float(child[0][4].attrib["value"]),
+                                                float(child[0][5].attrib["percent"]),
                                                 date))
         Weather.expand_data(weather_data)
-        sorted(weather_data, key=lambda w: w.date)  # TODO: Sort is broken, i have no clue how to fix that
+        weather_data = sorted(weather_data, key=lambda w: w.date)
         return weather_data
 
     @staticmethod
@@ -60,7 +62,7 @@ class Weather:
             startdate = weather[i].date
             for j in range(1, 60):
                 date = startdate + datetime.timedelta(minutes=j)
-                wd = Weatherdata()
+                wd = WeatherData()
                 wd.date = date
                 for col in ["temp", "hum", "wind_dir", "wind_speed", "pressure", "cloudy"]:
                     start = float(getattr(weather[i], col))
@@ -74,7 +76,7 @@ class Weather:
         """
         Get geocoordinate from City name
         :param city:
-        :return:
+        :return: Union[Type[JSONDecoder], Any]
         """
         try:
             config = configparser.RawConfigParser()
@@ -82,15 +84,15 @@ class Weather:
             googlekey = config.get("SolverSection", "googleapikey")
             request = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + city + "&key=" +
                                    googlekey)
-            json = request.json()
-            return json["results"][0]["geometry"]["location"]
+            text = request.json()
+            return text["results"][0]["geometry"]["location"]
         except KeyError:
             return ""
 
 
 we = Weather.get_weather("Bonn, Germany")
-for item in we:
-    print(item)
-# print(str(json.dumps(w)))
-# m = MQTTClient("optiframework_mosquitto_1", 1883)
-# m.sendResults("data/weather", str(json.dumps(w)))
+js = json.dumps([wea.__dict__ for wea in we], default=str)
+
+m = MQTTClient("optiframework_mosquitto_1", 1883)
+m.publish("data/weather", str(js), True)
+m.MQTTExit()
