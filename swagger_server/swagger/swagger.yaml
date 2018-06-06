@@ -265,21 +265,9 @@ definitions:
       meta:
         $ref: "#/definitions/metaLoad"
     example:
-      Q_Load:
-        file: false
-        mqtt:
-          qos: 0
-          topic: "topic"
-          host: "url"
       meta:
         pf_Load: 6.02745629999999987802539180847816169261932373046875
       Forecast: false
-      P_Load:
-        file: false
-        mqtt:
-          qos: 0
-          topic: "topic"
-          host: "url"
   metaLoad:
     type: "object"
     properties:
@@ -498,6 +486,8 @@ definitions:
         host: "url"
   MQTT:
     type: "object"
+    required:
+    - "host"
     properties:
       host:
         type: "string"
@@ -581,35 +571,11 @@ definitions:
       weather:
         $ref: "#/definitions/weather"
     example:
-      market:
-        file: false
-        mqtt:
-          qos: 0
-          topic: "topic"
-          host: "url"
       load:
-        Q_Load:
-          file: false
-          mqtt:
-            qos: 0
-            topic: "topic"
-            host: "url"
         meta:
           pf_Load: 6.02745629999999987802539180847816169261932373046875
         Forecast: false
-        P_Load:
-          file: false
-          mqtt:
-            qos: 0
-            topic: "topic"
-            host: "url"
       ESS:
-        SoC_Value:
-          file: false
-          mqtt:
-            qos: 0
-            topic: "topic"
-            host: "url"
         meta:
           Max_SoC: 5
           ESS_Max_Discharge_Power: 9
@@ -625,12 +591,6 @@ definitions:
           P_Grid_Max_Export_Power: 4
           Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
       photovoltaic:
-        P_PV:
-          file: false
-          mqtt:
-            qos: 0
-            topic: "topic"
-            host: "url"
         meta:
           PV_Inv_Max_Power: 1
         Forecast: false
@@ -647,56 +607,47 @@ definitions:
         $ref: "#/definitions/grid_Output"
     example:
       ESS:
-        description: "Control registration for Energy Storage Systems"
         P_ESS_Output:
           file: false
           mqtt:
-            qos: 1
+            qos: 0
             topic: "topic"
             host: "url"
       grid:
-        description: "Control registration for power from/to the grid"
         P_Grid_Export_Output:
-          description: "Control of the active power injected to the grid"
           file: false
           mqtt:
-            qos: 1
+            qos: 0
             topic: "topic"
             host: "url"
         Q_Grid_Export_Output:
-          description: "Control of the reactive power injected to the grid"
           file: false
           mqtt:
-            qos: 1
+            qos: 0
             topic: "topic"
             host: "url"
         P_Grid_Import_Output:
-          description: "Control of the active power taken from the grid"
           file: false
           mqtt:
-            qos: 1
+            qos: 0
             topic: "topic"
-            host: "url"
+            url: "url"
         Q_Grid_Import_Output:
-          description: "Control of the reactive power taken from the grid"
           file: false
           mqtt:
-            qos: 1
+            qos: 0
             topic: "topic"
             host: "url"
       photovoltaic:
-        description: "Control registration for Photovoltaic Systems"
         Q_PV_Output:
-          description: "Control of the reactive power of a photovoltaic system"
           file: false
           mqtt:
-            qos: 1
+            qos: 0
             topic: "topic"
             host: "url"
         P_PV_Output:
-          description: "Control of the active power of a photovoltaic system"
           file: false
           mqtt:
-            qos: 1
+            qos: 0
             topic: "topic"
             host: "url"

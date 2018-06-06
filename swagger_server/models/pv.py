@@ -58,6 +58,7 @@ class PV(Model):
     def forecast(self) -> bool:
         """Gets the forecast of this PV.
 
+        Is it forecasted data? Or row data  # noqa: E501
 
         :return: The forecast of this PV.
         :rtype: bool
@@ -68,6 +69,7 @@ class PV(Model):
     def forecast(self, forecast: bool):
         """Sets the forecast of this PV.
 
+        Is it forecasted data? Or row data  # noqa: E501
 
         :param forecast: The forecast of this PV.
         :type forecast: bool

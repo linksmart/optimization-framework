@@ -57,9 +57,9 @@ class MQTTClient:
 
     def sendResults(self, topic, data):
         try:
-            logger.info("Sending results")
+            logger.info("Sending results to this topic: "+topic)
             self.publish(topic, data)
-
+            logger.debug("Results published")
         except Exception as e:
             logger.error(e)
 
@@ -73,5 +73,8 @@ class MQTTClient:
         self.receivedMessages.append(mid)
 
     def MQTTExit(self):
+        logger.debug("Disconnecting MQTT")
         self.client.disconnect()
+        logger.debug("Disconnected from the MQTT clients")
         self.client.loop_stop()
+        logger.debug("MQTT service disconnected")

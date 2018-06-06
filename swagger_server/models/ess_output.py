@@ -47,6 +47,7 @@ class ESSOutput(Model):
     def p_ess_output(self) -> Source:
         """Gets the p_ess_output of this ESSOutput.
 
+        Setting power of the ESS  # noqa: E501
 
         :return: The p_ess_output of this ESSOutput.
         :rtype: Source
@@ -57,6 +58,7 @@ class ESSOutput(Model):
     def p_ess_output(self, p_ess_output: Source):
         """Sets the p_ess_output of this ESSOutput.
 
+        Setting power of the ESS  # noqa: E501
 
         :param p_ess_output: The p_ess_output of this ESSOutput.
         :type p_ess_output: Source

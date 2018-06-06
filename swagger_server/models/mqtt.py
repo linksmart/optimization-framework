@@ -15,29 +15,29 @@ class MQTT(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, url: str=None, topic: str=None, qos: int=None):  # noqa: E501
+    def __init__(self, host: str=None, topic: str=None, qos: int=None):  # noqa: E501
         """MQTT - a model defined in Swagger
 
-        :param url: The url of this MQTT.  # noqa: E501
-        :type url: str
+        :param host: The host of this MQTT.  # noqa: E501
+        :type host: str
         :param topic: The topic of this MQTT.  # noqa: E501
         :type topic: str
         :param qos: The qos of this MQTT.  # noqa: E501
         :type qos: int
         """
         self.swagger_types = {
-            'url': str,
+            'host': str,
             'topic': str,
             'qos': int
         }
 
         self.attribute_map = {
-            'url': 'url',
+            'host': 'host',
             'topic': 'topic',
             'qos': 'qos'
         }
 
-        self._url = url
+        self._host = host
         self._topic = topic
         self._qos = qos
 
@@ -53,25 +53,27 @@ class MQTT(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def url(self) -> str:
-        """Gets the url of this MQTT.
+    def host(self) -> str:
+        """Gets the host of this MQTT.
 
 
-        :return: The url of this MQTT.
+        :return: The host of this MQTT.
         :rtype: str
         """
-        return self._url
+        return self._host
 
-    @url.setter
-    def url(self, url: str):
-        """Sets the url of this MQTT.
+    @host.setter
+    def host(self, host: str):
+        """Sets the host of this MQTT.
 
 
-        :param url: The url of this MQTT.
-        :type url: str
+        :param host: The host of this MQTT.
+        :type host: str
         """
+        if host is None:
+            raise ValueError("Invalid value for `host`, must not be `None`")  # noqa: E501
 
-        self._url = url
+        self._host = host
 
     @property
     def topic(self) -> str:
@@ -112,5 +114,9 @@ class MQTT(Model):
         :param qos: The qos of this MQTT.
         :type qos: int
         """
+        if qos is not None and qos > 2:  # noqa: E501
+            raise ValueError("Invalid value for `qos`, must be a value less than or equal to `2`")  # noqa: E501
+        if qos is not None and qos < 0:  # noqa: E501
+            raise ValueError("Invalid value for `qos`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._qos = qos

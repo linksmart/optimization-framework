@@ -2,6 +2,7 @@
 import os
 import logging
 import configparser
+import json
 from optimization.controller import OptController
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -14,6 +15,7 @@ class ThreadFactory:
         self.time_step=time_step
         self.horizon=horizon
         self.repetition=repetition
+
 
     def getFilePath(self,dir, file_name):
         # print(os.path.sep)
@@ -46,8 +48,16 @@ class ThreadFactory:
         # Taking
         self.solver_name = config.get("SolverSection", "solver.name")
 
-        self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step)
+        ##############################################################################################
+        # Reads the registry/output and stores it into an object
+        path = self.getFilePath("utils", "Output.registry")
+        with open(path, "r") as file:
+            output_config = json.loads(file.read())
+        #logger.debug("This is the output data: " + str(output_config))
 
+
+        #Initializing constructor of the optimization controller thread
+        self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step, output_config)
         ####starts the optimization controller thread
         results = self.opt.start()
 
