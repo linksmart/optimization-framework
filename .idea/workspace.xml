@@ -2,12 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
 <<<<<<< HEAD
+<<<<<<< HEAD
     <list default="true" id="1a11ca96-8676-422f-9907-c5cc127f7c15" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
 =======
     <list default="true" id="1a11ca96-8676-422f-9907-c5cc127f7c15" name="Default" comment="weather connector">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
 >>>>>>> 9b4cf639a864236e5c9c79ebe1b661627ae583e4
+=======
+    <list default="true" id="1a11ca96-8676-422f-9907-c5cc127f7c15" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+>>>>>>> remotes/origin/dev
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -128,15 +134,37 @@
       <file leaf-file-name="ofw.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ofw.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="253">
               <caret line="15" column="0" lean-forward="true" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+=======
+            <state relative-caret-position="1000">
+              <caret line="95" column="0" lean-forward="false" selection-start-line="95" selection-start-column="0" selection-end-line="95" selection-end-column="0" />
+>>>>>>> remotes/origin/dev
               <folding />
             </state>
           </provider>
         </entry>
       </file>
+<<<<<<< HEAD
       <file leaf-file-name="ReferenceModel.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/optimization/models/ReferenceModel.py">
+=======
+      <file leaf-file-name="ofw.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ofw.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="935">
+              <caret line="55" column="14" lean-forward="true" selection-start-line="55" selection-start-column="14" selection-end-line="55" selection-end-column="14" />
+              <folding>
+                <element signature="e#51#70#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="data.dat" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/optimization/data.dat">
+>>>>>>> remotes/origin/dev
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="102">
               <caret line="57" column="80" lean-forward="true" selection-start-line="57" selection-start-column="80" selection-end-line="57" selection-end-column="80" />
@@ -213,6 +241,7 @@
         <option value="$PROJECT_DIR$/optimization/borrar.py" />
         <option value="$PROJECT_DIR$/optimization/data.dat" />
         <option value="$PROJECT_DIR$/optimization/__init__.py" />
+<<<<<<< HEAD
         <option value="$PROJECT_DIR$/requirements.txt" />
         <option value="$PROJECT_DIR$/swagger_server/controllers/command_controller.py" />
         <option value="$PROJECT_DIR$/optimization/models/ReferenceModel.py" />
@@ -222,6 +251,9 @@
         <option value="$PROJECT_DIR$/swagger_server/controllers/registry_controller.py" />
         <option value="$PROJECT_DIR$/utils/ConfigFile.properties" />
         <option value="$PROJECT_DIR$/IO/weather.py" />
+=======
+        <option value="$PROJECT_DIR$/.gitignore" />
+>>>>>>> remotes/origin/dev
       </list>
     </option>
   </component>
@@ -243,10 +275,13 @@
     </navigator>
     <panes>
 <<<<<<< HEAD
+<<<<<<< HEAD
       <pane id="Scope" />
       <pane id="Scratches" />
 =======
 >>>>>>> 9b4cf639a864236e5c9c79ebe1b661627ae583e4
+=======
+>>>>>>> remotes/origin/dev
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -326,6 +361,10 @@
           <select />
         </subPane>
       </pane>
+<<<<<<< HEAD
+=======
+      <pane id="Scratches" />
+>>>>>>> remotes/origin/dev
       <pane id="Scope" />
     </panes>
   </component>
@@ -425,21 +464,43 @@
       <option name="presentableId" value="Default" />
       <updated>1519985561874</updated>
     </task>
+    <task id="LOCAL-00001" summary="ignore workspace">
+      <created>1528366341055</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1528366341055</updated>
+    </task>
+    <task id="LOCAL-00002" summary="ignore workspace">
+      <created>1528366535965</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1528366535965</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="ToolWindowManager">
 <<<<<<< HEAD
     <frame x="1720" y="0" width="1720" height="1400" extended-state="0" />
-    <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+<<<<<<< HEAD
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.28482974" sideWeight="0.50416666" order="7" side_tool="true" content_ui="tabs" />
+=======
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16486068" sideWeight="0.50416666" order="7" side_tool="true" content_ui="tabs" />
+>>>>>>> remotes/origin/dev
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28158844" sideWeight="0.49583334" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+<<<<<<< HEAD
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25997654" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+=======
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.46830985" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+>>>>>>> remotes/origin/dev
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -499,6 +560,10 @@
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="ignore workspace" />
+    <option name="LAST_COMMIT_MESSAGE" value="ignore workspace" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
@@ -512,6 +577,10 @@
   </component>
   <component name="editorHistoryManager">
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+    <entry file="file://$PROJECT_DIR$/build/lib/myPackage/__version__.py" />
+>>>>>>> remotes/origin/dev
     <entry file="file://$PROJECT_DIR$/build/lib/myPackage/core.py" />
     <entry file="file://$PROJECT_DIR$/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
@@ -970,6 +1039,7 @@
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD
     <entry file="file://$PROJECT_DIR$/optimization/models/ReferenceModel.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
@@ -982,6 +1052,22 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="253">
           <caret line="15" column="0" lean-forward="true" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+=======
+    <entry file="file://$PROJECT_DIR$/ofw.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="935">
+          <caret line="55" column="14" lean-forward="true" selection-start-line="55" selection-start-column="14" selection-end-line="55" selection-end-column="14" />
+          <folding>
+            <element signature="e#51#70#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1000">
+          <caret line="95" column="0" lean-forward="false" selection-start-line="95" selection-start-column="0" selection-end-line="95" selection-end-column="0" />
+>>>>>>> remotes/origin/dev
           <folding />
         </state>
       </provider>
