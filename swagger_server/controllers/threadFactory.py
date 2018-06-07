@@ -21,8 +21,7 @@ class ThreadFactory:
         # print(os.path.sep)
         # print(os.environ.get("HOME"))
         project_dir = os.path.dirname(os.path.realpath(__file__))
-        # data_file = os.path.join("/usr/src/app", dir, file_name)
-        data_file = os.path.join(dir, file_name)
+        data_file = os.path.join("/usr/src/app", dir, file_name)
         return data_file
 
 

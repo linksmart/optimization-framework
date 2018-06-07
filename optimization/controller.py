@@ -6,9 +6,8 @@ Created on Fri Mar 16 15:05:36 2018
 """
 
 
-# import optimization.models as models
-# import os,
-import logging
+import optimization.models as models
+import os, logging
 import importlib
 import importlib.util
 import threading
@@ -18,6 +17,7 @@ from pyomo.opt.parallel import SolverManagerFactory
 from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
+import sys
 #from objdict import ObjDict
 from IO.outputController import OutputController
 
@@ -30,34 +30,35 @@ logger = logging.getLogger(__file__)
 
 class OptController(threading.Thread):
 
-    def __init__(self, object_name,solver_name,data_path, model_path, time_step):
+    def __init__(self, object_name,solver_name,data_path, model_path, time_step,output_config):
         #threading.Thread.__init__(self)
         super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
         #Loading variables
         self.name = object_name
-        self.results = ""
+        self.results=""
         self.model_path = model_path
         self.data_path = data_path
         self.solver_name = solver_name
         self.time_step=time_step
+        self.output_config=output_config
 
         self.stopRequest=threading.Event()
 
         try:
-            # dynamic load of a class
+            #dynamic load of a class
             logger.info("This is the model path: "+self.model_path)
             module = self.path_import2(self.model_path)
-            logger.info(getattr(module, 'Model'))
-            self.my_class = getattr(module, 'Model')
+            logger.info(getattr(module,'Model'))
+            self.my_class = getattr(module,'Model')
 
         except Exception as e:
             logger.error(e)
 
-        self.output = OutputController()
+        self.output = OutputController(self.output_config)
 
     # Importint a class dynamically
-    def path_import2(self, absolute_path):
+    def path_import2(self,absolute_path):
         spec = importlib.util.spec_from_file_location(absolute_path, absolute_path)
         module = spec.loader.load_module(spec.name)
         return module
@@ -67,14 +68,24 @@ class OptController(threading.Thread):
         super(OptController, self).join(timeout)
 
     def Stop(self):
+        #
         if self.isAlive():
             self.join()
 
-    # Start the optimization process and gives back a result
+
+    #Start the optimization process and gives back a result
     def run(self):
         logger.info("Starting optimization controller")
 
         ###Starts name server, dispatcher server and pyro_mip_server
+
+        name_server=subprocess.Popen(["/usr/local/bin/pyomo_ns"])
+        logger.debug("Name server started: "+str(name_server))
+        dispatch_server=subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
+        logger.debug("Dispatch server started: "+str(dispatch_server))
+        pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
+        logger.debug("Pyro mip server started: "+str(pyro_mip_server))
+
         try:
             ###maps action handles to instances
             action_handle_map={}
@@ -85,8 +96,11 @@ class OptController(threading.Thread):
 
             ###create a solver manager
             solver_manager=SolverManagerFactory('pyro')
+
             if solver_manager is None:
                 logger.error("Failed to create a solver manager")
+            else:
+                logger.debug("Solver manager created: "+str(solver_manager))
 
             key_P_PV_Potential = 'P_PV_Potential'
             key_Q_PV_Output = 'Q_PV_Output'
@@ -131,13 +145,13 @@ class OptController(threading.Thread):
                 if (self.results.solver.status == SolverStatus.ok) and (self.results.solver.termination_condition == TerminationCondition.optimal):
                     # this is feasible and optimal
                     logger.info("Solver status and termination condition ok")
-                    logger.info("Results for " + self.solved_name)
-                    logger.info(self.results)
+                    logger.debug("Results for " + self.solved_name)
+                    logger.debug(self.results)
                     instance.solutions.load_from(self.results)
                     try:
                         my_dict={}
                         for v in instance.component_objects(Var, active=True):
-                            logger.info("Variable: "+ str(v))
+                            #logger.info("Variable: "+ str(v))
                             varobject = getattr(instance, str(v))
                             #if str(v) == "P_PV_Output":
                                 #logger.info("Este es P_PV_Output")
@@ -161,7 +175,7 @@ class OptController(threading.Thread):
 
 
                         #logger.info("Este es mi dict"+str(my_dict))
-
+                        #logger.debug("This is the output data: " + str(self.output_config))
                         self.output.publishController(my_dict)
                     except Exception as e:
                         logger.error(e)
@@ -173,10 +187,24 @@ class OptController(threading.Thread):
                     #print(self.results.solver)
                     logger.info("Nothing fits")
 
-                logger.info("Optimization thread going to sleep")
+                logger.info("Optimization thread going to sleep for "+str(self.time_step)+" seconds")
                 time.sleep(self.time_step)
 
-            #ToDo
+            #Closing the pyomo servers
+            logger.debug("Deactivating pyro servers")
+            solver_manager.deactivate()
+            logger.debug("Pyro servers deactivated: "+str(solver_manager))
+            logger.debug("name server: "+str(name_server))
+            name_server.kill()
+            logger.debug("Exit name server")
+            dispatch_server.kill()
+            logger.debug("Exit dispatch server")
+            pyro_mip_server.kill()
+            logger.debug("Exit pyro-mip-server server")
+            #If Stop signal arrives it tries to disconnect all mqtt clients
+            for key,object in self.output.mqtt.items():
+                object.MQTTExit()
+                logger.debug("Client "+key+" is being disconnected")
             ###close subprocesses
 
 

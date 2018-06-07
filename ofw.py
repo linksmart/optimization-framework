@@ -12,7 +12,7 @@ import swagger_server.__main__ as webserver
 
 from optparse import OptionParser
 
-import pbs as sh
+import sh as sh
 
 from optimization.controller import OptController
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 16 14:08:34 2018
+Created on Tue Apr 10 14:03:01 2018
 
 @author: guemruekcue
 """
@@ -8,74 +8,74 @@ Created on Fri Mar 16 14:08:34 2018
 from pyomo.core import *
 
 class Model:
-    #
-    # Model
-    #
-
     model = AbstractModel()
 
-    #
-    # Parameters
-    #
-
-    model.I = Set()  # Raw materials
-    model.J = Set()  # Product types
-    model.T = Set()  # Time periods
-
-    model.c = Param(model.I, within=NonNegativeReals)  # c[i]  : Present cost of raw material i
-    model.a = Param(model.I, model.J, within=PositiveReals)  # a[i,j]: Raw material i required per unit of product j
-    model.f = Param(model.J, model.T, within=PositiveReals)  # f[j,t]: Cost of outsourcing product j in time period t
-    model.b = Param(within=PositiveReals)  # b     : Inventory capacity
-
-    model.d = Param(model.J, model.T, within=NonNegativeReals)  # d[j,t]: Random demand of product j in time period t
-
-    #
-    # Variables
-    #
-    model.x = Var(model.I, model.T,
-              within=NonNegativeReals)  # First stage variables:  x[i,t]: Quantity of raw material i purchased for use in period t
-    model.y = Var(model.J, model.T,
-              within=NonNegativeReals)  # Second stage variables: y[j,t]: Quantity of product j outsourced in period t
-
-    model.FirstStageCost = Var(within=NonNegativeReals)
-    model.LaterStageCost = Var(model.T, within=NonNegativeReals)
+    model.N=Set()                                                   #Index Set for energy storage system devices
+    model.T=Set()                                                   #Index Set for time steps of optimization horizon
+    model.T_SoC=Set()                                               #SoC of the ESSs at the end of optimization horizon are also taken into account
 
 
-    #
-    # Constraints
-    #
-    def inventory_capacity(model):
-        return summation(model.x) <= model.b
+    ##################################       PARAMETERS            #################################
+    ################################################################################################
+    model.Target=Param()                                            #Optimization objective
+
+    model.dT=Param(within=PositiveIntegers)                         #Number of seconds in one time step
+
+    model.P_Load_Forecast=Param(model.T,within=NonNegativeReals)    #Active power demand forecast
+    model.Q_Load_Forecast=Param(model.T,within=Reals)               #Reactive demand forecast
+    #TODO: Assign a default
+
+    model.P_PV_Forecast=Param(model.T,within=NonNegativeReals)      #PV PMPP forecast
+    model.PV_Inv_Max_Power=Param(within=PositiveReals)              #PV inverter capacity
+
+    model.ESS_Min_SoC=Param(model.N,within=PositiveReals)           #Minimum SoC of ESSs
+    model.ESS_Max_SoC=Param(model.N,within=PositiveReals)           #Maximum SoC of ESSs
+    model.ESS_SoC_Value=Param(model.N,within=PositiveReals)         #SoC value of ESSs at the begining of optimization horizon
+    model.ESS_Capacity=Param(model.N,within=PositiveReals)          #Storage Capacity of ESSs
+    model.ESS_Max_Charge_Power=Param(model.N,within=PositiveReals)  #Max Charge Power of ESSs
+    model.ESS_Max_Discharge_Power=Param(model.N,within=PositiveReals)#Max Discharge Power of ESSs
+    model.ESS_Charging_Eff=Param(model.N,within=PositiveReals)      #Charging efficiency of ESSs
+    model.ESS_Discharging_Eff=Param(model.N,within=PositiveReals)   #Discharging efficiency of ESSs
+
+    model.P_Grid_Max_Export_Power=Param(within=NonNegativeReals)    #Max active power export
+    model.Q_Grid_Max_Export_Power=Param(within=NonNegativeReals)    #Max reactive power export
+
+    model.Price_Forecast=Param(model.T)                             #Electric price forecast
 
 
-    model.InventoryCapacityConstraint = Constraint(rule=inventory_capacity)
+    model.Grid_VGEN=Param(within=NonNegativeReals)
+    model.Grid_R=Param(within=NonNegativeReals)
+    model.Grid_X=Param(within=NonNegativeReals)
+    model.Grid_dV_Tolerance=Param(within=PositiveReals)
 
 
-    def demand_meeting(model, j, t):
-        return (sum([model.a[i, j] * model.x[i, t] + model.y[j, t] for i in model.I]) - model.d[j, t]) >= 0
+
+    ################################################################################################
 
 
-    model.DemandConstraint = Constraint(model.J, model.T, rule=demand_meeting)
+
+    ##################################       VARIABLES             #################################
+    ################################################################################################
+    model.P_PV_Output=Var(model.T,within=NonNegativeReals,bounds=(0,model.PV_Inv_Max_Power))                                    #Active power output of PV
+    model.Q_PV_Output=Var(model.T,within=Reals,bounds=(-model.PV_Inv_Max_Power,model.PV_Inv_Max_Power))                         #Reactive power output of PV
+
+    #model.P_ESS_Output=Var(model.N,model.T,within=Reals,bounds=(-model.ESS_Max_Charge_Power[n],model.ESS_Max_Discharge_Power[n]))      #Active power output of ESSs
+
+    def ESS_Power_Bounds(model,n,t):
+        return (-model.ESS_Max_Charge_Power[n], model.ESS_Max_Discharge_Power[n])
+    model.P_ESS_Output = Var(model.N,model.T,within=Reals,bounds=ESS_Power_Bounds)
+
+    def ESS_SOC_Bounds(model,n,t):
+        return (model.ESS_Min_SoC[n], model.ESS_Max_SoC[n])
+    model.SoC_ESS=Var(model.N,model.T_SoC,within=NonNegativeReals,bounds=ESS_SOC_Bounds)
 
 
-    def first_stage_cost(model):
-        return model.FirstStageCost == sum([model.c[i] * model.x[i, t] for i in model.I for t in model.T])
+    model.P_Grid_Output=Var(model.T,within=Reals,bounds=(-model.P_Grid_Max_Export_Power,100000))                                 #Active power exchange with grid
+    model.Q_Grid_Output=Var(model.T,within=Reals,bounds=(-model.Q_Grid_Max_Export_Power,100000))                                 #Reactive power exchange with grid
 
+    model.dV=Var(model.T,within=Reals,bounds=(-model.Grid_dV_Tolerance,model.Grid_dV_Tolerance))
 
-    model.FirstStageCostConstraint = Constraint(rule=first_stage_cost)
-
-
-    def later_stage_cost(model, t):
-        return model.LaterStageCost[t] == sum([model.f[j, t] * model.y[j, t] for j in model.J])
-
-
-    model.LaterStageCostConstraint = Constraint(model.T, rule=later_stage_cost)
-
-
-    ## Objective
-    #
-    def objective_rule(model):
-        return model.FirstStageCost + summation(model.LaterStageCost)
+    ################################################################################################
 
 
 
