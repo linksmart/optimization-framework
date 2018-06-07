@@ -3,6 +3,8 @@ import os
 import logging
 import configparser
 import json
+
+from optimization.dataPublisher import DataPublisher
 from optimization.controller import OptController
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -54,16 +56,24 @@ class ThreadFactory:
             output_config = json.loads(file.read())
         #logger.debug("This is the output data: " + str(output_config))
 
-
         #Initializing constructor of the optimization controller thread
         self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step, output_config)
         ####starts the optimization controller thread
         results = self.opt.start()
 
+        """Need to get data from config"""
+        self.load_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "load_forecast", 0)
+        self.load_forecast_pub.start()
+
+        self.pv_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "pv_forecast", 0)
+        self.pv_forecast_pub.start()
+
     def stopOptControllerThread(self):
         logger.info("Stopping optimization controller thread")
         try:
             self.opt.Stop()
+            self.load_forecast_pub.Stop()
+            self.pv_forecast_pub.Stop()
             logger.info("Optimization controller thread stopped")
         except Exception as e:
             logger.error(e)

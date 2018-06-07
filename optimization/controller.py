@@ -19,6 +19,7 @@ import subprocess
 import time
 import sys
 #from objdict import ObjDict
+from IO.inputController import InputController
 from IO.outputController import OutputController
 
 
@@ -56,6 +57,8 @@ class OptController(threading.Thread):
             logger.error(e)
 
         self.output = OutputController(self.output_config)
+        topic_qos = [("load_forecast", 0), ("pv_forecast", 0)]
+        self.input = InputController(topic_qos, "optimizationframework_mosquitto_1")
 
     # Importint a class dynamically
     def path_import2(self,absolute_path):
@@ -112,7 +115,9 @@ class OptController(threading.Thread):
             key_Soc_EV = 'Soc_EV'
 
             while not self.stopRequest.isSet():
+                #data_dict = self.input.data_updated() #blocking call
                 # Creating an optimization instance with the referenced model
+                #instance = self.my_class.model.create_instance(data_dict)
                 instance = self.my_class.model.create_instance(self.data_path)
                 logger.info("Instance created with pyomo")
 
