@@ -7,6 +7,7 @@ from swagger_server.models.input_source import InputSource  # noqa: E501
 from swagger_server.models.output_source import OutputSource  # noqa: E501
 from swagger_server import util
 
+from flask import json
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -22,10 +23,9 @@ def getFilePath(dir, file_name):
 def input_source(Input_Source):  # noqa: E501
     """Creates a new data source as input
 
-     # noqa: E501
-
-    :param InputSource: Data source to be created
-    :type InputSource: dict | bytes
+    :return:
+    :param inputsource: Data source to be created
+    :type inputsource: dict | bytes
 
     :rtype: None
     """
