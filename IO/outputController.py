@@ -11,6 +11,7 @@ class OutputController:
         logger.info("Output Class started")
         self.output_config=output_config
         self.mqtt={}
+        self.client_id = "PROFESS"
 
         ###Connection to the mqtt broker
         try:
@@ -36,11 +37,11 @@ class OutputController:
                                 logger.debug("Already connected to the host "+host)
                             else:
                                 logger.debug("Creating mqtt client with the host: " + str(host))
-                                self.mqtt[str(host)] = MQTTClient(str(host), 1883)
+                                self.mqtt[str(host)] = MQTTClient(str(host), 1883, self.client_id)
                         else:
                             #logger.debug("False")
                             logger.debug("Creating mqtt client with the host: " + str(host))
-                            self.mqtt[str(host)] = MQTTClient(str(host), 1883)
+                            self.mqtt[str(host)] = MQTTClient(str(host), 1883, self.client_id)
                     logger.debug("Self.mqtt: " + str(self.mqtt))
         except Exception as e:
             logger.error(e)

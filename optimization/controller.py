@@ -57,8 +57,10 @@ class OptController(threading.Thread):
             logger.error(e)
 
         self.output = OutputController(self.output_config)
-        topic_qos = [("load_forecast", 0), ("pv_forecast", 0)]
-        self.input = InputController(topic_qos, "optimizationframework_mosquitto_1")
+
+        # make an input config to get topics, qos, host and port
+        topic_qos = [("forecast/load", 1), ("forecast/pv", 1)]
+        self.input = InputController(topic_qos, "optimizationframework_mosquitto_1", 1883)
 
     # Importint a class dynamically
     def path_import2(self,absolute_path):
@@ -71,6 +73,7 @@ class OptController(threading.Thread):
         super(OptController, self).join(timeout)
 
     def Stop(self):
+        self.input.exit()
         #
         if self.isAlive():
             self.join()

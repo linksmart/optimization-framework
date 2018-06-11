@@ -6,16 +6,15 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 class MQTTClient:
-    def __init__(self, host, mqttPort, keepalive=60):
+    def __init__(self, host, mqttPort, client_id, keepalive=60):
         self.host =host
         self.port=mqttPort
         self.keepalive=keepalive
         self.receivedMessages = []
         self.topic_ack_wait = []
         self.callback_functions = {}
-
-
-        self.client = mqtt.Client(client_id="PROFESS")
+        self.client_id = client_id
+        self.client = mqtt.Client(client_id)
         #client.username_pw_set("<<tenant>>/<<username>>", "<<password>>")
         self.client.on_message = self.on_message
         self.client.on_publish = self.on_publish
@@ -27,6 +26,7 @@ class MQTTClient:
             self.client.connect(self.host, self.port, self.keepalive)
 
         except Exception as e:
+            logger.error("Error connecting client "+str(self.host)+" "+str(self.port)+" "+str(self.keepalive))
             logger.error(e)
 
         #self.client.loop_forever()
@@ -52,12 +52,11 @@ class MQTTClient:
             #logger.error("Connection to the broker failed")
 
     def on_message(self,client, userdata, message):
-        logger.info(message.topic + " " + str(message.payload))
-        if (message.payload.startswith("something")):
-            logger.info("Input operation")
+        logger.debug(message.topic + " " + str(message.payload))
+        #if (message.payload.startswith("something")):
+            #logger.info("Input operation")
         if message.topic in self.callback_functions.keys():
-            logger.info("Topic in callback")
-            self.callback_functions[message.topic](message.payload)
+            self.callback_functions[message.topic](message.payload.decode())
 
 
     def sendResults(self, topic, data):
@@ -94,6 +93,7 @@ class MQTTClient:
                 logger.debug("Subscribed to topics: "+ str(topics_qos) + " result = " + str(result) + " , mid = " + str(mid))
                 self.topic_ack_wait.append(tuple([str(topics_qos), mid]))
                 self.callback_functions = callback_functions
+                logging.info("callback functions set")
             else:
                 logging.info("error on subscribing " + str(result))
         except Exception as e:

@@ -62,10 +62,10 @@ class ThreadFactory:
         results = self.opt.start()
 
         """Need to get data from config"""
-        self.load_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "load_forecast", 0)
+        self.load_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "forecast/load", 1)
         self.load_forecast_pub.start()
 
-        self.pv_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "pv_forecast", 0)
+        self.pv_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "forecast/pv", 1)
         self.pv_forecast_pub.start()
 
     def stopOptControllerThread(self):
