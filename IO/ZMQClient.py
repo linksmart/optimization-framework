@@ -15,13 +15,21 @@ class ZMQClient:
         self.host = host
         self.port = zmqPort
         self.context = zmq.Context()
-        self.url = 'tcp://{}:{}'.format(self.host, self.port)
+        if isinstance(self.port, list):
+            self.url = []
+            for p in self.port:
+                self.url.append('tcp://{}:{}'.format(self.host, p))
+        else:
+            self.url = 'tcp://{}:{}'.format(self.host, self.port)
+        logger.info("Initialize ZMQClient")
 
     def init_publisher(self):
         try:
+            logger.info("Initialize zmq publisher")
             self.publisher = self.context.socket(zmq.PUB)
             self.publisher.bind(self.url)
             time.sleep(1)
+            logger.info("publisher initialized")
         except Exception as e:
             logger.error(e)
 
@@ -29,16 +37,35 @@ class ZMQClient:
         self.publisher.unbind(self.url)
 
     def init_subscriber(self, topic):
-        self.subscriber = self.context.socket(zmq.SUB)
-        self.subscriber.connect(self.url)
-        filter = bytes(topic, 'ascii')
-        self.subscriber.setsockopt(zmq.SUBSCRIBE, filter)
-
-    def publish_message(self, message):
         try:
-            self.publisher.send(message)
+            logger.info("Initialize zmq subscriber")
+            self.subscriber = self.context.socket(zmq.SUB)
+            if isinstance(self.url, list):
+                for url in self.url:
+                    self.subscriber.connect(url)
+            else:
+                self.subscriber.connect(self.url)
+            self.subscriber.setsockopt_string(zmq.SUBSCRIBE, topic)
+            logger.info("subscriber initialized")
+        except Exception as e:
+            logger.error(e)
+
+    def publish_message(self, topic, message):
+        try:
+            self.publisher.send_string("%s %s" % (topic, message))
         except Exception as e:
             logger.error(e)
 
     def receive_message(self):
-        self.subscriber.recv()
+        try:
+            logger.debug("try receiving msg")
+            messagedata = self.subscriber.recv_string()
+            topic, message = messagedata.split(" ",1)
+            logger.debug(topic + " " + message)
+            return True, topic, message
+        except zmq.Again as e:
+            logger.debug("No messages received yet. Error = "+str(e))
+            return False, None, None
+        except Exception as e:
+            logger.error(e)
+            return False, None, None

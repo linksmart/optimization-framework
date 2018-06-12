@@ -38,6 +38,10 @@ services:
     image: eclipse-mosquitto
     ports:
       - 1883:1883
+  #zeromq:
+   # image: zeromq/zeromq
+    #ports:
+     # - 5555:5555
   #pyro:
   #  image: farshidtz/pyro4-ns
   #  command: ["--host=pyro-ns"]

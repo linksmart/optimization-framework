@@ -4,7 +4,7 @@ Created on Fri Mar 16 15:05:36 2018
 
 @author: garagon
 """
-
+import json
 
 import optimization.models as models
 import os, logging
@@ -31,7 +31,7 @@ logger = logging.getLogger(__file__)
 
 class OptController(threading.Thread):
 
-    def __init__(self, object_name,solver_name,data_path, model_path, time_step,output_config):
+    def __init__(self, object_name,solver_name,data_path, model_path, time_step,output_config,config):
         #threading.Thread.__init__(self)
         super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
@@ -59,8 +59,12 @@ class OptController(threading.Thread):
         self.output = OutputController(self.output_config)
 
         # make an input config to get topics, qos, host and port
-        topic_qos = [("forecast/load", 1), ("forecast/pv", 1)]
-        self.input = InputController(topic_qos, "optimizationframework_mosquitto_1", 1883)
+        load_forecast_topic = config.get("IO", "load.forecast.topic")
+        load_forecast_topic = json.loads(load_forecast_topic)
+        pv_forecast_topic = config.get("IO", "pv.forecast.topic")
+        pv_forecast_topic = json.loads(pv_forecast_topic)
+        topics = [load_forecast_topic, pv_forecast_topic]
+        self.input = InputController(topics, config)
 
     # Importint a class dynamically
     def path_import2(self,absolute_path):
@@ -118,7 +122,9 @@ class OptController(threading.Thread):
             key_Soc_EV = 'Soc_EV'
 
             while not self.stopRequest.isSet():
-                #data_dict = self.input.data_updated() #blocking call
+                logger.info("waiting for data")
+                data_dict = self.input.get_data() #blocking call
+                logger.info("data is "+str(data_dict))
                 # Creating an optimization instance with the referenced model
                 #instance = self.my_class.model.create_instance(data_dict)
                 instance = self.my_class.model.create_instance(self.data_path)

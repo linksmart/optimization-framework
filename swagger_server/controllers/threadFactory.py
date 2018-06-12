@@ -57,23 +57,28 @@ class ThreadFactory:
         #logger.debug("This is the output data: " + str(output_config))
 
         #Initializing constructor of the optimization controller thread
-        self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step, output_config)
+        self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step, output_config, config)
         ####starts the optimization controller thread
         results = self.opt.start()
 
-        """Need to get data from config"""
-        self.load_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "forecast/load", 1)
+        """Need to get data from config or input.registry?"""
+        load_forecast_topic = config.get("IO", "load.forecast.topic")
+        load_forecast_topic = json.loads(load_forecast_topic)
+        pv_forecast_topic = config.get("IO", "pv.forecast.topic")
+        pv_forecast_topic = json.loads(pv_forecast_topic)
+        self.load_forecast_pub = DataPublisher(load_forecast_topic, config)
+        self.pv_forecast_pub = DataPublisher(pv_forecast_topic, config)
         self.load_forecast_pub.start()
-
-        self.pv_forecast_pub = DataPublisher("optimizationframework_mosquitto_1", 1883, "forecast/pv", 1)
         self.pv_forecast_pub.start()
 
     def stopOptControllerThread(self):
-        logger.info("Stopping optimization controller thread")
         try:
-            self.opt.Stop()
+            logger.info("Stopping load forecast thread")
             self.load_forecast_pub.Stop()
+            logger.info("Stopping pv forecast thread")
             self.pv_forecast_pub.Stop()
+            logger.info("Stopping optimization controller thread")
+            self.opt.Stop()
             logger.info("Optimization controller thread stopped")
         except Exception as e:
             logger.error(e)
