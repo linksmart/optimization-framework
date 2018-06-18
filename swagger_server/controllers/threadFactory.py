@@ -4,6 +4,8 @@ import logging
 import configparser
 import json
 
+import asyncio
+
 from optimization.dataPublisher import DataPublisher
 from optimization.controller import OptController
 

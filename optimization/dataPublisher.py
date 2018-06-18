@@ -3,15 +3,18 @@ Created on Jun 07 15:49 2018
 
 @author: nishit
 """
+import datetime
 import json
 import logging
 import threading
 
 import time
+from queue import Queue
 from random import randrange
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
+from IO.radiation import Radiation
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -25,11 +28,21 @@ class DataPublisher(threading.Thread):
         self.config = config
         self.channel = config.get("IO", "channel")
         self.topic_params = topic_params
+        self.pv_data = {}
+        self.load_data = {}
         self.stopRequest = threading.Event()
         if self.channel == "MQTT":
             self.init_mqtt()
         elif self.channel == "ZMQ":
             self.init_zmq()
+
+        #  init pv data source
+        if topic_params["topic"] == "forecast/pv":
+            city = "Bonn, Germany"
+            radiation = Radiation(city, True)
+            self.q = Queue(maxsize=0)
+            self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
+            self.pv_thread.start()
         logger.info("Initializing data publisher thread for topic " + str(self.topic_params["topic"]))
 
     def init_mqtt(self):
@@ -62,8 +75,20 @@ class DataPublisher(threading.Thread):
     def run(self):
         """Get data from internet or any other source"""
         while not self.stopRequest.is_set():
-            #time.sleep(30) # test delay in data receive
-            data = self.get_data()  # test data
+            if self.topic_params["topic"] == "forecast/pv":
+                #  check if new data is available
+                if not self.q.empty():
+                    try:
+                        new_data = self.q.get_nowait()
+                        self.q.task_done()
+                        self.pv_data = new_data
+                    except Exception:
+                        logger.debug("Queue empty")
+                logger.debug("extract pv data")
+                data = self.extract_1day_data()
+                logger.debug(str(data))
+            else:
+                data = self.get_data()  # test data
             if self.channel == "MQTT":
                 self.mqtt_publish(data)
             elif self.channel == "ZMQ":
@@ -82,6 +107,48 @@ class DataPublisher(threading.Thread):
         logger.info("Sending results to zmq on this topic: " + self.topic_params["topic"])
         self.zmq.publish_message(self.topic_params["topic"], data)
         logger.debug("Results published")
+
+    def get_pv_data_from_source(self, radiation, q):
+        """PV Data fetch thread. Runs at 23:30 every day"""
+        while True:
+            try:
+                logger.info("Fetching pv data from radiation api")
+                data = radiation.get_data()
+                pv_data = json.loads(data)
+                q.put(pv_data)
+                delay = self.getDelayTime(23, 30)
+                time.sleep(delay)
+            except Exception as e:
+                logger.error(e)
+
+    def currentHour(self):
+        date = datetime.datetime.now()
+        currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour, 0) + \
+            datetime.timedelta(hours=1)
+        logger.debug(currentHour.hour)
+        return int(currentHour.hour)
+
+    def getDelayTime(self, hour, min):
+        date = datetime.datetime.now()
+        requestedTime = datetime.datetime(datetime.datetime.now().year, date.month, date.day, hour, min, 0)
+        return requestedTime.timestamp() - time.time()
+
+    def extract_1day_data(self):
+        currenthr = self.currentHour()
+        i = 0
+        flag = False
+        data = {}
+        for row in self.pv_data:
+            date = row["date"]
+            hr = int(date.split(" ")[1].split(":")[0])
+            if currenthr == hr:
+                flag = True
+            if flag and i < 24:
+                data[i] = float(row["pv_output"])
+                i = i + 1
+            if i > 23:
+                break
+        return json.dumps({"P_PV_Forecast": data})
 
     def get_data(self):
         """sample data"""
