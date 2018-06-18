@@ -40,7 +40,14 @@ def input_source(Input_Source):  # noqa: E501
         # limitation of qos
         # topic just base name
         # check with the model
-
+        try:
+            check = error_check_input(Input_Source)
+            if check != 0:
+                message = "Definition Error " + check
+                logger.error(message)
+                return message
+        except Exception as e:
+            logger.error(e)
         # Writes the registry/output to a txt file in ordner utils
         path = getFilePath("utils", "Input.registry")
         with open(path, 'w') as outfile:
@@ -132,3 +139,33 @@ def error_check_output_ambiguity(object):
         return "photovoltaic"
     else:
         return 0
+
+def error_check_input(object):
+    load = object.load.to_dict()
+    if (str(load["forecast"]) == "True"):
+        if (not (load["p_load"] or load["q_load"])):
+            return "load : P_Load or Q_Load empty"
+        elif (load["p_load"]["mqtt"] is None and load["p_load"]["file"] is None) or \
+                ((load["p_load"]["mqtt"]["host"] or load["p_load"]["mqtt"]["host"].isspace())
+                 and str(load["p_load"]["file"]) == "True"):
+            return "load : P_Load is empty OR P_Load File and MQTT options chosen at the same time"
+        elif (load["q_load"] is not None) and \
+                (load["q_load"]["mqtt"] is None and load["q_load"]["file"] is None) and\
+                ((load["q_load"]["mqtt"]["host"] or load["q_load"]["mqtt"]["host"].isspace()) and str(load["q_load"]["file"]) == "True"):
+            return "load : Q_Load is empty OR Q_Load File and MQTT options chosen at the same time"
+
+    ess = object.ess.to_dict()
+    if (ess["so_c_value"]["mqtt"] is not None and ess["so_c_value"]["file"] is not None) and \
+            (ess["so_c_value"]["mqtt"]["host"] or ess["so_c_value"]["mqtt"]["host"].isspace()) and \
+            str(ess["so_c_value"]["file"]) == "True":
+        return "ESS : SoC_Value is empty OR SoC_Value File and MQTT options chosen at the same time"
+
+    pv = object.photovoltaic.to_dict()
+    if (str(pv["forecast"]) == "True"):
+        if (not (pv["p_pv"])):
+            return "photovoltaic : P_PV empty"
+        elif (pv["p_pv"]["mqtt"]["host"] or pv["p_pv"]["mqtt"]["host"].isspace()) and str(
+                pv["p_pv"]["file"]) == "True":
+            return "photovoltaic : P_PV File and MQTT options chosen at the same time"
+
+    return 0
