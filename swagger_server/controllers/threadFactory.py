@@ -4,10 +4,9 @@ import logging
 import configparser
 import json
 
-import asyncio
-
-from optimization.dataPublisher import DataPublisher
 from optimization.controller import OptController
+from optimization.loadForecastPublisher import LoadForecastPublisher
+from optimization.pvForecastPublisher import PVForecastPublisher
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -68,8 +67,8 @@ class ThreadFactory:
         load_forecast_topic = json.loads(load_forecast_topic)
         pv_forecast_topic = config.get("IO", "pv.forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
-        self.load_forecast_pub = DataPublisher(load_forecast_topic, config)
-        self.pv_forecast_pub = DataPublisher(pv_forecast_topic, config)
+        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config)
+        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config)
         self.load_forecast_pub.start()
         self.pv_forecast_pub.start()
 
