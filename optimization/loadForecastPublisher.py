@@ -16,7 +16,7 @@ class LoadForecastPublisher(DataPublisher):
         self.load_data = {}
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "optimization", "loadData.dat")
-        super().__init__(topic_params, config)
+        super().__init__(topic_params, config, 30)
 
     def get_data(self):
         if self.flag:

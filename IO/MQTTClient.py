@@ -12,7 +12,7 @@ class MQTTClient:
         self.keepalive=keepalive
         self.receivedMessages = []
         self.topic_ack_wait = []
-        self.callback_functions = {}
+        self.callback_function = None
         self.client_id = client_id
         self.client = mqtt.Client(client_id)
         #client.username_pw_set("<<tenant>>/<<username>>", "<<password>>")
@@ -31,10 +31,6 @@ class MQTTClient:
 
         #self.client.loop_forever()
         self.client.loop_start()
-        #publish("s/us", "100,Python MQTT,c8y_MQTTDevice", True)
-        #publish("s/us", "110,S123456789,MQTT test model,Rev0.1")
-        #client.subscribe("s/ds")
-        #sendMeasurements()
 
         # Blocking call that processes network traffic, dispatches callbacks and
         # handles reconnecting.
@@ -47,16 +43,12 @@ class MQTTClient:
         #if rc == 0:
         logger.info("Connected to the broker")
 
-            #self.client.subscribe("test/#")
-        #else:
-            #logger.error("Connection to the broker failed")
 
     def on_message(self,client, userdata, message):
-        logger.debug(message.topic + " " + str(message.payload))
+        #logger.debug(message.topic + " " + str(message.payload))
         #if (message.payload.startswith("something")):
             #logger.info("Input operation")
-        if message.topic in self.callback_functions.keys():
-            self.callback_functions[message.topic](message.payload.decode())
+        self.callback_function(message.payload.decode())
 
 
     def sendResults(self, topic, data):
@@ -84,7 +76,7 @@ class MQTTClient:
         self.client.loop_stop()
         logger.debug("MQTT service disconnected")
 
-    def subscribe(self, topics_qos, callback_functions):
+    def subscribe(self, topics_qos, callback_function):
         # topics_qos is a list of tuples. eg [("topic",0)]
         try:
             logger.info("Subscribing to topics with qos: " + str(topics_qos))
@@ -92,7 +84,7 @@ class MQTTClient:
             if result == 0:
                 logger.debug("Subscribed to topics: "+ str(topics_qos) + " result = " + str(result) + " , mid = " + str(mid))
                 self.topic_ack_wait.append(tuple([str(topics_qos), mid]))
-                self.callback_functions = callback_functions
+                self.callback_function = callback_function
                 logging.info("callback functions set")
             else:
                 logging.info("error on subscribing " + str(result))

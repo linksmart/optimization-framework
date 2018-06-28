@@ -19,7 +19,7 @@ logger = logging.getLogger(__file__)
 
 class DataPublisher(ABC,threading.Thread):
 
-    def __init__(self, topic_params, config):
+    def __init__(self, topic_params, config, publish_frequency):
         super().__init__()
         self.config = config
         self.channel = config.get("IO", "channel")
@@ -29,6 +29,7 @@ class DataPublisher(ABC,threading.Thread):
             self.init_mqtt()
         elif self.channel == "ZMQ":
             self.init_zmq()
+        self.publish_frequency = publish_frequency
 
         logger.info("Initializing data publisher thread for topic " + str(self.topic_params["topic"]))
 
@@ -36,7 +37,7 @@ class DataPublisher(ABC,threading.Thread):
         self.host = self.config.get("IO", "mqtt.host")
         self.port = self.topic_params["mqtt.port"]
         self.qos = 1
-        self.client_id = "client" + str(randrange(100))
+        self.client_id = "client_publish" + str(randrange(100))
         self.mqtt = MQTTClient(str(self.host), self.port, self.client_id)
 
     def init_zmq(self):
@@ -64,7 +65,7 @@ class DataPublisher(ABC,threading.Thread):
         while not self.stopRequest.is_set():
             data = self.get_data()
             self.data_publish(data)
-            time.sleep(30)
+            time.sleep(self.publish_frequency)
 
     def data_publish(self, data):
         if self.channel == "MQTT":

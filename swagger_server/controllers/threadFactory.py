@@ -7,6 +7,8 @@ import json
 from optimization.controller import OptController
 from optimization.loadForecastPublisher import LoadForecastPublisher
 from optimization.pvForecastPublisher import PVForecastPublisher
+from prediction.loadController import LoadController
+from prediction.mockDataPublisher import MockDataPublisher
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -63,6 +65,7 @@ class ThreadFactory:
         results = self.opt.start()
 
         """Need to get data from config or input.registry?"""
+
         load_forecast_topic = config.get("IO", "load.forecast.topic")
         load_forecast_topic = json.loads(load_forecast_topic)
         pv_forecast_topic = config.get("IO", "pv.forecast.topic")
@@ -72,8 +75,20 @@ class ThreadFactory:
         self.load_forecast_pub.start()
         self.pv_forecast_pub.start()
 
+        """need to to be in a separate file"""
+        raw_data_topic = config.get("IO", "raw.data.topic")
+        raw_data_topic = json.loads(raw_data_topic)
+        self.mock_data = MockDataPublisher(raw_data_topic, config)
+        self.mock_data.start()
+        self.load_controller = LoadController(config)
+        self.load_controller.start()
+
     def stopOptControllerThread(self):
         try:
+            logger.info("Stopping mock data thread")
+            self.mock_data.Stop()
+            logger.info("Stopping load controller thread")
+            self.load_controller.Stop()
             logger.info("Stopping load forecast thread")
             self.load_forecast_pub.Stop()
             logger.info("Stopping pv forecast thread")

@@ -27,7 +27,7 @@ class PVForecastPublisher(DataPublisher):
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
         self.pv_thread.start()
 
-        super().__init__(topic_params, config)
+        super().__init__(topic_params, config, 30)
 
     def get_pv_data_from_source(self, radiation, q):
         """PV Data fetch thread. Runs at 23:30 every day"""
