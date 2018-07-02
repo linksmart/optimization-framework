@@ -11,4 +11,4 @@ pyzmq
 tensorflow
 pandas
 keras
-matplotlib
+h5py

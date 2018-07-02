@@ -66,14 +66,12 @@ class ThreadFactory:
 
         """Need to get data from config or input.registry?"""
 
-        load_forecast_topic = config.get("IO", "load.forecast.topic")
-        load_forecast_topic = json.loads(load_forecast_topic)
+
         pv_forecast_topic = config.get("IO", "pv.forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
-        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config)
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config)
-        self.load_forecast_pub.start()
         self.pv_forecast_pub.start()
+
 
         """need to to be in a separate file"""
         raw_data_topic = config.get("IO", "raw.data.topic")
@@ -89,8 +87,6 @@ class ThreadFactory:
             self.mock_data.Stop()
             logger.info("Stopping load controller thread")
             self.load_controller.Stop()
-            logger.info("Stopping load forecast thread")
-            self.load_forecast_pub.Stop()
             logger.info("Stopping pv forecast thread")
             self.pv_forecast_pub.Stop()
             logger.info("Stopping optimization controller thread")

@@ -3,6 +3,8 @@ Created on Jun 28 10:39 2018
 
 @author: nishit
 """
+import datetime
+import json
 
 import pandas as pd
 import numpy as np
@@ -19,7 +21,7 @@ class ProcessingData:
     def __init__(self):
         self.new_df = None
 
-    def preprocess_data(self, raw_data, num_timesteps):
+    def preprocess_data(self, raw_data, num_timesteps, train):
         # Loading Data
         col_heads = raw_data[0]
         raw_data = raw_data[1:]
@@ -76,13 +78,19 @@ class ProcessingData:
         logger.debug("x later" + str(x_train_reshaped.shape))
         logger.debug("y later" + str(y_train_reshaped.shape))
 
-        # split into training and test sets
-        sp = int(0.7 * len(data))
-        Xtrain, Xtest, Ytrain, Ytest = x_train_reshaped[0:sp], x_train_reshaped[sp:], y_train_reshaped[
-                                                                                      0:sp], y_train_reshaped[sp:]
-        logger.debug(str(Xtrain.shape) + " " + str(Xtest.shape) + " " + str(Ytrain.shape) + " " + str(Ytest.shape))
-        self.new_df = new_df
-        return Xtrain, Xtest, Ytrain, Ytest
+        if train:
+            # split into training and test sets
+            sp = int(0.7 * len(data))
+            Xtrain, Xtest, Ytrain, Ytest = x_train_reshaped[0:sp], x_train_reshaped[sp:], y_train_reshaped[
+                                                                                          0:sp], y_train_reshaped[sp:]
+            logger.debug(str(Xtrain.shape) + " " + str(Xtest.shape) + " " + str(Ytrain.shape) + " " + str(Ytest.shape))
+            self.new_df = new_df
+            return Xtrain[0:1000], Xtest[0:500], Ytrain[0:1000], Ytest[0:500]
+        else:
+            Xtest = x_train_reshaped
+            logger.debug(str(Xtest.shape))
+            self.new_df = new_df
+            return Xtest
 
     def add_date_time_test(self, Ytest):
         # Adding datetime to original test data
@@ -103,3 +111,26 @@ class ProcessingData:
         test_predictions['DateTime'] = test_act['DateTime']
         test_predictions = test_predictions.set_index('DateTime')
         return test_predictions
+
+    def hour_range(self):
+        date = datetime.datetime.now()
+        startHour = datetime.datetime(datetime.datetime.now().year, 12, 11, 5, 0) + \
+            datetime.timedelta(hours=1)
+        endHr = datetime.datetime(datetime.datetime.now().year, 12, 11, 5, 0) + \
+                      datetime.timedelta(days=1)
+        return startHour, endHr
+
+    def to_python_dict_data(self, prediction):
+            starthr, endhr = self.hour_range()
+            data = {}
+            start_date = pd.Timestamp(starthr.year, starthr.month, starthr.day, starthr.hour)
+            end_date = pd.Timestamp(endhr.year, endhr.month, endhr.day, endhr.hour)
+            filtered_data = prediction[start_date:end_date]
+            filtered_data = filtered_data.to_dict("split")
+            index = filtered_data["index"]
+            value = filtered_data["data"]
+            for i in range(len(index)):
+                date = index[i]
+                date = date.to_pydatetime()
+                data[date] = value[i][0]
+            return data

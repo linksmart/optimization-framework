@@ -63,7 +63,7 @@ class OptController(threading.Thread):
         pv_forecast_topic = config.get("IO", "pv.forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
         topics = [load_forecast_topic, pv_forecast_topic]
-        # self.input = OptimizationDataReceiver(topics, config)
+        self.input = OptimizationDataReceiver(topics, config)
 
 
     # Importint a class dynamically
@@ -123,8 +123,8 @@ class OptController(threading.Thread):
 
             while not self.stopRequest.isSet():
                 logger.info("waiting for data")
-                # data_dict = self.input.get_data() #blocking call
-                # logger.info("data is "+str(data_dict))
+                data_dict = self.input.get_data() #blocking call
+                logger.info("data is "+str(data_dict))
                 # Creating an optimization instance with the referenced model
                 #instance = self.my_class.model.create_instance(data_dict)
                 instance = self.my_class.model.create_instance(self.data_path)

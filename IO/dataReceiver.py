@@ -77,8 +77,10 @@ class DataReceiver(ABC):
     def on_msg_received(self, payload):
         pass
 
-    def get_mqtt_data(self):
-        while not self.data_update:
+    def get_mqtt_data(self, require_updated):
+        if require_updated == 1 and not self.data:
+            require_updated = 0
+        while require_updated == 0 and not self.data_update:
             logger.debug("wait for data")
             time.sleep(0.5)
         return self.get_and_update_data()
@@ -105,10 +107,17 @@ class DataReceiver(ABC):
         self.data_update = False
         return new_data
 
-    def get_data(self):
+    def get_data(self, require_updated=0):
+        """
+
+        :param require_updated: 0 -> wait for new data
+                                1 -> wait for new data if no prev data
+                                2 -> return prev data, even if empty
+        :return:
+        """
         data = {}
         if self.channel == "MQTT":
-            data = self.get_mqtt_data()
+            data = self.get_mqtt_data(require_updated)
         elif self.channel == "ZMQ":
             data = self.get_zmq_msg()
         return data

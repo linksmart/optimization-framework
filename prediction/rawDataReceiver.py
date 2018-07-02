@@ -33,8 +33,6 @@ class RawDataReceiver(DataReceiver):
                 cols = cols[1:]
                 cols = list(map(float, cols))
                 cols.insert(0, dateTime)
-            if i < 3:
-                logger.info(cols)
-                i += 1
+            i += 1
             new_data.append(cols)
         return new_data
