@@ -1,14 +1,15 @@
-"""
-Created on Jun 28 14:39 2018
-
-@author: nishit
-"""
-
+import logging
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ReduceLROnPlateau
-from keras.models import Sequential
+from keras.callbacks import ModelCheckpoint
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__file__)
 
 class TrainModel:
+
+    def __init__(self, save_path):
+        self.model_weights_path = save_path
 
     def train(self, model, Xtrain, Ytrain, num_epochs, batch_size):
         # define reduceLROnPlateau and early stopping callback
@@ -16,7 +17,9 @@ class TrainModel:
                                       patience=3, min_lr=0.001)
         earlystop = EarlyStopping(monitor='loss', min_delta=0, patience=4, verbose=1, mode='auto')
 
-        callbacks_list = [reduce_lr, earlystop]
+        #Saving the model with checkpoint callback
+        checkpoint = ModelCheckpoint(self.model_weights_path, monitor='loss', verbose=1, save_best_only=True, mode='min')
+        callbacks_list = [reduce_lr, earlystop, checkpoint]
 
         # Training a stateful LSTM
         for i in range(num_epochs):

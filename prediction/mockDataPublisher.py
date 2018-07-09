@@ -17,15 +17,22 @@ logger = logging.getLogger(__file__)
 class MockDataPublisher(DataPublisher):
 
     def __init__(self, topic_params, config):
-        super().__init__(topic_params, config, 10000)
+        super().__init__(topic_params, config, 1)
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "prediction", "USA_AK_King.Salmon.703260_TMY2.csv")
+        self.index = 1
 
     def get_data(self):
         if self.flag:
             with open(self.file_path) as f:
-                data = json.dumps(f.readlines())
-            self.flag = False
+                data = f.readlines()
+                if self.index < len(data):
+                    data = data[self.index]
+                    data = json.dumps([data])
+                    self.index += 1
+                else:
+                    self.flag = False
+                    data = {}
             return data
         else:
             return "{}"

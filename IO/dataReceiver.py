@@ -22,10 +22,11 @@ logger = logging.getLogger(__file__)
 
 class DataReceiver(ABC):
 
-    def __init__(self, topic_params, config):
+    def __init__(self, topic_params, config, emptyValue={}):
         super().__init__()
         self.topic_params = topic_params
-        self.data = {}
+        self.emptyValue = emptyValue
+        self.data = self.emptyValue.copy()
         self.data_update = False
         self.config = config
         self.channel = config.get("IO", "channel")
@@ -77,20 +78,20 @@ class DataReceiver(ABC):
     def on_msg_received(self, payload):
         pass
 
-    def get_mqtt_data(self, require_updated):
+    def get_mqtt_data(self, require_updated, clearData):
         if require_updated == 1 and not self.data:
             require_updated = 0
         while require_updated == 0 and not self.data_update:
             logger.debug("wait for data")
             time.sleep(0.5)
-        return self.get_and_update_data()
+        return self.get_and_update_data(clearData)
 
     def exit(self):
         if self.channel == "MQTT":
             self.mqtt.MQTTExit()
         logger.info("InputController safe exit")
 
-    def get_zmq_msg(self):
+    def get_zmq_msg(self, clearData):
         while True:
             logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
@@ -100,14 +101,16 @@ class DataReceiver(ABC):
                 self.on_msg_received(message)
                 break
             time.sleep(1)
-        return self.get_and_update_data()
+        return self.get_and_update_data(clearData)
 
-    def get_and_update_data(self):
+    def get_and_update_data(self, clearData):
         new_data = self.data.copy()
         self.data_update = False
+        if clearData:
+            self.data = self.emptyValue.copy()
         return new_data
 
-    def get_data(self, require_updated=0):
+    def get_data(self, require_updated=0, clearData=False):
         """
 
         :param require_updated: 0 -> wait for new data
@@ -117,7 +120,7 @@ class DataReceiver(ABC):
         """
         data = {}
         if self.channel == "MQTT":
-            data = self.get_mqtt_data(require_updated)
+            data = self.get_mqtt_data(require_updated, clearData)
         elif self.channel == "ZMQ":
-            data = self.get_zmq_msg()
+            data = self.get_zmq_msg(clearData)
         return data

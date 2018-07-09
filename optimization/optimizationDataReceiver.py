@@ -18,7 +18,7 @@ class OptimizationDataReceiver(DataReceiver):
         super().__init__(topic_params, config)
 
     def on_msg_received(self, payload):
-        logger.debug("Load data received : " + payload)
+        logger.debug("Data received : " + payload)
         data = json.loads(payload)
         self.data.update(self.add_formated_data(data))
         logger.info(self.data)

@@ -49,7 +49,7 @@ class LoadForecastPublisher(DataPublisher):
     def extract_1day_data(self):
         delta = 1
         data = {}
-        while delta < 24:
+        while delta <= 24:
             date = self.current_datetime(delta)
             data[int(delta-1)] = self.load_data[date]
             delta += 1
