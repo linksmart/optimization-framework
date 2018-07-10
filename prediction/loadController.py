@@ -7,7 +7,7 @@ import time
 
 import os
 
-from Helpers.utils import Utils
+from prediction.utils import Utils
 from optimization.loadForecastPublisher import LoadForecastPublisher
 from prediction.LSTMmodel import LSTMmodel
 from prediction.modelPrediction import ModelPrediction
@@ -31,17 +31,17 @@ class LoadController(threading.Thread):
         self.min_training_size = self.num_timesteps+10
 
         self.utils = Utils()
-        raw_data_file_container = os.path.join("/usr/src/app", "prediction", "raw_data.csv")
-        raw_data_file_host = "C:/raw_data.csv"
-        model_file_container = os.path.join("/usr/src/app", "prediction", "model.h5")
-        model_file_host = "C:/model.h5"
-        #self.utils.copy_files_from_host(raw_data_file_host, raw_data_file_container)
-        #self.utils.copy_files_from_host(model_file_host, model_file_container)
+        self.raw_data_file_container = os.path.join("/usr/src/app", "prediction", "raw_data.csv")
+        self.raw_data_file_host = os.path.join("/usr/src/app", "prediction/resources", "raw_data.csv")
+        self.model_file_container = os.path.join("/usr/src/app", "prediction", "model.h5")
+        self.model_file_host = os.path.join("/usr/src/app", "prediction/resources", "model.h5")
+        self.utils.copy_files_from_host(self.raw_data_file_host, self.raw_data_file_container)
+        self.utils.copy_files_from_host(self.model_file_host, self.model_file_container)
 
         raw_data_topic = config.get("IO", "raw.data.topic")
         raw_data_topic = json.loads(raw_data_topic)
         topics = [raw_data_topic]
-        self.raw_data = RawDataReceiver(topics, config, self.num_timesteps, 24*10, raw_data_file_container)
+        self.raw_data = RawDataReceiver(topics, config, self.num_timesteps, 24*10, self.raw_data_file_container)
         self.processingData = ProcessingData()
 
         self.q = Queue(maxsize=0)
@@ -53,8 +53,8 @@ class LoadController(threading.Thread):
 
         self.predicted_data = None
 
-        self.lstmModel = LSTMmodel(self.num_timesteps, self.hidden_size, self.batch_size, raw_data_file_container)
-        self.trainModel = TrainModel(raw_data_file_container)
+        self.lstmModel = LSTMmodel(self.num_timesteps, self.hidden_size, self.batch_size, self.model_file_container)
+        self.trainModel = TrainModel(self.model_file_container)
         self.modelPrediction = ModelPrediction()
 
         self.train = False
@@ -83,13 +83,7 @@ class LoadController(threading.Thread):
     
                     self.train = True
 
-                    """not required"""
-                    prediction = self.modelPrediction.predict(model, Xtest, self.batch_size)
-    
-                    # post processing
-                    test_predictions = self.processingData.add_date_time_pred(prediction)
-    
-                    data = self.processingData.to_python_dict_data(test_predictions)
+                    self.save_file_to_host()
             else:
                 # preprocess data
                 logger.info("len data = "+str(len(data)))
@@ -120,3 +114,5 @@ class LoadController(threading.Thread):
         logger.info("load controller thread exit")
 
     def save_file_to_host(self):
+        self.utils.copy_files_to_host(self.raw_data_file_container, self.raw_data_file_host)
+        pass

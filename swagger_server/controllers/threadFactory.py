@@ -15,13 +15,6 @@ logger = logging.getLogger(__file__)
 
 class ThreadFactory:
 
-    def __init__(self, model_name, time_step, horizon, repetition):
-        self.model_name=model_name
-        self.time_step=time_step
-        self.horizon=horizon
-        self.repetition=repetition
-
-
     def getFilePath(self,dir, file_name):
         # print(os.path.sep)
         # print(os.environ.get("HOME"))
@@ -29,9 +22,11 @@ class ThreadFactory:
         data_file = os.path.join("/usr/src/app", dir, file_name)
         return data_file
 
-
-
-    def startOptControllerThread(self):
+    def startOptControllerThread(self, model_name, time_step, horizon, repetition):
+        self.model_name = model_name
+        self.time_step = time_step
+        self.horizon = horizon
+        self.repetition = repetition
         logger.info("Creating optimization controller thread")
         logger.info("Number of repetitions: " + str(self.repetition))
         logger.info("Output with the following time steps: " + str(self.time_step))
@@ -72,8 +67,24 @@ class ThreadFactory:
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config)
         self.pv_forecast_pub.start()
 
+    def stopOptControllerThread(self):
+        try:
+            logger.info("Stopping pv forecast thread")
+            self.pv_forecast_pub.Stop()
+            logger.info("Stopping optimization controller thread")
+            self.opt.Stop()
+            logger.info("Optimization controller thread stopped")
+        except Exception as e:
+            logger.error(e)
 
-        """need to to be in a separate file"""
+    def startLoadPredictionThread(self):
+        logger.info("Creating load prediction controller thread")
+
+        # Creating an object of the configuration file
+        config = configparser.RawConfigParser()
+        config.read(self.getFilePath("utils", "ConfigFile.properties"))
+
+        """need to to be in a separate file?"""
         raw_data_topic = config.get("IO", "raw.data.topic")
         raw_data_topic = json.loads(raw_data_topic)
         self.mock_data = MockDataPublisher(raw_data_topic, config)
@@ -81,16 +92,11 @@ class ThreadFactory:
         self.load_controller = LoadController(config)
         self.load_controller.start()
 
-    def stopOptControllerThread(self):
+    def stopLoadPredictionThread(self):
         try:
             logger.info("Stopping mock data thread")
             self.mock_data.Stop()
             logger.info("Stopping load controller thread")
             self.load_controller.Stop()
-            logger.info("Stopping pv forecast thread")
-            self.pv_forecast_pub.Stop()
-            logger.info("Stopping optimization controller thread")
-            self.opt.Stop()
-            logger.info("Optimization controller thread stopped")
         except Exception as e:
             logger.error(e)

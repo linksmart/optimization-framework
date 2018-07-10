@@ -1,21 +1,20 @@
-import connexion
-import six
+"""
+Created on Jul 10 12:24 2018
+
+@author: nishit
+"""
 import logging
 
+import connexion
+from swagger_server.models.start_predict import StartPredict  # noqa: E501
 
-from swagger_server.models.start import Start  # noqa: E501
-from swagger_server import util
-from flask import json
 from swagger_server.controllers.threadFactory import ThreadFactory
-
-
-import os, time
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 
-class CommandController:
+class PredictionController:
 
     factory=None
     running=False
@@ -33,24 +32,19 @@ class CommandController:
         return self.running
 
     def start(self, json_object):
-        self.model_name = json_object.model_name
-        self.time_step = json_object.time_step
-        self.horizon = json_object.horizon
-        self.repetition = json_object.repetition
-        #logger.info("Self.factory "+str(self.factory))
+        self.predict = json_object.predict
 
         self.set(ThreadFactory())
 
-        #logger.info("Self.factory 2 " + str(self.factory))
         logger.info("Thread: " + str(self.get()))
-        self.get().startOptControllerThread(self.model_name, self.time_step, self.horizon, self.repetition)
+        self.get().startLoadPredictionThread()
         self.set_isRunning(True)
 
     def stop(self):
         logger.debug("Stop signal received")
         logger.debug("This is the factory object: "+str(self.get()))
         if self.factory:
-            self.factory.stopOptControllerThread()
+            self.factory.stopLoadPredictionThread()
             self.set_isRunning(False)
             message = "System stopped succesfully"
             logger.debug(message)
@@ -58,10 +52,11 @@ class CommandController:
             message="No threads found"
             logger.debug(message)
 
-variable=CommandController()
+variable=PredictionController()
 
-def framework_start(startOFW):  # noqa: E501
-    """Command for starting the framework
+
+def framework_start(startPred):  # noqa: E501
+    """Command for starting the prediction thread
 
     # noqa: E501
 
@@ -72,10 +67,10 @@ def framework_start(startOFW):  # noqa: E501
     """
     if connexion.request.is_json:
         logger.info("Starting the system")
-        startOFW = Start.from_dict(connexion.request.get_json())
+        startPred = StartPredict.from_dict(connexion.request.get_json())
 
         if not variable.get_isRunning():
-            variable.start(startOFW)
+            variable.start(startPred)
         else:
             logger.debug("System already running")
 

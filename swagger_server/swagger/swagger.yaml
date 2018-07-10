@@ -225,6 +225,45 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.command_controller"
+  /prediction/start:
+    put:
+      tags:
+      - "command"
+      summary: "Command for starting load prediction"
+      description: ""
+      operationId: "prediction_start"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "startPred"
+        description: "Start command for the load prediction framework"
+        required: true
+        schema:
+          $ref: "#/definitions/StartPredict"
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.prediction_controller"
+  /prediction/stop:
+    put:
+      tags:
+      - "command"
+      summary: "Command for stopping load prediction"
+      description: ""
+      operationId: "prediction_stop"
+      consumes:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.prediction_controller"
+
 definitions:
   Start:
     type: "object"
@@ -651,3 +690,12 @@ definitions:
             qos: 0
             topic: "topic"
             host: "url"
+  StartPredict:
+    type: "object"
+    required:
+    - "predict"
+    properties:
+      predict:
+        type: "boolean"
+    example:
+      predict: true

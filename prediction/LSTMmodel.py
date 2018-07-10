@@ -37,7 +37,6 @@ class LSTMmodel:
         self.num_timesteps = num_timesteps
         self.hidden_size = hidden_size
         self.batch_size = batch_size
-        self.train_model = TrainModel()
         self.model = None
         self.model_weights_path = save_path
 
@@ -46,11 +45,9 @@ class LSTMmodel:
         # Creating LSTM's structure
         # check if model present in file or create new model
         new = False
-        """
         if self.model:
             logger.info("model present in memory")
             return self.model, new
-        """
         model = self.load_saved_model()
         if not model:
             logger.info("create new model")

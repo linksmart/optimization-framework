@@ -47,7 +47,7 @@ class RawDataReceiver(DataReceiver):
         try:
             with open(self.file_path, 'a+') as file:
                 for item in data:
-                    line = ','.join(map(str, item))+"\n"
+                    line = ','.join(map(str, item[:2]))+"\n"
                     file.writelines(line)
             file.close()
         except Exception as e:
