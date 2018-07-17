@@ -28,7 +28,17 @@ class OptimizationDataReceiver(DataReceiver):
         new_data = {}
         for k, v in data.items():
             if isinstance(v, dict):
+                v = self.change_index_to_integer(v)
                 new_data[k] = v
             else:
-                new_data[k] = {None: v}
+                new_data[k] = {None: float(v)}
+        return new_data
+
+    def change_index_to_integer(self, data):
+        new_data = {}
+        for k, v in data.items():
+            if k.isdigit():
+                new_data[int(k)] = v
+            else:
+                new_data[k] = v
         return new_data

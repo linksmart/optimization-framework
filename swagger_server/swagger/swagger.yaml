@@ -135,8 +135,7 @@ paths:
         in: "path"
         description: "ID of the data source"
         required: true
-        type: "integer"
-        format: "int64"
+        type: "string"
       - in: "body"
         name: "dataset"
         description: "Dataset submitted to the framework"
@@ -153,14 +152,16 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.data_controller"
+  /data/load/{id}:
     post:
       tags:
       - "data"
-      summary: "Submits data to the framework"
+      summary: "Submits load data to the framework"
       description: ""
-      operationId: "data_in"
+      operationId: "load_data_in"
       consumes:
       - "application/json"
+      - "text/plain"
       produces:
       - "application/json"
       parameters:
@@ -168,8 +169,41 @@ paths:
         in: "path"
         description: "ID of the data source"
         required: true
-        type: "integer"
-        format: "int64"
+        type: "string"
+      - in: "body"
+        name: "dataset"
+        description: "Dataset submitted to the framework"
+        required: false
+        schema:
+          $ref: "#/definitions/dataset"
+      responses:
+        200:
+          description: "Created succesfully"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.data_controller"
+  /data/pv/{id}:
+    post:
+      tags:
+      - "data"
+      summary: "Submits load data to the framework"
+      description: ""
+      operationId: "pv_data_in"
+      consumes:
+      - "application/json"
+      - "text/plain"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of the data source"
+        required: true
+        type: "string"
       - in: "body"
         name: "dataset"
         description: "Dataset submitted to the framework"
@@ -225,44 +259,6 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.command_controller"
-  /prediction/start:
-    put:
-      tags:
-      - "command"
-      summary: "Command for starting load prediction"
-      description: ""
-      operationId: "prediction_start"
-      consumes:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "startPred"
-        description: "Start command for the load prediction framework"
-        required: true
-        schema:
-          $ref: "#/definitions/StartPredict"
-      responses:
-        200:
-          description: "OK"
-        405:
-          description: "Invalid input"
-      x-swagger-router-controller: "swagger_server.controllers.prediction_controller"
-  /prediction/stop:
-    put:
-      tags:
-      - "command"
-      summary: "Command for stopping load prediction"
-      description: ""
-      operationId: "prediction_stop"
-      consumes:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "OK"
-        405:
-          description: "Invalid input"
-      x-swagger-router-controller: "swagger_server.controllers.prediction_controller"
 
 definitions:
   Start:
@@ -386,11 +382,11 @@ definitions:
           topic: "topic"
           host: "url"
       meta:
-        Max_SoC: 5
+        ESS_Max_SoC: 5
         ESS_Max_Discharge_Power: 9
         ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
         ESS_Max_Charge_Power: 7
-        Min_SoC: 5
+        ESS_Min_SoC: 5
         ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
         ESS_Capacity: 2
   ESS_Output:
@@ -411,21 +407,21 @@ definitions:
   metaESS:
     type: "object"
     properties:
-      Min_SoC:
-        type: "integer"
-        format: "int32"
-      Max_SoC:
-        type: "integer"
-        format: "int32"
+      ESS_Min_SoC:
+        type: "number"
+        format: "float"
+      ESS_Max_SoC:
+        type: "number"
+        format: "float"
       ESS_Capacity:
-        type: "integer"
-        format: "int32"
+        type: "number"
+        format: "float"
       ESS_Max_Charge_Power:
-        type: "integer"
-        format: "int32"
+        type: "number"
+        format: "float"
       ESS_Max_Discharge_Power:
-        type: "integer"
-        format: "int32"
+        type: "number"
+        format: "float"
       ESS_Charging_Eff:
         type: "number"
         format: "float"
@@ -433,11 +429,11 @@ definitions:
         type: "number"
         format: "float"
     example:
-      Max_SoC: 5
+      ESS_Max_SoC: 5
       ESS_Max_Discharge_Power: 9
       ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
       ESS_Max_Charge_Power: 7
-      Min_SoC: 5
+      ESS_Min_SoC: 5
       ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
       ESS_Capacity: 2
   grid:
@@ -616,11 +612,11 @@ definitions:
         Forecast: false
       ESS:
         meta:
-          Max_SoC: 5
+          ESS_Max_SoC: 5
           ESS_Max_Discharge_Power: 9
           ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
           ESS_Max_Charge_Power: 7
-          Min_SoC: 5
+          ESS_Min_SoC: 5
           ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
           ESS_Capacity: 2
       grid:
@@ -690,12 +686,3 @@ definitions:
             qos: 0
             topic: "topic"
             host: "url"
-  StartPredict:
-    type: "object"
-    required:
-    - "predict"
-    properties:
-      predict:
-        type: "boolean"
-    example:
-      predict: true

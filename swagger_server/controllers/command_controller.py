@@ -39,11 +39,11 @@ class CommandController:
         self.repetition = json_object.repetition
         #logger.info("Self.factory "+str(self.factory))
 
-        self.set(ThreadFactory())
+        self.set(ThreadFactory(self.model_name, self.time_step, self.horizon, self.repetition))
 
         #logger.info("Self.factory 2 " + str(self.factory))
         logger.info("Thread: " + str(self.get()))
-        self.get().startOptControllerThread(self.model_name, self.time_step, self.horizon, self.repetition)
+        self.get().startOptControllerThread()
         self.set_isRunning(True)
 
     def stop(self):

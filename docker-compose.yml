@@ -60,8 +60,6 @@ services:
     #volumes:
       #- volume-glpsol:/usr/bin
       #- volume-glpk:/usr/local/lib
-    volumes:
-      - C:/test:/usr/src/app/prediction/resources
     #restart: unless-stopped
     #command: ["echo", "que sera sera"]
     command: ["python3", "-u", "ofw.py"]

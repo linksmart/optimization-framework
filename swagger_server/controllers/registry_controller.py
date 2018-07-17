@@ -3,6 +3,7 @@ import logging, os
 from flask import json
 import six
 
+from optimization.utils import Utils
 from swagger_server.models.input_source import InputSource  # noqa: E501
 from swagger_server.models.output_source import OutputSource  # noqa: E501
 from swagger_server import util
@@ -53,8 +54,11 @@ def input_source(Input_Source):  # noqa: E501
         with open(path, 'w') as outfile:
             json.dump(Input_Source, outfile, ensure_ascii=False)
         logger.info("registry/input saved into memory")
+        id = Utils.create_and_get_ID()
+        return 'Data source Id: ' + str(id)
+    else:
+        return 'Data not in json format'
 
-    return 'Operation succeded'
 
 
 

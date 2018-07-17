@@ -5,7 +5,7 @@
       "mqtt": {
         "qos": 1,
         "topic": "",
-        "host":  "optiframework_mosquitto_1"
+        "host":  "optimizationframework_mosquitto_1"
       }
     }
   },
@@ -15,7 +15,7 @@
       "mqtt": {
         "qos": 0,
         "topic": "",
-        "host": "optiframework_mosquitto_1"
+        "host": "optimizationframework_mosquitto_1"
       }
     },
     "Q_Grid_Export_Output": {
@@ -23,7 +23,7 @@
       "mqtt": {
         "qos": 0,
         "topic": "",
-        "host": "optiframework_mosquitto_1"
+        "host": "optimizationframework_mosquitto_1"
       }
     },
     "P_Grid_Import_Output": {
@@ -31,7 +31,7 @@
       "mqtt": {
         "qos": 0,
         "topic": "",
-        "host": "optiframework_mosquitto_1"
+        "host": "optimizationframework_mosquitto_1"
       }
     },
     "Q_Grid_Import_Output": {
@@ -39,7 +39,7 @@
       "mqtt": {
         "qos": 0,
         "topic": "",
-        "host": "optiframework_mosquitto_1"
+        "host": "optimizationframework_mosquitto_1"
       }
     }
   },
@@ -49,7 +49,7 @@
       "mqtt": {
         "qos": 0,
         "topic": "",
-        "host": "optiframework_mosquitto_1"
+        "host": "optimizationframework_mosquitto_1"
       }
     },
     "P_PV_Output": {
@@ -57,7 +57,7 @@
       "mqtt": {
         "qos": 0,
         "topic": "",
-        "host": "optiframework_mosquitto_1"
+        "host": "optimizationframework_mosquitto_1"
       }
     }
   }

@@ -69,7 +69,10 @@ class PVForecastPublisher(DataPublisher):
                 i = i + 1
             if i > 23:
                 break
-        return json.dumps({"P_PV_Forecast": data})
+        if not data:
+            return None
+        else:
+            return json.dumps({"P_PV_Forecast": data})
 
     def get_data(self):
         #  check if new data is available

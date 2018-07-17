@@ -64,7 +64,8 @@ class DataPublisher(ABC,threading.Thread):
         """Get data from internet or any other source"""
         while not self.stopRequest.is_set():
             data = self.get_data()
-            self.data_publish(data)
+            if data:
+                self.data_publish(data)
             time.sleep(self.publish_frequency)
 
     def data_publish(self, data):

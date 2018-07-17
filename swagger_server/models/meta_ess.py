@@ -15,37 +15,37 @@ class MetaESS(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, min_so_c: int=None, max_so_c: int=None, ess_capacity: int=None, ess_max_charge_power: int=None, ess_max_discharge_power: int=None, ess_charging_eff: float=None, ess_discharging_eff: float=None):  # noqa: E501
+    def __init__(self, ess_min_so_c: float=None, ess_max_so_c: float=None, ess_capacity: float=None, ess_max_charge_power: float=None, ess_max_discharge_power: float=None, ess_charging_eff: float=None, ess_discharging_eff: float=None):  # noqa: E501
         """MetaESS - a model defined in Swagger
 
-        :param min_so_c: The min_so_c of this MetaESS.  # noqa: E501
-        :type min_so_c: int
-        :param max_so_c: The max_so_c of this MetaESS.  # noqa: E501
-        :type max_so_c: int
+        :param ess_min_so_c: The ess_min_so_c of this MetaESS.  # noqa: E501
+        :type ess_min_so_c: float
+        :param ess_max_so_c: The ess_max_so_c of this MetaESS.  # noqa: E501
+        :type ess_max_so_c: float
         :param ess_capacity: The ess_capacity of this MetaESS.  # noqa: E501
-        :type ess_capacity: int
+        :type ess_capacity: float
         :param ess_max_charge_power: The ess_max_charge_power of this MetaESS.  # noqa: E501
-        :type ess_max_charge_power: int
+        :type ess_max_charge_power: float
         :param ess_max_discharge_power: The ess_max_discharge_power of this MetaESS.  # noqa: E501
-        :type ess_max_discharge_power: int
+        :type ess_max_discharge_power: float
         :param ess_charging_eff: The ess_charging_eff of this MetaESS.  # noqa: E501
         :type ess_charging_eff: float
         :param ess_discharging_eff: The ess_discharging_eff of this MetaESS.  # noqa: E501
         :type ess_discharging_eff: float
         """
         self.swagger_types = {
-            'min_so_c': int,
-            'max_so_c': int,
-            'ess_capacity': int,
-            'ess_max_charge_power': int,
-            'ess_max_discharge_power': int,
+            'ess_min_so_c': float,
+            'ess_max_so_c': float,
+            'ess_capacity': float,
+            'ess_max_charge_power': float,
+            'ess_max_discharge_power': float,
             'ess_charging_eff': float,
             'ess_discharging_eff': float
         }
 
         self.attribute_map = {
-            'min_so_c': 'Min_SoC',
-            'max_so_c': 'Max_SoC',
+            'ess_min_so_c': 'ESS_Min_SoC',
+            'ess_max_so_c': 'ESS_Max_SoC',
             'ess_capacity': 'ESS_Capacity',
             'ess_max_charge_power': 'ESS_Max_Charge_Power',
             'ess_max_discharge_power': 'ESS_Max_Discharge_Power',
@@ -53,8 +53,8 @@ class MetaESS(Model):
             'ess_discharging_eff': 'ESS_Discharging_Eff'
         }
 
-        self._min_so_c = min_so_c
-        self._max_so_c = max_so_c
+        self._ess_min_so_c = ess_min_so_c
+        self._ess_max_so_c = ess_max_so_c
         self._ess_capacity = ess_capacity
         self._ess_max_charge_power = ess_max_charge_power
         self._ess_max_discharge_power = ess_max_discharge_power
@@ -73,106 +73,106 @@ class MetaESS(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def min_so_c(self) -> int:
-        """Gets the min_so_c of this MetaESS.
+    def ess_min_so_c(self) -> float:
+        """Gets the ess_min_so_c of this MetaESS.
 
 
-        :return: The min_so_c of this MetaESS.
-        :rtype: int
+        :return: The ess_min_so_c of this MetaESS.
+        :rtype: float
         """
-        return self._min_so_c
+        return self._ess_min_so_c
 
-    @min_so_c.setter
-    def min_so_c(self, min_so_c: int):
-        """Sets the min_so_c of this MetaESS.
+    @ess_min_so_c.setter
+    def ess_min_so_c(self, ess_min_so_c: float):
+        """Sets the ess_min_so_c of this MetaESS.
 
 
-        :param min_so_c: The min_so_c of this MetaESS.
-        :type min_so_c: int
+        :param ess_min_so_c: The ess_min_so_c of this MetaESS.
+        :type ess_min_so_c: float
         """
 
-        self._min_so_c = min_so_c
+        self._ess_min_so_c = ess_min_so_c
 
     @property
-    def max_so_c(self) -> int:
-        """Gets the max_so_c of this MetaESS.
+    def ess_max_so_c(self) -> float:
+        """Gets the ess_max_so_c of this MetaESS.
 
 
-        :return: The max_so_c of this MetaESS.
-        :rtype: int
+        :return: The ess_max_so_c of this MetaESS.
+        :rtype: float
         """
-        return self._max_so_c
+        return self._ess_max_so_c
 
-    @max_so_c.setter
-    def max_so_c(self, max_so_c: int):
-        """Sets the max_so_c of this MetaESS.
+    @ess_max_so_c.setter
+    def ess_max_so_c(self, ess_max_so_c: float):
+        """Sets the ess_max_so_c of this MetaESS.
 
 
-        :param max_so_c: The max_so_c of this MetaESS.
-        :type max_so_c: int
+        :param ess_max_so_c: The ess_max_so_c of this MetaESS.
+        :type ess_max_so_c: float
         """
 
-        self._max_so_c = max_so_c
+        self._ess_max_so_c = ess_max_so_c
 
     @property
-    def ess_capacity(self) -> int:
+    def ess_capacity(self) -> float:
         """Gets the ess_capacity of this MetaESS.
 
 
         :return: The ess_capacity of this MetaESS.
-        :rtype: int
+        :rtype: float
         """
         return self._ess_capacity
 
     @ess_capacity.setter
-    def ess_capacity(self, ess_capacity: int):
+    def ess_capacity(self, ess_capacity: float):
         """Sets the ess_capacity of this MetaESS.
 
 
         :param ess_capacity: The ess_capacity of this MetaESS.
-        :type ess_capacity: int
+        :type ess_capacity: float
         """
 
         self._ess_capacity = ess_capacity
 
     @property
-    def ess_max_charge_power(self) -> int:
+    def ess_max_charge_power(self) -> float:
         """Gets the ess_max_charge_power of this MetaESS.
 
 
         :return: The ess_max_charge_power of this MetaESS.
-        :rtype: int
+        :rtype: float
         """
         return self._ess_max_charge_power
 
     @ess_max_charge_power.setter
-    def ess_max_charge_power(self, ess_max_charge_power: int):
+    def ess_max_charge_power(self, ess_max_charge_power: float):
         """Sets the ess_max_charge_power of this MetaESS.
 
 
         :param ess_max_charge_power: The ess_max_charge_power of this MetaESS.
-        :type ess_max_charge_power: int
+        :type ess_max_charge_power: float
         """
 
         self._ess_max_charge_power = ess_max_charge_power
 
     @property
-    def ess_max_discharge_power(self) -> int:
+    def ess_max_discharge_power(self) -> float:
         """Gets the ess_max_discharge_power of this MetaESS.
 
 
         :return: The ess_max_discharge_power of this MetaESS.
-        :rtype: int
+        :rtype: float
         """
         return self._ess_max_discharge_power
 
     @ess_max_discharge_power.setter
-    def ess_max_discharge_power(self, ess_max_discharge_power: int):
+    def ess_max_discharge_power(self, ess_max_discharge_power: float):
         """Sets the ess_max_discharge_power of this MetaESS.
 
 
         :param ess_max_discharge_power: The ess_max_discharge_power of this MetaESS.
-        :type ess_max_discharge_power: int
+        :type ess_max_discharge_power: float
         """
 
         self._ess_max_discharge_power = ess_max_discharge_power

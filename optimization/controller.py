@@ -18,6 +18,7 @@ from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
 
+from IO.inputController import InputController
 from IO.outputController import OutputController
 
 
@@ -30,7 +31,7 @@ logger = logging.getLogger(__file__)
 
 class OptController(threading.Thread):
 
-    def __init__(self, object_name,solver_name,data_path, model_path, time_step,output_config,config):
+    def __init__(self, object_name,solver_name,data_path, model_path, time_step,output_config,input_config,config):
         #threading.Thread.__init__(self)
         super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
@@ -42,7 +43,7 @@ class OptController(threading.Thread):
         self.solver_name = solver_name
         self.time_step=time_step
         self.output_config=output_config
-
+        self.input_config=input_config
         self.stopRequest=threading.Event()
 
         try:
@@ -56,14 +57,8 @@ class OptController(threading.Thread):
             logger.error(e)
 
         self.output = OutputController(self.output_config)
+        self.input = InputController(self.input_config, config, 24)
 
-        # make an input config to get topics, qos, host and port
-        load_forecast_topic = config.get("IO", "load.forecast.topic")
-        load_forecast_topic = json.loads(load_forecast_topic)
-        pv_forecast_topic = config.get("IO", "pv.forecast.topic")
-        pv_forecast_topic = json.loads(pv_forecast_topic)
-        topics = [load_forecast_topic, pv_forecast_topic]
-        self.input = OptimizationDataReceiver(topics, config)
 
 
     # Importint a class dynamically
@@ -77,7 +72,7 @@ class OptController(threading.Thread):
         super(OptController, self).join(timeout)
 
     def Stop(self):
-        self.input.exit()
+        self.input.Stop()
         #
         if self.isAlive():
             self.join()
@@ -126,15 +121,15 @@ class OptController(threading.Thread):
                 data_dict = self.input.get_data() #blocking call
                 logger.info("data is "+str(data_dict))
                 # Creating an optimization instance with the referenced model
-                #instance = self.my_class.model.create_instance(data_dict)
-                instance = self.my_class.model.create_instance(self.data_path)
+                instance = self.my_class.model.create_instance(data_dict)
+                #instance = self.my_class.model.create_instance(self.data_path)
                 logger.info("Instance created with pyomo")
 
                 #logger.info(instance.pprint())
 
                 action_handle = solver_manager.queue(instance, opt=optsolver)
                 action_handle_map[action_handle] = "myOptimizationModel_1"
-
+                start_time = time.time()
                 ###retrieve the solutions
                 for i in range(1):
                     this_action_handle=solver_manager.wait_any()
@@ -155,7 +150,8 @@ class OptController(threading.Thread):
 
                 ###   Testing solver status and termination condition
 
-
+                start_time = time.time() - start_time
+                logger.info("Time to run optimizer = "+str(start_time)+" sec.")
                 if (self.results.solver.status == SolverStatus.ok) and (self.results.solver.termination_condition == TerminationCondition.optimal):
                     # this is feasible and optimal
                     logger.info("Solver status and termination condition ok")

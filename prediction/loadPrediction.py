@@ -18,12 +18,15 @@ from prediction.trainModel import TrainModel
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
-class LoadController(threading.Thread):
+class LoadPrediction(threading.Thread):
 
-    def __init__(self, config):
+    def __init__(self, config, timesteps, horizon):
         super().__init__()
         self.stopRequest = threading.Event()
 
+        self.length = timesteps
+        self.length = 24
+        self.horizon = horizon
         self.num_timesteps = 25
         self.hidden_size = 10
         self.batch_size = 1
@@ -48,7 +51,7 @@ class LoadController(threading.Thread):
 
         load_forecast_topic = config.get("IO", "load.forecast.topic")
         load_forecast_topic = json.loads(load_forecast_topic)
-        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q)
+        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60)
         self.load_forecast_pub.start()
 
         self.predicted_data = None
@@ -88,7 +91,7 @@ class LoadController(threading.Thread):
                 # preprocess data
                 logger.info("len data = "+str(len(data)))
                 Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
-                test_predictions = self.modelPrediction.predict_next_day(model, Xtest, self.batch_size, 24)
+                test_predictions = self.modelPrediction.predict_next_day(model, Xtest, self.batch_size, self.length)
                 data = self.processingData.to_dict_with_datetime(test_predictions,
                                                                  datetime.datetime(datetime.datetime.now().year, 12, 11,
                                                                                    6, 0), 60)
