@@ -35,9 +35,10 @@ services:
  #     dockerfile: docker/Bonmin/Dockerfile
  #   image: garagon/bonmin:V0.1
   mosquitto:
-    image: eclipse-mosquitto
+    image: pascaldevink/rpi-mosquitto
+    #image: openenergy/rpi-mosquitto
     ports:
-      - 1883:1883
+      - "1883:1883"
   #zeromq:
    # image: zeromq/zeromq
     #ports:
@@ -48,9 +49,9 @@ services:
   ofw:
     build:
       context: ""
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-arm
      # ../docker/App/Dockerfile
-    image: myapp-ofw-ipopt
+    image: myapp_ofw
     ports:
       - "8080:8080"
  #   depends_on:

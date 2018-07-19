@@ -1,0 +1,17 @@
+requests
+pyomo
+sh
+connexion
+paho-mqtt
+numpy
+scipy
+pandas
+sklearn
+
+scikit-learn
+pillow
+#--upgrade --no-deps git+git://github.com/Theano/Theano.git
+
+keras
+#h5py  #already loaded in the docker file
+#--upgrade pyzmq   #pyzmq    #problem

@@ -1,17 +1,14 @@
 requests
 pyomo
 sh
-connexion
-paho-mqtt
+Pyro4
 numpy
 scipy
-pandas
 sklearn
-
-scikit-learn
-pillow
-#--upgrade --no-deps git+git://github.com/Theano/Theano.git
-
+connexion
+paho-mqtt
+pyzmq
+tensorflow
+pandas
 keras
-#h5py  #already loaded in the docker file
-#--upgrade pyzmq   #pyzmq    #problem
+h5py
