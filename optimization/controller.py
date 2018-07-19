@@ -179,9 +179,11 @@ class OptController(threading.Thread):
                                         # Try and add to the dictionary by key ref
                                         my_dict[str(v)]=list
 
-                                    except KeyError:
+                                    except Exception as e:
+                                        logger.error(e)
                                         # Append new index to currently existing items
-                                        my_dict = {**my_dict, **{v: list}}
+                                        #my_dict = {**my_dict, **{v: list}}
+					
 
 
                         #logger.info("Este es mi dict"+str(my_dict))
