@@ -7,6 +7,8 @@ import json
 from optimization.controller import OptController
 from optimization.loadForecastPublisher import LoadForecastPublisher
 from optimization.pvForecastPublisher import PVForecastPublisher
+from prediction.mockDataPublisher import MockDataPublisher
+from prediction.loadPrediction import LoadPrediction
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -81,8 +83,8 @@ class ThreadFactory:
             self.pv_forecast_pub.start()
 
         """need to to be in a separate file?"""
-        self.load_forecast = False
-        """
+        self.load_forecast = True
+
         if "load" in input_config.keys():
             self.load_forecast = bool(input_config["load"]["Forecast"])
         if self.load_forecast:
@@ -96,7 +98,7 @@ class ThreadFactory:
             config.read(self.getFilePath("utils", "ConfigFile.properties"))
             self.load_prediction = LoadPrediction(config, self.time_step, self.horizon)
             self.load_prediction.start()
-        """
+
 
     def stopOptControllerThread(self):
         try:
