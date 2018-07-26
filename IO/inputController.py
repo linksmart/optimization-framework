@@ -29,7 +29,7 @@ class InputController:
         self.set_params()
 
         topics = []
-        self.load_forecast = False
+        #self.load_forecast = False
         if self.load_forecast:
             load_forecast_topic = config.get("IO", "load.forecast.topic")
             load_forecast_topic = json.loads(load_forecast_topic)
