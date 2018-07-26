@@ -33,6 +33,7 @@ RUN apt-get install python3-pandas
 RUN apt-get install python3-sklearn
 RUN apt-get install python3-h5py
 RUN pip3 install -U tensorflow
+RUN pip3 install -U keras
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app
@@ -41,7 +42,7 @@ WORKDIR /usr/src/app
 COPY ofw.py /usr/src/app/
 COPY optimization /usr/src/app/optimization
 COPY utils /usr/src/app/utils
-#COPY prediction /usr/src/app/prediction
+COPY prediction /usr/src/app/prediction
 COPY swagger_server /usr/src/app/swagger_server
 COPY IO /usr/src/app/IO
 
