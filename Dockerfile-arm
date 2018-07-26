@@ -9,14 +9,30 @@ WORKDIR /usr/src/app
 # Copy the current directory contents into the container usr/src/app
 COPY requirements-arm.txt /usr/src/app/
 
-RUN apt-get install gcc gfortran libopenblas-base libopenblas-dev python3-dev libhdf5-dev libblas-dev liblapack-dev python3-setuptools python3-h5py libzmq3 libzmq3-dev python3-zmq
+RUN apt-get autoclean
+RUN apt-get clean
+
+RUN apt-get install gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev
 
 
+RUN pip3 install --upgrade pip
 
-# Install any needed packages specified in requirements.txt
-RUN pip3 install -r requirements-arm.txt
-#RUN pip3 install --upgrade https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.0-py3-none-any.whl
-
+RUN pip3 install -U requests
+RUN pip3 install -U pyomo
+RUN pip3 install -U gunicorn
+RUN pip3 install -U sh
+RUN pip3 install -U Pyro4
+RUN pip3 install -U connexion
+RUN pip3 install -U paho-mqtt
+RUN pip3 install -U pyzmq
+RUN pip3 install -U psutil
+RUN apt-get install python3-scipy
+RUN pip3 install setuptools
+RUN apt-get install libhdf5-serial-dev
+RUN apt-get install python3-pandas
+RUN apt-get install python3-sklearn
+RUN apt-get install python3-h5py
+RUN pip3 install -U tensorflow
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app
@@ -25,12 +41,7 @@ WORKDIR /usr/src/app
 COPY ofw.py /usr/src/app/
 COPY optimization /usr/src/app/optimization
 COPY utils /usr/src/app/utils
-COPY prediction /usr/src/app/prediction
+#COPY prediction /usr/src/app/prediction
 COPY swagger_server /usr/src/app/swagger_server
 COPY IO /usr/src/app/IO
-
-
-
-
-
 

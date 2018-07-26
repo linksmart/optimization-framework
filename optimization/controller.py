@@ -31,7 +31,7 @@ logger = logging.getLogger(__file__)
 
 class OptController(threading.Thread):
 
-    def __init__(self, object_name,solver_name,data_path, model_path, time_step,output_config,input_config,config):
+    def __init__(self, object_name,solver_name,data_path, model_path, time_step, repetition, output_config,input_config,config):
         #threading.Thread.__init__(self)
         super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
@@ -42,9 +42,11 @@ class OptController(threading.Thread):
         self.data_path = data_path
         self.solver_name = solver_name
         self.time_step=time_step
+        self.repetition = repetition
         self.output_config=output_config
         self.input_config=input_config
         self.stopRequest=threading.Event()
+        self.finish_status = False
 
         try:
             #dynamic load of a class
@@ -115,7 +117,7 @@ class OptController(threading.Thread):
             key_P_EV_Output= 'P_EV_Output'
             key_SoC_ESS = 'SoC_ESS'
             key_Soc_EV = 'Soc_EV'
-
+            count = 0
             while not self.stopRequest.isSet():
                 logger.info("waiting for data")
                 data_dict = self.input.get_data() #blocking call
@@ -199,6 +201,9 @@ class OptController(threading.Thread):
                     #print(self.results.solver)
                     logger.info("Nothing fits")
 
+                count += 1
+                if self.repetition > 0 and count >= self.repetition:
+                    break
                 logger.info("Optimization thread going to sleep for "+str(self.time_step)+" seconds")
                 time.sleep(self.time_step)
 
@@ -223,5 +228,5 @@ class OptController(threading.Thread):
         except Exception as e:
             logger.error(e)
             return e
-
+        self.finish_status = True
 

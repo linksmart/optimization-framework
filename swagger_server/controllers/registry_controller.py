@@ -11,7 +11,7 @@ from swagger_server import util
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
-
+utils = Utils()
 
 def getFilePath(dir, file_name):
     # print(os.path.sep)
@@ -54,7 +54,10 @@ def input_source(Input_Source):  # noqa: E501
         with open(path, 'w') as outfile:
             json.dump(Input_Source, outfile, ensure_ascii=False)
         logger.info("registry/input saved into memory")
-        id = Utils.create_and_get_ID()
+        id = utils.create_and_get_ID()
+        path = getFilePath("utils", "registry.id")
+        with open(path, 'w') as outfile:
+            outfile.write(id)
         return 'Data source Id: ' + str(id)
     else:
         return 'Data not in json format'

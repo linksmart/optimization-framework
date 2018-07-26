@@ -1,3 +1,4 @@
+#--upgrade --force-reinstall --user https://github.com/samjabrahams/tensorflow-on-raspberry-pi/releases/download/v1.1.0/tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
 requests
 pyomo
 sh
@@ -11,6 +12,7 @@ sklearn
 scikit-learn
 pillow
 #--upgrade --no-deps git+git://github.com/Theano/Theano.git
+
 
 keras
 #h5py  #already loaded in the docker file

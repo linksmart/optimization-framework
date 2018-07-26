@@ -1,4 +1,8 @@
+import json
 import logging
+
+import time
+
 from IO.MQTTClient import MQTTClient
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -50,7 +54,7 @@ class OutputController:
 
 
     def publishController(self, data):
-
+        data = self.senml_message_format(data)
         try:
             #logger.debug("These are the keys of output_config: "+str(output_config.keys()))
             logger.debug("These are the keys of data: " + str(data.keys()))
@@ -65,12 +69,28 @@ class OutputController:
                         host = value2["mqtt"]["host"]
                         #logger.debug("Published to this topic")
                         #logger.debug("Value: "+str(data.get(key2)))
-                        self.mqtt[str(host)].sendResults(topic, str(data.get(key2)))
+                        v = json.dumps(data.get(key2))
+                        logger.info("data = "+str(v))
+                        self.mqtt[str(host)].sendResults(topic, v)
         except Exception as e:
             logger.error(e)
 
 
-
+    def senml_message_format(self, data):
+        new_data = {}
+        current_time = int(time.time())
+        u = "W"
+        for key, value in data.items():
+            topic_data = {}
+            for v in value[0]:
+                if v is not 0:
+                    topic_data["e"] = [{"n": key,
+                                        "u": u,
+                                        "v": v,
+                                        "t": current_time}]
+            new_data[key] = topic_data.copy()
+        logger.info("data - "+str(new_data))
+        return new_data
 
 
 

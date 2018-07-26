@@ -3,12 +3,7 @@ pyomo
 sh
 Pyro4
 numpy
-scipy
 sklearn
 connexion
 paho-mqtt
 pyzmq
-tensorflow
-pandas
-keras
-h5py

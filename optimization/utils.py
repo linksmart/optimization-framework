@@ -5,18 +5,18 @@ Created on Jul 16 11:10 2018
 """
 import uuid
 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
-class Utils:
+class Utils(metaclass=Singleton):
 
-    id = "0"
+    def create_and_get_ID(self):
+        self.id = str(uuid.uuid4()).split("-")[4]
+        return self.id
 
-    @classmethod
-    def create_and_get_ID(cls):
-        id = uuid.uuid4()
-        id = str(id).split("-")[4]
-        cls.id = id
-        return id
-
-    @classmethod
-    def get_ID(cls):
-        return cls.id
+    def get_ID(self):
+        return self.id

@@ -7,8 +7,6 @@ import json
 from optimization.controller import OptController
 from optimization.loadForecastPublisher import LoadForecastPublisher
 from optimization.pvForecastPublisher import PVForecastPublisher
-from prediction.loadPrediction import LoadPrediction
-from prediction.mockDataPublisher import MockDataPublisher
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -67,10 +65,10 @@ class ThreadFactory:
             input_config = {}
 
         #Initializing constructor of the optimization controller thread
-        self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step, output_config,input_config, config)
+        self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step,
+                                 self.repetition, output_config, input_config, config)
         ####starts the optimization controller thread
         results = self.opt.start()
-
 
         """Need to get data from config or input.registry?"""
         self.pv_forecast = True
@@ -83,7 +81,8 @@ class ThreadFactory:
             self.pv_forecast_pub.start()
 
         """need to to be in a separate file?"""
-        self.load_forecast = True
+        self.load_forecast = False
+        """
         if "load" in input_config.keys():
             self.load_forecast = bool(input_config["load"]["Forecast"])
         if self.load_forecast:
@@ -97,14 +96,15 @@ class ThreadFactory:
             config.read(self.getFilePath("utils", "ConfigFile.properties"))
             self.load_prediction = LoadPrediction(config, self.time_step, self.horizon)
             self.load_prediction.start()
+        """
 
     def stopOptControllerThread(self):
         try:
             if self.load_forecast:
                 logger.info("Stopping mock data thread")
-                self.mock_data.Stop()
+                #self.mock_data.Stop()
                 logger.info("Stopping load prediction thread")
-                self.load_prediction.Stop()
+                #self.load_prediction.Stop()
             if self.pv_forecast:
                 logger.info("Stopping pv forecast thread")
                 self.pv_forecast_pub.Stop()
@@ -113,3 +113,6 @@ class ThreadFactory:
             logger.info("Optimization controller thread stopped")
         except Exception as e:
             logger.error(e)
+
+    def is_running(self):
+        return not self.opt.finish_status

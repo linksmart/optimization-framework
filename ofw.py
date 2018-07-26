@@ -7,8 +7,8 @@ import  os, logging
 import subprocess # just to call an arbitrary command e.g. 'ls'
 import time
 
-import swagger_server.__main__ as webserver
-
+#import swagger_server.__main__ as webserver
+import swagger_server.wsgi as webserver
 
 from optparse import OptionParser
 

@@ -29,6 +29,7 @@ class InputController:
         self.set_params()
 
         topics = []
+        self.load_forecast = False
         if self.load_forecast:
             load_forecast_topic = config.get("IO", "load.forecast.topic")
             load_forecast_topic = json.loads(load_forecast_topic)
@@ -94,16 +95,30 @@ class InputController:
         for row in rows:
             data[i] = float(row)
             i += 1
-        self.optimization_data[topic] = data
+        if len(data) == 0:
+            logger.error("Data file empty "+topic)
+        else:
+            self.optimization_data[topic] = data
 
     def get_data(self):
-        if self.subscriber:
-            data = self.subscriber.get_data()
-            self.optimization_data.update(data)
+        if not self.load_forecast:
+            self.read_input_data("P_Load_Forecast", "loadForecast.txt")
+        if not self.pv_forecast:
+            self.read_input_data("P_PV_Forecast", "pvForecast.txt")
+        pv_check = not self.pv_forecast
+        load_check = not self.load_forecast
+        while not (pv_check and load_check):
+            if self.subscriber:
+                data = self.subscriber.get_data()
+                self.optimization_data.update(data)
+                if "P_PV_Forecast" in data.keys():
+                    pv_check = True
+                if "P_Load_Forecast" in data.keys():
+                    load_check = True
         return {None: self.optimization_data.copy()}
 
     def Stop(self):
-        if not self.subscriber:
+        if self.subscriber is not None:
             self.subscriber.exit()
 
     def set_params(self):

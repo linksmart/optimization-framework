@@ -1,3 +1,5 @@
+import threading
+
 import connexion
 import six
 import logging
@@ -19,6 +21,7 @@ class CommandController:
 
     factory=None
     running=False
+    statusThread=None
 
     def set(self, object):
         self.factory=object
@@ -31,6 +34,9 @@ class CommandController:
 
     def get_isRunning(self):
         return self.running
+
+    def get_statusThread(self):
+        return self.statusThread
 
     def start(self, json_object):
         self.model_name = json_object.model_name
@@ -45,6 +51,8 @@ class CommandController:
         logger.info("Thread: " + str(self.get()))
         self.get().startOptControllerThread()
         self.set_isRunning(True)
+        self.statusThread = threading.Thread(target=self.run_status)
+        self.statusThread.start()
 
     def stop(self):
         logger.debug("Stop signal received")
@@ -57,6 +65,14 @@ class CommandController:
         else:
             message="No threads found"
             logger.debug(message)
+
+    def run_status(self):
+        while True:
+            status = self.get().is_running()
+            if not status:
+                self.stop()
+                break
+            time.sleep(1)
 
 variable=CommandController()
 
@@ -94,6 +110,8 @@ def framework_stop():  # noqa: E501
     """
 
     try:
+        if variable.statusThread is not None and variable.statusThread.isAlive:
+            variable.statusThread.join()
         logger.info("Stopping the system")
         if variable.get_isRunning():
             logger.debug("System running and trying to stop")

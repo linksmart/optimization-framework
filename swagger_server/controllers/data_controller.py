@@ -12,11 +12,22 @@ from swagger_server import util
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
-
+utils = Utils()
 
 def getFilePath(dir, file_name):
     data_file = os.path.join("/usr/src/app", dir, file_name)
     return data_file
+
+def get_id():
+    uid = "0"
+    try:
+        path = getFilePath("utils", "registry.id")
+        with open(path, 'r') as readfile:
+            uid = readfile.readlines()[0]
+    except Exception:
+        pass
+    logger.info("UID is : "+uid)
+    return uid
 
 def get_data_in(id, dataset=None):  # noqa: E501
     """Receives data from the framework
@@ -30,7 +41,8 @@ def get_data_in(id, dataset=None):  # noqa: E501
 
     :rtype: None
     """
-    if id == str(Utils.get_ID()):
+    uid = get_id()
+    if uid != "0" and uid == id:
         path = getFilePath("optimization", "loadForecast.txt")
         load = []
         try:
@@ -62,7 +74,8 @@ def load_data_in(id, dataset=None):  # noqa: E501
 
     :rtype: None
     """
-    if id == str(Utils.get_ID()):
+    uid = get_id()
+    if uid != "0" and uid == id:
         path = getFilePath("optimization", "loadForecast.txt")
         if connexion.request.is_json:
             dataset = Dataset.from_dict(connexion.request.get_json())  # noqa: E501
@@ -89,7 +102,8 @@ def pv_data_in(id, dataset=None):  # noqa: E501
 
     :rtype: None
     """
-    if id == str(Utils.get_ID()):
+    uid = get_id()
+    if uid != "0" and uid == id:
         path = getFilePath("optimization", "pvForecast.txt")
         if connexion.request.is_json:
             dataset = Dataset.from_dict(connexion.request.get_json())  # noqa: E501
