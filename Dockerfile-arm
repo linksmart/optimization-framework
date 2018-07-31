@@ -1,6 +1,6 @@
 
 # Use an official Python runtime as a parent image
-FROM garagon/ipopt:arm
+FROM garagon/solvers:arm_resin
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
@@ -12,7 +12,8 @@ COPY requirements-arm.txt /usr/src/app/
 RUN apt-get autoclean
 RUN apt-get clean
 
-RUN apt-get install gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev
+RUN apt-get update -y && apt-get install -y \
+	gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev
 
 
 RUN pip3 install --upgrade pip
@@ -26,12 +27,15 @@ RUN pip3 install -U connexion
 RUN pip3 install -U paho-mqtt
 RUN pip3 install -U pyzmq
 RUN pip3 install -U psutil
-RUN apt-get install python3-scipy
-RUN pip3 install setuptools
-RUN apt-get install libhdf5-serial-dev
-RUN apt-get install python3-pandas
-RUN apt-get install python3-sklearn
-RUN apt-get install python3-h5py
+RUN apt-get update -y && apt-get install -y \
+    libhdf5-serial-dev python3-scipy python3-h5py python3-numpy libatlas-dev python3-setuptools python3-pandas python3-sklearn
+
+
+#RUN pip3 install setuptools
+#RUN apt-get install libhdf5-serial-dev
+#RUN apt-get install python3-pandas
+#RUN apt-get install python3-sklearn
+#RUN apt-get install python3-h5py
 RUN pip3 install -U tensorflow
 RUN pip3 install -U keras
 
