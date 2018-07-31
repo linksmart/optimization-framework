@@ -1,10 +1,10 @@
 version: '3.2'
 services:
-  #glpk:
-  #  build:
-  #    context: ""
-  #    dockerfile: docker/Glpk/Dockerfile
-  #  image: glpk
+  glpk:
+    build:
+      context: ""
+      dockerfile: docker-arm/Glpk/Dockerfile
+    image: garagon/glpk:arm_resin
   #  #command: /bin/bash
   #  restart: always
   #  #command: ["cat","/etc/ld.so.conf"]
@@ -24,11 +24,17 @@ services:
       #  target: /usr/bin/glpsol
     #restart: unless-stopped
 
-  #ipopt:
-    #build:
-      #context: ""
-      #dockerfile: docker/Ipopt/Dockerfile
-    #image: garagon/ipopt:V0.2
+  ipopt:
+    build:
+      context: ""
+      dockerfile: docker-arm/Ipopt/Dockerfile
+    image: garagon/ipopt:arm_resin
+
+  solver:
+    build:
+      context: ""
+      dockerfile: docker-arm/Solver/Dockerfile
+    image: garagon/solvers:arm_resin
  # bonmin:
  #   build:
  #     context: ""
@@ -51,7 +57,7 @@ services:
       context: ""
       dockerfile: Dockerfile-arm
      # ../docker/App/Dockerfile
-    image: myapp_ofw
+    image: myapp_ofw_resin
     ports:
       - "8080:8080"
  #   depends_on:
