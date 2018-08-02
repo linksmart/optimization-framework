@@ -4,12 +4,16 @@ import requests
 import shutil
 
 from swagger_server.models.model import Model  # noqa: E501
+from swagger_server.models.model_answer import ModelAnswer  # noqa: E501
+from swagger_server.models.model_output import ModelOutput
 from swagger_server.models.model_url import ModelUrl  # noqa: E501
 from swagger_server import util
 from flask import json
 import os
 import logging
 import configparser
+from os import walk
+import re
 
 
 
@@ -27,6 +31,35 @@ def getFilePath(dir, file_name):
     project_dir = os.path.dirname(os.path.realpath(__file__))
     data_file = os.path.join("/usr/src/app", dir, file_name)
     return data_file
+
+def get_models_in():  # noqa: E501
+    """Fetches all installed models in the framework
+
+     # noqa: E501
+
+    :rtype: None
+    """
+
+    f = []
+    mypath = "/usr/src/app/optimization/models"
+    for (dirpath, dirnames, filenames) in walk(mypath):
+        f.extend(filenames)
+        logger.debug("Filenames: "+str(f))
+        break
+    f_new=[]
+    for filenames in f:
+        filenames = re.sub('.py', '', str(filenames))
+        f_new.append(filenames)
+    logger.debug("Filenames: " + str(f_new))
+    answer=[]
+
+    for i in range(len(f_new)):
+        answer.append(ModelOutput(f_new[i]))
+    answer=ModelAnswer(answer)
+
+    logger.debug("Answer: " + str(answer))
+    return answer
+
 
 def optimization_model(name, upModel):  # noqa: E501
     """Mathematical model for the optimization solver
@@ -56,7 +89,7 @@ def optimization_model(name, upModel):  # noqa: E501
         with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
             config.write(configfile)
         config.read(getFilePath("utils", "ConfigFile.properties"))
-        logger.info("Se cambio el nombre?: "+config['SolverSection']['model.name'])
+        logger.info("The model name changed?: "+config['SolverSection']['model.name'])
         #print("Config solver name: "+config.get("SolverSection", "model.name"))
 
 
@@ -65,7 +98,7 @@ def optimization_model(name, upModel):  # noqa: E501
     #upModel=Model.from_dict(connexion.request)
     #data = getDataJSON(upModel, "upModel")
     #print(data)
-    return 'do some magic 1!'
+    return 'Success'
 
 
 
@@ -109,4 +142,4 @@ def optimization_model_url(upModelUrl):  # noqa: E501
             logger.error(e)
     else:
         logger.info("Wrong Content-Type")
-    return 'do some magic 2'
+    return 'Success'
