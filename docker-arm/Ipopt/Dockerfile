@@ -6,8 +6,9 @@
 # Set the base image to Ubuntu
 #FROM ubuntu:16.04
 #FROM python:3.6.4-jessie
-#FROM arm64v8/python:3.6.5-jessie
-FROM resin/rpi-raspbian
+#FROM arm32v7/debian:stretch
+FROM resin/raspberrypi3-debian:stretch
+
 # Switch to root for install
 USER root
 
@@ -21,13 +22,13 @@ RUN apt-get update -y && apt-get install -y \
 	gfortran \
 	subversion \
 	build-essential \
+	python3-pip python3-dev \
 	--no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN echo "First apt-get install finished"
-RUN apt-get update -y && apt-get install -y git-core curl zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev python-software-properties libffi-dev
-RUN echo "Second apt-get install finished"
-RUN apt-get install python3-pip python3-dev
+RUN apt-get update -y && apt-get install -y git-core curl zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev software-properties-common libffi-dev
+
 
 # Set the working directory to usr/src/app/share
 RUN mkdir -p /usr/src/app/share
@@ -79,3 +80,5 @@ RUN ldconfig
 RUN rm -rf /usr/src/app/share/Ipopt-3.12.9.tgz
 #RUN apk add clean
 ENV PATH "$PATH:/usr/src/app/share/CoinIpopt/build/bin"
+
+
