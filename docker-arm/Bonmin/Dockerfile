@@ -5,7 +5,7 @@
 ###################################################################################################
 # Set the base image to Ubuntu
 #FROM ubuntu:16.04
-FROM python:3.6.4-jessie
+FROM resin/raspberrypi3-debian:stretch
 
 # Switch to root for install
 USER root
@@ -20,6 +20,7 @@ RUN apt-get update -y && apt-get install -y \
 	gfortran \
 	subversion \
 	build-essential \
+	python3-pip python3-dev \
 	--no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
