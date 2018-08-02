@@ -78,9 +78,9 @@ class InputController:
                                 data[k2] = {None:v2}
         self.optimization_data.update(data)
         if "load" in input_config.keys():
-            self.load_forecast = bool(input_config["load"]["Forecast"])
+            self.load_forecast = bool(input_config["load"]["Internal_Forecast"])
         if "photovoltaic" in input_config.keys():
-            self.pv_forecast = bool(input_config["photovoltaic"]["Forecast"])
+            self.pv_forecast = bool(input_config["photovoltaic"]["Internal_Forecast"])
 
     def read_input_data(self, topic, file):
         data = {}
