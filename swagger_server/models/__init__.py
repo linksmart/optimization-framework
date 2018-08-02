@@ -17,10 +17,12 @@ from swagger_server.models.meta_grid import MetaGrid
 from swagger_server.models.meta_load import MetaLoad
 from swagger_server.models.meta_pv import MetaPV
 from swagger_server.models.model import Model
+from swagger_server.models.model_answer import ModelAnswer
+from swagger_server.models.model_output import ModelOutput
 from swagger_server.models.model_url import ModelUrl
 from swagger_server.models.output_source import OutputSource
 from swagger_server.models.pv import PV
 from swagger_server.models.pv_output import PVOutput
 from swagger_server.models.source import Source
+from swagger_server.models.source_ess import SourceESS
 from swagger_server.models.start import Start
-from swagger_server.models.weather import Weather

@@ -17,29 +17,29 @@ class PV(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, forecast: bool=None, p_pv: Source=None, meta: MetaPV=None):  # noqa: E501
+    def __init__(self, internal_forecast: bool=None, p_pv: Source=None, meta: MetaPV=None):  # noqa: E501
         """PV - a model defined in Swagger
 
-        :param forecast: The forecast of this PV.  # noqa: E501
-        :type forecast: bool
+        :param internal_forecast: The internal_forecast of this PV.  # noqa: E501
+        :type internal_forecast: bool
         :param p_pv: The p_pv of this PV.  # noqa: E501
         :type p_pv: Source
         :param meta: The meta of this PV.  # noqa: E501
         :type meta: MetaPV
         """
         self.swagger_types = {
-            'forecast': bool,
+            'internal_forecast': bool,
             'p_pv': Source,
             'meta': MetaPV
         }
 
         self.attribute_map = {
-            'forecast': 'Forecast',
+            'internal_forecast': 'Internal_Forecast',
             'p_pv': 'P_PV',
             'meta': 'meta'
         }
 
-        self._forecast = forecast
+        self._internal_forecast = internal_forecast
         self._p_pv = p_pv
         self._meta = meta
 
@@ -55,29 +55,29 @@ class PV(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def forecast(self) -> bool:
-        """Gets the forecast of this PV.
+    def internal_forecast(self) -> bool:
+        """Gets the internal_forecast of this PV.
 
         Is it forecasted data? Or row data  # noqa: E501
 
-        :return: The forecast of this PV.
+        :return: The internal_forecast of this PV.
         :rtype: bool
         """
-        return self._forecast
+        return self._internal_forecast
 
-    @forecast.setter
-    def forecast(self, forecast: bool):
-        """Sets the forecast of this PV.
+    @internal_forecast.setter
+    def internal_forecast(self, internal_forecast: bool):
+        """Sets the internal_forecast of this PV.
 
         Is it forecasted data? Or row data  # noqa: E501
 
-        :param forecast: The forecast of this PV.
-        :type forecast: bool
+        :param internal_forecast: The internal_forecast of this PV.
+        :type internal_forecast: bool
         """
-        if forecast is None:
-            raise ValueError("Invalid value for `forecast`, must not be `None`")  # noqa: E501
+        if internal_forecast is None:
+            raise ValueError("Invalid value for `internal_forecast`, must not be `None`")  # noqa: E501
 
-        self._forecast = forecast
+        self._internal_forecast = internal_forecast
 
     @property
     def p_pv(self) -> Source:

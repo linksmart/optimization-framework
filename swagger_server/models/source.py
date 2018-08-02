@@ -16,25 +16,20 @@ class Source(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, file: bool=None, mqtt: MQTT=None):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None):  # noqa: E501
         """Source - a model defined in Swagger
 
-        :param file: The file of this Source.  # noqa: E501
-        :type file: bool
         :param mqtt: The mqtt of this Source.  # noqa: E501
         :type mqtt: MQTT
         """
         self.swagger_types = {
-            'file': bool,
             'mqtt': MQTT
         }
 
         self.attribute_map = {
-            'file': 'file',
             'mqtt': 'mqtt'
         }
 
-        self._file = file
         self._mqtt = mqtt
 
     @classmethod
@@ -47,27 +42,6 @@ class Source(Model):
         :rtype: Source
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def file(self) -> bool:
-        """Gets the file of this Source.
-
-
-        :return: The file of this Source.
-        :rtype: bool
-        """
-        return self._file
-
-    @file.setter
-    def file(self, file: bool):
-        """Sets the file of this Source.
-
-
-        :param file: The file of this Source.
-        :type file: bool
-        """
-
-        self._file = file
 
     @property
     def mqtt(self) -> MQTT:

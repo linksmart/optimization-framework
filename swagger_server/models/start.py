@@ -15,7 +15,7 @@ class Start(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, repetition: int=None, time_step: int=None, horizon: int=None, model_name: str=None):  # noqa: E501
+    def __init__(self, repetition: int=None, time_step: int=None, horizon: int=None, model_name: str=None, solver: str=None):  # noqa: E501
         """Start - a model defined in Swagger
 
         :param repetition: The repetition of this Start.  # noqa: E501
@@ -26,25 +26,30 @@ class Start(Model):
         :type horizon: int
         :param model_name: The model_name of this Start.  # noqa: E501
         :type model_name: str
+        :param solver: The solver of this Start.  # noqa: E501
+        :type solver: str
         """
         self.swagger_types = {
             'repetition': int,
             'time_step': int,
             'horizon': int,
-            'model_name': str
+            'model_name': str,
+            'solver': str
         }
 
         self.attribute_map = {
             'repetition': 'repetition',
             'time_step': 'time_step',
             'horizon': 'horizon',
-            'model_name': 'model_name'
+            'model_name': 'model_name',
+            'solver': 'solver'
         }
 
         self._repetition = repetition
         self._time_step = time_step
         self._horizon = horizon
         self._model_name = model_name
+        self._solver = solver
 
     @classmethod
     def from_dict(cls, dikt) -> 'Start':
@@ -146,3 +151,24 @@ class Start(Model):
         """
 
         self._model_name = model_name
+
+    @property
+    def solver(self) -> str:
+        """Gets the solver of this Start.
+
+
+        :return: The solver of this Start.
+        :rtype: str
+        """
+        return self._solver
+
+    @solver.setter
+    def solver(self, solver: str):
+        """Sets the solver of this Start.
+
+
+        :param solver: The solver of this Start.
+        :type solver: str
+        """
+
+        self._solver = solver

@@ -11,7 +11,6 @@ from swagger_server.models.grid import Grid  # noqa: F401,E501
 from swagger_server.models.load import Load  # noqa: F401,E501
 from swagger_server.models.pv import PV  # noqa: F401,E501
 from swagger_server.models.source import Source  # noqa: F401,E501
-from swagger_server.models.weather import Weather  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -21,7 +20,7 @@ class InputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, load: Load=None, photovoltaic: PV=None, ess: ESS=None, grid: Grid=None, market: Source=None, weather: Weather=None):  # noqa: E501
+    def __init__(self, load: Load=None, photovoltaic: PV=None, ess: ESS=None, grid: Grid=None, market: Source=None):  # noqa: E501
         """InputSource - a model defined in Swagger
 
         :param load: The load of this InputSource.  # noqa: E501
@@ -34,16 +33,13 @@ class InputSource(Model):
         :type grid: Grid
         :param market: The market of this InputSource.  # noqa: E501
         :type market: Source
-        :param weather: The weather of this InputSource.  # noqa: E501
-        :type weather: Weather
         """
         self.swagger_types = {
             'load': Load,
             'photovoltaic': PV,
             'ess': ESS,
             'grid': Grid,
-            'market': Source,
-            'weather': Weather
+            'market': Source
         }
 
         self.attribute_map = {
@@ -51,8 +47,7 @@ class InputSource(Model):
             'photovoltaic': 'photovoltaic',
             'ess': 'ESS',
             'grid': 'grid',
-            'market': 'market',
-            'weather': 'weather'
+            'market': 'market'
         }
 
         self._load = load
@@ -60,7 +55,6 @@ class InputSource(Model):
         self._ess = ess
         self._grid = grid
         self._market = market
-        self._weather = weather
 
     @classmethod
     def from_dict(cls, dikt) -> 'InputSource':
@@ -177,24 +171,3 @@ class InputSource(Model):
         """
 
         self._market = market
-
-    @property
-    def weather(self) -> Weather:
-        """Gets the weather of this InputSource.
-
-
-        :return: The weather of this InputSource.
-        :rtype: Weather
-        """
-        return self._weather
-
-    @weather.setter
-    def weather(self, weather: Weather):
-        """Sets the weather of this InputSource.
-
-
-        :param weather: The weather of this InputSource.
-        :type weather: Weather
-        """
-
-        self._weather = weather
