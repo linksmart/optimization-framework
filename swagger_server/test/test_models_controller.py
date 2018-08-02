@@ -6,12 +6,25 @@ from flask import json
 from six import BytesIO
 
 from swagger_server.models.model import Model  # noqa: E501
+from swagger_server.models.model_answer import ModelAnswer  # noqa: E501
 from swagger_server.models.model_url import ModelUrl  # noqa: E501
 from swagger_server.test import BaseTestCase
 
 
-class TestModelController(BaseTestCase):
-    """ModelController integration test stubs"""
+class TestModelsController(BaseTestCase):
+    """ModelsController integration test stubs"""
+
+    def test_get_models_in(self):
+        """Test case for get_models_in
+
+        Fetches all installed models in the framework
+        """
+        response = self.client.open(
+            '/v1/models',
+            method='GET',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
 
     def test_optimization_model(self):
         """Test case for optimization_model
@@ -20,7 +33,7 @@ class TestModelController(BaseTestCase):
         """
         upModel = Model()
         response = self.client.open(
-            '/v1/model',
+            '/v1/models/upload/{name}'.format(name='name_example'),
             method='POST',
             data=json.dumps(upModel),
             content_type='text/plain')
@@ -34,7 +47,7 @@ class TestModelController(BaseTestCase):
         """
         upModelUrl = ModelUrl()
         response = self.client.open(
-            '/v1/model/url',
+            '/v1/models/upload/url',
             method='POST',
             data=json.dumps(upModelUrl),
             content_type='application/json')

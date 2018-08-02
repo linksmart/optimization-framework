@@ -13,16 +13,16 @@ from swagger_server.test import BaseTestCase
 class TestRegistryController(BaseTestCase):
     """RegistryController integration test stubs"""
 
-    def test_load_source(self):
-        """Test case for load_source
+    def test_input_source(self):
+        """Test case for input_source
 
         Creates a new data source as input
         """
-        InputSource = InputSource()
+        Input_Source = InputSource()
         response = self.client.open(
             '/v1/registry/input/',
             method='POST',
-            data=json.dumps(InputSource),
+            data=json.dumps(Input_Source),
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -32,11 +32,11 @@ class TestRegistryController(BaseTestCase):
 
         Creates a new data source as ouput
         """
-        OutputSource = OutputSource()
+        Output_Source = OutputSource()
         response = self.client.open(
             '/v1/registry/output/',
             method='POST',
-            data=json.dumps(OutputSource),
+            data=json.dumps(Output_Source),
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
