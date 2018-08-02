@@ -41,14 +41,14 @@ def input_source(Input_Source):  # noqa: E501
         # limitation of qos
         # topic just base name
         # check with the model
-        try:
+        """try:
             check = error_check_input(Input_Source)
             if check != 0:
                 message = "Definition Error " + check
                 logger.error(message)
                 return message
         except Exception as e:
-            logger.error(e)
+            logger.error(e)"""
         # Writes the registry/output to a txt file in ordner utils
         path = getFilePath("utils", "Input.registry")
         with open(path, 'w') as outfile:
@@ -60,7 +60,7 @@ def input_source(Input_Source):  # noqa: E501
             outfile.write(id)
         return 'Data source Id: ' + str(id)
     else:
-        return 'Data not in json format'
+        return 'Data is not in json format'
 
 
 
@@ -106,14 +106,14 @@ def output_source(Output_Source):  # noqa: E501
             logger.info("This error")
             logger.error(e)
 
-        try:
+        """try:
             check=error_check_output_ambiguity(Output_Source)
             if check != 0:
                 message = "Definition Error "+ check +": File and MQTT options chosen at the same time"
                 logger.error(message)
                 return message
         except Exception as e:
-            logger.error(e)
+            logger.error(e)"""
         #Writes the registry/output to a txt file in ordner utils
         path = getFilePath("utils", "Output.registry")
         with open(path, 'w') as outfile:
@@ -149,7 +149,7 @@ def error_check_output_ambiguity(object):
 
 def error_check_input(object):
     load = object.load.to_dict()
-    if (str(load["forecast"]) == "True"):
+    if (str(load["internal_forecast"]) == "True"):
         if (not (load["p_load"] or load["q_load"])):
             return "load : P_Load or Q_Load empty"
         elif (load["p_load"]["mqtt"] is None and load["p_load"]["file"] is None) or \
@@ -162,13 +162,13 @@ def error_check_input(object):
             return "load : Q_Load is empty OR Q_Load File and MQTT options chosen at the same time"
 
     ess = object.ess.to_dict()
-    if (ess["so_c_value"]["mqtt"] is not None and ess["so_c_value"]["file"] is not None) and \
-            (ess["so_c_value"]["mqtt"]["host"] or ess["so_c_value"]["mqtt"]["host"].isspace()) and \
-            str(ess["so_c_value"]["file"]) == "True":
-        return "ESS : SoC_Value is empty OR SoC_Value File and MQTT options chosen at the same time"
+    if (ess["soc_value"]["mqtt"] is not None and ess["soc_value"]["value_percent"] is not None) and \
+            (ess["soc_value"]["mqtt"]["host"] or ess["soc_value"]["mqtt"]["host"].isspace()) and \
+            str(ess["soc_value"]["value_percent"]) == "True":
+        return "ESS : SoC_Value is empty OR value_percent and MQTT options chosen at the same time"
 
     pv = object.photovoltaic.to_dict()
-    if (str(pv["forecast"]) == "True"):
+    if (str(pv["internal_forecast"]) == "True"):
         if (not (pv["p_pv"])):
             return "photovoltaic : P_PV empty"
         elif (pv["p_pv"]["mqtt"]["host"] or pv["p_pv"]["mqtt"]["host"].isspace()) and str(
