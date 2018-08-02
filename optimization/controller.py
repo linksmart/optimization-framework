@@ -99,7 +99,7 @@ class OptController(threading.Thread):
 
             #####create a solver
             optsolver = SolverFactory(self.solver_name)
-            logger.info("solver instantiated")
+            logger.info("solver instantiated with "+self.solver_name)
 
             ###create a solver manager
             solver_manager=SolverManagerFactory('pyro')
