@@ -43,9 +43,10 @@ class CommandController:
         self.time_step = json_object.time_step
         self.horizon = json_object.horizon
         self.repetition = json_object.repetition
+        self.solver = json_object.solver
         #logger.info("Self.factory "+str(self.factory))
 
-        self.set(ThreadFactory(self.model_name, self.time_step, self.horizon, self.repetition))
+        self.set(ThreadFactory(self.model_name, self.time_step, self.horizon, self.repetition, self.solver))
 
         #logger.info("Self.factory 2 " + str(self.factory))
         logger.info("Thread: " + str(self.get()))
