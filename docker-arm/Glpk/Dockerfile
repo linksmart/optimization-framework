@@ -5,7 +5,11 @@
 ###################################################################################################
 # Set the base image to Ubuntu
 #FROM ubuntu:16.04
-FROM python:3.6.4-jessie
+#FROM python:3.6.4-jessie
+#FROM arm32v7/debian:stretch
+FROM resin/raspberrypi3-debian:stretch
+
+
 # Dockerfile to build glpk container images # Based on Ubuntu
 # Set the base image to Ubuntu FROM ubuntu:latest
 # File Author / Maintainer MAINTAINER Douglas McCloskey <dmccloskey87@gmail.com>
@@ -15,6 +19,7 @@ USER root
 RUN apt-get update -y && apt-get install -y \
 	wget \
 	build-essential \
+	python3-pip python3-dev \
 	--no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 # Install glpk from http
@@ -60,3 +65,6 @@ RUN rm -rf /user/local/glpk-4.57.tar.gz \
 #RUN ls /usr/local/glpk-4.57
 
 ### /usr/local/lib   --> library
+
+#RUN apt-get update -y && apt-get install -y \
+#	python3-pip python3-dev
