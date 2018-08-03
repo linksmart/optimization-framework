@@ -13,6 +13,30 @@ from swagger_server.test import BaseTestCase
 class TestRegistryController(BaseTestCase):
     """RegistryController integration test stubs"""
 
+    def test_delete_registry_input(self):
+        """Test case for delete_registry_input
+
+        Deletes the registration of the framework
+        """
+        response = self.client.open(
+            '/v1/registry/input/{id}'.format(id='id_example'),
+            method='DELETE',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_delete_registry_output(self):
+        """Test case for delete_registry_output
+
+        Deletes the registration output of the framework
+        """
+        response = self.client.open(
+            '/v1/registry/output/{id}'.format(id='id_example'),
+            method='DELETE',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
     def test_input_source(self):
         """Test case for input_source
 

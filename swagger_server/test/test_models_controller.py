@@ -14,6 +14,30 @@ from swagger_server.test import BaseTestCase
 class TestModelsController(BaseTestCase):
     """ModelsController integration test stubs"""
 
+    def test_delete_models(self):
+        """Test case for delete_models
+
+        Deletes the desired model of the framework
+        """
+        response = self.client.open(
+            '/v1/models/{name}'.format(name='name_example'),
+            method='DELETE',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_delete_models_all(self):
+        """Test case for delete_models_all
+
+        Deletes all models of the framework
+        """
+        response = self.client.open(
+            '/v1/models',
+            method='DELETE',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
     def test_get_models_in(self):
         """Test case for get_models_in
 
