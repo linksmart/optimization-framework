@@ -36,6 +36,54 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.models_controller"
+    delete:
+      tags:
+      - "models"
+      summary: "Deletes all models of the framework"
+      description: ""
+      operationId: "delete_models_all"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.models_controller"
+  /models/{name}:
+    delete:
+      tags:
+      - "models"
+      summary: "Deletes the desired model of the framework"
+      description: ""
+      operationId: "delete_models"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "name"
+        in: "path"
+        description: "Name of the model to be deleted"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.models_controller"
   /models/upload/{name}:
     post:
       tags:
@@ -115,6 +163,33 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.registry_controller"
+  /registry/input/{id}:
+    delete:
+      tags:
+      - "registry"
+      summary: "Deletes the registration of the framework"
+      description: ""
+      operationId: "delete_registry_input"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Name of the registry to be deleted"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
   /registry/output/:
     post:
       tags:
@@ -136,6 +211,33 @@ paths:
       responses:
         200:
           description: "Created succesfully"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
+  /registry/output/{id}:
+    delete:
+      tags:
+      - "registry"
+      summary: "Deletes the registration output of the framework"
+      description: ""
+      operationId: "delete_registry_output"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Name of the registry to be deleted"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
         400:
           description: "Bad request"
         405:
