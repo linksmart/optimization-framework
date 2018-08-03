@@ -136,10 +136,7 @@ def optimization_model(name, upModel):  # noqa: E501
         classText = string1 + string2
 
         #Adds an indent at the beginning of each line
-        import textwrap
-        wrapper = textwrap.TextWrapper(initial_indent='\t', subsequent_indent='\t')
         for lines in upModel:
-            wrapped=wrapper.fill(lines)
             classText = classText + ('\t')+ lines +('\n')
         logger.debug("Class: " + str(classText) )
 
