@@ -20,6 +20,33 @@ def getFilePath(dir, file_name):
     data_file = os.path.join("/usr/src/app", dir, file_name)
     return data_file
 
+def delete_registry_input(id):  # noqa: E501
+    """Deletes the registration of the framework
+
+     # noqa: E501
+
+    :param id: Name of the registry to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
+def delete_registry_output(id):  # noqa: E501
+    """Deletes the registration output of the framework
+
+     # noqa: E501
+
+    :param id: Name of the registry to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
+
 def input_source(Input_Source):  # noqa: E501
     """Creates a new data source as input
 

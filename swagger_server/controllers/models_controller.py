@@ -32,6 +32,55 @@ def getFilePath(dir, file_name):
     data_file = os.path.join("/usr/src/app", dir, file_name)
     return data_file
 
+def delete_models(name):  # noqa: E501
+    """Deletes the desired model of the framework
+
+     # noqa: E501
+
+    :param name: Name of the model to be deleted
+    :type name: str
+
+    :rtype: None
+    """
+    file_name=str(name)+".py"
+    logger.debug("This model will be erased: "+str(name))
+    file_path= os.path.join("/usr/src/app/optimization/models", file_name)
+    try:
+        os.remove(file_path)
+        answer="OK"
+    except Exception as e:
+        logger.error(e)
+        answer= str(e)
+    return answer
+
+
+def delete_models_all():  # noqa: E501
+    """Deletes all models of the framework
+
+     # noqa: E501
+
+
+    :rtype: None
+    """
+    f = []
+    mypath = "/usr/src/app/optimization/models"
+    for (dirpath, dirnames, filenames) in walk(mypath):
+        f.extend(filenames)
+        break
+    try:
+        for filenames in f:
+            logger.debug("Filenames: " + str(filenames))
+            if not "ReferenceModel.py" in filenames:
+                file_path = os.path.join("/usr/src/app/optimization/models", filenames)
+                logger.debug("File_path: "+file_path)
+                os.remove(file_path)
+        answer = "OK"
+    except Exception as e:
+        logger.error(e)
+        answer= str(e)
+    return answer
+
+
 def get_models_in():  # noqa: E501
     """Fetches all installed models in the framework
 
