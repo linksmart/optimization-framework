@@ -12,7 +12,7 @@ from optimization.loadForecastPublisher import LoadForecastPublisher
 from prediction.LSTMmodel import LSTMmodel
 from prediction.modelPrediction import ModelPrediction
 from prediction.processingData import ProcessingData
-from prediction.rawDataReceiver import RawDataReceiver
+from prediction.rawLoadDataReceiver import RawLoadDataReceiver
 from prediction.trainModel import TrainModel
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -20,7 +20,7 @@ logger = logging.getLogger(__file__)
 
 class LoadPrediction(threading.Thread):
 
-    def __init__(self, config, timesteps, horizon):
+    def __init__(self, config, input_config_parser, timesteps, horizon):
         super().__init__()
         self.stopRequest = threading.Event()
 
@@ -41,10 +41,10 @@ class LoadPrediction(threading.Thread):
         self.utils.copy_files_from_host(self.raw_data_file_host, self.raw_data_file_container)
         self.utils.copy_files_from_host(self.model_file_host, self.model_file_container)
 
-        raw_data_topic = config.get("IO", "raw.data.topic")
-        raw_data_topic = json.loads(raw_data_topic)
-        topics = [raw_data_topic]
-        self.raw_data = RawDataReceiver(topics, config, self.num_timesteps, 24*10, self.raw_data_file_container)
+        self.input_config_parser = input_config_parser
+
+        topic = self.input_config_parser.get_params("P_Load")
+        self.raw_data = RawLoadDataReceiver(topic, config, self.num_timesteps, 24 * 10, self.raw_data_file_container)
         self.processingData = ProcessingData()
 
         self.q = Queue(maxsize=0)

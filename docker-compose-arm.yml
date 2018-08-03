@@ -45,6 +45,7 @@ services:
     #image: openenergy/rpi-mosquitto
     ports:
       - "1883:1883"
+    container_name: "mosquito_S4G"
   #zeromq:
    # image: zeromq/zeromq
     #ports:

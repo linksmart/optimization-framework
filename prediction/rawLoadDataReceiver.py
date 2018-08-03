@@ -14,11 +14,11 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 
-class RawDataReceiver(DataReceiver):
+class RawLoadDataReceiver(DataReceiver):
 
     def __init__(self, topic_params, config, buffer, training_data, save_path):
         self.file_path = save_path
-        super().__init__(topic_params, config, [])
+        super().__init__(False, topic_params, config, [])
         self.buffer_data = []
         self.buffer = buffer
         self.training_data = training_data

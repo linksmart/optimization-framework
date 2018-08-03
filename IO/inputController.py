@@ -8,6 +8,7 @@ import logging
 
 import os
 
+from optimization.ESSDataReceiver import ESSDataReceiver
 from optimization.optimizationDataReceiver import OptimizationDataReceiver
 
 
@@ -16,20 +17,22 @@ logger = logging.getLogger(__file__)
 
 class InputController:
 
-    def __init__(self, input_config, config, timesteps):
+    def __init__(self, input_config_parser, config, timesteps):
         self.optimization_data = {}
-        self.input_config = input_config
+        self.input_config_parser = input_config_parser
         self.config = config
         self.timesteps = timesteps
         self.load_forecast = False
         self.pv_forecast = False
-        self.parse_input_config(input_config)
+        # need to get a internal_forecast from input config parser
+        self.ess_data = False
+        self.parse_input_config()
 
         self.set_timestep_data()
         self.set_params()
 
+        """for predictions"""
         topics = []
-        #self.load_forecast = False
         if self.load_forecast:
             load_forecast_topic = config.get("IO", "load.forecast.topic")
             load_forecast_topic = json.loads(load_forecast_topic)
@@ -43,9 +46,14 @@ class InputController:
         else:
             self.read_input_data("P_PV_Forecast", "pvForecast.txt")
         if len(topics) > 0:
-            self.subscriber = OptimizationDataReceiver(topics, config)
+            self.prediction_subscriber = OptimizationDataReceiver(topics, config)
         else:
-            self.subscriber = None
+            self.prediction_subscriber = None
+
+        # ESS data
+        if self.ess_data:
+            topic = self.input_config_parser.get_params("SoC_Value")
+            self.ess_data_receiver = ESSDataReceiver(False, topic, config)
 
     def set_timestep_data(self):
         i = 0
@@ -62,25 +70,12 @@ class InputController:
         self.optimization_data["Target"] = {None: 1}
         self.optimization_data["dT"] = {None: 3600}
 
-    def parse_input_config(self, input_config):
-        data = {}
-        for k, v in input_config.items():
-            if isinstance(v, dict):
-                for k1, v1 in v.items():
-                    if k1 == "meta":
-                        for k2, v2 in v1.items():
-                            v2 = float(v2)
-                            if v2.is_integer():
-                                v2 = int(v2)
-                            if k == "ESS":
-                                data[k2] = {0:v2}
-                            else:
-                                data[k2] = {None:v2}
+    def parse_input_config(self):
+        data = self.input_config_parser.get_optimization_values()
         self.optimization_data.update(data)
-        if "load" in input_config.keys():
-            self.load_forecast = bool(input_config["load"]["Internal_Forecast"])
-        if "photovoltaic" in input_config.keys():
-            self.pv_forecast = bool(input_config["photovoltaic"]["Internal_Forecast"])
+        self.load_forecast = self.input_config_parser.get_forecast_flag("load", False)
+        self.pv_forecast = self.input_config_parser.get_forecast_flag("photovoltaic", False)
+        self.ess_data = self.input_config_parser.get_forecast_flag("SoC_Value", False)
 
     def read_input_data(self, topic, file):
         data = {}
@@ -108,18 +103,21 @@ class InputController:
         pv_check = not self.pv_forecast
         load_check = not self.load_forecast
         while not (pv_check and load_check):
-            if self.subscriber:
-                data = self.subscriber.get_data()
+            if self.prediction_subscriber:
+                data = self.prediction_subscriber.get_data()
                 self.optimization_data.update(data)
                 if "P_PV_Forecast" in data.keys():
                     pv_check = True
                 if "P_Load_Forecast" in data.keys():
                     load_check = True
+        if self.ess_data:
+            data = self.ess_data_receiver.get_data()
+            self.optimization_data.update(data)
         return {None: self.optimization_data.copy()}
 
     def Stop(self):
-        if self.subscriber is not None:
-            self.subscriber.exit()
+        if self.prediction_subscriber is not None:
+            self.prediction_subscriber.exit()
 
     def set_params(self):
         params = {
@@ -148,7 +146,6 @@ class InputController:
                 21: 0.0,
                 22: 0.0,
                 23: 0.0},
-            'ESS_SoC_Value': {0: 0.35},
             'Price_Forecast': {
                 0: 34.61,
                 1: 33.28,
@@ -179,4 +176,6 @@ class InputController:
             'Grid_X': {None: 0.282},
             'Grid_dV_Tolerance': {None: 0.1}
         }
+        if not self.ess_data and not "ESS_SoC_Value" in self.optimization_data.keys():
+            params['ESS_SoC_Value'] = {0: 0.35}
         self.optimization_data.update(params)

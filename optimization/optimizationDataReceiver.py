@@ -15,7 +15,7 @@ logger = logging.getLogger(__file__)
 class OptimizationDataReceiver(DataReceiver):
 
     def __init__(self, topic_params, config):
-        super().__init__(topic_params, config)
+        super().__init__(True, topic_params, config)
 
     def on_msg_received(self, payload):
         logger.debug("Data received : " + payload)

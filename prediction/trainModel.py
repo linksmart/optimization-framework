@@ -23,8 +23,10 @@ class TrainModel:
 
         # Training a stateful LSTM
         for i in range(num_epochs):
-            print("Epoch {:d}/{:d}".format(i + 1, num_epochs))
+            logger.info("Epoch " + str(i + 1) + "/" + str(num_epochs))
             model.fit(Xtrain, Ytrain, batch_size=batch_size, epochs=1, verbose=1, callbacks=callbacks_list,
                       shuffle=False)
+            logger.info("fit")
             model.reset_states()
+        logger.info("Training completed")
         return model

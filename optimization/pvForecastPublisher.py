@@ -19,7 +19,7 @@ logger = logging.getLogger(__file__)
 
 class PVForecastPublisher(DataPublisher):
 
-    def __init__(self, topic_params, config):
+    def __init__(self, internal_topic_params, config):
         self.pv_data = {}
         city = "Bonn, Germany"
         radiation = Radiation(city, True)
@@ -27,7 +27,7 @@ class PVForecastPublisher(DataPublisher):
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
         self.pv_thread.start()
 
-        super().__init__(topic_params, config, 30)
+        super().__init__(internal_topic_params, config, 30)
 
     def get_pv_data_from_source(self, radiation, q):
         """PV Data fetch thread. Runs at 23:30 every day"""

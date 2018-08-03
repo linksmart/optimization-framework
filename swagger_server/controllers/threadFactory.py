@@ -4,11 +4,11 @@ import logging
 import configparser
 import json
 
+from IO.inputConfigParser import InputConfigParser
 from optimization.controller import OptController
-from optimization.loadForecastPublisher import LoadForecastPublisher
-from optimization.pvForecastPublisher import PVForecastPublisher
 from prediction.mockDataPublisher import MockDataPublisher
 from prediction.loadPrediction import LoadPrediction
+from prediction.pvPrediction import PVPrediction
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -74,37 +74,29 @@ class ThreadFactory:
             logger.error("Input file not found")
             input_config = {}
 
+        input_config_parser = InputConfigParser(input_config)
         #Initializing constructor of the optimization controller thread
-        self.opt = OptController("obj1", self.solver_name, self.data_path, self.model_path, self.time_step,
-                                 self.repetition, output_config, input_config, config)
+        self.opt = OptController("obj1", self.solver_name, self.model_path, self.time_step,
+                                 self.repetition, output_config, input_config_parser, config)
         ####starts the optimization controller thread
         results = self.opt.start()
 
         """Need to get data from config or input.registry?"""
-        self.pv_forecast = True
-        if "photovoltaic" in input_config.keys():
-            self.pv_forecast = bool(input_config["photovoltaic"]["Internal_Forecast"])
+        self.pv_forecast = input_config_parser.get_forecast_flag("photovoltaic", False)
         if self.pv_forecast:
-            pv_forecast_topic = config.get("IO", "pv.forecast.topic")
-            pv_forecast_topic = json.loads(pv_forecast_topic)
-            self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config)
-            self.pv_forecast_pub.start()
+            self.pv_prediction = PVPrediction(config, input_config_parser)
 
-        """need to to be in a separate file?"""
-        self.load_forecast = True
-
-        if "load" in input_config.keys():
-            self.load_forecast = bool(input_config["load"]["Internal_Forecast"])
+        self.load_forecast = input_config_parser.get_forecast_flag("load", False)
         if self.load_forecast:
-            raw_data_topic = config.get("IO", "raw.data.topic")
-            raw_data_topic = json.loads(raw_data_topic)
-            self.mock_data = MockDataPublisher(raw_data_topic, config)
+            raw_p_load_data_topic = config.get("IO", "raw.data.topic")
+            raw_p_load_data_topic = json.loads(raw_p_load_data_topic)
+            self.mock_data = MockDataPublisher(raw_p_load_data_topic, config)
             self.mock_data.start()
             logger.info("Creating load prediction controller thread")
             # Creating an object of the configuration file
             config = configparser.RawConfigParser()
             config.read(self.getFilePath("utils", "ConfigFile.properties"))
-            self.load_prediction = LoadPrediction(config, self.time_step, self.horizon)
+            self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
             self.load_prediction.start()
 
 
@@ -112,12 +104,12 @@ class ThreadFactory:
         try:
             if self.load_forecast:
                 logger.info("Stopping mock data thread")
-                #self.mock_data.Stop()
-                logger.info("Stopping load prediction thread")
-                #self.load_prediction.Stop()
+                self.mock_data.Stop()
+                logger.info("Stopping load thread")
+                self.load_prediction.Stop()
             if self.pv_forecast:
-                logger.info("Stopping pv forecast thread")
-                self.pv_forecast_pub.Stop()
+                logger.info("Stopping pv thread")
+                self.pv_prediction.Stop()
             logger.info("Stopping optimization controller thread")
             self.opt.Stop()
             logger.info("Optimization controller thread stopped")

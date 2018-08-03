@@ -22,21 +22,43 @@ logger = logging.getLogger(__file__)
 
 class DataReceiver(ABC):
 
-    def __init__(self, topic_params, config, emptyValue={}):
+    def __init__(self, internal, topic_params, config, emptyValue={}):
         super().__init__()
+        self.internal = internal
         self.topic_params = topic_params
         self.emptyValue = emptyValue
         self.data = self.emptyValue.copy()
         self.data_update = False
         self.config = config
-        self.channel = config.get("IO", "channel")
-        topics = self.get_channel_params()
-        if self.channel == "MQTT":
-            self.init_mqtt(topics)
-        elif self.channel == "ZMQ":
-            self.init_zmq(topics)
+        self.channel = "MQTT"
+        self.topics = None
+        self.port = None
+        self.setup()
 
-    def get_channel_params(self):
+        if self.channel == "MQTT":
+            self.init_mqtt(self.topics)
+        elif self.channel == "ZMQ":
+            self.init_zmq(self.topics)
+
+    def setup(self):
+        if self.internal:
+            self.channel = self.config.get("IO", "channel")
+            self.topics = self.get_internal_channel_params()
+        else:
+            self.topics, self.host = self.get_external_channel_params()
+
+    def get_external_channel_params(self):
+        topic_qos = []
+        # read from config
+        host = self.config.get("IO", "mqtt.host")
+        if self.topic_params:
+            topic = self.topic_params["topic"]
+            host = self.topic_params["host"]
+            qos = self.topic_params["qos"]
+            topic_qos.append((topic, qos))
+        return topic_qos, host
+
+    def get_internal_channel_params(self):
         if self.channel == "MQTT":
             topic_qos = []
             for topic in self.topic_params:
@@ -62,6 +84,9 @@ class DataReceiver(ABC):
 
     def init_mqtt(self, topic_qos):
         logger.info("Initializing mqtt subscription client")
+        if not self.port:
+            self.port = 1883
+            #read from config
         self.client_id = "client_receive" + str(randrange(100))
         self.mqtt = MQTTClient(str(self.host), self.port, self.client_id)
         self.mqtt.subscribe(topic_qos, self.on_msg_received)
