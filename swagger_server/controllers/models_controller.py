@@ -43,14 +43,15 @@ def delete_models(name):  # noqa: E501
     :rtype: None
     """
     file_name=str(name)+".py"
-    logger.debug("This model will be erased: "+str(name))
-    file_path= os.path.join("/usr/src/app/optimization/models", file_name)
-    try:
-        os.remove(file_path)
-        answer="OK"
-    except Exception as e:
-        logger.error(e)
-        answer= str(e)
+    if not "ReferenceModel.py" in file_name:
+        logger.debug("This model will be erased: "+str(name))
+        file_path= os.path.join("/usr/src/app/optimization/models", file_name)
+        try:
+            os.remove(file_path)
+            answer="OK"
+        except Exception as e:
+            logger.error(e)
+            answer= str(e)
     return answer
 
 
@@ -125,11 +126,26 @@ def optimization_model(name, upModel):  # noqa: E501
 
     try:
         #writes thw data into a file with the given name
-        print("This is the file name: " + name)
+        logger.debug("This is the file name: " + name)
         data_file = os.path.join("/usr/src/app/optimization/models", name)+".py"
-        #print("File name: "+data_file)
-        with open(data_file, mode='wb') as localfile:
-            localfile.write(upModel)
+        string1 = "from pyomo.core import *\n"
+        string2 = "class Model:\n"
+        upModel = connexion.request.get_data(as_text=True)
+        upModel = upModel.splitlines()
+
+        classText = string1 + string2
+
+        #Adds an indent at the beginning of each line
+        import textwrap
+        wrapper = textwrap.TextWrapper(initial_indent='\t', subsequent_indent='\t')
+        for lines in upModel:
+            wrapped=wrapper.fill(lines)
+            classText = classText + ('\t')+ lines +('\n')
+        logger.debug("Class: " + str(classText) )
+
+        # Saves the class into the /optimization/models
+        with open(data_file, mode='w') as localfile:
+            localfile.write(classText)
 
         # Creating an object of the configuration file in order to change the model.name into the SolverSection
         config = configparser.RawConfigParser()
@@ -138,16 +154,16 @@ def optimization_model(name, upModel):  # noqa: E501
         with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
             config.write(configfile)
         config.read(getFilePath("utils", "ConfigFile.properties"))
-        logger.info("The model name changed?: "+config['SolverSection']['model.name'])
-        #print("Config solver name: "+config.get("SolverSection", "model.name"))
-
+        logger.info("The model name was saved in the configuration file: "+config['SolverSection']['model.name'])
+        answer = "OK"
 
     except Exception as e:
         logger.error(e)
+        answer = e
     #upModel=Model.from_dict(connexion.request)
     #data = getDataJSON(upModel, "upModel")
     #print(data)
-    return 'Success'
+    return answer
 
 
 
