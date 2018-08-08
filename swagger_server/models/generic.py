@@ -16,30 +16,25 @@ class Generic(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name: str=None, file: bool=None, generic_name: Source=None):  # noqa: E501
+    def __init__(self, name: str=None, generic_name: Source=None):  # noqa: E501
         """Generic - a model defined in Swagger
 
         :param name: The name of this Generic.  # noqa: E501
         :type name: str
-        :param file: The file of this Generic.  # noqa: E501
-        :type file: bool
         :param generic_name: The generic_name of this Generic.  # noqa: E501
         :type generic_name: Source
         """
         self.swagger_types = {
             'name': str,
-            'file': bool,
             'generic_name': Source
         }
 
         self.attribute_map = {
             'name': 'name',
-            'file': 'file',
             'generic_name': 'generic_name'
         }
 
         self._name = name
-        self._file = file
         self._generic_name = generic_name
 
     @classmethod
@@ -73,33 +68,10 @@ class Generic(Model):
         :param name: The name of this Generic.
         :type name: str
         """
+        if name is None:
+            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
 
         self._name = name
-
-    @property
-    def file(self) -> bool:
-        """Gets the file of this Generic.
-
-        True for inserting data as plain text  # noqa: E501
-
-        :return: The file of this Generic.
-        :rtype: bool
-        """
-        return self._file
-
-    @file.setter
-    def file(self, file: bool):
-        """Sets the file of this Generic.
-
-        True for inserting data as plain text  # noqa: E501
-
-        :param file: The file of this Generic.
-        :type file: bool
-        """
-        if file is None:
-            raise ValueError("Invalid value for `file`, must not be `None`")  # noqa: E501
-
-        self._file = file
 
     @property
     def generic_name(self) -> Source:

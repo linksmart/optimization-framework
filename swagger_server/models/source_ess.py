@@ -16,26 +16,21 @@ class SourceESS(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None, value_percent: int=None):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None):  # noqa: E501
         """SourceESS - a model defined in Swagger
 
         :param mqtt: The mqtt of this SourceESS.  # noqa: E501
         :type mqtt: MQTT
-        :param value_percent: The value_percent of this SourceESS.  # noqa: E501
-        :type value_percent: int
         """
         self.swagger_types = {
-            'mqtt': MQTT,
-            'value_percent': int
+            'mqtt': MQTT
         }
 
         self.attribute_map = {
-            'mqtt': 'mqtt',
-            'value_percent': 'value_percent'
+            'mqtt': 'mqtt'
         }
 
         self._mqtt = mqtt
-        self._value_percent = value_percent
 
     @classmethod
     def from_dict(cls, dikt) -> 'SourceESS':
@@ -68,28 +63,3 @@ class SourceESS(Model):
         """
 
         self._mqtt = mqtt
-
-    @property
-    def value_percent(self) -> int:
-        """Gets the value_percent of this SourceESS.
-
-
-        :return: The value_percent of this SourceESS.
-        :rtype: int
-        """
-        return self._value_percent
-
-    @value_percent.setter
-    def value_percent(self, value_percent: int):
-        """Sets the value_percent of this SourceESS.
-
-
-        :param value_percent: The value_percent of this SourceESS.
-        :type value_percent: int
-        """
-        if value_percent is not None and value_percent > 100:  # noqa: E501
-            raise ValueError("Invalid value for `value_percent`, must be a value less than or equal to `100`")  # noqa: E501
-        if value_percent is not None and value_percent < 0:  # noqa: E501
-            raise ValueError("Invalid value for `value_percent`, must be a value greater than or equal to `0`")  # noqa: E501
-
-        self._value_percent = value_percent
