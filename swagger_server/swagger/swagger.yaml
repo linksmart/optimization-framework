@@ -135,24 +135,24 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.models_controller"
-  /registry/input/:
+  /data_source/mqtt:
     post:
       tags:
-      - "registry"
-      summary: "Creates a new data source as input"
+      - "data_source"
+      summary: "Creates a new mqtt data source as input"
       description: ""
-      operationId: "input_source"
+      operationId: "mqtt_input_source"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
       - in: "body"
-        name: "Input_Source"
+        name: "MQTT_Input_Source"
         description: "Data source to be created"
         required: true
         schema:
-          $ref: "#/definitions/InputSource"
+          $ref: "#/definitions/MQTTInputSource"
       responses:
         201:
           description: "Created succesfully"
@@ -162,54 +162,29 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
-  /registry/input/{id}:
-    delete:
-      tags:
-      - "registry"
-      summary: "Deletes the registration of the framework"
-      description: ""
-      operationId: "delete_registry_input"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "Name of the registry to be deleted"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-        400:
-          description: "Bad request"
-        405:
-          description: "Invalid input"
-        500:
-          description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
-  /registry/output/:
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+
+  /data_source/file:
     post:
       tags:
-      - "registry"
-      summary: "Creates a new data source as ouput"
+      - "data_source"
+      summary: "Creates a new data source as input"
       description: ""
-      operationId: "output_source"
+      operationId: "file_input_source"
       consumes:
       - "application/json"
+      - "text/plain"
       produces:
       - "application/json"
       parameters:
       - in: "body"
-        name: "Output_Source"
-        description: "Output data source to be created"
+        name: "File_Input_Source"
+        description: "Dataset submitted to the framework"
         required: true
         schema:
-          $ref: "#/definitions/OutputSource"
+          $ref: "#/definitions/FileInputSource"
       responses:
-        200:
+        201:
           description: "Created succesfully"
         400:
           description: "Bad request"
@@ -217,14 +192,15 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
-  /registry/output/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+
+  /data_source/{id}:
     delete:
       tags:
-      - "registry"
-      summary: "Deletes the registration output of the framework"
+      - "data_source"
+      summary: "Deletes all loaded data"
       description: ""
-      operationId: "delete_registry_output"
+      operationId: "delete_data_source_all"
       consumes:
       - "application/json"
       produces:
@@ -232,7 +208,7 @@ paths:
       parameters:
       - name: "id"
         in: "path"
-        description: "Name of the registry to be deleted"
+        description: "Id of the data source to be deleted"
         required: true
         type: "string"
       responses:
@@ -244,14 +220,15 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
-  /data/{param_name}/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+
+  /data_source/{param_name}/{id}:
     get:
       tags:
-      - "data"
+      - "data_source"
       summary: "Receives data from the framework"
       description: ""
-      operationId: "get_data_in"
+      operationId: "get_data_source_values"
       consumes:
       - "application/json"
       produces:
@@ -259,7 +236,7 @@ paths:
       parameters:
       - name: "param_name"
         in: "path"
-        description: "Name of the data source"
+        description: "Name of the parameter of the optimization model"
         required: true
         type: "string"
       - name: "id"
@@ -267,12 +244,6 @@ paths:
         description: "ID of the data source"
         required: true
         type: "string"
-      - in: "body"
-        name: "dataset"
-        description: "Dataset submitted to the framework"
-        required: false
-        schema:
-          $ref: "#/definitions/dataset"
       responses:
         200:
           description: "Created succesfully"
@@ -282,13 +253,13 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_controller"
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
     put:
       tags:
-      - "data"
-      summary: "Submits load data to the framework"
+      - "data_source"
+      summary: "Submits data to the framework"
       description: ""
-      operationId: "load_data_in"
+      operationId: "data_in_parameter"
       consumes:
       - "application/json"
       - "text/plain"
@@ -308,7 +279,7 @@ paths:
       - in: "body"
         name: "dataset"
         description: "Dataset submitted to the framework"
-        required: false
+        required: true
         schema:
           type: "object"
       responses:
@@ -320,10 +291,10 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_controller"
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
     delete:
       tags:
-      - "data"
+      - "data_source"
       summary: "Deletes the loaded data"
       description: ""
       operationId: "delete_parameter_data"
@@ -351,14 +322,15 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_controller"
-  /data/{id}:
-    delete:
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+
+  /control/mqtt/{id}:
+    put:
       tags:
-      - "data"
-      summary: "Deletes all loaded data"
+      - "control"
+      summary: "Creates a new control setpoint as ouput"
       description: ""
-      operationId: "delete_parameter_all"
+      operationId: "output_source_mqtt"
       consumes:
       - "application/json"
       produces:
@@ -366,7 +338,39 @@ paths:
       parameters:
       - name: "id"
         in: "path"
-        description: "Id of the registry to be deleted"
+        description: "Name of the data source to be actualized"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "Output_Source"
+        description: "Output data source to be created"
+        required: true
+        schema:
+          $ref: "#/definitions/OutputSource"
+      responses:
+        200:
+          description: "Created succesfully"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+    delete:
+      tags:
+      - "control"
+      summary: "Deletes the registration output of the framework"
+      description: ""
+      operationId: "delete_mqtt_output"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Name of the registry to be deleted"
         required: true
         type: "string"
       responses:
@@ -378,8 +382,69 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_controller"
-  /command/start:
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+  /control/file/{id}:
+    put:
+      tags:
+      - "control"
+      summary: "Creates a new data source as ouput"
+      description: ""
+      operationId: "output_source_file"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Name of the registry to be actualized"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "Output_Source"
+        description: "Output data source to be created"
+        required: true
+        schema:
+          $ref: "#/definitions/Path_Definition"
+
+      responses:
+        200:
+          description: "Created succesfully"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+    delete:
+      tags:
+      - "control"
+      summary: "Deletes the registration output of the framework"
+      description: ""
+      operationId: "delete_file_output"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Name of the registry to be deleted"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+
+  /command/start/{id}:
     put:
       tags:
       - "command"
@@ -389,6 +454,11 @@ paths:
       consumes:
       - "application/json"
       parameters:
+      - name: "id"
+        in: "path"
+        description: "Id of the registry to be started"
+        required: true
+        type: "string"
       - in: "body"
         name: "startOFW"
         description: "Start command for the optimization framework \n repetitions:\
@@ -402,7 +472,7 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.command_controller"
-  /command/stop:
+  /command/stop/{id}:
     put:
       tags:
       - "command"
@@ -411,13 +481,20 @@ paths:
       operationId: "framework_stop"
       consumes:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Id of the registry to be stopped"
+        required: true
+        type: "string"
       responses:
         200:
           description: "OK"
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.command_controller"
+
+
 definitions:
   Start:
     type: "object"
@@ -440,15 +517,20 @@ definitions:
       solver:
         type: "string"
 
+  Path_Definition:
+    type: "object"
+    required:
+    - "path"
+    properties:
+      path:
+        type: "string"
+        description: "Path where the results will be stored"
+
   Load:
     type: "object"
     required:
-    - "Internal_Forecast"
     - "P_Load"
     properties:
-      Internal_Forecast:
-        type: "boolean"
-        description: "Is it forecasted data? Or row data"
       P_Load:
         $ref: "#/definitions/Source"
       Q_Load:
@@ -468,12 +550,8 @@ definitions:
   PV:
     type: "object"
     required:
-    - "Internal_Forecast"
     - "P_PV"
     properties:
-      Internal_Forecast:
-        type: "boolean"
-        description: "Is it forecasted data? Or row data"
       P_PV:
         $ref: "#/definitions/Source"
       meta:
@@ -584,16 +662,17 @@ definitions:
       mqtt:
         $ref: "#/definitions/MQTT"
     description: "Selection between MQTT or file mode inputs or outputs"
-    example:
-      mqtt:
-        qos: 0
-        host: "host"
-        topic: "topic"
+
+
   SourceESS:
     type: "object"
     properties:
       mqtt:
         $ref: "#/definitions/MQTT"
+
+  SourceESSFile:
+    type: "object"
+    properties:
       value_percent:
         type: "integer"
         format: "int32"
@@ -663,9 +742,11 @@ definitions:
       name: "ModelUrl"
       wrapped: true
 
-  InputSource:
+  MQTTInputSource:
     type: "object"
     properties:
+      generic:
+        $ref: "#/definitions/Generic"
       load:
         $ref: "#/definitions/Load"
       photovoltaic:
@@ -676,8 +757,23 @@ definitions:
         $ref: "#/definitions/grid"
       global_control:
         $ref: "#/definitions/Global_Control"
+
+
+  FileInputSource:
+    type: "object"
+    properties:
       generic:
-        $ref: "#/definitions/Generic"
+        $ref: "#/definitions/Generic_File"
+      load:
+        $ref: "#/definitions/Load_File"
+      photovoltaic:
+        $ref: "#/definitions/PV_File"
+      ESS:
+        $ref: "#/definitions/ESS_File"
+      grid:
+        $ref: "#/definitions/grid"
+      global_control:
+        $ref: "#/definitions/Global_Control_File"
 
 
   OutputSource:
@@ -711,15 +807,71 @@ definitions:
   Global_Control:
     type: "object"
     required:
-    - "file"
+    - "ESS_Control"
     properties:
-      file:
-        type: "boolean"
-        description: "True for inserting data as plain text"
       ESS_Control:
         $ref: "#/definitions/Source"
 
+  Global_Control_File:
+    type: "object"
+    required:
+    - "ESS_Control"
+    properties:
+      ESS_Control:
+        type: "object"
+
+  PV_File:
+    type: "object"
+    required:
+    - "P_PV"
+    properties:
+      P_PV:
+        type: array
+        items:
+          type: number
+      meta:
+        $ref: "#/definitions/metaPV"
+
+  ESS_File:
+    type: "object"
+    required:
+    - "SoC_Value"
+    properties:
+      SoC_Value:
+        type: "integer"
+        format: "int32"
+        minimum: 0
+        maximum: 100
+      meta:
+        $ref: "#/definitions/metaESS"
+
+  Load_File:
+    type: "object"
+    required:
+    - "P_Load"
+    properties:
+      P_Load:
+        type: "object"
+        description: "Inserting data as plain text"
+      Q_Load:
+        type: "object"
+        description: "Inserting data as plain text"
+      meta:
+        $ref: "#/definitions/metaLoad"
+
+
   Generic:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      name:
+        type: "string"
+        description: "Name defining the parameter into the optimization model"
+      generic_name:
+        $ref: "#/definitions/Source"
+
+  Generic_File:
     type: "object"
     required:
     - "file"
@@ -728,7 +880,6 @@ definitions:
         type: "string"
         description: "Name defining the parameter into the optimization model"
       file:
-        type: "boolean"
-        description: "True for inserting data as plain text"
-      generic_name:
-        $ref: "#/definitions/Source"
+        type: "object"
+        description: "Inserting data as plain text"
+
