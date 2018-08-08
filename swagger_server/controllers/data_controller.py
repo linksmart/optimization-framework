@@ -29,7 +29,40 @@ def get_id():
     logger.info("UID is : "+uid)
     return uid
 
-def get_data_in(id, dataset=None):  # noqa: E501
+def check_id(id):
+    directory = os.path.join(os.getcwd(), "optimization", str(id))
+    if os.path.exists(directory):
+        return True
+    else:
+        return False
+def delete_parameter_all(id):  # noqa: E501
+    """Deletes all loaded data
+
+     # noqa: E501
+
+    :param id: Id of the registry to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
+def delete_parameter_data(param_name, id):  # noqa: E501
+    """Deletes the loaded data
+
+     # noqa: E501
+
+    :param param_name: Name of the data source
+    :type param_name: str
+    :param id: Name of the registry to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+def get_data_in(param_name, id, dataset=None):  # noqa: E501
     """Receives data from the framework
 
      # noqa: E501
@@ -41,6 +74,7 @@ def get_data_in(id, dataset=None):  # noqa: E501
 
     :rtype: None
     """
+
     uid = get_id()
     if uid != "0" and uid == id:
         path = getFilePath("optimization", "loadForecast.txt")
@@ -62,7 +96,7 @@ def get_data_in(id, dataset=None):  # noqa: E501
         return "Invalid Id"
 
 
-def load_data_in(id, dataset=None):  # noqa: E501
+def load_data_in(param_name, id, dataset=None):  # noqa: E501
     """Submits load data to the framework
 
      # noqa: E501
@@ -74,9 +108,11 @@ def load_data_in(id, dataset=None):  # noqa: E501
 
     :rtype: None
     """
-    uid = get_id()
-    if uid != "0" and uid == id:
-        path = getFilePath("optimization", "loadForecast.txt")
+
+    if check_id(id):
+        file_name = str(param_name)+".txt"
+        path = os.path.join(os.getcwd(), "optimization",str(id),file_name)
+        logger.debug("Path where the data is stored" +str(path))
         if connexion.request.is_json:
             dataset = Dataset.from_dict(connexion.request.get_json())  # noqa: E501
         else:
@@ -84,35 +120,9 @@ def load_data_in(id, dataset=None):  # noqa: E501
             dataset = dataset.split("\n")
             with open(path, 'w') as outfile:
                 outfile.writelines(dataset)
-            logger.info("input data saved into memory")
+            logger.info("input data saved into memory: "+str(file_name))
         return 'Success'
     else:
         return "Invalid Id"
 
 
-def pv_data_in(id, dataset=None):  # noqa: E501
-    """Submits load data to the framework
-
-     # noqa: E501
-
-    :param id: ID of the data source
-    :type id: str
-    :param dataset: Dataset submitted to the framework
-    :type dataset: dict | bytes
-
-    :rtype: None
-    """
-    uid = get_id()
-    if uid != "0" and uid == id:
-        path = getFilePath("optimization", "pvForecast.txt")
-        if connexion.request.is_json:
-            dataset = Dataset.from_dict(connexion.request.get_json())  # noqa: E501
-        else:
-            dataset = connexion.request.get_data(as_text=True)  # noqa: E501
-            dataset = dataset.split("\n")
-            with open(path, 'w') as outfile:
-                outfile.writelines(dataset)
-            logger.info("input data saved into memory")
-        return 'Success'
-    else:
-        return "Invalid Id"
