@@ -60,5 +60,9 @@ class MetaLoad(Model):
         :param pf_load: The pf_load of this MetaLoad.
         :type pf_load: float
         """
+        if pf_load is not None and pf_load > 1:  # noqa: E501
+            raise ValueError("Invalid value for `pf_load`, must be a value less than or equal to `1`")  # noqa: E501
+        if pf_load is not None and pf_load < 0:  # noqa: E501
+            raise ValueError("Invalid value for `pf_load`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._pf_load = pf_load

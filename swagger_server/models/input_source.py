@@ -7,10 +7,11 @@ from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
 from swagger_server.models.ess import ESS  # noqa: F401,E501
+from swagger_server.models.generic import Generic  # noqa: F401,E501
+from swagger_server.models.global_control import GlobalControl  # noqa: F401,E501
 from swagger_server.models.grid import Grid  # noqa: F401,E501
 from swagger_server.models.load import Load  # noqa: F401,E501
 from swagger_server.models.pv import PV  # noqa: F401,E501
-from swagger_server.models.source import Source  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -20,7 +21,7 @@ class InputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, load: Load=None, photovoltaic: PV=None, ess: ESS=None, grid: Grid=None, market: Source=None):  # noqa: E501
+    def __init__(self, load: Load=None, photovoltaic: PV=None, ess: ESS=None, grid: Grid=None, global_control: GlobalControl=None, generic: Generic=None):  # noqa: E501
         """InputSource - a model defined in Swagger
 
         :param load: The load of this InputSource.  # noqa: E501
@@ -31,15 +32,18 @@ class InputSource(Model):
         :type ess: ESS
         :param grid: The grid of this InputSource.  # noqa: E501
         :type grid: Grid
-        :param market: The market of this InputSource.  # noqa: E501
-        :type market: Source
+        :param global_control: The global_control of this InputSource.  # noqa: E501
+        :type global_control: GlobalControl
+        :param generic: The generic of this InputSource.  # noqa: E501
+        :type generic: Generic
         """
         self.swagger_types = {
             'load': Load,
             'photovoltaic': PV,
             'ess': ESS,
             'grid': Grid,
-            'market': Source
+            'global_control': GlobalControl,
+            'generic': Generic
         }
 
         self.attribute_map = {
@@ -47,14 +51,16 @@ class InputSource(Model):
             'photovoltaic': 'photovoltaic',
             'ess': 'ESS',
             'grid': 'grid',
-            'market': 'market'
+            'global_control': 'global_control',
+            'generic': 'generic'
         }
 
         self._load = load
         self._photovoltaic = photovoltaic
         self._ess = ess
         self._grid = grid
-        self._market = market
+        self._global_control = global_control
+        self._generic = generic
 
     @classmethod
     def from_dict(cls, dikt) -> 'InputSource':
@@ -152,22 +158,43 @@ class InputSource(Model):
         self._grid = grid
 
     @property
-    def market(self) -> Source:
-        """Gets the market of this InputSource.
+    def global_control(self) -> GlobalControl:
+        """Gets the global_control of this InputSource.
 
 
-        :return: The market of this InputSource.
-        :rtype: Source
+        :return: The global_control of this InputSource.
+        :rtype: GlobalControl
         """
-        return self._market
+        return self._global_control
 
-    @market.setter
-    def market(self, market: Source):
-        """Sets the market of this InputSource.
+    @global_control.setter
+    def global_control(self, global_control: GlobalControl):
+        """Sets the global_control of this InputSource.
 
 
-        :param market: The market of this InputSource.
-        :type market: Source
+        :param global_control: The global_control of this InputSource.
+        :type global_control: GlobalControl
         """
 
-        self._market = market
+        self._global_control = global_control
+
+    @property
+    def generic(self) -> Generic:
+        """Gets the generic of this InputSource.
+
+
+        :return: The generic of this InputSource.
+        :rtype: Generic
+        """
+        return self._generic
+
+    @generic.setter
+    def generic(self, generic: Generic):
+        """Sets the generic of this InputSource.
+
+
+        :param generic: The generic of this InputSource.
+        :type generic: Generic
+        """
+
+        self._generic = generic

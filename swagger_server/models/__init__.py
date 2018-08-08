@@ -7,6 +7,8 @@ from swagger_server.models.dataset import Dataset
 from swagger_server.models.e import E
 from swagger_server.models.ess import ESS
 from swagger_server.models.ess_output import ESSOutput
+from swagger_server.models.generic import Generic
+from swagger_server.models.global_control import GlobalControl
 from swagger_server.models.grid import Grid
 from swagger_server.models.grid_output import GridOutput
 from swagger_server.models.input_source import InputSource
