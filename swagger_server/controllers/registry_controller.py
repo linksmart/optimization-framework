@@ -76,15 +76,25 @@ def input_source(Input_Source):  # noqa: E501
                 return message
         except Exception as e:
             logger.error(e)"""
-        # Writes the registry/output to a txt file in ordner utils
-        path = getFilePath("utils", "Input.registry")
+
+        ####generates an id an makes a directory with the id for the data and for the registry
+        try:
+            id = utils.create_and_get_ID()
+            dir = os.path.join(os.getcwd(), "utils", str(id))
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+            dir_data = os.path.join(os.getcwd(), "optimization", str(id))
+            if not os.path.exists(dir_data):
+                os.makedirs(dir_data)
+        except Exception as e:
+            logger.error(e)
+
+        # saves the registry into the new folder
+        path = os.path.join(os.getcwd(), "utils", str(id),"Input.registry")
         with open(path, 'w') as outfile:
             json.dump(Input_Source, outfile, ensure_ascii=False)
         logger.info("registry/input saved into memory")
-        id = utils.create_and_get_ID()
-        path = getFilePath("utils", "registry.id")
-        with open(path, 'w') as outfile:
-            outfile.write(id)
+
         return 'Data source Id: ' + str(id)
     else:
         return 'Data is not in json format'
