@@ -65,7 +65,7 @@ class CommandController:
         logger.debug("Thread started")
         self.set_isRunning(self.id, True)
         logger.debug("Flag isRunning set to True")
-        self.statusThread[self.id] = threading.Thread(target=self.run_status, args=self.id)
+        self.statusThread[self.id] = threading.Thread(target=self.run_status, args=(self.id,))
         logger.debug("Status of the Thread started")
         self.statusThread[self.id].start()
         logger.debug("Command controller start finished")
