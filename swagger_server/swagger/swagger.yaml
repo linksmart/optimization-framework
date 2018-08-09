@@ -164,6 +164,65 @@ paths:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
 
+  /data_source/mqtt/{id}:
+    put:
+      tags:
+      - "data_source"
+      summary: "Submits data to the framework"
+      description: ""
+      operationId: "mqtt_input_put"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of the data source"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "dataset"
+        description: "Dataset submitted to the framework"
+        required: true
+        schema:
+          $ref: "#/definitions/MQTTInputSource"
+      responses:
+        200:
+          description: "Created succesfully"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+    delete:
+      tags:
+      - "data_source"
+      summary: "Deletes the loaded data"
+      description: ""
+      operationId: "delete_mqtt_registry"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Name of the registry to be deleted"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
   /data_source/file:
     post:
       tags:
@@ -193,36 +252,7 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-
-  /data_source/{id}:
-    delete:
-      tags:
-      - "data_source"
-      summary: "Deletes all loaded data"
-      description: ""
-      operationId: "delete_data_source_all"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "Id of the data source to be deleted"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-        400:
-          description: "Bad request"
-        405:
-          description: "Invalid input"
-        500:
-          description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-
-  /data_source/{param_name}/{id}:
+  /data_source/file/{id}:
     get:
       tags:
       - "data_source"
@@ -259,18 +289,12 @@ paths:
       - "data_source"
       summary: "Submits data to the framework"
       description: ""
-      operationId: "data_in_parameter"
+      operationId: "file_input_put"
       consumes:
       - "application/json"
-      - "text/plain"
       produces:
       - "application/json"
       parameters:
-      - name: "param_name"
-        in: "path"
-        description: "Name of the data source"
-        required: true
-        type: "string"
       - name: "id"
         in: "path"
         description: "ID of the data source"
@@ -281,7 +305,7 @@ paths:
         description: "Dataset submitted to the framework"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/FileInputSource"
       responses:
         200:
           description: "Created succesfully"
@@ -297,17 +321,12 @@ paths:
       - "data_source"
       summary: "Deletes the loaded data"
       description: ""
-      operationId: "delete_parameter_data"
+      operationId: "delete_file_registry"
       consumes:
       - "application/json"
       produces:
       - "application/json"
       parameters:
-      - name: "param_name"
-        in: "path"
-        description: "Name of the data source"
-        required: true
-        type: "string"
       - name: "id"
         in: "path"
         description: "Name of the registry to be deleted"
@@ -323,6 +342,36 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+  /data_source/{id}:
+    delete:
+      tags:
+      - "data_source"
+      summary: "Deletes all loaded data"
+      description: ""
+      operationId: "delete_data_source_all"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Id of the data source to be deleted"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+
+
+
 
   /control/mqtt/{id}:
     put:
