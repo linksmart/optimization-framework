@@ -6,9 +6,9 @@ Created on Aug 09 10:36 2018
 
 class Constants:
 
-    ESS = "ess"
-    SoC_Value = "so_c_value"
+    ESS = "ESS"
+    SoC_Value = "SoC_Value"
     meta = "meta"
-    P_PV = "p_pv"
-    P_Load = "p_load"
-    Q_Load = "q_load"
+    P_PV = "P_PV"
+    P_Load = "P_Load"
+    Q_Load = "Q_Load"

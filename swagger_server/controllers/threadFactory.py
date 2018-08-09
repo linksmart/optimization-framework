@@ -5,8 +5,9 @@ import configparser
 import json
 
 from IO.inputConfigParser import InputConfigParser
+from mock_data.mockSoCDataPublisher import MockSoCDataPublisher
 from optimization.controller import OptController
-from prediction.mockDataPublisher import MockDataPublisher
+from mock_data.mockPLoadDataPublisher import MockPLoadDataPublisher
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 
@@ -103,34 +104,43 @@ class ThreadFactory:
         logger.debug("Optimization object started")
 
         """Need to get data from config or input.registry?"""
-        self.pv_forecast = input_config_parser.get_forecast_flag("photovoltaic")
+        self.pv_forecast = input_config_parser.get_forecast_flag("P_PV")
         if self.pv_forecast:
             self.pv_prediction = PVPrediction(config, input_config_parser)
 
-        self.load_forecast = input_config_parser.get_forecast_flag("load")
+        self.load_forecast = input_config_parser.get_forecast_flag("P_Load")
         if self.load_forecast:
-            raw_p_load_data_topic = config.get("IO", "raw.data.topic")
+            raw_p_load_data_topic = config.get("IO", "raw.pload.data.topic")
             raw_p_load_data_topic = json.loads(raw_p_load_data_topic)
-            self.mock_data = MockDataPublisher(raw_p_load_data_topic, config)
-            self.mock_data.start()
+            self.mock_p_load_data = MockPLoadDataPublisher(raw_p_load_data_topic, config)
+            self.mock_p_load_data.start()
             logger.info("Creating load prediction controller thread")
             # Creating an object of the configuration file
             config = configparser.RawConfigParser()
             config.read(self.getFilePath("utils", "ConfigFile.properties"))
             self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
             self.load_prediction.start()
+        self.soc_forecast = input_config_parser.get_forecast_flag("SoC_Value")
+        if self.soc_forecast:
+            raw_soc_data_topic = config.get("IO", "raw.soc.data.topic")
+            raw_soc_data_topic = json.loads(raw_soc_data_topic)
+            self.mock_soc_data = MockSoCDataPublisher(raw_soc_data_topic, config)
+            self.mock_soc_data.start()
         logger.debug("Start in threadfactory finished")
 
     def stopOptControllerThread(self):
         try:
             if self.load_forecast:
-                logger.info("Stopping mock data thread")
-                self.mock_data.Stop()
+                logger.info("Stopping mock p load data thread")
+                self.mock_p_load_data.Stop()
                 logger.info("Stopping load thread")
                 self.load_prediction.Stop()
             if self.pv_forecast:
                 logger.info("Stopping pv thread")
                 self.pv_prediction.Stop(self.id)
+            if self.soc_forecast:
+                logger.info("Stopping mock soc data thread")
+                self.mock_soc_data.Stop()
             logger.info("Stopping optimization controller thread")
             self.opt.Stop(self.id)
             logger.info("Optimization controller thread stopped")

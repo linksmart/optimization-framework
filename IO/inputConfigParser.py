@@ -61,6 +61,8 @@ class InputConfigParser:
 
     def get_forecast_flag(self, topic):
         if topic in self.mqtt_params:
+            logger.info("Topic forecast " + str(topic) + " True")
             return True
         else:
+            logger.info("Topic forecast " + str(topic) + " False")
             return False
