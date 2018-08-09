@@ -670,14 +670,6 @@ definitions:
       mqtt:
         $ref: "#/definitions/MQTT"
 
-  SourceESSFile:
-    type: "object"
-    properties:
-      value_percent:
-        type: "integer"
-        format: "int32"
-        minimum: 0
-        maximum: 100
 
   MQTT:
     type: "object"
@@ -818,7 +810,9 @@ definitions:
     - "ESS_Control"
     properties:
       ESS_Control:
-        type: "object"
+        type: array
+        items:
+          type: number
 
   PV_File:
     type: "object"
@@ -832,18 +826,6 @@ definitions:
       meta:
         $ref: "#/definitions/metaPV"
 
-  ESS_File:
-    type: "object"
-    required:
-    - "SoC_Value"
-    properties:
-      SoC_Value:
-        type: "integer"
-        format: "int32"
-        minimum: 0
-        maximum: 100
-      meta:
-        $ref: "#/definitions/metaESS"
 
   Load_File:
     type: "object"
@@ -851,14 +833,28 @@ definitions:
     - "P_Load"
     properties:
       P_Load:
-        type: "object"
-        description: "Inserting data as plain text"
+        type: array
+        items:
+          type: number
       Q_Load:
-        type: "object"
-        description: "Inserting data as plain text"
+        type: array
+        items:
+          type: number
       meta:
         $ref: "#/definitions/metaLoad"
 
+
+  ESS_File:
+    type: "object"
+    required:
+    - "SoC_Value"
+    properties:
+      SoC_Value:
+        type: "number"
+        minimum: 0
+        maximum: 100
+      meta:
+        $ref: "#/definitions/metaESS"
 
   Generic:
     type: "object"
@@ -880,6 +876,7 @@ definitions:
         type: "string"
         description: "Name defining the parameter into the optimization model"
       file:
-        type: "object"
-        description: "Inserting data as plain text"
+        type: array
+        items:
+          type: number
 
