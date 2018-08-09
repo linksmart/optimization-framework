@@ -163,7 +163,6 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-
   /data_source/mqtt/{id}:
     put:
       tags:
@@ -369,10 +368,6 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-
-
-
-
   /control/mqtt/{id}:
     put:
       tags:
@@ -455,7 +450,6 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/Path_Definition"
-
       responses:
         200:
           description: "Created succesfully"
@@ -492,7 +486,6 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.control_controller"
-
   /command/start/{id}:
     put:
       tags:
@@ -542,8 +535,6 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.command_controller"
-
-
 definitions:
   Start:
     type: "object"
@@ -565,7 +556,12 @@ definitions:
         type: "string"
       solver:
         type: "string"
-
+    example:
+      time_step: 6
+      horizon: 1
+      model_name: "model_name"
+      repetition: 0
+      solver: "solver"
   Path_Definition:
     type: "object"
     required:
@@ -574,7 +570,6 @@ definitions:
       path:
         type: "string"
         description: "Path where the results will be stored"
-
   Load:
     type: "object"
     required:
@@ -586,7 +581,19 @@ definitions:
         $ref: "#/definitions/Source"
       meta:
         $ref: "#/definitions/metaLoad"
-
+    example:
+      Q_Load:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      meta:
+        pf_Load: 0.6027456
+      P_Load:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   metaLoad:
     type: "object"
     properties:
@@ -595,7 +602,8 @@ definitions:
         format: "float"
         minimum: 0
         maximum: 1
-
+    example:
+      pf_Load: 0.6027456
   PV:
     type: "object"
     required:
@@ -606,7 +614,14 @@ definitions:
       meta:
         $ref: "#/definitions/metaPV"
     description: "Definition of a PV element as input for the optimizer"
-
+    example:
+      P_PV:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      meta:
+        PV_Inv_Max_Power: 1
   PV_Output:
     type: "object"
     required:
@@ -616,7 +631,17 @@ definitions:
         $ref: "#/definitions/Source"
       Q_PV_Output:
         $ref: "#/definitions/Source"
-
+    example:
+      Q_PV_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_PV_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   metaPV:
     type: "object"
     properties:
@@ -634,7 +659,20 @@ definitions:
         $ref: "#/definitions/SourceESS"
       meta:
         $ref: "#/definitions/metaESS"
-
+    example:
+      SoC_Value:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      meta:
+        ESS_Max_Discharge_Power: 7.0614014
+        ESS_Max_SoC: 5.962134
+        ESS_Charging_Eff: 9.301444
+        ESS_Min_SoC: 1.4658129
+        ESS_Max_Charge_Power: 2.302136
+        ESS_Discharging_Eff: 3.6160767
+        ESS_Capacity: 5.637377
   ESS_Output:
     type: "object"
     required:
@@ -643,7 +681,12 @@ definitions:
       P_ESS_Output:
         description: "Setting power of the ESS"
         $ref: "#/definitions/Source"
-
+    example:
+      P_ESS_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   metaESS:
     type: "object"
     properties:
@@ -668,13 +711,25 @@ definitions:
       ESS_Discharging_Eff:
         type: "number"
         format: "float"
-
+    example:
+      ESS_Max_Discharge_Power: 7.0614014
+      ESS_Max_SoC: 5.962134
+      ESS_Charging_Eff: 9.301444
+      ESS_Min_SoC: 1.4658129
+      ESS_Max_Charge_Power: 2.302136
+      ESS_Discharging_Eff: 3.6160767
+      ESS_Capacity: 5.637377
   grid:
     type: "object"
     properties:
       meta:
         $ref: "#/definitions/metaGrid"
-
+    example:
+      meta:
+        Q_Grid_Max_Export_Power: 4
+        Min_Voltage_Drop: 1.2315135
+        P_Grid_Max_Export_Power: 2
+        Max_Voltage_Drop: 7.386282
   grid_Output:
     type: "object"
     required:
@@ -688,7 +743,27 @@ definitions:
         $ref: "#/definitions/Source"
       Q_Grid_Import_Output:
         $ref: "#/definitions/Source"
-
+    example:
+      P_Grid_Export_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Grid_Export_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_Grid_Import_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Grid_Import_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   metaGrid:
     type: "object"
     properties:
@@ -704,22 +779,32 @@ definitions:
       Min_Voltage_Drop:
         type: "number"
         format: "float"
-
+    example:
+      Q_Grid_Max_Export_Power: 4
+      Min_Voltage_Drop: 1.2315135
+      P_Grid_Max_Export_Power: 2
+      Max_Voltage_Drop: 7.386282
   Source:
     type: "object"
     properties:
       mqtt:
         $ref: "#/definitions/MQTT"
     description: "Selection between MQTT or file mode inputs or outputs"
-
-
+    example:
+      mqtt:
+        qos: 0
+        host: "host"
+        topic: "topic"
   SourceESS:
     type: "object"
     properties:
       mqtt:
         $ref: "#/definitions/MQTT"
-
-
+    example:
+      mqtt:
+        qos: 0
+        host: "host"
+        topic: "topic"
   MQTT:
     type: "object"
     required:
@@ -734,7 +819,10 @@ definitions:
         format: "int32"
         minimum: 0
         maximum: 2
-
+    example:
+      qos: 0
+      host: "host"
+      topic: "topic"
   dataset:
     type: "object"
     properties:
@@ -771,7 +859,6 @@ definitions:
     type: "object"
     xml:
       name: "Model"
-
   Model_url:
     type: "object"
     required:
@@ -782,7 +869,6 @@ definitions:
     xml:
       name: "ModelUrl"
       wrapped: true
-
   MQTTInputSource:
     type: "object"
     properties:
@@ -798,8 +884,61 @@ definitions:
         $ref: "#/definitions/grid"
       global_control:
         $ref: "#/definitions/Global_Control"
-
-
+    example:
+      load:
+        Q_Load:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        meta:
+          pf_Load: 0.6027456
+        P_Load:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+      ESS:
+        SoC_Value:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        meta:
+          ESS_Max_Discharge_Power: 7.0614014
+          ESS_Max_SoC: 5.962134
+          ESS_Charging_Eff: 9.301444
+          ESS_Min_SoC: 1.4658129
+          ESS_Max_Charge_Power: 2.302136
+          ESS_Discharging_Eff: 3.6160767
+          ESS_Capacity: 5.637377
+      grid:
+        meta:
+          Q_Grid_Max_Export_Power: 4
+          Min_Voltage_Drop: 1.2315135
+          P_Grid_Max_Export_Power: 2
+          Max_Voltage_Drop: 7.386282
+      photovoltaic:
+        P_PV:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        meta:
+          PV_Inv_Max_Power: 1
+      generic:
+        generic_name:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        name: "name"
+      global_control:
+        ESS_Control:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
   FileInputSource:
     type: "object"
     properties:
@@ -815,8 +954,47 @@ definitions:
         $ref: "#/definitions/grid"
       global_control:
         $ref: "#/definitions/Global_Control_File"
-
-
+    example:
+      load:
+        Q_Load:
+        - 1.46581298050294517310021547018550336360931396484375
+        - 1.46581298050294517310021547018550336360931396484375
+        meta:
+          pf_Load: 0.6027456
+        P_Load:
+        - 6.02745618307040320615897144307382404804229736328125
+        - 6.02745618307040320615897144307382404804229736328125
+      ESS:
+        SoC_Value: 56.37376656633328053658260614611208438873291015625
+        meta:
+          ESS_Max_Discharge_Power: 7.0614014
+          ESS_Max_SoC: 5.962134
+          ESS_Charging_Eff: 9.301444
+          ESS_Min_SoC: 1.4658129
+          ESS_Max_Charge_Power: 2.302136
+          ESS_Discharging_Eff: 3.6160767
+          ESS_Capacity: 5.637377
+      grid:
+        meta:
+          Q_Grid_Max_Export_Power: 4
+          Min_Voltage_Drop: 1.2315135
+          P_Grid_Max_Export_Power: 2
+          Max_Voltage_Drop: 7.386282
+      photovoltaic:
+        P_PV:
+        - 5.962133916683182377482808078639209270477294921875
+        - 5.962133916683182377482808078639209270477294921875
+        meta:
+          PV_Inv_Max_Power: 1
+      generic:
+        file:
+        - 0.80082819046101150206595775671303272247314453125
+        - 0.80082819046101150206595775671303272247314453125
+        name: "name"
+      global_control:
+        ESS_Control:
+        - 2.3021358869347654518833223846741020679473876953125
+        - 2.3021358869347654518833223846741020679473876953125
   OutputSource:
     type: "object"
     properties:
@@ -826,7 +1004,45 @@ definitions:
         $ref: "#/definitions/ESS_Output"
       grid:
         $ref: "#/definitions/grid_Output"
-
+    example:
+      ESS:
+        P_ESS_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+      grid:
+        P_Grid_Export_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_Grid_Export_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        P_Grid_Import_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_Grid_Import_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+      photovoltaic:
+        Q_PV_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        P_PV_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
   Model_answer:
     type: "object"
     properties:
@@ -834,7 +1050,12 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/Model_Output"
-
+    example:
+      models:
+      - name: "name"
+        solver: "solver"
+      - name: "name"
+        solver: "solver"
   Model_Output:
     type: "object"
     required:
@@ -844,7 +1065,9 @@ definitions:
         type: "string"
       solver:
         type: "string"
-
+    example:
+      name: "name"
+      solver: "solver"
   Global_Control:
     type: "object"
     required:
@@ -852,47 +1075,66 @@ definitions:
     properties:
       ESS_Control:
         $ref: "#/definitions/Source"
-
+    example:
+      ESS_Control:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   Global_Control_File:
     type: "object"
     required:
     - "ESS_Control"
     properties:
       ESS_Control:
-        type: array
+        type: "array"
         items:
-          type: number
-
+          type: "number"
+    example:
+      ESS_Control:
+      - 2.3021358869347654518833223846741020679473876953125
+      - 2.3021358869347654518833223846741020679473876953125
   PV_File:
     type: "object"
     required:
     - "P_PV"
     properties:
       P_PV:
-        type: array
+        type: "array"
         items:
-          type: number
+          type: "number"
       meta:
         $ref: "#/definitions/metaPV"
-
-
+    example:
+      P_PV:
+      - 5.962133916683182377482808078639209270477294921875
+      - 5.962133916683182377482808078639209270477294921875
+      meta:
+        PV_Inv_Max_Power: 1
   Load_File:
     type: "object"
     required:
     - "P_Load"
     properties:
       P_Load:
-        type: array
+        type: "array"
         items:
-          type: number
+          type: "number"
       Q_Load:
-        type: array
+        type: "array"
         items:
-          type: number
+          type: "number"
       meta:
         $ref: "#/definitions/metaLoad"
-
-
+    example:
+      Q_Load:
+      - 1.46581298050294517310021547018550336360931396484375
+      - 1.46581298050294517310021547018550336360931396484375
+      meta:
+        pf_Load: 0.6027456
+      P_Load:
+      - 6.02745618307040320615897144307382404804229736328125
+      - 6.02745618307040320615897144307382404804229736328125
   ESS_File:
     type: "object"
     required:
@@ -904,7 +1146,16 @@ definitions:
         maximum: 100
       meta:
         $ref: "#/definitions/metaESS"
-
+    example:
+      SoC_Value: 56.37376656633328053658260614611208438873291015625
+      meta:
+        ESS_Max_Discharge_Power: 7.0614014
+        ESS_Max_SoC: 5.962134
+        ESS_Charging_Eff: 9.301444
+        ESS_Min_SoC: 1.4658129
+        ESS_Max_Charge_Power: 2.302136
+        ESS_Discharging_Eff: 3.6160767
+        ESS_Capacity: 5.637377
   Generic:
     type: "object"
     required:
@@ -915,7 +1166,13 @@ definitions:
         description: "Name defining the parameter into the optimization model"
       generic_name:
         $ref: "#/definitions/Source"
-
+    example:
+      generic_name:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      name: "name"
   Generic_File:
     type: "object"
     required:
@@ -925,7 +1182,11 @@ definitions:
         type: "string"
         description: "Name defining the parameter into the optimization model"
       file:
-        type: array
+        type: "array"
         items:
-          type: number
-
+          type: "number"
+    example:
+      file:
+      - 0.80082819046101150206595775671303272247314453125
+      - 0.80082819046101150206595775671303272247314453125
+      name: "name"
