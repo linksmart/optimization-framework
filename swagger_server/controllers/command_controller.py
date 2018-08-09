@@ -62,9 +62,13 @@ class CommandController:
         #logger.info("Self.factory 2 " + str(self.factory))
         logger.info("Thread: " + str(self.get(self.id)))
         self.get(self.id).startOptControllerThread()
+        logger.debug("Thread started")
         self.set_isRunning(self.id, True)
+        logger.debug("Flag isRunning set to True")
         self.statusThread[self.id] = threading.Thread(target=self.run_status(self.id))
+        logger.debug("Status of the Thread started")
         self.statusThread[self.id].start()
+        logger.debug("Command controller start finished")
 
 
     def stop(self, id):
@@ -104,13 +108,16 @@ def framework_start(id, startOFW):  # noqa: E501
         startOFW = Start.from_dict(connexion.request.get_json())
 
         if variable.isRunningExists():
+            logger.debug("isRunning exists")
             if not variable.get_isRunning(id):
                 variable.start(id, startOFW)
                 return "System started succesfully"
             else:
-                return "System already running"
                 logger.debug("System already running")
+                return "System already running"
+
         else:
+            logger.debug("isRunning not created yet")
             variable.start(id, startOFW)
             return "System started succesfully"
 

@@ -89,6 +89,7 @@ class ThreadFactory:
             self.opt.start()
         except Exception as e:
             logger.error(e)
+        logger.debug("Optimization object started")
 
         """Need to get data from config or input.registry?"""
         self.pv_forecast = input_config_parser.get_forecast_flag("photovoltaic", False)
@@ -107,7 +108,7 @@ class ThreadFactory:
             config.read(self.getFilePath("utils", "ConfigFile.properties"))
             self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
             self.load_prediction.start()
-
+        logger.debug("Start in threadfactory finished")
 
     def stopOptControllerThread(self):
         try:
