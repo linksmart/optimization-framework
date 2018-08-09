@@ -63,8 +63,7 @@ class ThreadFactory:
 
         ##############################################################################################
         # Reads the registry/output and stores it into an object
-
-        path = self.getFilePath("utils", "Output.registry")
+        path = os.path.join(os.getcwd(), "utils", str(self.id), "Output.registry.mqtt")
         with open(path, "r") as file:
             output_config = json.loads(file.read())
         #logger.debug("This is the output data: " + str(output_config))
@@ -121,11 +120,13 @@ class ThreadFactory:
             self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
             self.load_prediction.start()
         self.soc_forecast = input_config_parser.get_forecast_flag("SoC_Value")
+        """
         if self.soc_forecast:
             raw_soc_data_topic = config.get("IO", "raw.soc.data.topic")
             raw_soc_data_topic = json.loads(raw_soc_data_topic)
             self.mock_soc_data = MockSoCDataPublisher(raw_soc_data_topic, config)
             self.mock_soc_data.start()
+        """
         logger.debug("Start in threadfactory finished")
 
     def stopOptControllerThread(self):
@@ -138,9 +139,11 @@ class ThreadFactory:
             if self.pv_forecast:
                 logger.info("Stopping pv thread")
                 self.pv_prediction.Stop(self.id)
+            """
             if self.soc_forecast:
                 logger.info("Stopping mock soc data thread")
                 self.mock_soc_data.Stop()
+            """
             logger.info("Stopping optimization controller thread")
             self.opt.Stop(self.id)
             logger.info("Optimization controller thread stopped")

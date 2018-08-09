@@ -16,16 +16,11 @@ class MockSoCDataPublisher(DataPublisher):
 
     def __init__(self, topic_params, config):
         super().__init__(topic_params, config, 5)
-        self.flag = True
-        self.index = 0
+        self.index = 20
 
     def get_data(self):
-        if self.flag:
-            if self.index < 100:
-                self.index += 1
-                return self.index
-            else:
-                self.flag = False
-                return 1
+        if self.index < 100:
+            self.index += 1
+            return self.index
         else:
-            return 1
+            self.index = 20

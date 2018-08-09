@@ -1,11 +1,15 @@
 import connexion
 import six
-
+import os, logging, json
 from swagger_server.models.output_source import OutputSource  # noqa: E501
 from swagger_server.models.path_definition import PathDefinition  # noqa: E501
 from swagger_server import util
 
+from optimization.utils import Utils
 
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__file__)
+utils = Utils()
 def delete_file_output(id):  # noqa: E501
     """Deletes the registration output of the framework
 
@@ -63,4 +67,18 @@ def output_source_mqtt(id, Output_Source):  # noqa: E501
     """
     if connexion.request.is_json:
         Output_Source = OutputSource.from_dict(connexion.request.get_json())  # noqa: E501
+        dataset = connexion.request.get_json()
+        logger.info("This is the dictionary: " + Output_Source.to_str())
+        try:
+            dir = os.path.join(os.getcwd(), "utils", str(id))
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+        except Exception as e:
+            logger.error(e)
+
+        # saves the registry into the new folder
+        path = os.path.join(os.getcwd(), "utils", str(id), "Output.registry.mqtt")
+        with open(path, 'w') as outfile:
+            json.dump(dataset, outfile, ensure_ascii=False)
+        logger.info("control output saved into memory")
     return 'do some magic!'
