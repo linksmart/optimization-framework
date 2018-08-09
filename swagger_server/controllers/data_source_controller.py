@@ -90,7 +90,16 @@ def file_input_source(File_Input_Source):  # noqa: E501
                 os.makedirs(dir_data)
         except Exception as e:
             logger.error(e)
-        input_all = File_Input_Source.to_dict()
+
+        # saves the registry into the new folder
+        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.file")
+        with open(path, 'w') as outfile:
+            json.dump(File_Input_Source, outfile, ensure_ascii=False)
+            logger.info("registry/input saved into memory")
+
+        with open(path, 'r') as file:
+            input_all=json.load(file)
+
         for header in input_all:
             logger.debug("Headers: "+ str(header))
             input = input_all[header]
@@ -120,7 +129,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
                                     outfile.writelines(dataset)
-                            elif "so_c_value" in key:
+                            elif "SoC_Value" in key:
                                 file_name = str(key) + ".txt"
                                 path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
                                 logger.debug("Path where the data is stored" + str(path))
@@ -151,11 +160,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
                     else:
                         logger.debug("No data in "+str(key))
 
-        # saves the registry into the new folder
-        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.file")
-        with open(path, 'w') as outfile:
-            json.dump(File_Input_Source, outfile, ensure_ascii=False)
-            logger.info("registry/input saved into memory")
+
 
 
         return 'Data source Id: ' + str(id)
@@ -192,7 +197,36 @@ def mqtt_input_put(id, dataset):  # noqa: E501
     """
     if connexion.request.is_json:
         dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        logger.info("This is the dictionary: " + dataset.to_str())
+
+        dataset_dict = dataset.to_dict()
+
+        # check if the file exists
+        dir = os.path.join(os.getcwd(), "utils", str(id))
+        if not os.path.exists(dir):
+            return "Id not existing"
+        else:
+            dir_file = os.path.join(dir, "Input.registry.mqtt")
+            if os.path.exists(dir_file):
+                # appends information
+                logger.info("Appending information to the mqtt input registry")
+                with open(dir_file, 'r+') as readfile:
+                    data = json.load(readfile)
+                    for header in dataset_dict:
+                        data[header] = dataset_dict[header]
+                    readfile.seek(0)
+                    json.dump(data, readfile)
+                    readfile.truncate()
+                logger.info("data source saved into memory")
+            else:
+                # saves the registry into the new folder
+                with open(dir_file, 'w') as outfile:
+                    json.dump(dataset, outfile, ensure_ascii=False)
+                logger.info("data source saved into memory")
+
+            return "Data source registered"
+    else:
+        return 'Data is not in json format'
 
 
 def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
