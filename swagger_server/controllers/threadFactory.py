@@ -15,12 +15,13 @@ logger = logging.getLogger(__file__)
 
 class ThreadFactory:
 
-    def __init__(self, model_name, time_step, horizon, repetition, solver):
+    def __init__(self, model_name, time_step, horizon, repetition, solver, id):
         self.model_name=model_name
         self.time_step=time_step
         self.horizon=horizon
         self.repetition=repetition
         self.solver=solver
+        self.id = id
 
 
     def getFilePath(self,dir, file_name):
@@ -38,28 +39,30 @@ class ThreadFactory:
         logger.info("Optimization calculated with the following model: " + self.model_name)
         logger.info("Optimization calculated with the following solver: " + self.solver)
 
-        # Creating an object of the configuration file
-        config = configparser.RawConfigParser()
-        config.read(self.getFilePath("utils", "ConfigFile.properties"))
+        # Creating an object of the configuration file (standard values)
+        try:
+            config = configparser.RawConfigParser()
+            config.read(self.getFilePath("utils", "ConfigFile.properties"))
+        except Exception as e:
+            logger.error(e)
+
+        # Loads the solver name if it was not given thorough the endpoint command/start/id
         if not self.model_name:
             self.model_name = config.get("SolverSection", "model.name")
-
         logger.debug("This is the model name: " + self.model_name)
         self.model_path = os.path.join(config.get("SolverSection", "model.base.path"), self.model_name) + ".py"
-        logger.debug("This is the model name: " + str(self.model_path))
-        # Taking the data file name from the configuration file
-        data_file_name = config.get("SolverSection", "data.file")
-        self.data_path = self.getFilePath("optimization", data_file_name)
+        logger.debug("This is the path of the model: " + str(self.model_path))
 
-        # Taking
+        # Loads the solver name if not specified in command/start/id
         if not self.solver:
             self.solver_name = config.get("SolverSection", "solver.name")
         else:
             self.solver_name = self.solver
-
         logger.debug("Optimization calculated with the following solver: " + self.solver_name)
+
         ##############################################################################################
         # Reads the registry/output and stores it into an object
+
         path = self.getFilePath("utils", "Output.registry")
         with open(path, "r") as file:
             output_config = json.loads(file.read())
@@ -67,19 +70,25 @@ class ThreadFactory:
 
         try:
             # Reads the registry/input and stores it into an object
-            path = self.getFilePath("utils", "Input.registry")
+            path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry")
+            #path = self.getFilePath("utils", "Input.registry")
             with open(path, "r") as file:
                 input_config = json.loads(file.read())
         except Exception as e:
             logger.error("Input file not found")
             input_config = {}
+            logger.error(e)
 
         input_config_parser = InputConfigParser(input_config)
+
         #Initializing constructor of the optimization controller thread
-        self.opt = OptController("obj1", self.solver_name, self.model_path, self.time_step,
+        self.opt = OptController(self.id, self.solver_name, self.model_path, self.time_step,
                                  self.repetition, output_config, input_config_parser, config)
         ####starts the optimization controller thread
-        results = self.opt.start()
+        try:
+            self.opt.start()
+        except Exception as e:
+            logger.error(e)
 
         """Need to get data from config or input.registry?"""
         self.pv_forecast = input_config_parser.get_forecast_flag("photovoltaic", False)
@@ -109,12 +118,14 @@ class ThreadFactory:
                 self.load_prediction.Stop()
             if self.pv_forecast:
                 logger.info("Stopping pv thread")
-                self.pv_prediction.Stop()
+                self.pv_prediction.Stop(self.id)
             logger.info("Stopping optimization controller thread")
-            self.opt.Stop()
+            self.opt.Stop(self.id)
             logger.info("Optimization controller thread stopped")
+            return "Optimization controller thread stopped"
         except Exception as e:
             logger.error(e)
+            return e
 
     def is_running(self):
         return not self.opt.finish_status
