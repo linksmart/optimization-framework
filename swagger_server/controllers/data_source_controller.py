@@ -13,23 +13,6 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 utils = Utils()
 
-def data_in_parameter(param_name, id, dataset):  # noqa: E501
-    """Submits data to the framework
-
-     # noqa: E501
-
-    :param param_name: Name of the data source
-    :type param_name: str
-    :param id: ID of the data source
-    :type id: str
-    :param dataset: Dataset submitted to the framework
-    :type dataset: 
-
-    :rtype: None
-    """
-    return 'do some magic!'
-
-
 def delete_data_source_all(id):  # noqa: E501
     """Deletes all loaded data
 
@@ -43,13 +26,11 @@ def delete_data_source_all(id):  # noqa: E501
     return 'do some magic!'
 
 
-def delete_parameter_data(param_name, id):  # noqa: E501
+def delete_file_registry(id):  # noqa: E501
     """Deletes the loaded data
 
      # noqa: E501
 
-    :param param_name: Name of the data source
-    :type param_name: str
     :param id: Name of the registry to be deleted
     :type id: str
 
@@ -57,6 +38,34 @@ def delete_parameter_data(param_name, id):  # noqa: E501
     """
     return 'do some magic!'
 
+
+def delete_mqtt_registry(id):  # noqa: E501
+    """Deletes the loaded data
+
+     # noqa: E501
+
+    :param id: Name of the registry to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+def file_input_put(id, dataset):  # noqa: E501
+    """Submits data to the framework
+
+     # noqa: E501
+
+    :param id: ID of the data source
+    :type id: str
+    :param dataset: Dataset submitted to the framework
+    :type dataset: dict | bytes
+
+    :rtype: None
+    """
+    if connexion.request.is_json:
+        dataset = FileInputSource.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
 
 def file_input_source(File_Input_Source):  # noqa: E501
     """Creates a new data source as input
@@ -168,6 +177,22 @@ def get_data_source_values(param_name, id):  # noqa: E501
 
     :rtype: None
     """
+    return 'do some magic!'
+
+def mqtt_input_put(id, dataset):  # noqa: E501
+    """Submits data to the framework
+
+     # noqa: E501
+
+    :param id: ID of the data source
+    :type id: str
+    :param dataset: Dataset submitted to the framework
+    :type dataset: dict | bytes
+
+    :rtype: None
+    """
+    if connexion.request.is_json:
+        dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 
