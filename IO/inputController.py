@@ -75,11 +75,11 @@ class InputController:
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
         self.optimization_data.update(data)
-        self.load_forecast = self.input_config_parser.get_forecast_flag("load", False)
+        self.load_forecast = self.input_config_parser.get_forecast_flag("load")
         logger.debug("self.load_forecast: "+ str(self.load_forecast))
-        self.pv_forecast = self.input_config_parser.get_forecast_flag("photovoltaic", False)
+        self.pv_forecast = self.input_config_parser.get_forecast_flag("photovoltaic")
         logger.debug("self.pv_forecast: " + str(self.pv_forecast))
-        self.ess_data = self.input_config_parser.get_forecast_flag("SoC_Value", False)
+        self.ess_data = self.input_config_parser.get_forecast_flag("SoC_Value")
         logger.debug("self.ess_data: " + str(self.ess_data))
 
     def read_input_data(self, id, topic, file):

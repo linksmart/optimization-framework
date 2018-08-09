@@ -70,16 +70,27 @@ class ThreadFactory:
 
         try:
             # Reads the registry/input and stores it into an object
-            path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry")
+            path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.file")
             #path = self.getFilePath("utils", "Input.registry")
             with open(path, "r") as file:
-                input_config = json.loads(file.read())
+                input_config_file = json.loads(file.read())
         except Exception as e:
             logger.error("Input file not found")
-            input_config = {}
+            input_config_file = {}
             logger.error(e)
 
-        input_config_parser = InputConfigParser(input_config)
+        try:
+            # Reads the registry/input and stores it into an object
+            path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.mqtt")
+            #path = self.getFilePath("utils", "Input.registry")
+            with open(path, "r") as file:
+                input_config_mqtt = json.loads(file.read())
+        except Exception as e:
+            logger.error("Input file not found")
+            input_config_mqtt = {}
+            logger.error(e)
+
+        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt)
 
         #Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.time_step,
@@ -92,11 +103,11 @@ class ThreadFactory:
         logger.debug("Optimization object started")
 
         """Need to get data from config or input.registry?"""
-        self.pv_forecast = input_config_parser.get_forecast_flag("photovoltaic", False)
+        self.pv_forecast = input_config_parser.get_forecast_flag("photovoltaic")
         if self.pv_forecast:
             self.pv_prediction = PVPrediction(config, input_config_parser)
 
-        self.load_forecast = input_config_parser.get_forecast_flag("load", False)
+        self.load_forecast = input_config_parser.get_forecast_flag("load")
         if self.load_forecast:
             raw_p_load_data_topic = config.get("IO", "raw.data.topic")
             raw_p_load_data_topic = json.loads(raw_p_load_data_topic)

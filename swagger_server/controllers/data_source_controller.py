@@ -90,7 +90,6 @@ def file_input_source(File_Input_Source):  # noqa: E501
                 os.makedirs(dir_data)
         except Exception as e:
             logger.error(e)
-
         input_all = File_Input_Source.to_dict()
         for header in input_all:
             logger.debug("Headers: "+ str(header))
@@ -153,7 +152,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
                         logger.debug("No data in "+str(key))
 
         # saves the registry into the new folder
-        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry")
+        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.file")
         with open(path, 'w') as outfile:
             json.dump(File_Input_Source, outfile, ensure_ascii=False)
             logger.info("registry/input saved into memory")
@@ -238,7 +237,7 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             logger.error(e)
 
         # saves the registry into the new folder
-        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry")
+        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.mqtt")
         with open(path, 'w') as outfile:
             json.dump(MQTT_Input_Source, outfile, ensure_ascii=False)
         logger.info("registry/input saved into memory")
