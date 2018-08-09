@@ -31,15 +31,14 @@ logger = logging.getLogger(__file__)
 
 class OptController(threading.Thread):
 
-    def __init__(self, object_name,solver_name, model_path, time_step, repetition, output_config, input_config_parser, config):
+    def __init__(self, id, solver_name, model_path, time_step, repetition, output_config, input_config_parser, config):
         #threading.Thread.__init__(self)
         super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
         #Loading variables
-        self.name = object_name
+        self.id = id
         self.results=""
         self.model_path = model_path
-        #self.data_path = data_path
         self.solver_name = solver_name
         self.time_step=time_step
         self.repetition = repetition
@@ -59,7 +58,7 @@ class OptController(threading.Thread):
             logger.error(e)
 
         self.output = OutputController(self.output_config)
-        self.input = InputController(self.input_config_parser, config, 24)
+        self.input = InputController(self.id, self.input_config_parser, config, 24)
 
 
 
@@ -73,9 +72,8 @@ class OptController(threading.Thread):
         self.stopRequest.set()
         super(OptController, self).join(timeout)
 
-    def Stop(self):
-        self.input.Stop()
-        #
+    def Stop(self, id):
+        self.input.Stop(id)
         if self.isAlive():
             self.join()
 
@@ -120,7 +118,8 @@ class OptController(threading.Thread):
             count = 0
             while not self.stopRequest.isSet():
                 logger.info("waiting for data")
-                data_dict = self.input.get_data() #blocking call
+                logger.info("This is the id: "+self.id)
+                data_dict = self.input.get_data(self.id) #blocking call
                 logger.info("data is "+str(data_dict))
                 # Creating an optimization instance with the referenced model
                 instance = self.my_class.model.create_instance(data_dict)
