@@ -63,6 +63,11 @@ class InputConfigParser:
 
     def get_forecast_flag(self, topic, default):
         if topic in self.input_config.keys():
-            return bool(self.input_config[topic]["Internal_Forecast"])
+            if "mqtt" in self.input_config[topic]:
+                logger.debug("Mqtt registry was found")
+                return True
+            else:
+                logger.debug("Mqtt registry was not found")
+                return False
         else:
             return default

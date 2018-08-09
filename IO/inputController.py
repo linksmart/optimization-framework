@@ -17,11 +17,13 @@ logger = logging.getLogger(__file__)
 
 class InputController:
 
-    def __init__(self, input_config_parser, config, timesteps):
+    def __init__(self, id, input_config_parser, config, timesteps):
         self.optimization_data = {}
+        self.prediction_subscriber={}
         self.input_config_parser = input_config_parser
         self.config = config
         self.timesteps = timesteps
+        self.id=id
         self.load_forecast = False
         self.pv_forecast = False
         # need to get a internal_forecast from input config parser
@@ -38,17 +40,17 @@ class InputController:
             load_forecast_topic = json.loads(load_forecast_topic)
             topics.append(load_forecast_topic)
         else:
-            self.read_input_data("P_Load_Forecast", "loadForecast.txt")
+            self.read_input_data(id, "P_Load_Forecast", "p_load.txt")
         if self.pv_forecast:
             pv_forecast_topic = config.get("IO", "pv.forecast.topic")
             pv_forecast_topic = json.loads(pv_forecast_topic)
             topics.append(pv_forecast_topic)
         else:
-            self.read_input_data("P_PV_Forecast", "pvForecast.txt")
+            self.read_input_data(id, "P_PV_Forecast", "p_pv.txt")
         if len(topics) > 0:
-            self.prediction_subscriber = OptimizationDataReceiver(topics, config)
+            self.prediction_subscriber[self.id] = OptimizationDataReceiver(topics, config)
         else:
-            self.prediction_subscriber = None
+            self.prediction_subscriber[self.id] = None
 
         # ESS data
         if self.ess_data:
@@ -74,19 +76,24 @@ class InputController:
         data = self.input_config_parser.get_optimization_values()
         self.optimization_data.update(data)
         self.load_forecast = self.input_config_parser.get_forecast_flag("load", False)
+        logger.debug("self.load_forecast: "+ str(self.load_forecast))
         self.pv_forecast = self.input_config_parser.get_forecast_flag("photovoltaic", False)
+        logger.debug("self.pv_forecast: " + str(self.pv_forecast))
         self.ess_data = self.input_config_parser.get_forecast_flag("SoC_Value", False)
+        logger.debug("self.ess_data: " + str(self.ess_data))
 
-    def read_input_data(self, topic, file):
+    def read_input_data(self, id, topic, file):
         data = {}
-        path = os.path.join("/usr/src/app", "optimization", file)
+        """"/ usr / src / app / optimization / 95c38e56d913 / p_load.txt"""
+        logger.debug("This is the id in read_input_data: "+str(id))
+        path = os.path.join("/usr/src/app", "optimization", str(id), file)
         rows = []
         i = 0
         try:
             with open(path, "r") as file:
                 rows = file.readlines()
         except Exception as e:
-            logger.error("read input file exception "+str(e))
+            logger.error("Read input file exception: "+str(e))
         for row in rows:
             data[i] = float(row)
             i += 1
@@ -95,16 +102,19 @@ class InputController:
         else:
             self.optimization_data[topic] = data
 
-    def get_data(self):
+    def get_data(self, id):
+        """needs to be changed"""
         if not self.load_forecast:
-            self.read_input_data("P_Load_Forecast", "loadForecast.txt")
+            self.read_input_data(id, "P_Load_Forecast", "p_load.txt")
         if not self.pv_forecast:
-            self.read_input_data("P_PV_Forecast", "pvForecast.txt")
+            self.read_input_data(id, "P_PV_Forecast", "p_pv.txt")
+        """until here"""
+
         pv_check = not self.pv_forecast
         load_check = not self.load_forecast
         while not (pv_check and load_check):
-            if self.prediction_subscriber:
-                data = self.prediction_subscriber.get_data()
+            if self.prediction_subscriber[id]:
+                data = self.prediction_subscriber[id].get_data()
                 self.optimization_data.update(data)
                 if "P_PV_Forecast" in data.keys():
                     pv_check = True
@@ -115,9 +125,9 @@ class InputController:
             self.optimization_data.update(data)
         return {None: self.optimization_data.copy()}
 
-    def Stop(self):
-        if self.prediction_subscriber is not None:
-            self.prediction_subscriber.exit()
+    def Stop(self, id):
+        if self.prediction_subscriber[id] is not None:
+            self.prediction_subscriber[id].exit()
 
     def set_params(self):
         params = {
