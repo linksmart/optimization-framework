@@ -13,6 +13,72 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 utils = Utils()
 
+
+def store_data(dataset, id):
+    for header in dataset:
+        logger.debug("Headers: " + str(header))
+        input = dataset[header]
+        logger.debug(header + " present")
+        for key in input:
+            data = input[key]
+            logger.debug("Data in " + str(key) + " is " + str(data))
+            if data is not None:
+                logger.debug("Data is not None")
+                if not "generic" in header:
+                    if "meta" in key:
+                        file_name = str(header) + "_" + str(key) + ".txt"
+                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        logger.debug("Path where the data is stored" + str(path))
+                        # dataset = dataset.split(",")
+                        if os.path.isfile(path):
+                            os.remove(path)
+
+                        with open(path, 'w') as outfile:
+                            outfile.writelines(data)
+                    elif "SoC_Value" in key:
+                        file_name = str(key) + ".txt"
+                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        logger.debug("Path where the data is stored" + str(path))
+                        # dataset = dataset.split(",")
+                        if os.path.isfile(path):
+                            os.remove(path)
+                        with open(path, 'w') as outfile:
+                            outfile.write(str(data))
+                    else:
+                        file_name = str(key) + ".txt"
+                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        logger.debug("Path where the data is stored" + str(path))
+                        # dataset = dataset.split(",")
+                        if os.path.isfile(path):
+                            os.remove(path)
+                        logger.debug("This is the path to open: "+str(path))
+                        with open(path, 'w') as outfile:
+                            # outfile.write('\n'.join(str(dataset)))
+                            outfile.writelines(str(i) + '\n' for i in data)
+                else:
+                    logger.debug("generic")
+                    if "generic_name" or "file "in key:
+                        name = input["name"]
+                        file_name = str(name) + ".txt"
+                        logger.debug("This is the file name for generic: " + str(file_name))
+                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        logger.debug("Path where the data is stored" + str(path))
+                        # dataset = dataset.split(",")
+                        if os.path.isfile(path):
+                            logger.debug("Path exists")
+                            os.remove(path)
+                            logger.debug("File erased")
+
+                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        logger.debug("Path where the data is stored" + str(path))
+                        with open(path, 'w') as outfile:
+                            outfile.writelines(str(data))
+                        logger.info("input data saved into memory: " + str(file_name))
+
+            else:
+                logger.debug("No data in " + str(key))
+    return 1
+
 def delete_data_source_all(id):  # noqa: E501
     """Deletes all loaded data
 
@@ -89,53 +155,12 @@ def file_input_put(id, dataset):  # noqa: E501
                 logger.info("data source saved into memory")
             else:
                 # saves the registry into the new folder
-                for header in dataset:
-                    logger.debug("Headers: " + str(header))
-                    input = dataset[header]
-                    logger.debug(header + " present")
-                    for key in input:
-                        data = input[key]
-                        logger.debug("Data in " + str(key) + " is " + str(data))
-                        if data is not None:
-                            if not "generic" in header:
-                                if "meta" in key:
-                                    file_name = str(header) + "_" + str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.writelines(data)
-                                elif "SoC_Value" in key:
-                                    file_name = str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.write(str(data))
-                                else:
-                                    file_name = str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        # outfile.write('\n'.join(str(dataset)))
-                                        outfile.writelines(str(i) + '\n' for i in data)
-                            else:
-                                if "name" in str(key):
-                                    file_name = str(data) + ".txt"
-                                else:
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.writelines(str(data))
-                                    logger.info("input data saved into memory: " + str(file_name))
-                        else:
-                            logger.debug("No data in " + str(key))
+
                 with open(dir_file, 'w') as outfile:
                     json.dump(dataset, outfile, ensure_ascii=False)
                 logger.info("data source saved into memory")
 
+            store_data(dataset, id)
             return "Data source registered"
     else:
         return 'Data is not in json format'
@@ -287,6 +312,7 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                 # appends information
                 logger.info("Appending information to the mqtt input registry")
 
+
                 with open(dir_file, 'r+') as readfile:
                     data = json.load(readfile)
                     for header in dataset:
@@ -298,55 +324,11 @@ def mqtt_input_put(id, dataset):  # noqa: E501
             else:
                 # saves the registry into the new folder
                 # saves the registry into the new folder
-                for header in dataset:
-                    logger.debug("Headers: " + str(header))
-                    input = dataset[header]
-                    logger.debug(header + " present")
-                    for key in input:
-                        data = input[key]
-                        logger.debug("Data in " + str(key) + " is " + str(data))
-                        if data is not None:
-                            if not "generic" in header:
-                                if "meta" in key:
-                                    file_name = str(header) + "_" + str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.writelines(data)
-                                elif "SoC_Value" in key:
-                                    file_name = str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.write(str(data))
-                                else:
-                                    file_name = str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        # outfile.write('\n'.join(str(dataset)))
-                                        outfile.writelines(str(i) + '\n' for i in data)
-                            else:
-                                if "generic_name" in key:
-                                    name=input["name"]
-                                    file_name = str(name) + ".txt"
-                                    logger.debug("This is the file name for generic: "+str(file_name))
-                                    path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.writelines(str(data))
-                                    logger.info("input data saved into memory: " + str(file_name))
-
-                        else:
-                            logger.debug("No data in " + str(key))
                 with open(dir_file, 'w') as outfile:
                     json.dump(dataset, outfile, ensure_ascii=False)
                 logger.info("data source saved into memory")
 
+            store_data(dataset, id)
             return "Data source registered"
     else:
         return 'Data is not in json format'
