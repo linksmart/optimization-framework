@@ -103,6 +103,8 @@ class MQTTClient:
         while count<100:
             if len(self.topic_ack_wait) == 0:
                 return True
+            else:
+                logger.info("topic ack wait len = "+str(len(self.topic_ack_wait)))
             time.sleep(1)
             count+=1
         return False

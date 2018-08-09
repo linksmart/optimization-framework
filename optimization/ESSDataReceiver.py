@@ -19,7 +19,7 @@ class ESSDataReceiver(DataReceiver):
     def on_msg_received(self, payload):
         raw_data = json.loads(payload)
         formated_data = self.add_formated_data(raw_data)
-        self.data.append(formated_data)
+        self.data.update(formated_data)
         self.data_update = True
         logger.info("ess data received")
 
@@ -29,5 +29,5 @@ class ESSDataReceiver(DataReceiver):
         # value = data["value"]
         # assuming the value is a float value
         new_data = {0: value}
-        return new_data
+        return {"ESS_SoC_Value": new_data}
 

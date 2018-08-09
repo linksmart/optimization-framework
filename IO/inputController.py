@@ -40,13 +40,13 @@ class InputController:
             load_forecast_topic = json.loads(load_forecast_topic)
             topics.append(load_forecast_topic)
         else:
-            self.read_input_data(id, "P_Load_Forecast", "p_load.txt")
+            self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
         if self.pv_forecast:
             pv_forecast_topic = config.get("IO", "pv.forecast.topic")
             pv_forecast_topic = json.loads(pv_forecast_topic)
             topics.append(pv_forecast_topic)
         else:
-            self.read_input_data(id, "P_PV_Forecast", "p_pv.txt")
+            self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
         if len(topics) > 0:
             self.prediction_subscriber[self.id] = OptimizationDataReceiver(topics, config)
         else:
@@ -75,9 +75,9 @@ class InputController:
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
         self.optimization_data.update(data)
-        self.load_forecast = self.input_config_parser.get_forecast_flag("load")
+        self.load_forecast = self.input_config_parser.get_forecast_flag("P_Load")
         logger.debug("self.load_forecast: "+ str(self.load_forecast))
-        self.pv_forecast = self.input_config_parser.get_forecast_flag("photovoltaic")
+        self.pv_forecast = self.input_config_parser.get_forecast_flag("P_PV")
         logger.debug("self.pv_forecast: " + str(self.pv_forecast))
         self.ess_data = self.input_config_parser.get_forecast_flag("SoC_Value")
         logger.debug("self.ess_data: " + str(self.ess_data))
@@ -105,9 +105,9 @@ class InputController:
     def get_data(self, id):
         """needs to be changed"""
         if not self.load_forecast:
-            self.read_input_data(id, "P_Load_Forecast", "p_load.txt")
+            self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
         if not self.pv_forecast:
-            self.read_input_data(id, "P_PV_Forecast", "p_pv.txt")
+            self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
         """until here"""
 
         pv_check = not self.pv_forecast
