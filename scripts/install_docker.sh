@@ -5,4 +5,4 @@ sudo apt-get remove docker docker-engine docker.io
 curl -fsSL get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo pip3 install docker-compose
-sudo docker-compose -f docker-compose-profess.yml pull ofw
+#sudo docker-compose -f docker-compose-profess.yml pull ofw
