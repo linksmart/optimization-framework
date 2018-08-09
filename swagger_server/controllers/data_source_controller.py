@@ -15,7 +15,7 @@ utils = Utils()
 
 
 def store_data(dataset, id):
-    logger.debug("Storing the data")
+
     for header in dataset:
         logger.debug("Headers: " + str(header))
         input = dataset[header]
