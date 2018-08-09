@@ -19,7 +19,7 @@ class TestCommandController(BaseTestCase):
         """
         startOFW = Start()
         response = self.client.open(
-            '/v1/command/start',
+            '/v1/command/start/{id}'.format(id='id_example'),
             method='PUT',
             data=json.dumps(startOFW),
             content_type='application/json')
@@ -32,7 +32,7 @@ class TestCommandController(BaseTestCase):
         Command for stoping the framework
         """
         response = self.client.open(
-            '/v1/command/stop',
+            '/v1/command/stop/{id}'.format(id='id_example'),
             method='PUT',
             content_type='application/json')
         self.assert200(response,
