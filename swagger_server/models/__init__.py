@@ -34,5 +34,4 @@ from swagger_server.models.pv_output import PVOutput
 from swagger_server.models.path_definition import PathDefinition
 from swagger_server.models.source import Source
 from swagger_server.models.source_ess import SourceESS
-from swagger_server.models.source_ess_file import SourceESSFile
 from swagger_server.models.start import Start

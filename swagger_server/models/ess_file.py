@@ -16,16 +16,16 @@ class ESSFile(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, so_c_value: int=None, meta: MetaESS=None):  # noqa: E501
+    def __init__(self, so_c_value: float=None, meta: MetaESS=None):  # noqa: E501
         """ESSFile - a model defined in Swagger
 
         :param so_c_value: The so_c_value of this ESSFile.  # noqa: E501
-        :type so_c_value: int
+        :type so_c_value: float
         :param meta: The meta of this ESSFile.  # noqa: E501
         :type meta: MetaESS
         """
         self.swagger_types = {
-            'so_c_value': int,
+            'so_c_value': float,
             'meta': MetaESS
         }
 
@@ -49,22 +49,22 @@ class ESSFile(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def so_c_value(self) -> int:
+    def so_c_value(self) -> float:
         """Gets the so_c_value of this ESSFile.
 
 
         :return: The so_c_value of this ESSFile.
-        :rtype: int
+        :rtype: float
         """
         return self._so_c_value
 
     @so_c_value.setter
-    def so_c_value(self, so_c_value: int):
+    def so_c_value(self, so_c_value: float):
         """Sets the so_c_value of this ESSFile.
 
 
         :param so_c_value: The so_c_value of this ESSFile.
-        :type so_c_value: int
+        :type so_c_value: float
         """
         if so_c_value is None:
             raise ValueError("Invalid value for `so_c_value`, must not be `None`")  # noqa: E501
