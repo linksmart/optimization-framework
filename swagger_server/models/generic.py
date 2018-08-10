@@ -6,7 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
-from swagger_server.models.source import Source  # noqa: F401,E501
+from swagger_server.models.generic_mqtt import GenericMqtt  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -16,26 +16,15 @@ class Generic(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name: str=None, generic_name: Source=None):  # noqa: E501
+    def __init__(self):  # noqa: E501
         """Generic - a model defined in Swagger
 
-        :param name: The name of this Generic.  # noqa: E501
-        :type name: str
-        :param generic_name: The generic_name of this Generic.  # noqa: E501
-        :type generic_name: Source
         """
         self.swagger_types = {
-            'name': str,
-            'generic_name': Source
         }
 
         self.attribute_map = {
-            'name': 'name',
-            'generic_name': 'generic_name'
         }
-
-        self._name = name
-        self._generic_name = generic_name
 
     @classmethod
     def from_dict(cls, dikt) -> 'Generic':
@@ -47,49 +36,3 @@ class Generic(Model):
         :rtype: Generic
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def name(self) -> str:
-        """Gets the name of this Generic.
-
-        Name defining the parameter into the optimization model  # noqa: E501
-
-        :return: The name of this Generic.
-        :rtype: str
-        """
-        return self._name
-
-    @name.setter
-    def name(self, name: str):
-        """Sets the name of this Generic.
-
-        Name defining the parameter into the optimization model  # noqa: E501
-
-        :param name: The name of this Generic.
-        :type name: str
-        """
-        if name is None:
-            raise ValueError("Invalid value for `name`, must not be `None`")  # noqa: E501
-
-        self._name = name
-
-    @property
-    def generic_name(self) -> Source:
-        """Gets the generic_name of this Generic.
-
-
-        :return: The generic_name of this Generic.
-        :rtype: Source
-        """
-        return self._generic_name
-
-    @generic_name.setter
-    def generic_name(self, generic_name: Source):
-        """Sets the generic_name of this Generic.
-
-
-        :param generic_name: The generic_name of this Generic.
-        :type generic_name: Source
-        """
-
-        self._generic_name = generic_name

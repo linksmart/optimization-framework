@@ -38,6 +38,7 @@ RUN apt-get update -y && apt-get install -y \
 #RUN apt-get install python3-h5py
 RUN pip3 install -U tensorflow
 RUN pip3 install -U keras
+RUN pip3 install -U senml
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

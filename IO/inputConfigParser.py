@@ -16,31 +16,55 @@ class InputConfigParser:
         self.input_config_file = input_config_file
         self.input_config_mqtt = input_config_mqtt
         self.mqtt_params = {}
+        self.generic_names = []
         self.extract_mqtt_params()
+        self.optimization_params = self.extract_optimization_values()
+
+
+    def get_mqtt(self, value2):
+        if isinstance(value2, dict) and "mqtt" in value2.keys():
+            host = None
+            topic = None
+            qos = 0
+            if "host" in value2["mqtt"].keys():
+                host = value2["mqtt"]["host"]
+            if "topic" in value2["mqtt"].keys():
+                topic = value2["mqtt"]["topic"]
+            if "qos" in value2["mqtt"].keys():
+                qos = value2["mqtt"]["qos"]
+            if host is not None and topic is not None:
+                return {"host": host, "topic": topic, "qos": qos}
+            else:
+                return None
+        else:
+            return None
 
     def extract_mqtt_params(self):
         for key, value in self.input_config_mqtt.items():
-            for key2, value2 in value.items():
-                host = None
-                topic = None
-                qos = 0
-                if isinstance(value2, dict) and "mqtt" in value2.keys():
-                    if "host" in value2["mqtt"].keys():
-                        host = value2["mqtt"]["host"]
-                    if "topic" in value2["mqtt"].keys():
-                        topic = value2["mqtt"]["topic"]
-                    if "qos" in value2["mqtt"].keys():
-                        qos = value2["mqtt"]["qos"]
-                    if host is not None and topic is not None:
-                        self.mqtt_params[key2] = {"host":host,
-                                                 "topic":topic,
-                                                 "qos":qos}
+            if key == "generic":
+                for value1 in value:
+                    if "name" in value1.keys():
+                        name = value1["name"]
+                        if "generic_name" in value1.keys():
+                            value2 = value1["generic_name"]
+                            mqtt = self.get_mqtt(value2)
+                            if mqtt is not None:
+                                self.mqtt_params[name] = mqtt.copy()
+                                self.generic_names.append(name)
+            else:
+                for key2, value2 in value.items():
+                    mqtt = self.get_mqtt(value2)
+                    if mqtt is not None:
+                        self.mqtt_params[key2] = mqtt.copy()
         logger.info("params = "+str(self.mqtt_params))
 
     def get_params(self, topic):
         return self.mqtt_params[topic]
 
     def get_optimization_values(self):
+        return self.optimization_params
+
+    def extract_optimization_values(self):
         data = {}
         for input_config in [self.input_config_file, self.input_config_mqtt]:
             for k, v in input_config.items():
@@ -66,3 +90,6 @@ class InputConfigParser:
         else:
             logger.info("Topic forecast " + str(topic) + " False")
             return False
+
+    def get_generic_data_names(self):
+        return self.generic_names

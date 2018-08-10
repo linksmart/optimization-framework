@@ -927,12 +927,18 @@ definitions:
         meta:
           PV_Inv_Max_Power: 1
       generic:
-        generic_name:
+      - generic_name:
           mqtt:
             qos: 0
             host: "host"
             topic: "topic"
-        name: "name"
+        name: "name1"
+      - generic_name:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        name: "name2"
       global_control:
         ESS_Control:
           mqtt:
@@ -1157,6 +1163,23 @@ definitions:
         ESS_Discharging_Eff: 3.61607669999999981058635967201553285121917724609375
         ESS_Capacity: 5.63737699999999986033571985899470746517181396484375
   Generic:
+    type: "array"
+    items:
+      $ref: "#/definitions/Generic_mqtt"
+    example:
+    - generic_name:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      name: "name1"
+    - generic_name:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      name: "name2"
+  Generic_mqtt:
     type: "object"
     required:
     - "name"

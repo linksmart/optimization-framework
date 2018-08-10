@@ -1,0 +1,17 @@
+version: '3.2'
+services:
+  mosquitto:
+    image: pascaldevink/rpi-mosquitto
+    container_name: "mosquito_S4G"
+    ports:
+      - "1883:1883"
+  ofw:
+    image: garagon/optimization:arm
+    ports:
+      - "8080:8080"
+    command: ["python3", "-u", "ofw.py"]
+ 
+
+#volumes:
+  #volume-glpsol:
+  #volume-glpk:

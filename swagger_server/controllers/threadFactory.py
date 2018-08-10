@@ -5,6 +5,7 @@ import configparser
 import json
 
 from IO.inputConfigParser import InputConfigParser
+from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
 from mock_data.mockSoCDataPublisher import MockSoCDataPublisher
 from optimization.controller import OptController
 from mock_data.mockPLoadDataPublisher import MockPLoadDataPublisher
@@ -92,7 +93,32 @@ class ThreadFactory:
 
         input_config_parser = InputConfigParser(input_config_file, input_config_mqtt)
 
-        #Initializing constructor of the optimization controller thread
+        """Need to get data from config or input.registry?"""
+        self.pv_forecast = input_config_parser.get_forecast_flag("P_PV")
+        if self.pv_forecast:
+            self.pv_prediction = PVPrediction(config, input_config_parser)
+
+        self.load_forecast = input_config_parser.get_forecast_flag("P_Load")
+        if self.load_forecast:
+            logger.info("Creating load prediction controller thread")
+            # Creating an object of the configuration file
+            config = configparser.RawConfigParser()
+            config.read(self.getFilePath("utils", "ConfigFile.properties"))
+            self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
+            self.load_prediction.start()
+
+        self.soc_value = input_config_parser.get_forecast_flag("SoC_Value")
+        generic_names = input_config_parser.get_generic_data_names()
+        self.generic_flags = {}
+        if generic_names is not None and len(generic_names) > 0:
+            for generic_name in generic_names:
+                self.generic_flags[generic_name] = input_config_parser.get_forecast_flag(generic_name)
+        self.mock = True
+        if self.mock:
+            self.startMockDataPublisherThreads(config)
+        logger.debug("Start in threadfactory finished")
+
+        # Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.time_step,
                                  self.repetition, output_config, input_config_parser, config)
         ####starts the optimization controller thread
@@ -102,48 +128,54 @@ class ThreadFactory:
             logger.error(e)
         logger.debug("Optimization object started")
 
-        """Need to get data from config or input.registry?"""
-        self.pv_forecast = input_config_parser.get_forecast_flag("P_PV")
-        if self.pv_forecast:
-            self.pv_prediction = PVPrediction(config, input_config_parser)
-
-        self.load_forecast = input_config_parser.get_forecast_flag("P_Load")
+    def startMockDataPublisherThreads(self, config):
         if self.load_forecast:
             raw_p_load_data_topic = config.get("IO", "raw.pload.data.topic")
             raw_p_load_data_topic = json.loads(raw_p_load_data_topic)
             self.mock_p_load_data = MockPLoadDataPublisher(raw_p_load_data_topic, config)
             self.mock_p_load_data.start()
-            logger.info("Creating load prediction controller thread")
-            # Creating an object of the configuration file
-            config = configparser.RawConfigParser()
-            config.read(self.getFilePath("utils", "ConfigFile.properties"))
-            self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
-            self.load_prediction.start()
-        self.soc_forecast = input_config_parser.get_forecast_flag("SoC_Value")
-        """
-        if self.soc_forecast:
+        if self.soc_value:
             raw_soc_data_topic = config.get("IO", "raw.soc.data.topic")
             raw_soc_data_topic = json.loads(raw_soc_data_topic)
             self.mock_soc_data = MockSoCDataPublisher(raw_soc_data_topic, config)
             self.mock_soc_data.start()
-        """
-        logger.debug("Start in threadfactory finished")
+        if len(self.generic_flags) > 0:
+            self.mock_generic_data = {}
+            mock_flag_off = {}
+            for generic_name, flag in self.generic_flags.items():
+                if flag:
+                    logger.info("raw.generic.data.topic" + "." + str(generic_name))
+                    raw_generic_data_topic = config.get("IO", "raw.generic.data.topic" + "." + str(generic_name), fallback=None)
+                    if raw_generic_data_topic is not None:
+                        raw_generic_data_topic = json.loads(raw_generic_data_topic)
+                        self.mock_generic_data[generic_name] = MockGenericDataPublisher(raw_generic_data_topic, config, generic_name)
+                        self.mock_generic_data[generic_name].start()
+                    else:
+                        mock_flag_off[generic_name] = False
+            self.generic_flags.update(mock_flag_off)
+    def stopMockDataPublisherThreads(self):
+        if self.load_forecast:
+            logger.info("Stopping mock p load data thread")
+            self.mock_p_load_data.Stop()
+        if self.soc_value:
+            logger.info("Stopping mock soc data thread")
+            self.mock_soc_data.Stop()
+        if len(self.generic_flags) > 0:
+            for generic_name, flag in self.generic_flags.items():
+                if flag:
+                    self.mock_generic_data[generic_name].Stop()
 
     def stopOptControllerThread(self):
         try:
+            if self.mock:
+                self.stopMockDataPublisherThreads()
+            # stop as per ID
             if self.load_forecast:
-                logger.info("Stopping mock p load data thread")
-                self.mock_p_load_data.Stop()
                 logger.info("Stopping load thread")
                 self.load_prediction.Stop()
             if self.pv_forecast:
                 logger.info("Stopping pv thread")
-                self.pv_prediction.Stop(self.id)
-            """
-            if self.soc_forecast:
-                logger.info("Stopping mock soc data thread")
-                self.mock_soc_data.Stop()
-            """
+                self.pv_prediction.Stop()
             logger.info("Stopping optimization controller thread")
             self.opt.Stop(self.id)
             logger.info("Optimization controller thread stopped")
