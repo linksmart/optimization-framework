@@ -7,7 +7,7 @@ from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
 from swagger_server.models.ess_file import ESSFile  # noqa: F401,E501
-from swagger_server.models.generic_file import GenericFile  # noqa: F401,E501
+from swagger_server.models.generic_files import GenericFiles  # noqa: F401,E501
 from swagger_server.models.global_control_file import GlobalControlFile  # noqa: F401,E501
 from swagger_server.models.grid import Grid  # noqa: F401,E501
 from swagger_server.models.load_file import LoadFile  # noqa: F401,E501
@@ -21,11 +21,11 @@ class FileInputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, generic: GenericFile=None, load: LoadFile=None, photovoltaic: PVFile=None, ess: ESSFile=None, grid: Grid=None, global_control: GlobalControlFile=None):  # noqa: E501
+    def __init__(self, generic: GenericFiles=None, load: LoadFile=None, photovoltaic: PVFile=None, ess: ESSFile=None, grid: Grid=None, global_control: GlobalControlFile=None):  # noqa: E501
         """FileInputSource - a model defined in Swagger
 
         :param generic: The generic of this FileInputSource.  # noqa: E501
-        :type generic: GenericFile
+        :type generic: GenericFiles
         :param load: The load of this FileInputSource.  # noqa: E501
         :type load: LoadFile
         :param photovoltaic: The photovoltaic of this FileInputSource.  # noqa: E501
@@ -38,7 +38,7 @@ class FileInputSource(Model):
         :type global_control: GlobalControlFile
         """
         self.swagger_types = {
-            'generic': GenericFile,
+            'generic': GenericFiles,
             'load': LoadFile,
             'photovoltaic': PVFile,
             'ess': ESSFile,
@@ -74,22 +74,22 @@ class FileInputSource(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def generic(self) -> GenericFile:
+    def generic(self) -> GenericFiles:
         """Gets the generic of this FileInputSource.
 
 
         :return: The generic of this FileInputSource.
-        :rtype: GenericFile
+        :rtype: GenericFiles
         """
         return self._generic
 
     @generic.setter
-    def generic(self, generic: GenericFile):
+    def generic(self, generic: GenericFiles):
         """Sets the generic of this FileInputSource.
 
 
         :param generic: The generic of this FileInputSource.
-        :type generic: GenericFile
+        :type generic: GenericFiles
         """
 
         self._generic = generic

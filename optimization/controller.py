@@ -226,6 +226,17 @@ class OptController(threading.Thread):
 
         except Exception as e:
             logger.error(e)
-            return e
+            e = str(e)
+            solver_error = "The SolverFactory was unable to create the solver"
+            if solver_error in e:
+                i = e.index(solver_error)
+                i_start = e.index("\"",i)
+                i_end = e.index("\"",i_start+1)
+                solver = e[i_start+1: i_end]
+                error_msg = "Incorrect solver "+str(solver)+" used"
+                logger.error(error_msg)
+            else:
+                error_msg = e
+            return error_msg
         self.finish_status = True
 

@@ -17,21 +17,23 @@ class InputConfigParser:
         self.input_config_mqtt = input_config_mqtt
         self.mqtt_params = {}
         self.generic_names = []
+        self.defined_receivers = {"P_Load", "P_PV", "SoC_Value"}
         self.extract_mqtt_params()
         self.optimization_params = self.extract_optimization_values()
+        logger.info("generic names = "+str(self.generic_names))
 
 
     def get_mqtt(self, value2):
-        if isinstance(value2, dict) and "mqtt" in value2.keys():
+        if isinstance(value2, dict) and Constants.mqtt in value2.keys():
             host = None
             topic = None
             qos = 0
-            if "host" in value2["mqtt"].keys():
-                host = value2["mqtt"]["host"]
-            if "topic" in value2["mqtt"].keys():
-                topic = value2["mqtt"]["topic"]
-            if "qos" in value2["mqtt"].keys():
-                qos = value2["mqtt"]["qos"]
+            if "host" in value2[Constants.mqtt].keys():
+                host = value2[Constants.mqtt]["host"]
+            if "topic" in value2[Constants.mqtt].keys():
+                topic = value2[Constants.mqtt]["topic"]
+            if "qos" in value2[Constants.mqtt].keys():
+                qos = value2[Constants.mqtt]["qos"]
             if host is not None and topic is not None:
                 return {"host": host, "topic": topic, "qos": qos}
             else:
@@ -56,6 +58,8 @@ class InputConfigParser:
                     mqtt = self.get_mqtt(value2)
                     if mqtt is not None:
                         self.mqtt_params[key2] = mqtt.copy()
+                        if key2 not in self.defined_receivers:
+                            self.generic_names.append(key2)
         logger.info("params = "+str(self.mqtt_params))
 
     def get_params(self, topic):
@@ -81,6 +85,13 @@ class InputConfigParser:
                                     data[k2] = {None: v2}
                         elif k1 == Constants.SoC_Value and isinstance(v1, int):
                             data["ESS_SoC_Value"] = {0: float(v1 / 100)}
+                        elif isinstance(v1, list) and k1 not in self.defined_receivers:
+                            self.generic_names.append(k1)
+                if k == "generic" and input_config == self.input_config_file:
+                    for val in v:
+                        for k1, v1 in val.items():
+                            if k1 == "name":
+                                self.generic_names.append(v1)
         return data
 
     def get_forecast_flag(self, topic):

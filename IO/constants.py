@@ -12,3 +12,4 @@ class Constants:
     P_PV = "P_PV"
     P_Load = "P_Load"
     Q_Load = "Q_Load"
+    mqtt = "mqtt"

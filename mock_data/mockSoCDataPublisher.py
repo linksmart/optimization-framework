@@ -3,9 +3,14 @@ Created on Aug 09 14:11 2018
 
 @author: nishit
 """
+import json
 import logging
 
 import os
+import random
+
+import time
+from senml import senml
 
 from IO.dataPublisher import DataPublisher
 
@@ -19,8 +24,8 @@ class MockSoCDataPublisher(DataPublisher):
         self.index = 20
 
     def get_data(self):
-        if self.index < 100:
-            self.index += 1
-            return self.index
-        else:
-            self.index = 20
+        meas = senml.SenMLMeasurement()
+        meas.name = "ESS_SoC_Value"
+        meas.value = random.randint(20,100)
+        meas.time = time.time()
+        return json.dumps(meas.to_json())

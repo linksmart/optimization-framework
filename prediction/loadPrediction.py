@@ -110,8 +110,8 @@ class LoadPrediction(threading.Thread):
     def Stop(self):
         logger.info("start load controller thread exit")
         logger.info("Stopping load forecast thread")
-        self.load_forecast_pub.Stop()
         self.stopRequest.set()
+        self.load_forecast_pub.Stop()
         if self.isAlive():
             self.join()
         logger.info("load controller thread exit")

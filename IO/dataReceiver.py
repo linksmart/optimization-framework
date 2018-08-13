@@ -24,6 +24,7 @@ class DataReceiver(ABC):
 
     def __init__(self, internal, topic_params, config, emptyValue={}):
         super().__init__()
+        self.stop_request = False
         self.internal = internal
         self.topic_params = topic_params
         self.emptyValue = emptyValue
@@ -87,7 +88,7 @@ class DataReceiver(ABC):
         if not self.port:
             self.port = 1883
             #read from config
-        self.client_id = "client_receive" + str(randrange(100))
+        self.client_id = "client_receive" + str(randrange(100000)) + str(time.time()).replace(".","")
         self.mqtt = MQTTClient(str(self.host), self.port, self.client_id)
         self.mqtt.subscribe(topic_qos, self.on_msg_received)
         if not self.mqtt.subscribe_ack_wait():
@@ -106,18 +107,19 @@ class DataReceiver(ABC):
     def get_mqtt_data(self, require_updated, clearData):
         if require_updated == 1 and not self.data:
             require_updated = 0
-        while require_updated == 0 and not self.data_update:
+        while require_updated == 0 and not self.data_update and not self.stop_request:
             logger.debug("wait for data")
             time.sleep(0.5)
         return self.get_and_update_data(clearData)
 
     def exit(self):
+        self.stop_request = True
         if self.channel == "MQTT":
             self.mqtt.MQTTExit()
         logger.info("InputController safe exit")
 
     def get_zmq_msg(self, clearData):
-        while True:
+        while True and not self.stop_request:
             logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
             logger.debug("zmq subscription msg received")

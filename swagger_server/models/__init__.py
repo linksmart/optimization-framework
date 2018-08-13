@@ -11,6 +11,7 @@ from swagger_server.models.ess_output import ESSOutput
 from swagger_server.models.file_input_source import FileInputSource
 from swagger_server.models.generic import Generic
 from swagger_server.models.generic_file import GenericFile
+from swagger_server.models.generic_files import GenericFiles
 from swagger_server.models.generic_mqtt import GenericMqtt
 from swagger_server.models.global_control import GlobalControl
 from swagger_server.models.global_control_file import GlobalControlFile

@@ -8,7 +8,7 @@ import logging
 
 import os
 
-from optimization.ESSDataReceiver import ESSDataReceiver
+from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
 from optimization.optimizationDataReceiver import OptimizationDataReceiver
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__file__)
 class InputController:
 
     def __init__(self, id, input_config_parser, config, timesteps):
+        self.stop_request = False
         self.optimization_data = {}
         self.prediction_subscriber={}
         self.input_config_parser = input_config_parser
@@ -28,7 +29,7 @@ class InputController:
         self.load_forecast = False
         self.pv_forecast = False
         # need to get a internal_forecast from input config parser
-        self.ess_data_mqtt = False
+        self.soc_value_data_mqtt = False
         self.generic_data_mqtt = {}
         self.generic_names = None
         self.parse_input_config()
@@ -56,9 +57,10 @@ class InputController:
             self.prediction_subscriber[self.id] = None
 
         # ESS data
-        if self.ess_data_mqtt:
+        self.soc_value_data_receiver = None
+        if self.soc_value_data_mqtt:
             topic = self.input_config_parser.get_params("SoC_Value")
-            self.ess_data_receiver = ESSDataReceiver(False, topic, config)
+            self.soc_value_data_receiver = SoCValueDataReceiver(False, topic, config)
 
         self.generic_data_receiver = {}
         if len(self.generic_data_mqtt) > 0:
@@ -89,8 +91,8 @@ class InputController:
         logger.debug("self.load_forecast: "+ str(self.load_forecast))
         self.pv_forecast = self.input_config_parser.get_forecast_flag("P_PV")
         logger.debug("self.pv_forecast: " + str(self.pv_forecast))
-        self.ess_data_mqtt = self.input_config_parser.get_forecast_flag("SoC_Value")
-        logger.debug("self.ess_data: " + str(self.ess_data_mqtt))
+        self.soc_value_data_mqtt = self.input_config_parser.get_forecast_flag("SoC_Value")
+        logger.debug("self.ess_data: " + str(self.soc_value_data_mqtt))
         self.generic_names = self.input_config_parser.get_generic_data_names()
         logger.info("genereic name = " + str(self.generic_names))
         if self.generic_names is not None and len(self.generic_names) > 0:
@@ -128,7 +130,7 @@ class InputController:
 
         pv_check = not self.pv_forecast
         load_check = not self.load_forecast
-        while not (pv_check and load_check):
+        while not (pv_check and load_check) and not self.stop_request:
             if self.prediction_subscriber[id]:
                 data = self.prediction_subscriber[id].get_data()
                 self.optimization_data.update(data)
@@ -136,8 +138,8 @@ class InputController:
                     pv_check = True
                 if "P_Load_Forecast" in data.keys():
                     load_check = True
-        if self.ess_data_mqtt:
-            data = self.ess_data_receiver.get_data()
+        if self.soc_value_data_mqtt:
+            data = self.soc_value_data_receiver.get_data()
             self.optimization_data.update(data)
         else:
             self.read_input_data(id, "ESS_SoC_Value", "SoC_Value.txt")
@@ -151,12 +153,13 @@ class InputController:
         return {None: self.optimization_data.copy()}
 
     def Stop(self, id):
+        self.stop_request = True
         if self.prediction_subscriber[id] is not None:
             self.prediction_subscriber[id].exit()
-        if self.ess_data_receiver:
-            self.ess_data_receiver.exit()
-        if self.generic_data_receiver:
-            self.generic_data_receiver.exit()
+        if self.soc_value_data_receiver:
+            self.soc_value_data_receiver.exit()
+        for generic_name in self.generic_data_receiver.keys():
+            self.generic_data_receiver[generic_name].exit()
 
     def set_params(self):
         params = {
@@ -215,6 +218,6 @@ class InputController:
             'Grid_X': {None: 0.282},
             'Grid_dV_Tolerance': {None: 0.1}
         }
-        if not self.ess_data_mqtt and not "ESS_SoC_Value" in self.optimization_data.keys():
+        if not self.soc_value_data_mqtt and not "ESS_SoC_Value" in self.optimization_data.keys():
             params['ESS_SoC_Value'] = {0: 0.35}
         self.optimization_data.update(params)

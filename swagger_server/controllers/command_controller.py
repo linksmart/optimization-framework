@@ -1,6 +1,7 @@
 import threading
 
 import connexion
+import re
 import six
 import logging
 
@@ -22,6 +23,7 @@ class CommandController:
     factory={}
     statusThread={}
     running = {}
+    asdf = {}
 
     def set(self, id, object):
         self.factory[id] = object
@@ -40,10 +42,10 @@ class CommandController:
             return False
     def get_isRunning(self, id):
         #logger.debug("Running: "+str(self.running[id]))
-        if not self.running[id]:
-            return False
-        else:
+        if id in self.running.keys():
             return self.running[id]
+        else:
+            return False
 
     def get_statusThread(self,id):
         return self.statusThread[id]
@@ -69,6 +71,7 @@ class CommandController:
         logger.debug("Status of the Thread started")
         self.statusThread[self.id].start()
         logger.debug("Command controller start finished")
+        logger.info("running status "+str(self.running))
 
 
     def stop(self, id):
@@ -92,6 +95,19 @@ class CommandController:
             time.sleep(1)
 
 variable=CommandController()
+available_solvers = ["ipopt", "glpk", "bonmin"]
+def get_models():
+    f = []
+    mypath = "/usr/src/app/optimization/models"
+    for (dirpath, dirnames, filenames) in os.walk(mypath):
+        f.extend(filenames)
+        break
+    f_new = []
+    for filenames in f:
+        filenames = re.sub('.py', '', str(filenames))
+        f_new.append(filenames)
+    logger.debug("available models = "+str(f_new))
+    return f_new
 
 def framework_start(id, startOFW):  # noqa: E501
     """Command for starting the framework
@@ -106,7 +122,11 @@ def framework_start(id, startOFW):  # noqa: E501
     if connexion.request.is_json:
         logger.info("Starting the system")
         startOFW = Start.from_dict(connexion.request.get_json())
-
+        models = get_models()
+        if startOFW.model_name != "" and startOFW.model_name not in models:
+            return "Model not available. Available models are :" + str(models)
+        if startOFW.solver not in available_solvers:
+            return "Use one of the following solvers :" + str(available_solvers)
         if variable.isRunningExists():
             logger.debug("isRunning exists")
             if not variable.get_isRunning(id):
@@ -135,9 +155,9 @@ def framework_stop(id):  # noqa: E501
 
     :rtype: None
     """
-
+    logger.info("running status "+str(variable.running))
     try:
-        if variable.statusThread[id] is not None and variable.statusThread[id].isAlive:
+        if id in variable.statusThread and variable.statusThread[id].isAlive:
             variable.statusThread[id].join()
         logger.info("Stopping the system")
         if variable.get_isRunning(id):

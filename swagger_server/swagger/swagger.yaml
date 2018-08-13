@@ -949,7 +949,7 @@ definitions:
     type: "object"
     properties:
       generic:
-        $ref: "#/definitions/Generic_File"
+        $ref: "#/definitions/Generic_Files"
       load:
         $ref: "#/definitions/Load_File"
       photovoltaic:
@@ -993,10 +993,14 @@ definitions:
         meta:
           PV_Inv_Max_Power: 1
       generic:
-        file:
+      - file:
         - 0.80082819046101150206595775671303272247314453125
         - 0.80082819046101150206595775671303272247314453125
-        name: "name"
+        name: "name1"
+      - file:
+        - 0.70082819046101152427041824921616353094577789306640625
+        - 0.90082819046101147986149726420990191400051116943359375
+        name: "name2"
       global_control:
         ESS_Control:
         - 2.3021358869347654518833223846741020679473876953125
@@ -1196,10 +1200,24 @@ definitions:
           host: "host"
           topic: "topic"
       name: "name"
+  Generic_Files:
+    type: "array"
+    items:
+      $ref: "#/definitions/Generic_File"
+    example:
+    - file:
+      - 0.80082819046101150206595775671303272247314453125
+      - 0.80082819046101150206595775671303272247314453125
+      name: "name1"
+    - file:
+      - 0.70082819046101152427041824921616353094577789306640625
+      - 0.90082819046101147986149726420990191400051116943359375
+      name: "name2"
   Generic_File:
     type: "object"
     required:
     - "file"
+    - "name"
     properties:
       name:
         type: "string"
