@@ -121,6 +121,9 @@ class OptController(threading.Thread):
                 logger.info("This is the id: "+self.id)
                 data_dict = self.input.get_data(self.id) #blocking call
                 logger.info("data is "+str(data_dict))
+                if self.stopRequest.isSet():
+                    break
+
                 # Creating an optimization instance with the referenced model
                 instance = self.my_class.model.create_instance(data_dict)
                 #instance = self.my_class.model.create_instance(self.data_path)
@@ -189,7 +192,7 @@ class OptController(threading.Thread):
 
                         #logger.info("Este es mi dict"+str(my_dict))
                         #logger.debug("This is the output data: " + str(self.output_config))
-                        self.output.publishController(my_dict)
+                        self.output.publishController(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:

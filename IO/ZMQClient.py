@@ -50,6 +50,20 @@ class ZMQClient:
         except Exception as e:
             logger.error(e)
 
+    def init_subscriber_byte(self, topic):
+        try:
+            logger.info("Initialize zmq subscriber byte")
+            self.subscriber = self.context.socket(zmq.SUB)
+            if isinstance(self.url, list):
+                for url in self.url:
+                    self.subscriber.connect(url)
+            else:
+                self.subscriber.connect(self.url)
+            self.subscriber.setsockopt(zmq.SUBSCRIBE, topic)
+            logger.info("subscriber initialized")
+        except Exception as e:
+            logger.error(e)
+
     def publish_message(self, topic, message):
         try:
             self.publisher.send_string("%s %s" % (topic, message))
@@ -69,3 +83,19 @@ class ZMQClient:
         except Exception as e:
             logger.error(e)
             return False, None, None
+
+    def recreq_server(self, callback_function):
+        self.recreq = self.context.socket(zmq.REP)
+        self.recreq.bind(self.url)
+
+        while True:
+            #  Wait for next request from client
+            message = self.recreq.recv()
+            logger.info("Received request: %s" % message)
+
+            result = callback_function()
+            #  Do some 'work'
+            time.sleep(1)
+
+            #  Send reply back to client
+            self.recreq.send(bytes(result))

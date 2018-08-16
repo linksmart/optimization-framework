@@ -39,6 +39,7 @@ RUN apt-get update -y && apt-get install -y \
 RUN pip3 install -U tensorflow
 RUN pip3 install -U keras
 RUN pip3 install -U senml
+RUN pip3 install -U redis
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

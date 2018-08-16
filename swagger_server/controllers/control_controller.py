@@ -1,16 +1,16 @@
 import connexion
 import six
 import os, logging, json
+
+from IO.redisDB import RedisDB
 from swagger_server.models.output_source import OutputSource  # noqa: E501
 from swagger_server.models.path_definition import PathDefinition  # noqa: E501
-from swagger_server import util
 
 from optimization.utils import Utils
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 utils = Utils()
-
 
 def delete_data(id, registry_file):
     try:
@@ -66,7 +66,14 @@ def output_source_file(id, Output_Source):  # noqa: E501
     """
     if connexion.request.is_json:
         Output_Source = PathDefinition.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    result = {}
+    redisDB = RedisDB()
+    output_keys = redisDB.get_keys_for_pattern("o:"+id+":*")
+    if output_keys is not None:
+        for key in output_keys:
+            value = redisDB.get_list(key)
+            result[key[key.rindex(":")+1:]] = [float(i) for i in value]
+    return result
 
 
 def output_source_mqtt(id, Output_Source):  # noqa: E501

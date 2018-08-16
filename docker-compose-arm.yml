@@ -53,6 +53,12 @@ services:
   #pyro:
   #  image: farshidtz/pyro4-ns
   #  command: ["--host=pyro-ns"]
+  redis:
+    image: redis:latest
+    container_name: "redis_S4G"
+    command: redis-server
+    ports:
+      - "6379:6379"
   ofw:
     build:
       context: ""

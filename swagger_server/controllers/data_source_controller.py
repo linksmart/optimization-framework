@@ -7,7 +7,6 @@ from os.path import isfile, join
 from optimization.utils import Utils
 from swagger_server.models.file_input_source import FileInputSource  # noqa: E501
 from swagger_server.models.mqtt_input_source import MQTTInputSource  # noqa: E501
-from swagger_server.controllers.command_controller import CommandController
 from swagger_server import util
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
