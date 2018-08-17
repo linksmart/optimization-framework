@@ -22,7 +22,7 @@ class LoadForecastPublisher(DataPublisher):
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "optimization", "loadData.dat")
         self.q = queue
-        super().__init__(internal_topic_params, config, publish_frequency)
+        super().__init__(True, internal_topic_params, config, publish_frequency)
 
     def get_data(self):
         #  check if new data is available

@@ -19,10 +19,13 @@ logger = logging.getLogger(__file__)
 
 class DataPublisher(ABC,threading.Thread):
 
-    def __init__(self, topic_params, config, publish_frequency):
+    def __init__(self, internal, topic_params, config, publish_frequency):
         super().__init__()
+        self.internal = internal
         self.config = config
-        self.channel = config.get("IO", "channel")
+        self.channel = "MQTT"
+        if internal:
+            self.channel = config.get("IO", "channel")
         self.topic_params = topic_params
         self.stopRequest = threading.Event()
         if self.channel == "MQTT":

@@ -88,22 +88,16 @@ class InputController:
         data = self.input_config_parser.get_optimization_values()
         self.optimization_data.update(data)
         self.load_forecast = self.input_config_parser.get_forecast_flag("P_Load")
-        logger.debug("self.load_forecast: "+ str(self.load_forecast))
         self.pv_forecast = self.input_config_parser.get_forecast_flag("P_PV")
-        logger.debug("self.pv_forecast: " + str(self.pv_forecast))
         self.soc_value_data_mqtt = self.input_config_parser.get_forecast_flag("SoC_Value")
-        logger.debug("self.ess_data: " + str(self.soc_value_data_mqtt))
         self.generic_names = self.input_config_parser.get_generic_data_names()
-        logger.info("genereic name = " + str(self.generic_names))
         if self.generic_names is not None and len(self.generic_names) > 0:
             for generic_name in self.generic_names:
                 self.generic_data_mqtt[generic_name] = self.input_config_parser.get_forecast_flag(generic_name)
-                logger.debug("generic_name: " +str(generic_name) + " flag: " + str(self.generic_data_mqtt[generic_name]))
 
     def read_input_data(self, id, topic, file):
         data = {}
         """"/ usr / src / app / optimization / 95c38e56d913 / p_load.txt"""
-        logger.debug("This is the id in read_input_data: "+str(id))
         path = os.path.join("/usr/src/app", "optimization", str(id), file)
         rows = []
         i = 0
@@ -121,12 +115,10 @@ class InputController:
             self.optimization_data[topic] = data
 
     def get_data(self, id):
-        """needs to be changed"""
         if not self.load_forecast:
             self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
         if not self.pv_forecast:
             self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
-        """until here"""
 
         pv_check = not self.pv_forecast
         load_check = not self.load_forecast

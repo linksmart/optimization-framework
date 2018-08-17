@@ -20,7 +20,7 @@ logger = logging.getLogger(__file__)
 class MockSoCDataPublisher(DataPublisher):
 
     def __init__(self, topic_params, config):
-        super().__init__(topic_params, config, 5)
+        super().__init__(False, topic_params, config, 5)
         self.index = 20
 
     def get_data(self):

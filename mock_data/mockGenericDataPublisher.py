@@ -18,7 +18,7 @@ logger = logging.getLogger(__file__)
 class MockGenericDataPublisher(DataPublisher):
 
     def __init__(self, topic_params, config, generic_name):
-        super().__init__(topic_params, config, 5)
+        super().__init__(False, topic_params, config, 5)
         self.generic_name = generic_name
 
     def get_data(self):
