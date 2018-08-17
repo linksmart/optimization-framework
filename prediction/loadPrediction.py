@@ -28,7 +28,7 @@ class LoadPrediction(threading.Thread):
         self.length = 24
         self.horizon = horizon
         self.num_timesteps = 25
-        self.hidden_size = 10
+        self.hidden_size = 40
         self.batch_size = 1
         self.num_epochs = 1  # 10
         self.min_training_size = self.num_timesteps+10
@@ -37,6 +37,7 @@ class LoadPrediction(threading.Thread):
         self.raw_data_file_container = os.path.join("/usr/src/app", "prediction", "raw_data.csv")
         self.raw_data_file_host = os.path.join("/usr/src/app", "prediction/resources", "raw_data.csv")
         self.model_file_container = os.path.join("/usr/src/app", "prediction", "model.h5")
+        self.model_file_container_temp = os.path.join("/usr/src/app", "prediction", "model_temp.h5")
         self.model_file_host = os.path.join("/usr/src/app", "prediction/resources", "model.h5")
         self.utils.copy_files_from_host(self.raw_data_file_host, self.raw_data_file_container)
         self.utils.copy_files_from_host(self.model_file_host, self.model_file_container)
@@ -56,17 +57,17 @@ class LoadPrediction(threading.Thread):
 
         self.predicted_data = None
 
-        self.lstmModel = LSTMmodel(self.num_timesteps, self.hidden_size, self.batch_size, self.model_file_container)
+        self.lstmModel = LSTMmodel(self.num_timesteps, self.hidden_size, self.batch_size, self.model_file_container, self.model_file_container_temp)
         self.trainModel = TrainModel(self.model_file_container)
         self.modelPrediction = ModelPrediction()
 
-        self.train = False
+        self.trained = False
         self.today = datetime.datetime.now().day
-        self.copy_to_host_thread = threading.Thread()
+        self.train_thread = None
 
     def run(self):
         while not self.stopRequest.is_set():
-            model, created = self.lstmModel.model_setup()
+            model, model_temp, created, temp_flag = self.lstmModel.model_setup()
             train = created or self.checktime()
             self.today = datetime.datetime.now()
             # get raw data from mqtt/zmq
@@ -74,44 +75,37 @@ class LoadPrediction(threading.Thread):
             logger.debug("raw data ready " + str(len(data)))
             test_predictions = []
             if train:
-                # preprocess data
-                if len(data) > self.min_training_size:
-                    Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True)
-
-                    # train if required
-                    self.trainModel.train(model, Xtrain, Ytrain, self.num_epochs, self.batch_size)
-    
-                    # evaluate if required
-                    self.modelPrediction.evaluate(model, Xtest, Ytest, self.batch_size)
-    
-                    self.train = True
-
-                    self.save_file_to_host()
+                self.train_thread = threading.Thread(target=self.train_model, args=(data, model,))
+                self.train_thread.start()
             else:
                 # preprocess data
                 logger.info("len data = "+str(len(data)))
-                Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
-                test_predictions = self.modelPrediction.predict_next_day(model, Xtest, self.batch_size, self.length)
-                data = self.processingData.to_dict_with_datetime(test_predictions,
-                                                                 datetime.datetime(datetime.datetime.now().year, 12, 11,
-                                                                                   6, 0), 60)
-                self.q.put(data)
-
+                if len(data) >= self.num_timesteps:
+                    if temp_flag:
+                        model = model_temp
+                    if model is not None:
+                        Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
+                        test_predictions = self.modelPrediction.predict_next_day(model, Xtest, self.batch_size, self.length)
+                        data = self.processingData.to_dict_with_datetime(test_predictions,
+                                                                         datetime.datetime(datetime.datetime.now().year, 12, 11,
+                                                                                           6, 0), 60)
+                        self.q.put(data)
             logger.debug("predictions "+str(test_predictions))
 
             time.sleep(1)
             # for testing
 
     def checktime(self):
-        return (not self.train or datetime.datetime.now().day > self.today.day
-        or datetime.datetime.now().month > self.today.month
-        or datetime.datetime.now().year > self.today.year)
+        return (not self.trained or datetime.datetime.now().day > self.today.day
+                or datetime.datetime.now().month > self.today.month
+                or datetime.datetime.now().year > self.today.year)
 
     def Stop(self):
         logger.info("start load controller thread exit")
         logger.info("Stopping load forecast thread")
         self.stopRequest.set()
         self.load_forecast_pub.Stop()
+        self.trainModel.Stop()
         if self.isAlive():
             self.join()
         logger.info("load controller thread exit")
@@ -119,3 +113,19 @@ class LoadPrediction(threading.Thread):
     def save_file_to_host(self):
         self.utils.copy_files_to_host(self.raw_data_file_container, self.raw_data_file_host)
         pass
+
+    def train_model(self, data, model):
+        # preprocess data
+        try:
+            if len(data) > self.min_training_size:
+                self.trained = True
+                logger.info("start training")
+                Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True)
+                # train if required
+                self.trainModel.train(model, Xtrain, Ytrain, self.num_epochs, self.batch_size)
+                # evaluate if required
+                self.modelPrediction.evaluate(model, Xtest, Ytest, self.batch_size)
+                self.save_file_to_host()
+        except Exception as e:
+            self.trained = False
+            logger.error("error training model "+str(e))

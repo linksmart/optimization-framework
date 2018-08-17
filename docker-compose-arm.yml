@@ -78,6 +78,12 @@ services:
     #command: ["echo", "que sera sera"]
     command: ["python3", "-u", "ofw.py"]
     #command: ["ls","/usr/bin"]
+  mock:
+    build:
+      context: ""
+      dockerfile: mock_data/docker-arm/Dockerfile-mock-arm
+     # ../docker/App/Dockerfile
+    command: ["python3", "-u", "mockdata.py", "P_Load", "SoC_Value"]
 
 volumes:
   volume-glpsol:

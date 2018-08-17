@@ -168,17 +168,10 @@ class OptController(threading.Thread):
                             #logger.info("Variable: "+ str(v))
                             varobject = getattr(instance, str(v))
                             #if str(v) == "P_PV_Output":
-                                #logger.info("Este es P_PV_Output")
                                 #my_dict[str(v)]='2'
-                                #logger.info("A ver "+ str(my_dict))
                             for index in varobject:
-                                #logger.info(str(index)+", "+ str(varobject[index].value))
                                 if index==0:
-                                    #logger.info("Estoy aqui")
-                                    #logger.info(str(index) + ", " + str(varobject[index].value))
-
                                     list=[{index,varobject[index].value}]
-                                    #logger.info("Estaes la lista"+str(list))
                                     try:
                                         # Try and add to the dictionary by key ref
                                         my_dict[str(v)]=list
@@ -189,9 +182,6 @@ class OptController(threading.Thread):
                                         #my_dict = {**my_dict, **{v: list}}
 					
 
-
-                        #logger.info("Este es mi dict"+str(my_dict))
-                        #logger.debug("This is the output data: " + str(self.output_config))
                         self.output.publishController(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
@@ -199,8 +189,6 @@ class OptController(threading.Thread):
                     # do something about it? or exit?
                     logger.info("Termination condition is infeasible")
                 else:
-                    # something else is wrong
-                    #print(self.results.solver)
                     logger.info("Nothing fits")
 
                 count += 1

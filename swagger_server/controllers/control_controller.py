@@ -35,8 +35,12 @@ def delete_file_output(id):  # noqa: E501
 
     :rtype: None
     """
-    """also need to delete output files"""
-    return delete_data(id, "Output.registry.file")
+    redisDB = RedisDB()
+    output_keys = redisDB.get_keys_for_pattern("o:" + id + ":*")
+    if output_keys is not None:
+        for key in output_keys:
+            redisDB.remove(key)
+    return "success"
 
 
 def delete_mqtt_output(id):  # noqa: E501
@@ -52,7 +56,7 @@ def delete_mqtt_output(id):  # noqa: E501
     return delete_data(id, "Output.registry.mqtt")
 
 
-def output_source_file(id, Output_Source):  # noqa: E501
+def output_source_file(id):  # noqa: E501
     """Creates a new data source as ouput
 
      # noqa: E501
@@ -64,8 +68,6 @@ def output_source_file(id, Output_Source):  # noqa: E501
 
     :rtype: None
     """
-    if connexion.request.is_json:
-        Output_Source = PathDefinition.from_dict(connexion.request.get_json())  # noqa: E501
     result = {}
     redisDB = RedisDB()
     output_keys = redisDB.get_keys_for_pattern("o:"+id+":*")
@@ -104,6 +106,6 @@ def output_source_mqtt(id, Output_Source):  # noqa: E501
         with open(path, 'w') as outfile:
             json.dump(dataset, outfile, ensure_ascii=False)
         logger.info("control output saved into memory")
-    return 'do some magic!'
+    return 'success'
 
 

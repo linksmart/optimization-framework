@@ -63,16 +63,18 @@ class ThreadFactory:
         logger.debug("Optimization calculated with the following solver: " + self.solver_name)
 
         ##############################################################################################
-        # Reads the registry/output and stores it into an object
-        path = os.path.join(os.getcwd(), "utils", str(self.id), "Output.registry.mqtt")
-        with open(path, "r") as file:
-            output_config = json.loads(file.read())
-        #logger.debug("This is the output data: " + str(output_config))
+        output_config = None
+        try:
+            # Reads the registry/output and stores it into an object
+            path = os.path.join(os.getcwd(), "utils", str(self.id), "Output.registry.mqtt")
+            with open(path, "r") as file:
+                output_config = json.loads(file.read())
+        except Exception as e:
+            logger.error("Output.registry.mqtt not set, only file output available")
 
         try:
             # Reads the registry/input and stores it into an object
             path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.file")
-            #path = self.getFilePath("utils", "Input.registry")
             with open(path, "r") as file:
                 input_config_file = json.loads(file.read())
         except Exception as e:
@@ -83,7 +85,6 @@ class ThreadFactory:
         try:
             # Reads the registry/input and stores it into an object
             path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.mqtt")
-            #path = self.getFilePath("utils", "Input.registry")
             with open(path, "r") as file:
                 input_config_mqtt = json.loads(file.read())
         except Exception as e:
@@ -107,15 +108,6 @@ class ThreadFactory:
             self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
             self.load_prediction.start()
 
-        self.soc_value = input_config_parser.get_forecast_flag("SoC_Value")
-        generic_names = input_config_parser.get_generic_data_names()
-        self.generic_flags = {}
-        if generic_names is not None and len(generic_names) > 0:
-            for generic_name in generic_names:
-                self.generic_flags[generic_name] = input_config_parser.get_forecast_flag(generic_name)
-        self.mock = True
-        if self.mock:
-            self.startMockDataPublisherThreads(config)
         logger.debug("Start in threadfactory finished")
 
         # Initializing constructor of the optimization controller thread
@@ -128,47 +120,8 @@ class ThreadFactory:
             logger.error(e)
         logger.debug("Optimization object started")
 
-    def startMockDataPublisherThreads(self, config):
-        if self.load_forecast:
-            raw_p_load_data_topic = config.get("IO", "raw.pload.data.topic")
-            raw_p_load_data_topic = json.loads(raw_p_load_data_topic)
-            self.mock_p_load_data = MockPLoadDataPublisher(raw_p_load_data_topic, config)
-            self.mock_p_load_data.start()
-        if self.soc_value:
-            raw_soc_data_topic = config.get("IO", "raw.soc.data.topic")
-            raw_soc_data_topic = json.loads(raw_soc_data_topic)
-            self.mock_soc_data = MockSoCDataPublisher(raw_soc_data_topic, config)
-            self.mock_soc_data.start()
-        if len(self.generic_flags) > 0:
-            self.mock_generic_data = {}
-            mock_flag_off = {}
-            for generic_name, flag in self.generic_flags.items():
-                if flag:
-                    logger.info("raw.generic.data.topic" + "." + str(generic_name))
-                    raw_generic_data_topic = config.get("IO", "raw.generic.data.topic" + "." + str(generic_name), fallback=None)
-                    if raw_generic_data_topic is not None:
-                        raw_generic_data_topic = json.loads(raw_generic_data_topic)
-                        self.mock_generic_data[generic_name] = MockGenericDataPublisher(raw_generic_data_topic, config, generic_name)
-                        self.mock_generic_data[generic_name].start()
-                    else:
-                        mock_flag_off[generic_name] = False
-            self.generic_flags.update(mock_flag_off)
-    def stopMockDataPublisherThreads(self):
-        if self.load_forecast:
-            logger.info("Stopping mock p load data thread")
-            self.mock_p_load_data.Stop()
-        if self.soc_value:
-            logger.info("Stopping mock soc data thread")
-            self.mock_soc_data.Stop()
-        if len(self.generic_flags) > 0:
-            for generic_name, flag in self.generic_flags.items():
-                if flag:
-                    self.mock_generic_data[generic_name].Stop()
-
     def stopOptControllerThread(self):
         try:
-            if self.mock:
-                self.stopMockDataPublisherThreads()
             # stop as per ID
             if self.load_forecast:
                 logger.info("Stopping load thread")

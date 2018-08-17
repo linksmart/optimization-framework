@@ -428,10 +428,10 @@ paths:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.control_controller"
   /control/file/{id}:
-    put:
+    get:
       tags:
       - "control"
-      summary: "Creates a new data source as ouput"
+      summary: "Get ouput of the optimization"
       description: ""
       operationId: "output_source_file"
       consumes:
@@ -444,12 +444,6 @@ paths:
         description: "Name of the registry to be actualized"
         required: true
         type: "string"
-      - in: "body"
-        name: "Output_Source"
-        description: "Output data source to be created"
-        required: true
-        schema:
-          $ref: "#/definitions/Path_Definition"
       responses:
         200:
           description: "Created succesfully"
@@ -463,7 +457,7 @@ paths:
     delete:
       tags:
       - "control"
-      summary: "Deletes the registration output of the framework"
+      summary: "Deletes the output of the framework"
       description: ""
       operationId: "delete_file_output"
       consumes:

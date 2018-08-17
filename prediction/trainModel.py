@@ -10,6 +10,7 @@ class TrainModel:
 
     def __init__(self, save_path):
         self.model_weights_path = save_path
+        self.stop_request = False
 
     def train(self, model, Xtrain, Ytrain, num_epochs, batch_size):
         # define reduceLROnPlateau and early stopping callback
@@ -23,6 +24,8 @@ class TrainModel:
 
         # Training a stateful LSTM
         for i in range(num_epochs):
+            if self.stop_request:
+                break
             logger.info("Epoch " + str(i + 1) + "/" + str(num_epochs))
             model.fit(Xtrain, Ytrain, batch_size=batch_size, epochs=1, verbose=1, callbacks=callbacks_list,
                       shuffle=False)
@@ -30,3 +33,6 @@ class TrainModel:
             model.reset_states()
         logger.info("Training completed")
         return model
+
+    def Stop(self):
+        self.stop_request = True

@@ -19,7 +19,7 @@ class MockPLoadDataPublisher(DataPublisher):
     def __init__(self, topic_params, config):
         super().__init__(topic_params, config, 1)
         self.flag = True
-        self.file_path = os.path.join("/usr/src/app", "prediction", "USA_AK_King.Salmon.703260_TMY2.csv")
+        self.file_path = os.path.join("/usr/src/app", "mock_data", "USA_AK_King.Salmon.703260_TMY2.csv")
         self.index = 1
 
     def get_data(self):

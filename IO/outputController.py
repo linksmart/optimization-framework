@@ -19,6 +19,7 @@ class OutputController:
         self.mqtt={}
         self.client_id = "PROFESS"
         self.redisDB = RedisDB()
+        self.output_mqtt = {}
 
         if output_config is not None:
             self.init_mqtt()
@@ -28,8 +29,13 @@ class OutputController:
         try:
             for key, value in self.output_config.items():
                 for key2, value2 in value.items():
-                    if  (value2["mqtt"]["host"] or value2["mqtt"]["host"].isspace()):
+                    if (value2["mqtt"]["host"] or value2["mqtt"]["host"].isspace()):
                         host=value2["mqtt"]["host"]
+                        topic = value2["mqtt"]["topic"]
+                        qos = 0
+                        if "qos" in value2["mqtt"]:
+                            qos = value2["mqtt"]["qos"]
+                        self.output_mqtt[key2] = {"host":host, "topic":topic, "qos":qos}
                         if bool(self.mqtt):
                             if host in self.mqtt:
                                 logger.debug("Already connected to the host "+host)
@@ -46,16 +52,15 @@ class OutputController:
     def publishController(self, id, data):
         data = self.senml_message_format(data)
         try:
-            logger.debug("These are the keys of data: " + str(data.keys()))
-            for key, value in self.output_config.items():
-                for key2, value2 in value.items():
-                    if key2 in data:
-                        topic=value2["mqtt"]["topic"]
-                        host = value2["mqtt"]["host"]
-                        v = json.dumps(data.get(key2))
-                        logger.info("data = "+str(v))
-                        self.save(id, key2, v)
-                        self.mqtt[str(host)].sendResults(topic, v)
+            for key, value in data.items():
+                v = json.dumps(data[key])
+                self.save(id, key, v)
+                if key in self.output_mqtt.keys():
+                    value2 = self.output_mqtt[key]
+                    topic = value2["topic"]
+                    host = value2["host"]
+                    qos = value2["qos"]
+                    self.mqtt[str(host)].sendResults(topic, v)
         except Exception as e:
             logger.error(e)
 
@@ -76,7 +81,6 @@ class OutputController:
                     doc = senml.SenMLDocument([meas])
                     topic_data["e"] = doc.to_json()
             new_data[key] = topic_data.copy()
-        logger.info("data - "+str(new_data))
         return new_data
 
     def makeFile(self):
@@ -85,7 +89,6 @@ class OutputController:
     def save(self, id, topic, value):
         try:
             value = json.loads(value)
-            logger.info(str(value))
             list_items = value["e"]
             #  since we created it and it only has one element
             v = list_items[0]["v"]
