@@ -17,11 +17,12 @@ logger = logging.getLogger(__file__)
 
 class LoadForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, queue, publish_frequency):
+    def __init__(self, internal_topic_params, config, queue, publish_frequency, topic):
         self.load_data = {}
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "optimization", "loadData.dat")
         self.q = queue
+        self.topic = topic
         super().__init__(True, internal_topic_params, config, publish_frequency)
 
     def get_data(self):
@@ -54,11 +55,5 @@ class LoadForecastPublisher(DataPublisher):
             data[int(delta-1)] = self.load_data[date]
             delta += 1
         logger.info("load d = "+str(data))
-        return json.dumps({"P_Load_Forecast": data})
+        return json.dumps({self.topic: data})
 
-    def test_data(self):
-        data = {}
-        data[0] = 0.10
-        data[1] = 0.11
-        data[2] = 0.12
-        return json.dumps({"P_Load_Forecast": data})

@@ -17,7 +17,18 @@ class InputConfigParser:
         self.input_config_mqtt = input_config_mqtt
         self.mqtt_params = {}
         self.generic_names = []
-        self.defined_receivers = {"P_Load","P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T", "P_PV", "SoC_Value"}
+        self.generic_file_names = []
+        self.defined_prediction_names = ["P_Load", "P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T"]
+        self.defined_non_prediction_names = ["P_PV"]
+        self.defined_external_names = ["SoC_Value"]
+        self.defined_receivers = []
+        self.defined_receivers.append(self.defined_prediction_names)
+        self.defined_receivers.append(self.defined_non_prediction_names)
+        self.defined_receivers.append(self.defined_external_names)
+        self.prediction_names = []
+        self.non_prediction_names = []
+        self.external_names = []
+
         self.extract_mqtt_params()
         self.optimization_params = self.extract_optimization_values()
         logger.info("generic names = "+str(self.generic_names))
@@ -58,9 +69,18 @@ class InputConfigParser:
                     mqtt = self.get_mqtt(value2)
                     if mqtt is not None:
                         self.mqtt_params[key2] = mqtt.copy()
-                        if key2 not in self.defined_receivers:
-                            self.generic_names.append(key2)
+                        self.add_name_to_list(key2)
         logger.info("params = "+str(self.mqtt_params))
+
+    def add_name_to_list(self, key):
+        if key in self.defined_prediction_names:
+            self.prediction_names.append(key)
+        elif key in self.defined_non_prediction_names:
+            self.non_prediction_names.append(key)
+        elif key in self.defined_external_names:
+            self.external_names.append(key)
+        else:
+            self.generic_names.append(key)
 
     def get_params(self, topic):
         return self.mqtt_params[topic]
@@ -85,8 +105,8 @@ class InputConfigParser:
                                     data[k2] = {None: v2}
                         elif k1 == Constants.SoC_Value and isinstance(v1, int):
                             data["ESS_SoC_Value"] = {0: float(v1 / 100)}
-                        elif isinstance(v1, list) and k1 not in self.defined_receivers:
-                            self.generic_names.append(k1)
+                        elif isinstance(v1, list):
+                            self.add_name_to_list(k1)
                 if k == "generic" and input_config == self.input_config_file:
                     for val in v:
                         for k1, v1 in val.items():
@@ -102,3 +122,12 @@ class InputConfigParser:
 
     def get_generic_data_names(self):
         return self.generic_names
+
+    def get_prediction_names(self):
+        return self.prediction_names
+
+    def get_non_prediction_names(self):
+        return self.non_prediction_names
+
+    def get_external_names(self):
+        return self.external_names

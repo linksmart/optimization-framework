@@ -107,20 +107,23 @@ class ThreadFactory:
 
 
         input_config_parser = InputConfigParser(input_config_file, input_config_mqtt)
-
-        """Need to get data from config or input.registry?"""
-        self.pv_forecast = input_config_parser.get_forecast_flag("P_PV")
-        if self.pv_forecast:
-            self.pv_prediction = PVPrediction(config, input_config_parser)
-
-        self.load_forecast = input_config_parser.get_forecast_flag("P_Load")
-        if self.load_forecast:
-            logger.info("Creating load prediction controller thread")
-            # Creating an object of the configuration file
-            config = configparser.RawConfigParser()
-            config.read(self.getFilePath("utils", "ConfigFile.properties"))
-            self.load_prediction = LoadPrediction(config, input_config_parser, self.time_step, self.horizon)
-            self.load_prediction.start()
+        self.prediction_threads = {}
+        self.prediction_names = input_config_parser.get_prediction_names()
+        if self.prediction_names is not None and len(self.prediction_names) > 0:
+            for prediction_name in self.prediction_names:
+                flag = input_config_parser.get_forecast_flag(prediction_name)
+                if flag:
+                    logger.info("Creating load prediction controller thread for topic "+str(prediction_name))
+                    self.prediction_threads[prediction_name] = LoadPrediction(config, input_config_parser, self.time_step, self.horizon, prediction_name)
+                    self.prediction_threads[prediction_name].start()
+        self.non_prediction_threads = {}
+        self.non_prediction_names = input_config_parser.get_non_prediction_names()
+        if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:
+            for non_prediction_name in self.non_prediction_names:
+                flag = input_config_parser.get_forecast_flag(non_prediction_name)
+                if flag:
+                    if non_prediction_name == "P_PV":
+                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser)
 
         logger.debug("Start in threadfactory finished")
 
@@ -137,12 +140,10 @@ class ThreadFactory:
     def stopOptControllerThread(self):
         try:
             # stop as per ID
-            if self.load_forecast:
-                logger.info("Stopping load thread")
-                self.load_prediction.Stop()
-            if self.pv_forecast:
-                logger.info("Stopping pv thread")
-                self.pv_prediction.Stop()
+            for name, obj in self.prediction_threads.items():
+                obj.Stop()
+            for name, obj in self.non_prediction_threads.items():
+                obj.Stop()
             logger.info("Stopping optimization controller thread")
             self.opt.Stop(self.id)
             logger.info("Optimization controller thread stopped")

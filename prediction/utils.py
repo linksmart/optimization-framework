@@ -15,6 +15,8 @@ class Utils:
         self.container_id = "optimizationframework_ofw_1"
 
     def copy_files_to_host(self, container, host):
+        pass
+        """
         try:
             command = "cp " + container + " " + host
             logger.info("command = "+command)
@@ -22,8 +24,11 @@ class Utils:
                         shell=True)
         except Exception as e:
             logger.error("Error copy file to host. "+str(e))
+        """
 
     def copy_files_from_host(self, host, container):
+        pass
+        """
         try:
             command = "cp " + host + " " + container
             logger.info("command = " + command)
@@ -31,3 +36,4 @@ class Utils:
                         shell=True)
         except Exception as e:
             logger.error("Error copy file from host. "+str(e))
+        """

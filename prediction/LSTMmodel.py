@@ -13,19 +13,19 @@ import tensorflow as tf
 
 from prediction.trainModel import TrainModel
 
-os.environ['PYTHONHASHSEED'] = '0'
+#os.environ['PYTHONHASHSEED'] = '0'
 np.random.seed(42)
-rn.seed(12345)
-session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+#rn.seed(12345)
+#session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
 import keras as k
-from keras import backend as K
+#from keras import backend as K
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.models import load_model
 tf.set_random_seed(1234)
-sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
-K.set_session(sess)
+#sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+#K.set_session(sess)
 
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)

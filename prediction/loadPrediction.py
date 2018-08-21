@@ -20,10 +20,11 @@ logger = logging.getLogger(__file__)
 
 class LoadPrediction(threading.Thread):
 
-    def __init__(self, config, input_config_parser, timesteps, horizon):
+    def __init__(self, config, input_config_parser, timesteps, horizon, topic):
         super().__init__()
         self.stopRequest = threading.Event()
 
+        self.topic = topic
         self.length = timesteps
         self.length = 24
         self.horizon = horizon
@@ -52,7 +53,7 @@ class LoadPrediction(threading.Thread):
 
         load_forecast_topic = config.get("IO", "load.forecast.topic")
         load_forecast_topic = json.loads(load_forecast_topic)
-        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60)
+        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60, self.topic)
         self.load_forecast_pub.start()
 
         self.predicted_data = None
@@ -89,6 +90,8 @@ class LoadPrediction(threading.Thread):
                         data = self.processingData.to_dict_with_datetime(test_predictions,
                                                                          datetime.datetime(datetime.datetime.now().year, 12, 11,
                                                                                            6, 0), 60)
+                    else:
+                        logger.info("prediction  model is none")
                         self.q.put(data)
             logger.debug("predictions "+str(test_predictions))
 

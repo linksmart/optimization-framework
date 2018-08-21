@@ -23,14 +23,15 @@ class InputController:
     def __init__(self, id, input_config_parser, config, timesteps):
         self.stop_request = False
         self.optimization_data = {}
-        self.prediction_subscriber={}
+        self.internal_subscriber={}
         self.input_config_parser = input_config_parser
         logger.debug("Config parser: "+str(self.input_config_parser))
         self.config = config
         self.timesteps = timesteps
         self.id=id
-        self.load_forecast = False
-        self.pv_forecast = False
+        self.prediction_mqtt_flags = {}
+        self.non_prediction_mqtt_flags = {}
+        self.external_mqtt_flags = {}
         # need to get a internal_forecast from input config parser
         self.soc_value_data_mqtt = False
         self.generic_data_mqtt = {}
@@ -42,30 +43,32 @@ class InputController:
 
         """for predictions"""
         topics = []
-        if self.load_forecast:
-            load_forecast_topic = config.get("IO", "load.forecast.topic")
-            load_forecast_topic = json.loads(load_forecast_topic)
-            topics.append(load_forecast_topic)
-        else:
-            self.get_forecast_files(id, "Load")
-            #self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
-        if self.pv_forecast:
-            pv_forecast_topic = config.get("IO", "pv.forecast.topic")
-            pv_forecast_topic = json.loads(pv_forecast_topic)
-            topics.append(pv_forecast_topic)
-        else:
-            self.get_forecast_files(id, "PV")
-            #self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
+        for topic, flag in self.prediction_mqtt_flags.items():
+            if flag:
+                """ should be prediction topic instead of load"""
+                load_forecast_topic = config.get("IO", "load.forecast.topic")
+                load_forecast_topic = json.loads(load_forecast_topic)
+                topics.append(load_forecast_topic)
+                break
+        for topic, flag in self.non_prediction_mqtt_flags.items():
+            if flag:
+                if topic == "P_PV":
+                    pv_forecast_topic = config.get("IO", "pv.forecast.topic")
+                    pv_forecast_topic = json.loads(pv_forecast_topic)
+                    topics.append(pv_forecast_topic)
+
         if len(topics) > 0:
-            self.prediction_subscriber[self.id] = OptimizationDataReceiver(topics, config)
+            self.internal_subscriber[self.id] = OptimizationDataReceiver(topics, config)
         else:
-            self.prediction_subscriber[self.id] = None
+            self.internal_subscriber[self.id] = None
 
         # ESS data
-        self.soc_value_data_receiver = None
-        if self.soc_value_data_mqtt:
-            topic = self.input_config_parser.get_params("SoC_Value")
-            self.soc_value_data_receiver = SoCValueDataReceiver(False, topic, config)
+        self.external_data_receiver = {}
+        for topic, flag in self.external_mqtt_flags.items():
+            if flag:
+                if topic == "SoC_Value":
+                    params = self.input_config_parser.get_params("SoC_Value")
+                    self.external_data_receiver[topic] = SoCValueDataReceiver(False, params, config)
 
         self.generic_data_receiver = {}
         if len(self.generic_data_mqtt) > 0:
@@ -118,9 +121,20 @@ class InputController:
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
         self.optimization_data.update(data)
-        self.load_forecast = self.input_config_parser.get_forecast_flag("P_Load")
-        self.pv_forecast = self.input_config_parser.get_forecast_flag("P_PV")
-        self.soc_value_data_mqtt = self.input_config_parser.get_forecast_flag("SoC_Value")
+        self.prediction_names = self.input_config_parser.get_prediction_names()
+        if self.prediction_names is not None and len(self.prediction_names) > 0:
+            for prediction_name in self.prediction_names:
+                self.prediction_mqtt_flags[prediction_name] = self.input_config_parser.get_forecast_flag(prediction_name)
+        self.non_prediction_names = self.input_config_parser.get_non_prediction_names()
+        if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:
+            for non_prediction_name in self.non_prediction_names:
+                self.non_prediction_mqtt_flags[non_prediction_name] = self.input_config_parser.get_forecast_flag(
+                    non_prediction_name)
+        self.external_names = self.input_config_parser.get_external_names()
+        if self.external_names is not None and len(self.external_names) > 0:
+            for external_name in self.external_names:
+                self.external_mqtt_flags[external_name] = self.input_config_parser.get_forecast_flag(
+                    external_name)
         self.generic_names = self.input_config_parser.get_generic_data_names()
         if self.generic_names is not None and len(self.generic_names) > 0:
             for generic_name in self.generic_names:
@@ -147,36 +161,37 @@ class InputController:
             self.optimization_data[topic] = data
 
     def get_data(self, id):
-        logger.debug("self.load_forecast "+str(self.load_forecast))
-        if not self.load_forecast:
-            #self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
-            self.get_forecast_files(id, "Load")
-        logger.debug("self.pv_forecast " + str(self.pv_forecast))
-        if not self.pv_forecast:
-            self.get_forecast_files(id, "PV")
-            #self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
-
-        pv_check = not self.pv_forecast
-        logger.debug("pv_check " + str(pv_check))
-        load_check = not self.load_forecast
-        logger.debug("load_check " + str(load_check))
-        while not (pv_check and load_check) and not self.stop_request:
-            if self.prediction_subscriber[id]:
+        name_check = {}
+        for prediction_name, mqtt_flag in self.prediction_mqtt_flags.items():
+            if mqtt_flag:
+                name_check[prediction_name] = False
+            else:
+                self.read_input_data(id, prediction_name, prediction_name + ".txt")
+        for non_prediction_name, mqtt_flag in self.non_prediction_mqtt_flags.items():
+            if mqtt_flag:
+                name_check[non_prediction_name] = False
+            else:
+                self.read_input_data(id, non_prediction_name, non_prediction_name + ".txt")
+        logger.info("name_check = "+str(name_check))
+        while not self.check(name_check) and not self.stop_request:
+            if self.internal_subscriber[id]:
                 logger.debug("Entered the prediction subscriber")
-                data = self.prediction_subscriber[id].get_data()
+                data = self.internal_subscriber[id].get_data()
                 self.optimization_data.update(data)
                 for key in data.keys():
-                    if "PV" and "Forecast" in key:
-                        pv_check = True
-                    if "Load" and "Forecast" in data.keys():
-                        load_check = True
-        if self.soc_value_data_mqtt:
-            logger.debug("Entered self.soc_value_data_mqtt")
-            data = self.soc_value_data_receiver.get_data()
-            self.optimization_data.update(data)
-        else:
-            logger.debug("Not self.soc_value_data_mqtt")
-            self.read_input_data(id, "ESS_SoC_Value", "SoC_Value.txt")
+                    if key in name_check.keys():
+                        name_check[key] = True
+        logger.debug("external mqtt data")
+        if self.external_mqtt_flags is not None:
+            for external_name, mqtt_flag in self.external_mqtt_flags.items():
+                if not mqtt_flag:
+                    if external_name is not "SoC_Value":
+                        self.read_input_data(id, external_name, external_name + ".txt")
+                else:
+                    logger.debug("external mqtt True "+str(external_name))
+                    data = self.external_data_receiver[external_name].get_data()
+                    self.optimization_data.update(data)
+
         if self.generic_data_mqtt is not None:
             logger.debug("Entered self.generic_data_mqtt")
             for generic_name, mqtt_flag in self.generic_data_mqtt.items():
@@ -185,15 +200,20 @@ class InputController:
                 else:
                     data = self.generic_data_receiver[generic_name].get_data()
                     self.optimization_data.update(data)
-        #return {self.optimization_data.copy()}
         return {None: self.optimization_data.copy()}
+
+    def check(self, name_check):
+        result = True
+        for flag in name_check.values():
+            result = result and flag
+        return result
 
     def Stop(self, id):
         self.stop_request = True
-        if self.prediction_subscriber[id] is not None:
-            self.prediction_subscriber[id].exit()
-        if self.soc_value_data_receiver:
-            self.soc_value_data_receiver.exit()
+        if self.internal_subscriber[id] is not None:
+            self.internal_subscriber[id].exit()
+        for external_name in self.external_data_receiver.keys():
+            self.external_data_receiver[external_name].exit()
         for generic_name in self.generic_data_receiver.keys():
             self.generic_data_receiver[generic_name].exit()
 

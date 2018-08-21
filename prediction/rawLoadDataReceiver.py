@@ -56,10 +56,13 @@ class RawLoadDataReceiver(DataReceiver):
 
     def read_from_file(self):
         try:
-            with open(self.file_path) as file:
-                data = file.readlines()
-            file.close()
-            return data
+            if os.path.exists(self.file_path):
+                with open(self.file_path) as file:
+                    data = file.readlines()
+                file.close()
+                return data
+            else:
+                return []
         except Exception as e:
             logger.error(e)
         return []

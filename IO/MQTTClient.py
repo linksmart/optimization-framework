@@ -84,6 +84,7 @@ class MQTTClient:
             if result == 0:
                 logger.debug("Subscribed to topics: "+ str(topics_qos) + " result = " + str(result) + " , mid = " + str(mid))
                 self.topic_ack_wait.append(tuple([str(topics_qos), mid]))
+                logger.debug("sub ack wait = "+str(self.topic_ack_wait))
                 self.callback_function = callback_function
                 logging.info("callback functions set")
             else:

@@ -72,7 +72,7 @@ class PVForecastPublisher(DataPublisher):
         if not data:
             return None
         else:
-            return json.dumps({"P_PV_Forecast": data})
+            return json.dumps({"P_PV": data})
 
     def get_data(self):
         #  check if new data is available

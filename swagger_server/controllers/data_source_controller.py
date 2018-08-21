@@ -15,7 +15,12 @@ utils = Utils()
 
 # mqtt flag to be removed after corresponding changes in file api
 def store_data(dataset, id,source):
-
+    try:
+        dir_data = os.path.join(os.getcwd(), "optimization", str(id), source)
+        if not os.path.exists(dir_data):
+            os.makedirs(dir_data)
+    except Exception as e:
+        logger.error("error creating dir "+str(e))
     for header in dataset:
         logger.debug("Headers: " + str(header))
         input = dataset[header]
@@ -32,7 +37,7 @@ def store_data(dataset, id,source):
                             name = item["name"]
                             file_name = str(name) + ".txt"
                             logger.debug("This is the file name for generic: " + str(file_name))
-                            path = os.path.join(os.getcwd(), "optimization", str(id),source, file_name)
+                            path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             # dataset = dataset.split(",")
                             if os.path.isfile(path):
@@ -40,7 +45,7 @@ def store_data(dataset, id,source):
                                 os.remove(path)
                                 logger.debug("File erased")
 
-                            path = os.path.join(os.getcwd(), "optimization", str(id),source, file_name)
+                            path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             with open(path, 'w') as outfile:
                                 outfile.writelines(str(i) + '\n' for i in data)
@@ -87,38 +92,34 @@ def store_data(dataset, id,source):
                     logger.debug("No data in " + str(key))
     return 1
 
-def delete_data(id, registry_file):
+def delete_data(id, registry_file, source):
     try:
         dir = os.path.join(os.getcwd(), "utils", str(id))
         if not os.path.exists(dir):
             return "Id not existing"
         else:
-            keys = set()
-            dir_file = os.path.join(dir, registry_file)
-            if os.path.exists(dir_file):
-                with open(dir_file, 'r') as infile:
-                    json_file = json.load(infile)
-                    for k, v in json_file.items():
-                        if k == "generic":
-                            for item in v:
-                                name = item["name"]
-                                keys.add(name)
-                        elif isinstance(v, dict):
-                            for k1, v1, in v.items():
-                                if k1 == "meta":
-                                    keys.add(k + "_" + k1)
-                                else:
-                                    keys.add(k1)
-                os.remove(dir_file)
-            logger.info("keys = " + str(keys))
-            if len(keys) > 0:
-                path = os.path.join(os.getcwd(), "optimization", str(id))
-                if os.path.exists(path):
-                    for file in keys:
-                        file_path = os.path.join(path, (str(file) + ".txt"))
-                        logger.info("file path = " + str(file_path))
-                        if os.path.exists(file_path):
+            registry = os.path.join(dir, registry_file)
+            if os.path.exists(registry):
+                os.remove(registry)
+            dir_files = os.listdir(dir)
+            if dir_files is not None and len(dir_files) == 0:
+                os.rmdir(dir)
+            path = os.path.join(os.getcwd(), "optimization", str(id), source)
+            if os.path.exists(path):
+                files = os.listdir(path)
+                if files is not None:
+                    for file in files:
+                        file_path = os.path.join(path, file)
+                        if os.path.isfile(file_path):
                             os.remove(file_path)
+                files = os.listdir(path)
+                if files is not None and len(files) == 0:
+                    os.rmdir(path)
+            path = os.path.join(os.getcwd(), "optimization", str(id))
+            if os.path.exists(path):
+                dir_files = os.listdir(path)
+                if dir_files is not None and len(dir_files) == 0:
+                    os.rmdir(path)
             return "success"
     except Exception as e:
         logger.error(e)
@@ -134,8 +135,8 @@ def delete_data_source_all(id):  # noqa: E501
 
     :rtype: None
     """
-    result_file = delete_data(id, "Input.registry.file")
-    result_mqtt = delete_data(id, "Input.registry.mqtt")
+    result_file = delete_data(id, "Input.registry.file", "file")
+    result_mqtt = delete_data(id, "Input.registry.mqtt", "mqtt")
     if result_file == "error" or result_mqtt == "error":
         return "error"
     elif result_file == "success" or result_mqtt == "success":
@@ -155,7 +156,7 @@ def delete_file_registry(id):  # noqa: E501
 
     :rtype: None
     """
-    result = delete_data(id, "Input.registry.file")
+    result = delete_data(id, "Input.registry.file", "file")
     return result
 
 def delete_mqtt_registry(id):  # noqa: E501
@@ -168,7 +169,7 @@ def delete_mqtt_registry(id):  # noqa: E501
 
     :rtype: None
     """
-    result = delete_data(id, "Input.registry.mqtt")
+    result = delete_data(id, "Input.registry.mqtt", "mqtt")
     return result
 
 def file_input_put(id, dataset):  # noqa: E501
@@ -332,9 +333,26 @@ def get_data_source_values(param_name, id):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
-
-
+    data = ""
+    dir = os.path.join(os.getcwd(), "utils", str(id))
+    try:
+        if not os.path.exists(dir):
+            return "Id not existing"
+        else:
+            file_registry = os.path.join(dir, "Input.registry.file")
+            if os.path.exists(file_registry):
+                with open(file_registry, "r") as infile:
+                    file_data = infile.readlines()
+                    data = "File registry = " + file_data
+            mqtt_registry = os.path.join(dir, "Input.registry.mqtt")
+            if os.path.exists(mqtt_registry):
+                with open(mqtt_registry, "r") as infile:
+                    mqtt_data = infile.readlines()
+                    data = data + "\n" + mqtt_data
+    except Exception as e:
+        logger.error("error reading registry "+str(e))
+        data = "error"
+    return data
 
 def mqtt_input_put(id, dataset):  # noqa: E501
     """Submits data to the framework
@@ -381,7 +399,7 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                     json.dump(dataset, outfile, ensure_ascii=False)
                 logger.info("data source saved into memory")
 
-            store_data(dataset, id, "mqtt")
+            #store_data(dataset, id, "mqtt")
             return "Data source registered"
     else:
         return 'Data is not in json format'
@@ -422,7 +440,7 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             dir = os.path.join(os.getcwd(), "utils", str(id))
             if not os.path.exists(dir):
                 os.makedirs(dir)
-            dir_data = os.path.join(os.getcwd(), "optimization", str(id))
+            dir_data = os.path.join(os.getcwd(), "optimization", str(id), "mqtt")
             if not os.path.exists(dir_data):
                 os.makedirs(dir_data)
         except Exception as e:
