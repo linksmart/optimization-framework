@@ -67,16 +67,24 @@ class ThreadFactory:
         try:
             # Reads the registry/output and stores it into an object
             path = os.path.join(os.getcwd(), "utils", str(self.id), "Output.registry.mqtt")
-            with open(path, "r") as file:
-                output_config = json.loads(file.read())
+            if not os.path.exists(path):
+                logger.debug("Output.registry.mqtt not set, only file output available")
+            else:
+                with open(path, "r") as file:
+                    output_config = json.loads(file.read())
         except Exception as e:
             logger.error("Output.registry.mqtt not set, only file output available")
 
         try:
             # Reads the registry/input and stores it into an object
             path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.file")
-            with open(path, "r") as file:
-                input_config_file = json.loads(file.read())
+            if not os.path.exists(path):
+                input_config_file = {}
+                logger.debug("Not Input.registry.file present")
+            else:
+                with open(path, "r") as file:
+                    input_config_file = json.loads(file.read())
+                logger.debug("Input.registry.file found")
         except Exception as e:
             logger.error("Input file not found")
             input_config_file = {}
@@ -85,12 +93,18 @@ class ThreadFactory:
         try:
             # Reads the registry/input and stores it into an object
             path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.mqtt")
-            with open(path, "r") as file:
-                input_config_mqtt = json.loads(file.read())
+            if not os.path.exists(path):
+                input_config_mqtt = {}
+                logger.debug("Not Input.registry.mqtt present")
+            else:
+                with open(path, "r") as file:
+                    input_config_mqtt = json.loads(file.read())
+                logger.debug("Input.registry.mqtt found")
         except Exception as e:
             logger.error("Input file not found")
             input_config_mqtt = {}
             logger.error(e)
+
 
         input_config_parser = InputConfigParser(input_config_file, input_config_mqtt)
 

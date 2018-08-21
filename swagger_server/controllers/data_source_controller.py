@@ -14,7 +14,7 @@ logger = logging.getLogger(__file__)
 utils = Utils()
 
 # mqtt flag to be removed after corresponding changes in file api
-def store_data(dataset, id):
+def store_data(dataset, id,source):
 
     for header in dataset:
         logger.debug("Headers: " + str(header))
@@ -32,7 +32,7 @@ def store_data(dataset, id):
                             name = item["name"]
                             file_name = str(name) + ".txt"
                             logger.debug("This is the file name for generic: " + str(file_name))
-                            path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                            path = os.path.join(os.getcwd(), "optimization", str(id),source, file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             # dataset = dataset.split(",")
                             if os.path.isfile(path):
@@ -40,7 +40,7 @@ def store_data(dataset, id):
                                 os.remove(path)
                                 logger.debug("File erased")
 
-                            path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                            path = os.path.join(os.getcwd(), "optimization", str(id),source, file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             with open(path, 'w') as outfile:
                                 outfile.writelines(str(i) + '\n' for i in data)
@@ -55,7 +55,7 @@ def store_data(dataset, id):
                     logger.debug("Data is not None")
                     if "meta" in key:
                         file_name = str(header) + "_" + str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        path = os.path.join(os.getcwd(), "optimization", str(id),source, file_name)
                         logger.debug("Path where the data is stored" + str(path))
                         # dataset = dataset.split(",")
                         if os.path.isfile(path):
@@ -65,7 +65,7 @@ def store_data(dataset, id):
                             outfile.writelines(data)
                     elif "SoC_Value" in key:
                         file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
                         logger.debug("Path where the data is stored" + str(path))
                         # dataset = dataset.split(",")
                         if os.path.isfile(path):
@@ -74,7 +74,7 @@ def store_data(dataset, id):
                             outfile.write(str(data))
                     else:
                         file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                        path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
                         logger.debug("Path where the data is stored" + str(path))
                         # dataset = dataset.split(",")
                         if os.path.isfile(path):
@@ -214,7 +214,7 @@ def file_input_put(id, dataset):  # noqa: E501
                     json.dump(dataset, outfile, ensure_ascii=False)
                 logger.info("data source saved into memory")
 
-            store_data(dataset, id)
+            store_data(dataset, id, "file")
             return "Data source registered"
     else:
         return 'Data is not in json format'
@@ -235,7 +235,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
 
         try:
             id = utils.create_and_get_ID()
-            dir_data = os.path.join(os.getcwd(), "optimization", str(id))
+            dir_data = os.path.join(os.getcwd(), "optimization", str(id),"file")
             if not os.path.exists(dir_data):
                 os.makedirs(dir_data)
             dir_data = os.path.join(os.getcwd(), "utils", str(id))
@@ -265,7 +265,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
                             name = v["name"]
                             file_name = str(name) + ".txt"
                             logger.debug("This is the file name for generic: " + str(file_name))
-                            path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                            path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             # dataset = dataset.split(",")
                             with open(path, 'w') as outfile:
@@ -290,21 +290,21 @@ def file_input_source(File_Input_Source):  # noqa: E501
 
                             if "meta" in key:
                                 file_name = str(header) + "_" + str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                                path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
                                 logger.debug("Path where the data is stored" + str(path))
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
                                     outfile.writelines(dataset)
                             elif "SoC_Value" in key:
                                 file_name = str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                                path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
                                 logger.debug("Path where the data is stored" + str(path))
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
                                     outfile.write(str(dataset))
                             else:
                                 file_name = str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization", str(id), file_name)
+                                path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
                                 logger.debug("Path where the data is stored" + str(path))
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
@@ -381,7 +381,7 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                     json.dump(dataset, outfile, ensure_ascii=False)
                 logger.info("data source saved into memory")
 
-            store_data(dataset, id)
+            store_data(dataset, id, "mqtt")
             return "Data source registered"
     else:
         return 'Data is not in json format'

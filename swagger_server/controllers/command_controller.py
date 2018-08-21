@@ -139,6 +139,9 @@ def framework_start(id, startOFW):  # noqa: E501
             return "Model not available. Available models are :" + str(models)
         if startOFW.solver not in available_solvers:
             return "Use one of the following solvers :" + str(available_solvers)
+        dir = os.path.join(os.getcwd(), "utils", str(id))
+        if not os.path.exists(dir):
+            return "Id not existing"
         if variable.isRunningExists():
             logger.debug("isRunning exists")
             if not variable.get_isRunning(id):
