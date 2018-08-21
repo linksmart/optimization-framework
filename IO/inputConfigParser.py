@@ -17,7 +17,7 @@ class InputConfigParser:
         self.input_config_mqtt = input_config_mqtt
         self.mqtt_params = {}
         self.generic_names = []
-        self.defined_receivers = {"P_Load", "P_PV", "SoC_Value"}
+        self.defined_receivers = {"P_Load","P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T", "P_PV", "SoC_Value"}
         self.extract_mqtt_params()
         self.optimization_params = self.extract_optimization_values()
         logger.info("generic names = "+str(self.generic_names))
