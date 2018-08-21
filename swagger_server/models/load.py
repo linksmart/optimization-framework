@@ -17,30 +17,60 @@ class Load(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, p_load: Source=None, q_load: Source=None, meta: MetaLoad=None):  # noqa: E501
+    def __init__(self, p_load: Source=None, p_load_r: Source=None, p_load_s: Source=None, p_load_t: Source=None, q_load: Source=None, q_load_r: Source=None, q_load_s: Source=None, q_load_t: Source=None, meta: MetaLoad=None):  # noqa: E501
         """Load - a model defined in Swagger
 
         :param p_load: The p_load of this Load.  # noqa: E501
         :type p_load: Source
+        :param p_load_r: The p_load_r of this Load.  # noqa: E501
+        :type p_load_r: Source
+        :param p_load_s: The p_load_s of this Load.  # noqa: E501
+        :type p_load_s: Source
+        :param p_load_t: The p_load_t of this Load.  # noqa: E501
+        :type p_load_t: Source
         :param q_load: The q_load of this Load.  # noqa: E501
         :type q_load: Source
+        :param q_load_r: The q_load_r of this Load.  # noqa: E501
+        :type q_load_r: Source
+        :param q_load_s: The q_load_s of this Load.  # noqa: E501
+        :type q_load_s: Source
+        :param q_load_t: The q_load_t of this Load.  # noqa: E501
+        :type q_load_t: Source
         :param meta: The meta of this Load.  # noqa: E501
         :type meta: MetaLoad
         """
         self.swagger_types = {
             'p_load': Source,
+            'p_load_r': Source,
+            'p_load_s': Source,
+            'p_load_t': Source,
             'q_load': Source,
+            'q_load_r': Source,
+            'q_load_s': Source,
+            'q_load_t': Source,
             'meta': MetaLoad
         }
 
         self.attribute_map = {
             'p_load': 'P_Load',
+            'p_load_r': 'P_Load_R',
+            'p_load_s': 'P_Load_S',
+            'p_load_t': 'P_Load_T',
             'q_load': 'Q_Load',
+            'q_load_r': 'Q_Load_R',
+            'q_load_s': 'Q_Load_S',
+            'q_load_t': 'Q_Load_T',
             'meta': 'meta'
         }
 
         self._p_load = p_load
+        self._p_load_r = p_load_r
+        self._p_load_s = p_load_s
+        self._p_load_t = p_load_t
         self._q_load = q_load
+        self._q_load_r = q_load_r
+        self._q_load_s = q_load_s
+        self._q_load_t = q_load_t
         self._meta = meta
 
     @classmethod
@@ -72,10 +102,71 @@ class Load(Model):
         :param p_load: The p_load of this Load.
         :type p_load: Source
         """
-        if p_load is None:
-            raise ValueError("Invalid value for `p_load`, must not be `None`")  # noqa: E501
 
         self._p_load = p_load
+
+    @property
+    def p_load_r(self) -> Source:
+        """Gets the p_load_r of this Load.
+
+
+        :return: The p_load_r of this Load.
+        :rtype: Source
+        """
+        return self._p_load_r
+
+    @p_load_r.setter
+    def p_load_r(self, p_load_r: Source):
+        """Sets the p_load_r of this Load.
+
+
+        :param p_load_r: The p_load_r of this Load.
+        :type p_load_r: Source
+        """
+
+        self._p_load_r = p_load_r
+
+    @property
+    def p_load_s(self) -> Source:
+        """Gets the p_load_s of this Load.
+
+
+        :return: The p_load_s of this Load.
+        :rtype: Source
+        """
+        return self._p_load_s
+
+    @p_load_s.setter
+    def p_load_s(self, p_load_s: Source):
+        """Sets the p_load_s of this Load.
+
+
+        :param p_load_s: The p_load_s of this Load.
+        :type p_load_s: Source
+        """
+
+        self._p_load_s = p_load_s
+
+    @property
+    def p_load_t(self) -> Source:
+        """Gets the p_load_t of this Load.
+
+
+        :return: The p_load_t of this Load.
+        :rtype: Source
+        """
+        return self._p_load_t
+
+    @p_load_t.setter
+    def p_load_t(self, p_load_t: Source):
+        """Sets the p_load_t of this Load.
+
+
+        :param p_load_t: The p_load_t of this Load.
+        :type p_load_t: Source
+        """
+
+        self._p_load_t = p_load_t
 
     @property
     def q_load(self) -> Source:
@@ -97,6 +188,69 @@ class Load(Model):
         """
 
         self._q_load = q_load
+
+    @property
+    def q_load_r(self) -> Source:
+        """Gets the q_load_r of this Load.
+
+
+        :return: The q_load_r of this Load.
+        :rtype: Source
+        """
+        return self._q_load_r
+
+    @q_load_r.setter
+    def q_load_r(self, q_load_r: Source):
+        """Sets the q_load_r of this Load.
+
+
+        :param q_load_r: The q_load_r of this Load.
+        :type q_load_r: Source
+        """
+
+        self._q_load_r = q_load_r
+
+    @property
+    def q_load_s(self) -> Source:
+        """Gets the q_load_s of this Load.
+
+
+        :return: The q_load_s of this Load.
+        :rtype: Source
+        """
+        return self._q_load_s
+
+    @q_load_s.setter
+    def q_load_s(self, q_load_s: Source):
+        """Sets the q_load_s of this Load.
+
+
+        :param q_load_s: The q_load_s of this Load.
+        :type q_load_s: Source
+        """
+
+        self._q_load_s = q_load_s
+
+    @property
+    def q_load_t(self) -> Source:
+        """Gets the q_load_t of this Load.
+
+
+        :return: The q_load_t of this Load.
+        :rtype: Source
+        """
+        return self._q_load_t
+
+    @q_load_t.setter
+    def q_load_t(self, q_load_t: Source):
+        """Sets the q_load_t of this Load.
+
+
+        :param q_load_t: The q_load_t of this Load.
+        :type q_load_t: Source
+        """
+
+        self._q_load_t = q_load_t
 
     @property
     def meta(self) -> MetaLoad:
