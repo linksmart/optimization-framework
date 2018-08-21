@@ -17,6 +17,7 @@ from pyomo.opt.parallel import SolverManagerFactory
 from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
+import json
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
@@ -120,12 +121,16 @@ class OptController(threading.Thread):
                 logger.info("waiting for data")
                 logger.info("This is the id: "+self.id)
                 data_dict = self.input.get_data(self.id) #blocking call
-                logger.info("data is "+str(data_dict))
+                #logger.info("data is "+str(data_dict))
+                logger.debug("Data is: "+json.dumps(data_dict, indent=4))
                 if self.stopRequest.isSet():
                     break
 
                 # Creating an optimization instance with the referenced model
-                instance = self.my_class.model.create_instance(data_dict)
+                try:
+                    instance = self.my_class.model.create_instance(data_dict)
+                except Exception as e:
+                    logger.error(e)
                 #instance = self.my_class.model.create_instance(self.data_path)
                 logger.info("Instance created with pyomo")
 
