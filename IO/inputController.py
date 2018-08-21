@@ -7,6 +7,7 @@ import json
 import logging
 
 import os
+import re
 
 from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
@@ -18,11 +19,13 @@ logger = logging.getLogger(__file__)
 
 class InputController:
 
+
     def __init__(self, id, input_config_parser, config, timesteps):
         self.stop_request = False
         self.optimization_data = {}
         self.prediction_subscriber={}
         self.input_config_parser = input_config_parser
+        logger.debug("Config parser: "+str(self.input_config_parser))
         self.config = config
         self.timesteps = timesteps
         self.id=id
@@ -35,7 +38,7 @@ class InputController:
         self.parse_input_config()
 
         self.set_timestep_data()
-        self.set_params()
+        #self.set_params()
 
         """for predictions"""
         topics = []
@@ -44,13 +47,15 @@ class InputController:
             load_forecast_topic = json.loads(load_forecast_topic)
             topics.append(load_forecast_topic)
         else:
-            self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
+            self.get_forecast_files(id, "Load")
+            #self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
         if self.pv_forecast:
             pv_forecast_topic = config.get("IO", "pv.forecast.topic")
             pv_forecast_topic = json.loads(pv_forecast_topic)
             topics.append(pv_forecast_topic)
         else:
-            self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
+            self.get_forecast_files(id, "PV")
+            #self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
         if len(topics) > 0:
             self.prediction_subscriber[self.id] = OptimizationDataReceiver(topics, config)
         else:
@@ -69,6 +74,30 @@ class InputController:
                     topic = self.input_config_parser.get_params(generic_name)
                     self.generic_data_receiver[generic_name] = GenericDataReceiver(False, topic, config, generic_name)
 
+
+    def get_forecast_files(self, id, output):
+        f = []
+        mypath = os.path.join("/usr/src/app/optimization/",str(id),"file")
+        logger.debug("This is mypath: "+str(mypath))
+
+        for (dirpath, dirnames, filenames) in os.walk(mypath):
+            f.extend(filenames)
+            break
+        logger.debug("These are the names in "+str(id)+": "+str(f))
+
+        for filenames in f:
+            if output in filenames:
+                file = filenames
+                logger.debug("File name: " + str(file))
+                #filenames = re.sub('.txt', '_Forecast', str(filenames))
+                filenames = re.sub('.txt', '', str(filenames))
+                topic = filenames
+                logger.debug("Topic: " + str(topic))
+                self.read_input_data(id, topic, file)
+
+
+
+
     def set_timestep_data(self):
         i = 0
         T = []
@@ -81,8 +110,10 @@ class InputController:
         self.optimization_data["N"] = {None: [0]}
         self.optimization_data["T"] = {None: T}
         self.optimization_data["T_SoC"] = {None: T_SoC}
-        self.optimization_data["Target"] = {None: 1}
+        #self.optimization_data["Target"] = {None: 1}
         self.optimization_data["dT"] = {None: 3600}
+
+    ######big change
 
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
@@ -98,7 +129,8 @@ class InputController:
     def read_input_data(self, id, topic, file):
         data = {}
         """"/ usr / src / app / optimization / 95c38e56d913 / p_load.txt"""
-        path = os.path.join("/usr/src/app", "optimization", str(id), file)
+        path = os.path.join("/usr/src/app", "optimization", str(id), "file", file)
+        logger.debug("Data path: "+str(path))
         rows = []
         i = 0
         try:
@@ -115,33 +147,45 @@ class InputController:
             self.optimization_data[topic] = data
 
     def get_data(self, id):
+        logger.debug("self.load_forecast "+str(self.load_forecast))
         if not self.load_forecast:
-            self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
+            #self.read_input_data(id, "P_Load_Forecast", "P_Load.txt")
+            self.get_forecast_files(id, "Load")
+        logger.debug("self.pv_forecast " + str(self.pv_forecast))
         if not self.pv_forecast:
-            self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
+            self.get_forecast_files(id, "PV")
+            #self.read_input_data(id, "P_PV_Forecast", "P_PV.txt")
 
         pv_check = not self.pv_forecast
+        logger.debug("pv_check " + str(pv_check))
         load_check = not self.load_forecast
+        logger.debug("load_check " + str(load_check))
         while not (pv_check and load_check) and not self.stop_request:
             if self.prediction_subscriber[id]:
+                logger.debug("Entered the prediction subscriber")
                 data = self.prediction_subscriber[id].get_data()
                 self.optimization_data.update(data)
-                if "P_PV_Forecast" in data.keys():
-                    pv_check = True
-                if "P_Load_Forecast" in data.keys():
-                    load_check = True
+                for key in data.keys():
+                    if "PV" and "Forecast" in key:
+                        pv_check = True
+                    if "Load" and "Forecast" in data.keys():
+                        load_check = True
         if self.soc_value_data_mqtt:
+            logger.debug("Entered self.soc_value_data_mqtt")
             data = self.soc_value_data_receiver.get_data()
             self.optimization_data.update(data)
         else:
+            logger.debug("Not self.soc_value_data_mqtt")
             self.read_input_data(id, "ESS_SoC_Value", "SoC_Value.txt")
         if self.generic_data_mqtt is not None:
+            logger.debug("Entered self.generic_data_mqtt")
             for generic_name, mqtt_flag in self.generic_data_mqtt.items():
                 if not mqtt_flag:
                     self.read_input_data(id, generic_name, generic_name + ".txt")
                 else:
                     data = self.generic_data_receiver[generic_name].get_data()
                     self.optimization_data.update(data)
+        #return {self.optimization_data.copy()}
         return {None: self.optimization_data.copy()}
 
     def Stop(self, id):
@@ -152,6 +196,7 @@ class InputController:
             self.soc_value_data_receiver.exit()
         for generic_name in self.generic_data_receiver.keys():
             self.generic_data_receiver[generic_name].exit()
+
 
     def set_params(self):
         params = {
