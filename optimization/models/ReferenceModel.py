@@ -17,15 +17,16 @@ class Model:
 
     ##################################       PARAMETERS            #################################
     ################################################################################################
-    model.Target=Param()                                            #Optimization objective
+    #model.Target=Param()                                            #Optimization objective
 
     model.dT=Param(within=PositiveIntegers)                         #Number of seconds in one time step
+    model.dT=Param(within=PositiveIntegers)                         #Number of seconds in one time step
 
-    model.P_Load_Forecast=Param(model.T,within=NonNegativeReals)    #Active power demand forecast
-    model.Q_Load_Forecast=Param(model.T,within=Reals)               #Reactive demand forecast
+    model.P_Load=Param(model.T,within=NonNegativeReals)    #Active power demand forecast
+    model.Q_Load=Param(model.T,within=Reals)               #Reactive demand forecast
     #TODO: Assign a default
 
-    model.P_PV_Forecast=Param(model.T,within=NonNegativeReals)      #PV PMPP forecast
+    model.P_PV=Param(model.T,within=NonNegativeReals)      #PV PMPP forecast
     model.PV_Inv_Max_Power=Param(within=PositiveReals)              #PV inverter capacity
 
     model.ESS_Min_SoC=Param(model.N,within=PositiveReals)           #Minimum SoC of ESSs
@@ -48,7 +49,10 @@ class Model:
     model.Grid_X=Param(within=NonNegativeReals)
     model.Grid_dV_Tolerance=Param(within=PositiveReals)
 
-
+    model.Grid_VGEN = 0.4
+    model.Grid_R = 0.67
+    model.Grid_X = 0.282
+    model.Grid_dV_Tolerance = 0.1
 
     ################################################################################################
 
@@ -89,15 +93,15 @@ class Model:
     #######                Rule6: Voltage drop                          #######
     ###########################################################################
     def con_rule1(model,t):
-        return model.P_Load_Forecast[t]==model.P_PV_Output[t]+ model.P_Grid_Output[t] + sum(model.P_ESS_Output[n,t] for n in model.N)
+        return model.P_Load[t]==model.P_PV_Output[t]+ model.P_Grid_Output[t] + sum(model.P_ESS_Output[n,t] for n in model.N)
     def con_rule2(model,t):
-        return model.Q_Load_Forecast[t]==model.Q_PV_Output[t]+ model.Q_Grid_Output[t]
+        return model.Q_Load[t]==model.Q_PV_Output[t]+ model.Q_Grid_Output[t]
     def con_rule3(model,n,t):
         return model.SoC_ESS[n,t+1]==model.SoC_ESS[n,t] - model.P_ESS_Output[n,t]*model.dT/model.ESS_Capacity[n]
     def con_rule4(model,n):
         return model.SoC_ESS[n,0]==model.ESS_SoC_Value[n]
     def con_rule5(model,t):
-        return model.P_PV_Output[t]*model.P_PV_Output[t]+model.Q_PV_Output[t]*model.Q_PV_Output[t] <= model.P_PV_Forecast[t]*model.P_PV_Forecast[t]
+        return model.P_PV_Output[t]*model.P_PV_Output[t]+model.Q_PV_Output[t]*model.Q_PV_Output[t] <= model.P_PV[t]*model.P_PV[t]
     def con_rule6(model,t):
         return model.dV[t]==(model.Grid_R*model.P_Grid_Output[t]+model.Grid_X*model.Q_Grid_Output[t])/model.Grid_VGEN
 
@@ -113,10 +117,10 @@ class Model:
     #######                         OBJECTIVE                           #######
     ###########################################################################
     def obj_rule(model):
-        if model.Target==1:   #Minimum exchange with grid
-            return sum(model.P_Grid_Output[t]*model.P_Grid_Output[t]+model.Q_Grid_Output[t]*model.Q_Grid_Output[t] for t in model.T)
+        #if model.Target==1:   #Minimum exchange with grid
+        return sum(model.P_Grid_Output[t]*model.P_Grid_Output[t]+model.Q_Grid_Output[t]*model.Q_Grid_Output[t] for t in model.T)
         #elif model.Target==2: #Maximum utilization of PV potential
-            #return sum(model.P_PV_Forecast[m]-model.P_PV_Output[m] for t in model.T)
+            #return sum(model.P_PV[m]-model.P_PV_Output[m] for t in model.T)
         #elif model.Target==3: #Minimum electricity bill
             #return sum(model.Price[t]*model.P_Grid_Output[t] for t in model.T)
         #elif model.Target==4: #Minimum voltage drop
