@@ -588,6 +588,36 @@ definitions:
           qos: 0
           host: "host"
           topic: "topic"
+      P_Load_R:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_Load_S:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_Load_T:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Load_R:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Load_S:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Load_T:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   metaLoad:
     type: "object"
     properties:
@@ -618,12 +648,22 @@ definitions:
         PV_Inv_Max_Power: 1
   PV_Output:
     type: "object"
-    required:
-    - "P_PV_Output"
     properties:
       P_PV_Output:
         $ref: "#/definitions/Source"
+      P_PV_R:
+        $ref: "#/definitions/Source"
+      P_PV_S:
+        $ref: "#/definitions/Source"
+      P_PV_T:
+        $ref: "#/definitions/Source"
       Q_PV_Output:
+        $ref: "#/definitions/Source"
+      Q_PV_R:
+        $ref: "#/definitions/Source"
+      Q_PV_S:
+        $ref: "#/definitions/Source"
+      Q_PV_T:
         $ref: "#/definitions/Source"
     example:
       Q_PV_Output:
@@ -1124,7 +1164,31 @@ definitions:
         type: "array"
         items:
           type: "number"
+      P_Load_R:
+        type: "array"
+        items:
+          type: "number"
+      P_Load_S:
+        type: "array"
+        items:
+          type: "number"
+      P_Load_T:
+        type: "array"
+        items:
+          type: "number"
       Q_Load:
+        type: "array"
+        items:
+          type: "number"
+      Q_Load_R:
+        type: "array"
+        items:
+          type: "number"
+      Q_Load_S:
+        type: "array"
+        items:
+          type: "number"
+      Q_Load_T:
         type: "array"
         items:
           type: "number"
