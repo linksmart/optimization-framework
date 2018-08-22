@@ -617,7 +617,7 @@ definitions:
           host: "host"
           topic: "topic"
       meta:
-        pf_Load: 0.6027456
+        pf_Load: 0.602745599999999992490984368487261235713958740234375
       P_Load:
         mqtt:
           qos: 0
@@ -637,7 +637,7 @@ definitions:
         minimum: 0
         maximum: 1
     example:
-      pf_Load: 0.6027456
+      pf_Load: 0.602745599999999992490984368487261235713958740234375
   PV:
     type: "object"
     properties:
@@ -708,20 +708,61 @@ definitions:
     properties:
       P_PV_Output:
         $ref: "#/definitions/Source"
-      P_PV_R:
+      P_PV_R_Output:
         $ref: "#/definitions/Source"
-      P_PV_S:
+      P_PV_S_Output:
         $ref: "#/definitions/Source"
-      P_PV_T:
+      P_PV_T_Output:
         $ref: "#/definitions/Source"
       Q_PV_Output:
         $ref: "#/definitions/Source"
-      Q_PV_R:
+      Q_PV_R_Output:
         $ref: "#/definitions/Source"
-      Q_PV_S:
+      Q_PV_S_Output:
         $ref: "#/definitions/Source"
-      Q_PV_T:
+      Q_PV_T_Output:
         $ref: "#/definitions/Source"
+    example:
+      Q_PV_T_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_PV_R_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_PV_T_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_PV_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_PV_S_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_PV_R_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_PV_S_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_PV_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   metaPV:
     type: "object"
     properties:
@@ -729,7 +770,7 @@ definitions:
         type: "integer"
         format: "int32"
     example:
-      PV_Inv_Max_Power: 1
+      PV_Inv_Max_Power: 2
   ESS:
     type: "object"
     required:
@@ -746,13 +787,13 @@ definitions:
           host: "host"
           topic: "topic"
       meta:
-        ESS_Max_Discharge_Power: 9.301444
-        ESS_Max_SoC: 5.637377
-        ESS_Charging_Eff: 3.6160767
-        ESS_Min_SoC: 5.962134
-        ESS_Max_Charge_Power: 7.0614014
-        ESS_Discharging_Eff: 2.027123
-        ESS_Capacity: 2.302136
+        ESS_Max_Discharge_Power: 9.301444000000000045247361413203179836273193359375
+        ESS_Max_SoC: 5.63737699999999986033571985899470746517181396484375
+        ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
+        ESS_Min_SoC: 5.96213399999999982270537657313980162143707275390625
+        ESS_Max_Charge_Power: 7.06140140000000027242776923230849206447601318359375
+        ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
+        ESS_Capacity: 2.30213599999999996015276337857358157634735107421875
   ESS_Output:
     type: "object"
     required:
@@ -792,13 +833,13 @@ definitions:
         type: "number"
         format: "float"
     example:
-      ESS_Max_Discharge_Power: 9.301444
-      ESS_Max_SoC: 5.637377
-      ESS_Charging_Eff: 3.6160767
-      ESS_Min_SoC: 5.962134
-      ESS_Max_Charge_Power: 7.0614014
-      ESS_Discharging_Eff: 2.027123
-      ESS_Capacity: 2.302136
+      ESS_Max_Discharge_Power: 9.301444000000000045247361413203179836273193359375
+      ESS_Max_SoC: 5.63737699999999986033571985899470746517181396484375
+      ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
+      ESS_Min_SoC: 5.96213399999999982270537657313980162143707275390625
+      ESS_Max_Charge_Power: 7.06140140000000027242776923230849206447601318359375
+      ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
+      ESS_Capacity: 2.30213599999999996015276337857358157634735107421875
   grid:
     type: "object"
     properties:
@@ -807,22 +848,69 @@ definitions:
     example:
       meta:
         Q_Grid_Max_Export_Power: 7
-        Min_Voltage_Drop: 1.0246457
+        Min_Voltage_Drop: 1.0246456999999999926131977190379984676837921142578125
         P_Grid_Max_Export_Power: 4
-        Max_Voltage_Drop: 1.2315135
+        Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
   grid_Output:
     type: "object"
-    required:
-    - "P_Grid_Export_Output"
     properties:
-      P_Grid_Export_Output:
+      P_Grid_Output:
         $ref: "#/definitions/Source"
-      Q_Grid_Export_Output:
+      P_Grid_R_Output:
         $ref: "#/definitions/Source"
-      P_Grid_Import_Output:
+      P_Grid_S_Output:
         $ref: "#/definitions/Source"
-      Q_Grid_Import_Output:
+      P_Grid_T_Output:
         $ref: "#/definitions/Source"
+      Q_Grid_Output:
+        $ref: "#/definitions/Source"
+      Q_Grid_R_Output:
+        $ref: "#/definitions/Source"
+      Q_Grid_S_Output:
+        $ref: "#/definitions/Source"
+      Q_Grid_T_Output:
+        $ref: "#/definitions/Source"
+    example:
+      P_Grid_R_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_Grid_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_Grid_T_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      P_Grid_S_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Grid_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Grid_R_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Grid_S_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
+      Q_Grid_T_Output:
+        mqtt:
+          qos: 0
+          host: "host"
+          topic: "topic"
   metaGrid:
     type: "object"
     properties:
@@ -840,9 +928,9 @@ definitions:
         format: "float"
     example:
       Q_Grid_Max_Export_Power: 7
-      Min_Voltage_Drop: 1.0246457
+      Min_Voltage_Drop: 1.0246456999999999926131977190379984676837921142578125
       P_Grid_Max_Export_Power: 4
-      Max_Voltage_Drop: 1.2315135
+      Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
   Source:
     type: "object"
     properties:
@@ -976,7 +1064,7 @@ definitions:
             host: "host"
             topic: "topic"
         meta:
-          pf_Load: 0.6027456
+          pf_Load: 0.602745599999999992490984368487261235713958740234375
         P_Load:
           mqtt:
             qos: 0
@@ -994,19 +1082,19 @@ definitions:
             host: "host"
             topic: "topic"
         meta:
-          ESS_Max_Discharge_Power: 9.301444
-          ESS_Max_SoC: 5.637377
-          ESS_Charging_Eff: 3.6160767
-          ESS_Min_SoC: 5.962134
-          ESS_Max_Charge_Power: 7.0614014
-          ESS_Discharging_Eff: 2.027123
-          ESS_Capacity: 2.302136
+          ESS_Max_Discharge_Power: 9.301444000000000045247361413203179836273193359375
+          ESS_Max_SoC: 5.63737699999999986033571985899470746517181396484375
+          ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
+          ESS_Min_SoC: 5.96213399999999982270537657313980162143707275390625
+          ESS_Max_Charge_Power: 7.06140140000000027242776923230849206447601318359375
+          ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
+          ESS_Capacity: 2.30213599999999996015276337857358157634735107421875
       grid:
         meta:
           Q_Grid_Max_Export_Power: 7
-          Min_Voltage_Drop: 1.0246457
+          Min_Voltage_Drop: 1.0246456999999999926131977190379984676837921142578125
           P_Grid_Max_Export_Power: 4
-          Max_Voltage_Drop: 1.2315135
+          Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
       photovoltaic:
         P_PV:
           mqtt:
@@ -1093,7 +1181,7 @@ definitions:
         - 5.63737665663332876420099637471139430999755859375
         - 5.63737665663332876420099637471139430999755859375
         meta:
-          pf_Load: 0.6027456
+          pf_Load: 0.602745599999999992490984368487261235713958740234375
         P_Load:
         - 0.80082819046101150206595775671303272247314453125
         - 0.80082819046101150206595775671303272247314453125
@@ -1101,32 +1189,32 @@ definitions:
         - 2.3021358869347654518833223846741020679473876953125
         - 2.3021358869347654518833223846741020679473876953125
       ESS:
-        SoC_Value: 20.271230230023217444568217615596950054168701171875
+        SoC_Value: 41.45608029883936040960179525427520275115966796875
         meta:
-          ESS_Max_Discharge_Power: 9.301444
-          ESS_Max_SoC: 5.637377
-          ESS_Charging_Eff: 3.6160767
-          ESS_Min_SoC: 5.962134
-          ESS_Max_Charge_Power: 7.0614014
-          ESS_Discharging_Eff: 2.027123
-          ESS_Capacity: 2.302136
+          ESS_Max_Discharge_Power: 9.301444000000000045247361413203179836273193359375
+          ESS_Max_SoC: 5.63737699999999986033571985899470746517181396484375
+          ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
+          ESS_Min_SoC: 5.96213399999999982270537657313980162143707275390625
+          ESS_Max_Charge_Power: 7.06140140000000027242776923230849206447601318359375
+          ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
+          ESS_Capacity: 2.30213599999999996015276337857358157634735107421875
       grid:
         meta:
           Q_Grid_Max_Export_Power: 7
-          Min_Voltage_Drop: 1.0246457
+          Min_Voltage_Drop: 1.0246456999999999926131977190379984676837921142578125
           P_Grid_Max_Export_Power: 4
-          Max_Voltage_Drop: 1.2315135
+          Max_Voltage_Drop: 1.2315134999999999276809603543370030820369720458984375
       photovoltaic:
         P_PV:
         - 3.61607674925191080461672754609026014804840087890625
         - 3.61607674925191080461672754609026014804840087890625
         meta:
-          PV_Inv_Max_Power: 1
+          PV_Inv_Max_Power: 2
       generic: ""
       global_control:
         ESS_Control:
-        - 4.1456080298839363962315474054776132106781005859375
-        - 4.1456080298839363962315474054776132106781005859375
+        - 7.3862819483858839220147274318151175975799560546875
+        - 7.3862819483858839220147274318151175975799560546875
   OutputSource:
     type: "object"
     properties:
@@ -1144,28 +1232,78 @@ definitions:
             host: "host"
             topic: "topic"
       grid:
-        P_Grid_Export_Output:
+        P_Grid_R_Output:
           mqtt:
             qos: 0
             host: "host"
             topic: "topic"
-        Q_Grid_Export_Output:
+        P_Grid_Output:
           mqtt:
             qos: 0
             host: "host"
             topic: "topic"
-        P_Grid_Import_Output:
+        P_Grid_T_Output:
           mqtt:
             qos: 0
             host: "host"
             topic: "topic"
-        Q_Grid_Import_Output:
+        P_Grid_S_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_Grid_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_Grid_R_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_Grid_S_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_Grid_T_Output:
           mqtt:
             qos: 0
             host: "host"
             topic: "topic"
       photovoltaic:
+        Q_PV_T_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        P_PV_R_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        P_PV_T_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
         Q_PV_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        P_PV_S_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_PV_R_Output:
+          mqtt:
+            qos: 0
+            host: "host"
+            topic: "topic"
+        Q_PV_S_Output:
           mqtt:
             qos: 0
             host: "host"
@@ -1224,8 +1362,8 @@ definitions:
           type: "number"
     example:
       ESS_Control:
-      - 4.1456080298839363962315474054776132106781005859375
-      - 4.1456080298839363962315474054776132106781005859375
+      - 7.3862819483858839220147274318151175975799560546875
+      - 7.3862819483858839220147274318151175975799560546875
   PV_File:
     type: "object"
     required:
@@ -1242,7 +1380,7 @@ definitions:
       - 3.61607674925191080461672754609026014804840087890625
       - 3.61607674925191080461672754609026014804840087890625
       meta:
-        PV_Inv_Max_Power: 1
+        PV_Inv_Max_Power: 2
   Load_File:
     type: "object"
     properties:
@@ -1300,7 +1438,7 @@ definitions:
       - 5.63737665663332876420099637471139430999755859375
       - 5.63737665663332876420099637471139430999755859375
       meta:
-        pf_Load: 0.6027456
+        pf_Load: 0.602745599999999992490984368487261235713958740234375
       P_Load:
       - 0.80082819046101150206595775671303272247314453125
       - 0.80082819046101150206595775671303272247314453125
@@ -1319,15 +1457,15 @@ definitions:
       meta:
         $ref: "#/definitions/metaESS"
     example:
-      SoC_Value: 20.271230230023217444568217615596950054168701171875
+      SoC_Value: 41.45608029883936040960179525427520275115966796875
       meta:
-        ESS_Max_Discharge_Power: 9.301444
-        ESS_Max_SoC: 5.637377
-        ESS_Charging_Eff: 3.6160767
-        ESS_Min_SoC: 5.962134
-        ESS_Max_Charge_Power: 7.0614014
-        ESS_Discharging_Eff: 2.027123
-        ESS_Capacity: 2.302136
+        ESS_Max_Discharge_Power: 9.301444000000000045247361413203179836273193359375
+        ESS_Max_SoC: 5.63737699999999986033571985899470746517181396484375
+        ESS_Charging_Eff: 3.61607669999999981058635967201553285121917724609375
+        ESS_Min_SoC: 5.96213399999999982270537657313980162143707275390625
+        ESS_Max_Charge_Power: 7.06140140000000027242776923230849206447601318359375
+        ESS_Discharging_Eff: 2.027123000000000008213874025386758148670196533203125
+        ESS_Capacity: 2.30213599999999996015276337857358157634735107421875
   Generic:
     type: "array"
     items:
