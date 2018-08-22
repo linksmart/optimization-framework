@@ -280,14 +280,14 @@ def file_input_source(File_Input_Source):  # noqa: E501
                             logger.debug("Type of "+str(key)+str(type(key)))
                             logger.debug("Type of dataset" + str(type(dataset)))
                             #logger.debug("Size of dataset" + str(len(dataset)))
-                            if "soc_value" in str(key):
+                            """if "soc_value" in str(key):
                                 logger.debug("soc_value")
                             elif "SoC_Value" in str(key):
                                 logger.debug("SoC_Value")
                             elif "so_c_value" in str(key):
                                 logger.debug("so_c_value")
                             else:
-                                logger.debug("key: "+str(key))
+                                logger.debug("key: "+str(key))"""
 
                             if "meta" in key:
                                 file_name = str(header) + "_" + str(key) + ".txt"
