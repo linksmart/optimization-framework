@@ -31,7 +31,7 @@ class Model:
 
     model.ESS_Min_SoC=Param(model.N,within=PositiveReals)           #Minimum SoC of ESSs
     model.ESS_Max_SoC=Param(model.N,within=PositiveReals)           #Maximum SoC of ESSs
-    model.ESS_SoC_Value=Param(model.N,within=PositiveReals)         #SoC value of ESSs at the begining of optimization horizon
+    model.SoC_Value=Param(model.N,within=PositiveReals)         #SoC value of ESSs at the begining of optimization horizon
     model.ESS_Capacity=Param(model.N,within=PositiveReals)          #Storage Capacity of ESSs
     model.ESS_Max_Charge_Power=Param(model.N,within=PositiveReals)  #Max Charge Power of ESSs
     model.ESS_Max_Discharge_Power=Param(model.N,within=PositiveReals)#Max Discharge Power of ESSs
@@ -99,7 +99,7 @@ class Model:
     def con_rule3(model,n,t):
         return model.SoC_ESS[n,t+1]==model.SoC_ESS[n,t] - model.P_ESS_Output[n,t]*model.dT/model.ESS_Capacity[n]
     def con_rule4(model,n):
-        return model.SoC_ESS[n,0]==model.ESS_SoC_Value[n]
+        return model.SoC_ESS[n,0]==model.SoC_Value[n]
     def con_rule5(model,t):
         return model.P_PV_Output[t]*model.P_PV_Output[t]+model.Q_PV_Output[t]*model.Q_PV_Output[t] <= model.P_PV[t]*model.P_PV[t]
     def con_rule6(model,t):

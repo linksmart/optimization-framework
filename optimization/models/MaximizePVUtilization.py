@@ -18,7 +18,6 @@ class Model:
 
     model = AbstractModel()
 
-    model.N = Set()  # Index Set for energy storage system devices
     model.T = Set()  # Index Set for time steps of optimization horizon
     model.T_SoC = Set()  # SoC of the ESSs at the end of optimization horizon are also taken into account
 
@@ -27,18 +26,17 @@ class Model:
 
     model.dT = Param(within=PositiveIntegers)  # Number of seconds in one time step
 
-    model.Price_Forecast = Param(model.T)  # Electric price forecast
+    # model.Price_Forecast=Param(model.T)                             #Electric price forecast
     model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
 
-    model.ESS_Min_SoC = Param(model.N, within=PositiveReals)  # Minimum SoC of ESSs
-    model.ESS_Max_SoC = Param(model.N, within=PositiveReals)  # Maximum SoC of ESSs
-    model.SoC_Value = Param(model.N,
-                                within=PositiveReals)  # SoC value of ESSs at the begining of optimization horizon
-    model.ESS_Capacity = Param(model.N, within=PositiveReals)  # Storage Capacity of ESSs
-    model.ESS_Max_Charge_Power = Param(model.N, within=PositiveReals)  # Max Charge Power of ESSs
-    model.ESS_Max_Discharge_Power = Param(model.N, within=PositiveReals)  # Max Discharge Power of ESSs
-    model.ESS_Charging_Eff = Param(model.N, within=PositiveReals)  # Charging efficiency of ESSs
-    model.ESS_Discharging_Eff = Param(model.N, within=PositiveReals)  # Discharging efficiency of ESSs
+    model.ESS_Min_SoC = Param(within=PositiveReals)  # Minimum SoC of ESSs
+    model.ESS_Max_SoC = Param(within=PositiveReals)  # Maximum SoC of ESSs
+    model.SoC_Value = Param(within=PositiveReals)  # SoC value of ESSs at the begining of optimization horizon
+    model.ESS_Capacity = Param(within=PositiveReals)  # Storage Capacity of ESSs
+    model.ESS_Max_Charge_Power = Param(within=PositiveReals)  # Max Charge Power of ESSs
+    model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
+    model.ESS_Charging_Eff = Param(within=PositiveReals)  # Charging efficiency of ESSs
+    model.ESS_Discharging_Eff = Param(within=PositiveReals)  # Discharging efficiency of ESSs
 
     model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
     model.Q_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max reactive power export
@@ -79,16 +77,8 @@ class Model:
 
     model.P_PV_Output = Var(model.T, within=NonNegativeReals,
                             bounds=(0, model.PV_Inv_Max_Power))  # Power output of PV inverter
-
-    def ESS_Power_Bounds(model, n, t):
-        return (-model.ESS_Max_Charge_Power[n], model.ESS_Max_Discharge_Power[n])
-
-    model.P_ESS_Output = Var(model.N, model.T, within=Reals, bounds=ESS_Power_Bounds)
-
-    def ESS_SOC_Bounds(model, n, t):
-        return (model.ESS_Min_SoC[n], model.ESS_Max_SoC[n])
-
-    model.SoC_ESS = Var(model.N, model.T_SoC, within=NonNegativeReals, bounds=ESS_SOC_Bounds)
+    model.P_ESS_Output = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))
+    model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 
     ################################################################################################
 
@@ -121,9 +111,6 @@ class Model:
     def con_rule_pv_potential(model, t):
         return model.P_PV_Output[t] <= model.P_PV[t]
 
-    def con_rule_pv_inverter(model, t):
-        return model.P_PV_Output[t] <= model.PV_Inv_Max_Power
-
     # Import/Export constraints
     def con_rule_grid_P(model, t):
         return model.P_Grid_Output[t] == model.P_Grid_R_Output[t] + model.P_Grid_S_Output[t] + model.P_Grid_T_Output[t]
@@ -137,12 +124,11 @@ class Model:
     def con_rule_grid_Q_inv(model, t):
         return model.Q_Grid_Output[t] >= -model.Q_Grid_Max_Export_Power
 
-    def con_rule_socBalance(model, n, t):
-        return model.SoC_ESS[n, t + 1] == model.SoC_ESS[n, t] - model.P_ESS_Output[n, t] * model.dT / \
-               model.ESS_Capacity[n] / 3600
+    def con_rule_socBalance(model, t):
+        return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / model.ESS_Capacity / 3600
 
-    def con_rule_iniSoC(model, n):
-        return model.SoC_ESS[n, 0] == model.SoC_Value[n]
+    def con_rule_iniSoC(model):
+        return model.SoC_ESS[0] == model.SoC_Value
 
     # Energy router (virtual) constraints
     def energyrouter_p(model, t):
@@ -152,8 +138,7 @@ class Model:
         return model.Q_ER[t] == model.Q_ER_R[t] + model.Q_ER_S[t] + model.Q_ER_T[t]
 
     def energyrouter_io(model, t):
-        er_feedin = (model.P_PV_Output[t] + sum(model.P_ESS_Output[n, t] for n in model.N)) * (
-                    model.P_PV_Output[t] + sum(model.P_ESS_Output[n, t] for n in model.N))
+        er_feedin = (model.P_PV_Output[t] + model.P_ESS_Output[t]) * (model.P_PV_Output[t] + model.P_ESS_Output[t])
         return er_feedin * er_feedin == model.P_ER[t] * model.P_ER[t] + model.Q_ER[t] * model.Q_ER[t]
 
     model.con_Pdem_R = Constraint(model.T, rule=con_rule_Pdem_R)
@@ -164,15 +149,14 @@ class Model:
     model.con_Qdem_T = Constraint(model.T, rule=con_rule_Qdem_T)
 
     model.con_pv_pmax = Constraint(model.T, rule=con_rule_pv_potential)
-    model.con_pv_inv = Constraint(model.T, rule=con_rule_pv_inverter)
 
     model.con_grid_P = Constraint(model.T, rule=con_rule_grid_P)
     model.con_grid_inv_P = Constraint(model.T, rule=con_rule_grid_P_inv)
     model.con_grid_Q = Constraint(model.T, rule=con_rule_grid_Q)
     model.con_grid_inv_Q = Constraint(model.T, rule=con_rule_grid_Q_inv)
 
-    model.con_ess_soc = Constraint(model.N, model.T, rule=con_rule_socBalance)
-    model.con_ess_Inisoc = Constraint(model.N, rule=con_rule_iniSoC)
+    model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
+    model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 
     model.con_er_p = Constraint(model.T, rule=energyrouter_p)
     model.con_er_q = Constraint(model.T, rule=energyrouter_q)
@@ -185,4 +169,3 @@ class Model:
         return sum(model.P_PV[t] - model.P_PV_Output[t] for t in model.T)
 
     model.obj = Objective(rule=obj_rule, sense=minimize)
-    

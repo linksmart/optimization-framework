@@ -35,7 +35,7 @@ class MinimizePowerBill():
         
         model.ESS_Min_SoC=Param(model.N,within=PositiveReals)           #Minimum SoC of ESSs
         model.ESS_Max_SoC=Param(model.N,within=PositiveReals)           #Maximum SoC of ESSs
-        model.ESS_SoC_Value=Param(model.N,within=PositiveReals)         #SoC value of ESSs at the begining of optimization horizon
+        model.SoC_Value=Param(model.N,within=PositiveReals)         #SoC value of ESSs at the begining of optimization horizon
         model.ESS_Capacity=Param(model.N,within=PositiveReals)          #Storage Capacity of ESSs
         model.ESS_Max_Charge_Power=Param(model.N,within=PositiveReals)  #Max Charge Power of ESSs
         model.ESS_Max_Discharge_Power=Param(model.N,within=PositiveReals)#Max Discharge Power of ESSs
@@ -146,7 +146,7 @@ class MinimizePowerBill():
         def con_rule_socBalance(model,n,t):
             return model.SoC_ESS[n,t+1]==model.SoC_ESS[n,t] - model.S_ESS_Output[n,t]*model.dT/model.ESS_Capacity[n]    
         def con_rule_iniSoC(model,n):
-            return model.SoC_ESS[n,0]==model.ESS_SoC_Value[n] 
+            return model.SoC_ESS[n,0]==model.SoC_Value[n] 
        
         model.con_Pdem_R=Constraint(model.T,rule=con_rule_Pdem_R)
         model.con_Pdem_S=Constraint(model.T,rule=con_rule_Pdem_S)
