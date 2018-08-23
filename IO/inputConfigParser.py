@@ -31,6 +31,7 @@ class InputConfigParser:
 
         self.extract_mqtt_params()
         self.optimization_params = self.extract_optimization_values()
+        logger.debug("optimization_params: "+str(self.optimization_params))
         logger.info("generic names = "+str(self.generic_names))
 
 
@@ -93,18 +94,22 @@ class InputConfigParser:
         for input_config in [self.input_config_file, self.input_config_mqtt]:
             for k, v in input_config.items():
                 if isinstance(v, dict):
+                    logger.debug("k: "+str(k)+" v: "+str(v))
                     for k1, v1 in v.items():
+                        #logger.debug("k1: " + str(k1) + " v1: " + str(v1))
                         if k1 == Constants.meta:
                             for k2, v2 in v1.items():
+                                logger.debug("k2: " + str(k2) + " v2: " + str(v2))
                                 v2 = float(v2)
                                 if v2.is_integer():
                                     v2 = int(v2)
                                 if k == Constants.ESS:
-                                    data[k2] = {0: v2}
+                                    data[k2] = {None: v2}
                                 else:
                                     data[k2] = {None: v2}
-                        elif k1 == Constants.SoC_Value and isinstance(v1, int):
-                            data["ESS_SoC_Value"] = {0: float(v1 / 100)}
+                        elif k1 == Constants.SoC_Value and isinstance(v1, float):
+                            logger.debug("Constants.SoC_Value: "+str(v1))
+                            data["SoC_Value"] = {None: float(v1)}
                         elif isinstance(v1, list):
                             self.add_name_to_list(k1)
                 if k == "generic" and input_config == self.input_config_file:
