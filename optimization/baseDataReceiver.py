@@ -61,7 +61,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                     if n == self.generic_name:
                         v = self.unit_value_change(v, u)
                         if n not in index.keys():
-                            index[n] = 0
+                            index[n] = None
                         if n not in data.keys():
                             data[n] = {}
                         data[n][index[n]] = v

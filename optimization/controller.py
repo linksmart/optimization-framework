@@ -170,11 +170,13 @@ class OptController(threading.Thread):
                     try:
                         my_dict={}
                         for v in instance.component_objects(Var, active=True):
-                            #logger.info("Variable: "+ str(v))
+                            #logger.debug("Variable in the optimization: "+ str(v))
                             varobject = getattr(instance, str(v))
+                            #logger.debug("varobject: "+str(varobject))
                             #if str(v) == "P_PV_Output":
                                 #my_dict[str(v)]='2'
                             for index in varobject:
+                                #logger.debug("index: "+str(index))
                                 if index==0:
                                     list=[{index,varobject[index].value}]
                                     try:
@@ -185,8 +187,8 @@ class OptController(threading.Thread):
                                         logger.error(e)
                                         # Append new index to currently existing items
                                         #my_dict = {**my_dict, **{v: list}}
-					
 
+                        logger.debug("Variable in the optimization dict: " + str(my_dict))
                         self.output.publishController(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
