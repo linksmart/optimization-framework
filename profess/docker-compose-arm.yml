@@ -5,12 +5,25 @@ services:
     container_name: "mosquito_S4G"
     ports:
       - "1883:1883"
+  redis:
+    image: redis:latest
+    container_name: "redis_S4G"
+    command: redis-server
+    ports:
+      - "6379:6379"
   ofw:
     image: garagon/optimization:arm
+    container_name: "ofw"
     ports:
       - "8080:8080"
+    depends_on:
+      - redis
     command: ["python3", "-u", "ofw.py"]
- 
+  mock:
+    build:
+      context: ""
+      dockerfile: mock_data/docker-arm/Dockerfile-mock-arm
+    command: ["python3", "-u", "mockdata.py", "P_Load", "SoC_Value"]
 
 #volumes:
   #volume-glpsol:
