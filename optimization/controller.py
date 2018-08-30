@@ -98,6 +98,7 @@ class OptController(threading.Thread):
 
             #####create a solver
             optsolver = SolverFactory(self.solver_name)
+            optsolver.options["max_iter"]=5000
             logger.info("solver instantiated with "+self.solver_name)
 
             ###create a solver manager
