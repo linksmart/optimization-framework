@@ -5,6 +5,7 @@ import re
 import logging
 
 from IO.redisDB import RedisDB
+from optimization.models.InvalidModelException import InvalidModelException
 from swagger_server.models.start import Start  # noqa: E501
 
 from swagger_server.controllers.threadFactory import ThreadFactory
@@ -145,15 +146,23 @@ def framework_start(id, startOFW):  # noqa: E501
         if variable.isRunningExists():
             logger.debug("isRunning exists")
             if not variable.get_isRunning(id):
-                variable.start(id, startOFW)
-                return "System started succesfully"
+                try:
+                    variable.start(id, startOFW)
+                    return "System started succesfully"
+                except InvalidModelException as e:
+                    logger.error("Error "+str(e))
+                    return str(e)
             else:
                 logger.debug("System already running")
                 return "System already running"
         else:
             logger.debug("isRunning not created yet")
-            variable.start(id, startOFW)
-            return "System started succesfully"
+            try:
+                variable.start(id, startOFW)
+                return "System started succesfully"
+            except InvalidModelException as e:
+                logger.error("Error " + str(e))
+                return str(e)
 
     else:
         logger.error("Wrong Content-Type")

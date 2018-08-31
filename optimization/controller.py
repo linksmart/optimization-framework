@@ -25,6 +25,7 @@ from IO.outputController import OutputController
 
 
 #from optimization.models.ReferenceModel import Model
+from optimization.models.InvalidModelException import InvalidModelException
 from optimization.optimizationDataReceiver import OptimizationDataReceiver
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -57,6 +58,7 @@ class OptController(threading.Thread):
 
         except Exception as e:
             logger.error(e)
+            raise InvalidModelException("model is invalid/contains python syntax errors")
 
         self.output = OutputController(self.output_config)
         self.input = InputController(self.id, self.input_config_parser, config, 24)

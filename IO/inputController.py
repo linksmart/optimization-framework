@@ -111,7 +111,7 @@ class InputController:
             T_SoC.append(i)
             i += 1
         T_SoC.append(i)
-        #self.optimization_data["N"] = {None: [0]}
+        self.optimization_data["N"] = {None: [0]}
         self.optimization_data["T"] = {None: T}
         self.optimization_data["T_SoC"] = {None: T_SoC}
         #self.optimization_data["Target"] = {None: 1}
