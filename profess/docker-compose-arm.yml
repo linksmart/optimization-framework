@@ -20,10 +20,9 @@ services:
       - redis
     command: ["python3", "-u", "ofw.py"]
   mock:
-    build:
-      context: ""
-      dockerfile: mock_data/docker-arm/Dockerfile-mock-arm
-    command: ["python3", "-u", "mockdata.py", "P_Load", "SoC_Value"]
+    image: garagon/optimization:mock
+    container_name: "mock"
+    command: ["python3", "-u", "mockdata.py", "SoC_Value"]
 
 #volumes:
   #volume-glpsol:
