@@ -51,6 +51,7 @@ class OutputController:
 
     def publishController(self, id, data):
         data = self.senml_message_format(data)
+        logger.debug("Output controller: "+str(json.dumps(data, indent=4)))
         try:
             for key, value in data.items():
                 v = json.dumps(data[key])
@@ -81,6 +82,7 @@ class OutputController:
                     doc = senml.SenMLDocument([meas])
                     topic_data["e"] = doc.to_json()
             new_data[key] = topic_data.copy()
+        #logger.debug("Topic MQTT Senml message: "+str(new_data))
         return new_data
 
     def makeFile(self):
