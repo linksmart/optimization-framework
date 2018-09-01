@@ -80,6 +80,7 @@ class DataPublisher(ABC,threading.Thread):
     def mqtt_publish(self, data):
         try:
             logger.info("Sending results to mqtt on this topic: " + self.topic_params["topic"])
+            logger.debug("MQTT Data: "+str(data))
             self.mqtt.publish(self.topic_params["topic"], data, True)
             logger.debug("Results published")
         except Exception as e:
