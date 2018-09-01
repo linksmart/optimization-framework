@@ -28,25 +28,37 @@ class BaseDataReceiver(DataReceiver, ABC):
         logger.debug("generic data received")
 
     def add_formated_data(self, json_data):
+
+        logger.debug("add formatted data json: "+str(json_data))
+        json_data=json_data["e"][0]
         doc = None
         try:
             doc = senml.SenMLDocument.from_json(json_data)
+            logger.debug("SENMl: "+str(doc))
         except Exception as e:
             pass
+        logger.debug("add formatted data: "+str(doc))
         if not doc:
+            logger.debug("no doc")
             try:
                 meas = senml.SenMLMeasurement.from_json(json_data)
                 doc = senml.SenMLDocument([meas])
+                logger.debug("new doc: "+str(doc))
             except Exception as e:
                 pass
         if doc:
+            logger.debug("doc: "+str(json.dumps(doc.to_json())))
             base_data = doc.base
+            logger.debug("base data: "+str(base_data))
+            #e=doc.e
+            #logger.debug("doc e: "+str(e))
             bn, bu = None, None
             if base_data:
                 bn = base_data.name
                 bu = base_data.unit
             data = {}
             index = {}
+            logger.debug("doc.measurement: "+str(doc.measurements))
             for meas in doc.measurements:
                 n = meas.name
                 u = meas.unit
