@@ -189,7 +189,9 @@ class OptController(threading.Thread):
                                         # Append new index to currently existing items
                                         #my_dict = {**my_dict, **{v: list}}
 
-                        logger.debug("Variable in the optimization dict: " + str(my_dict))
+
+                        logger.debug("Variable in the optimization dict: "+str(my_dict))
+                        #logger.debug("Variable in the optimization dict: " + str(json.dumps(my_dict, indent=4)))
                         self.output.publishController(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
