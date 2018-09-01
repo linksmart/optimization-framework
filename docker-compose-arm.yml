@@ -85,7 +85,7 @@ services:
       context: ""
       dockerfile: mock_data/docker-arm/Dockerfile-mock-arm
      # ../docker/App/Dockerfile
-    command: ["python3", "-u", "mockdata.py", "P_Load", "SoC_Value"]
+    command: ["python3", "-u", "mockdata.py",  "SoC_Value"] #"P_Load",
 
 volumes:
   volume-glpsol:
