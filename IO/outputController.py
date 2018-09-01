@@ -94,7 +94,9 @@ class OutputController:
             list_items = value["e"]
             #  since we created it and it only has one element
             v = list_items[0]["v"]
-            key = "o:"+id+":"+topic
-            self.redisDB.add_to_list(key, v)
+            t = list_items[0]["t"]
+            key = "o:"+id+":"+topic+":"+str(t)
+            self.redisDB.set(key, v)
+            #self.redisDB.add_to_list(key, v)
         except Exception as e:
             logger.error("error adding to redis "+str(e))

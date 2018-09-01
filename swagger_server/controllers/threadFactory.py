@@ -1,4 +1,3 @@
-
 import os
 import logging
 import configparser
@@ -9,24 +8,25 @@ from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
 from mock_data.mockSoCDataPublisher import MockSoCDataPublisher
 from optimization.controller import OptController
 from mock_data.mockPLoadDataPublisher import MockPLoadDataPublisher
+from optimization.models.InvalidModelException import InvalidModelException
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+
 class ThreadFactory:
 
     def __init__(self, model_name, time_step, horizon, repetition, solver, id):
-        self.model_name=model_name
-        self.time_step=time_step
-        self.horizon=horizon
-        self.repetition=repetition
-        self.solver=solver
+        self.model_name = model_name
+        self.time_step = time_step
+        self.horizon = horizon
+        self.repetition = repetition
+        self.solver = solver
         self.id = id
 
-
-    def getFilePath(self,dir, file_name):
+    def getFilePath(self, dir, file_name):
         # print(os.path.sep)
         # print(os.environ.get("HOME"))
         project_dir = os.path.dirname(os.path.realpath(__file__))
@@ -77,7 +77,7 @@ class ThreadFactory:
 
         try:
             # Reads the registry/input and stores it into an object
-            path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.file")
+            path = os.path.join(os.getcwd(), "utils", str(self.id), "Input.registry.file")
             if not os.path.exists(path):
                 input_config_file = {}
                 logger.debug("Not Input.registry.file present")
@@ -92,7 +92,7 @@ class ThreadFactory:
 
         try:
             # Reads the registry/input and stores it into an object
-            path = os.path.join(os.getcwd(), "utils", str(self.id),"Input.registry.mqtt")
+            path = os.path.join(os.getcwd(), "utils", str(self.id), "Input.registry.mqtt")
             if not os.path.exists(path):
                 input_config_mqtt = {}
                 logger.debug("Not Input.registry.mqtt present")
@@ -105,16 +105,17 @@ class ThreadFactory:
             input_config_mqtt = {}
             logger.error(e)
 
-
-        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt)
+        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name)
         self.prediction_threads = {}
         self.prediction_names = input_config_parser.get_prediction_names()
         if self.prediction_names is not None and len(self.prediction_names) > 0:
             for prediction_name in self.prediction_names:
                 flag = input_config_parser.get_forecast_flag(prediction_name)
                 if flag:
-                    logger.info("Creating load prediction controller thread for topic "+str(prediction_name))
-                    self.prediction_threads[prediction_name] = LoadPrediction(config, input_config_parser, self.time_step, self.horizon, prediction_name)
+                    logger.info("Creating load prediction controller thread for topic " + str(prediction_name))
+                    self.prediction_threads[prediction_name] = LoadPrediction(config, input_config_parser,
+                                                                              self.time_step, self.horizon,
+                                                                              prediction_name)
                     self.prediction_threads[prediction_name].start()
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_non_prediction_names()
@@ -130,6 +131,7 @@ class ThreadFactory:
         # Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.time_step,
                                  self.repetition, output_config, input_config_parser, config)
+
         ####starts the optimization controller thread
         try:
             self.opt.start()

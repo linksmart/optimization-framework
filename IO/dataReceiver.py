@@ -91,8 +91,10 @@ class DataReceiver(ABC):
         self.client_id = "client_receive" + str(randrange(100000)) + str(time.time()).replace(".","")
         self.mqtt = MQTTClient(str(self.host), self.port, self.client_id)
         self.mqtt.subscribe(topic_qos, self.on_msg_received)
-        if not self.mqtt.subscribe_ack_wait():
+        while not self.mqtt.subscribe_ack_wait():
+            self.mqtt.subscribe(topic_qos, self.on_msg_received)
             logger.error("Topic subscribe missing ack")
+
         logger.info("successfully subscribed")
 
     def init_zmq(self, topics):

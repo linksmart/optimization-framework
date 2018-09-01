@@ -6,13 +6,16 @@ Created on Aug 03 14:22 2018
 import logging
 
 from IO.constants import Constants
+from optimization.ModelParamsInfo import ModelParamsInfo
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 class InputConfigParser:
 
-    def __init__(self, input_config_file, input_config_mqtt):
+    def __init__(self, input_config_file, input_config_mqtt, model_name):
+        self.model_name = model_name
+        self.model_variables = ModelParamsInfo.get_model_param(self.model_name)
         self.input_config_file = input_config_file
         self.input_config_mqtt = input_config_mqtt
         self.mqtt_params = {}
@@ -103,13 +106,20 @@ class InputConfigParser:
                                 v2 = float(v2)
                                 if v2.is_integer():
                                     v2 = int(v2)
-                                if k == Constants.ESS:
-                                    data[k2] = {None: v2}
+                                if k2 in self.model_variables.keys():
+                                    indexing = self.model_variables[k2]["indexing"]
+                                    if indexing == "index":
+                                        data[k2] = {int(0): v2}
+                                    elif indexing == "None":
+                                        data[k2] = {None: v2}
                                 else:
                                     data[k2] = {None: v2}
-                        elif k1 == Constants.SoC_Value and isinstance(v1, float):
-                            logger.debug("Constants.SoC_Value: "+str(v1))
-                            data["SoC_Value"] = {None: float(v1)}
+                        elif k1 == Constants.SoC_Value and isinstance(v1, int):
+                            indexing = self.model_variables[Constants.SoC_Value]["indexing"]
+                            if indexing == "index":
+                                data[Constants.SoC_Value] = {int(0): float(v1 / 100)}
+                            elif indexing == "None":
+                                data[Constants.SoC_Value] = {None: float(v1 / 100)}
                         elif isinstance(v1, list):
                             self.add_name_to_list(k1)
                 if k == "generic" and input_config == self.input_config_file:
