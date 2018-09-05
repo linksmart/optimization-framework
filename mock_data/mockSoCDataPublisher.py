@@ -26,7 +26,7 @@ class MockSoCDataPublisher(DataPublisher):
 
     def get_data(self):
         meas = senml.SenMLMeasurement()
-        meas.name = "SoC_Value"
+        #meas.name = "SoC_Value"
         #meas.value = random.randint(20,100)
         self.value= self.value + 1
         meas.value = self.value
