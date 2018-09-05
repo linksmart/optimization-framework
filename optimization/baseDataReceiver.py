@@ -31,6 +31,7 @@ class BaseDataReceiver(DataReceiver, ABC):
 
         logger.debug("add formatted data json: "+str(json_data))
         json_data=json_data["e"][0]
+        logger.debug("add formatted data json [e][0]: "+str(json_data))
         doc = None
         try:
             doc = senml.SenMLDocument.from_json(json_data)
@@ -65,21 +66,42 @@ class BaseDataReceiver(DataReceiver, ABC):
                 v = meas.value
                 if not u:
                     u = bu
+                    logger.debug("unit: "+str(u))
                 if bn and n and bn != n:
                     n = bn + n
+                    logger.debug("name bn + n: " + str(n))
                 if not n:
-                    n = bn
+                    if not bn:
+                        n=self.generic_name
+                        logger.debug("name generic name: "+str(n))
+                    else:
+                        n = bn
+                        logger.debug("name bn: " + str(n))
                 try:
-                    if n == self.generic_name:
+                    logger.debug("Generic name " + str(self.generic_name) + " exists")
+                    v = self.unit_value_change(v, u)
+                    logger.debug("value after units change: " + str(v))
+                    if n not in index.keys():
+                        index[n] = None
+                    if n not in data.keys():
+                        data[n] = {}
+                    data[n][index[n]] = v
+                    logger.debug("data[n][index[n]] : " + str(data[n][index[n]]))
+                    #index[n] += 1
+                    """if n == self.generic_name:
+                        logger.debug("Generic name "+str(self.generic_name)+" exists")
                         v = self.unit_value_change(v, u)
+                        logger.debug("value after units change: "+str(v))
                         if n not in index.keys():
                             index[n] = None
                         if n not in data.keys():
                             data[n] = {}
                         data[n][index[n]] = v
-                        index[n] += 1
+                        logger.debug("data[n][index[n]] : " + str(data[n][index[n]]))
+                        index[n] += 1"""
                 except Exception as e:
                     logger.error("error "+str(e)+"  n = "+str(n))
+            logger.debug("data: "+str(data))
             return data
         return {}
 
