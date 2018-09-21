@@ -4,11 +4,7 @@ import configparser
 import json
 
 from IO.inputConfigParser import InputConfigParser
-from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
-from mock_data.mockSoCDataPublisher import MockSoCDataPublisher
 from optimization.controller import OptController
-from mock_data.mockPLoadDataPublisher import MockPLoadDataPublisher
-from optimization.models.InvalidModelException import InvalidModelException
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 
@@ -116,7 +112,7 @@ class ThreadFactory:
                     self.prediction_threads[prediction_name] = LoadPrediction(config, input_config_parser,
                                                                               self.time_step, self.horizon,
                                                                               prediction_name)
-                    self.prediction_threads[prediction_name].start()
+                    #self.prediction_threads[prediction_name].start()
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_non_prediction_names()
         if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:

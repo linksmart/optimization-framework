@@ -1,0 +1,34 @@
+
+# Use an official Python runtime as a parent image
+FROM garagon/ipopt:V0.2
+
+# Set the working directory to usr/src/app
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+# Copy the current directory contents into the container usr/src/app
+COPY requirements.txt /usr/src/app/
+
+# #new addition
+RUN apt-get autoclean
+RUN apt-get clean
+
+RUN apt-get update -y && apt-get install -y \
+	gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev
+
+RUN pip3 install --upgrade pip
+
+RUN pip3 install -U paho-mqtt
+RUN pip3 install -U pyzmq
+
+RUN pip3 install -U senml
+RUN pip3 install -U redis
+
+WORKDIR /usr/src/app
+
+COPY utils /usr/src/app/utils
+COPY IO /usr/src/app/IO
+COPY mock_data /usr/src/app/mock_data
+COPY mockdata.py /usr/src/app/
+
+

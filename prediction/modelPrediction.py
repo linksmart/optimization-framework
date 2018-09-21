@@ -6,15 +6,7 @@ Created on Jun 28 14:40 2018
 import logging
 
 import numpy as np
-import pandas as pd
-
 from math import sqrt
-
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
-from keras.callbacks import EarlyStopping
-from keras.callbacks import ReduceLROnPlateau
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -36,14 +28,15 @@ class ModelPrediction:
         rmse = sqrt(score)
         print("\nMSE: {:.3f}, RMSE: {:.3f}".format(score, rmse))
 
-    def predict_next_day(self, model, Xvals, model_batch_size, length):
+    def predict_next_day(self, model, Xvals, model_batch_size, length, graph):
         # predict, pop first xval and push the predicted result
         # repeat
         prediction = np.zeros(length)
         for i in range(length):
-            pred = self.predict(model, Xvals, model_batch_size)
-            Xvals = self.getDF(pred, Xvals)
-            prediction.put(indices=i, values=pred)
+            with graph.as_default():
+                pred = self.predict(model, Xvals, model_batch_size)
+                Xvals = self.getDF(pred, Xvals)
+                prediction.put(indices=i, values=pred)
         return prediction
 
     def getDF(self, pred, Xvals):

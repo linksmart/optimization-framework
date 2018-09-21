@@ -38,6 +38,7 @@ services:
     image: eclipse-mosquitto
     ports:
       - 1883:1883
+    container_name: "mosquito_S4G"
   #zeromq:
    # image: zeromq/zeromq
     #ports:
@@ -45,6 +46,12 @@ services:
   #pyro:
   #  image: farshidtz/pyro4-ns
   #  command: ["--host=pyro-ns"]
+  redis:
+    image: redis:latest
+    container_name: "redis_S4G"
+    command: redis-server
+    ports:
+      - "6379:6379"
   ofw:
     build:
       context: ""
@@ -53,6 +60,8 @@ services:
     image: myapp-ofw-ipopt
     ports:
       - "8080:8080"
+    depends_on:
+      - redis
  #   depends_on:
  #     - glpk
  #     - ipopt
@@ -64,6 +73,12 @@ services:
     #command: ["echo", "que sera sera"]
     command: ["python3", "-u", "ofw.py"]
     #command: ["ls","/usr/bin"]
+  mock:
+    build:
+      context: ""
+      dockerfile: mock_data/docker-arm/Dockerfile-mock
+     # ../docker/App/Dockerfile
+    command: ["python3", "-u", "mockdata.py", "P_Load", "SoC_Value"]
 
 volumes:
   volume-glpsol:
