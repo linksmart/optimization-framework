@@ -9,6 +9,9 @@ class TrainModel:
         self.stop_request = False
 
     def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, model_weights_path, topic):
+        """
+        Creates a new model, compiles it and then trains it
+        """
         import os
         #os.environ['KERAS_BACKEND'] = 'theano'
         from keras.callbacks import EarlyStopping

@@ -16,6 +16,9 @@ from prediction.rawLoadDataReceiver import RawLoadDataReceiver
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+"""
+Creates a thread for prediction and a thread for training
+"""
 class LoadPrediction:
 
     def __init__(self, config, input_config_parser, timesteps, horizon, topic, id):
@@ -80,6 +83,14 @@ class LoadPrediction:
 
 
 class Training(threading.Thread):
+    """
+    - Load data points from file
+    - Wait till 55 points to train for the first time
+    - After initial training, Train model once in 24 hr
+    - Create a new model, compile, and train
+    - Save the checkpoints model in model_train.h5
+    - After training is completed, copy the model_train.h5 to model.h5
+    """
 
     def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
                  model_file_container, model_file_container_train, topic):
@@ -145,6 +156,13 @@ class Training(threading.Thread):
 
 class Prediction(threading.Thread):
 
+    """
+    - As soon as the number of data points is 25, prediction starts
+    - If model.h5 present in disk
+        then present then use model.h5
+        else load model_temp.h5 from disk (temp pre-trained model)
+    - predict for next 24 points (24 predictions)
+    """
     def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
                  model_file_container_temp, model_file_container, q, topic):
         super().__init__()

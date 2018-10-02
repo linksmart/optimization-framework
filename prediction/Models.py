@@ -17,6 +17,7 @@ tf.set_random_seed(1234)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+
 class Models:
 
     def __init__(self, num_timesteps, hidden_size, batch_size, save_path, save_path_temp):
@@ -30,6 +31,11 @@ class Models:
         self.model_weights_path_temp = save_path_temp
 
     def get_model(self):
+        """manages which model to load
+        If model.h5 present in disk
+	    then present then use model.h5
+	    else load model_temp.h5 from disk (temp pre-trained model)
+	    """
         temp = False
         if self.model:
             logger.info("model present in memory")
@@ -56,13 +62,13 @@ class Models:
 
     def load_saved_model(self, path):
         try:
-            #os.environ['KERAS_BACKEND'] = 'theano'
+            # os.environ['KERAS_BACKEND'] = 'theano'
             from keras.models import load_model
             from keras import backend as K
             import tensorflow as tf
             model, graph = None, None
             if os.path.exists(path):
-                logger.info("Loading model from disk from path = "+str(path))
+                logger.info("Loading model from disk from path = " + str(path))
                 K.clear_session()
                 model = load_model(path)
                 model._make_predict_function()
@@ -70,5 +76,5 @@ class Models:
                 logger.info("Loaded model from disk")
             return model, graph
         except Exception as e:
-            logger.error("Exception loading model "+str(e))
+            logger.error("Exception loading model " + str(e))
             return None, None

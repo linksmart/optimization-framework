@@ -33,6 +33,7 @@ class PredictModel:
         # repeat
         prediction = np.zeros(length)
         for i in range(length):
+            """calls predict n times to predict n points, use the prev prediction to predict next value"""
             with graph.as_default():
                 pred = self.predict(model, Xvals, model_batch_size)
                 Xvals = self.getDF(pred, Xvals)
