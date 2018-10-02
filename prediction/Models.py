@@ -56,13 +56,14 @@ class Models:
 
     def load_saved_model(self, path):
         try:
+            #os.environ['KERAS_BACKEND'] = 'theano'
             from keras.models import load_model
             from keras import backend as K
             import tensorflow as tf
             model, graph = None, None
             if os.path.exists(path):
                 logger.info("Loading model from disk from path = "+str(path))
-                # K.clear_session()
+                K.clear_session()
                 model = load_model(path)
                 model._make_predict_function()
                 graph = tf.get_default_graph()

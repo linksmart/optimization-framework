@@ -9,6 +9,8 @@ class TrainModel:
         self.stop_request = False
 
     def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, model_weights_path, topic):
+        import os
+        #os.environ['KERAS_BACKEND'] = 'theano'
         from keras.callbacks import EarlyStopping
         from keras.callbacks import ReduceLROnPlateau
         from keras.callbacks import ModelCheckpoint
@@ -19,6 +21,7 @@ class TrainModel:
         from keras import backend as K
         import tensorflow as tf
         K.clear_session()
+
         session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
         sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
         K.set_session(sess)

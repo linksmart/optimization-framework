@@ -22,7 +22,7 @@ logger = logging.getLogger(__file__)
 
 class DataReceiver(ABC):
 
-    def __init__(self, internal, topic_params, config, emptyValue={}):
+    def __init__(self, internal, topic_params, config, emptyValue={}, id=None):
         super().__init__()
         self.stop_request = False
         self.internal = internal
@@ -34,6 +34,7 @@ class DataReceiver(ABC):
         self.channel = "MQTT"
         self.topics = None
         self.port = None
+        self.id = id
         self.setup()
 
         if self.channel == "MQTT":
@@ -65,23 +66,20 @@ class DataReceiver(ABC):
             for topic in self.topic_params:
                 for k, v in topic.items():
                     if k == "topic":
-                        topic_qos.append((v,1))
+                        topic_qos.append((v + "_" + self.id,1))
                     elif k == "mqtt.port":
                         self.port = v
             self.host = self.config.get("IO", "mqtt.host")
             return topic_qos
         elif self.channel == "ZMQ":
-            port_list = []
             topics = []
             for topic in self.topic_params:
                 for k, v in topic.items():
                     if k == "topic":
-                        topics.append(v)
-                    elif k == "zmq.port":
-                        port_list.append(v)
-            self.port = port_list
+                        topics.append(v + "_" + self.id)
+            self.port = self.config.get("IO", "zmq.sub.port")
             self.host = self.config.get("IO", "zmq.host")
-            return commonprefix(topics)
+            return topics
 
     def init_mqtt(self, topic_qos):
         logger.info("Initializing mqtt subscription client")
@@ -99,8 +97,8 @@ class DataReceiver(ABC):
 
     def init_zmq(self, topics):
         logger.info("Initializing zmq subscription client")
-        self.zmq = ZMQClient(self.host, self.port)
-        self.zmq.init_subscriber(topics)
+        self.zmq = ZMQClient(self.host, None, self.port)
+        self.zmq.init_subscriber(topics, self.id)
 
     @abstractmethod
     def on_msg_received(self, payload):
@@ -124,7 +122,7 @@ class DataReceiver(ABC):
         while True and not self.stop_request:
             logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
-            logger.debug("zmq subscription msg received")
+            logger.debug("zmq subscription msg received for topic "+str(topic)+" for id "+str(self.id))
             logger.info(message)
             if flag:
                 self.on_msg_received(message)

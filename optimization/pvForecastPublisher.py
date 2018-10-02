@@ -19,15 +19,14 @@ logger = logging.getLogger(__file__)
 
 class PVForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config):
+    def __init__(self, internal_topic_params, config, id):
         self.pv_data = {}
         city = "Bonn, Germany"
         radiation = Radiation(city, True)
         self.q = Queue(maxsize=0)
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
         self.pv_thread.start()
-
-        super().__init__(True, internal_topic_params, config, 30)
+        super().__init__(True, internal_topic_params, config, 30, id)
 
     def get_pv_data_from_source(self, radiation, q):
         """PV Data fetch thread. Runs at 23:30 every day"""
@@ -85,5 +84,35 @@ class PVForecastPublisher(DataPublisher):
                 logger.debug("Queue empty")
         logger.debug("extract pv data")
         data = self.extract_1day_data()
-        logger.debug(str(data))
+        #logger.debug(str(data))
         return data
+        #return self.sample_data()
+
+    def sample_data(self):
+        data = {
+                0:0,
+                1:0,
+                2: 0,
+                3:0,
+                4:0,
+                5:0,
+                6:0,
+                7:0,
+                8:1.13248512,
+                9:3.016735616,
+                10:4.823979947,
+                11:6.329861639,
+                12:7.06663104,
+                13:7.42742784,
+                14: 7.420178035,
+                15:7.077290784,
+                16:5.99361984,
+                17:4.036273408,
+                18:1.462618829,
+                19: 0,
+                20:0,
+                21:0,
+                22:0,
+                23:0
+        }
+        return json.dumps({"P_PV": data})

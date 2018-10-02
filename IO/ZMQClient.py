@@ -4,62 +4,58 @@ Created on Jun 11 12:57 2018
 @author: nishit
 """
 import logging
+import threading
+
 import zmq
 import time
+
+from IO.redisDB import RedisDB
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+
 class ZMQClient:
-    def __init__(self, host, zmqPort):
+
+    def __init__(self, host, pubPort, subPort):
         self.host = host
-        self.port = zmqPort
+        self.pubPort = pubPort
+        self.subPort = subPort
         self.context = zmq.Context()
-        if isinstance(self.port, list):
-            self.url = []
-            for p in self.port:
-                self.url.append('tcp://{}:{}'.format(self.host, p))
-        else:
-            self.url = 'tcp://{}:{}'.format(self.host, self.port)
+        self.pubUrl = 'tcp://{}:{}'.format(self.host, self.pubPort)
+        self.subUrl = 'tcp://{}:{}'.format(self.host, self.subPort)
+        #self.init_forwarder()
         logger.info("Initialize ZMQClient")
 
-    def init_publisher(self):
+    def init_forwarder(self):
+        redisDB = RedisDB()
+        result = redisDB.get("forwarder", "False")
+        logger.info("forwarder = "+str(result))
+        if result == "False":
+            forwarderDevice = ForwarderDevice(self.host, self.pubPort, self.subPort)
+            forwarderDevice.start()
+
+    def init_publisher(self, id=None):
         try:
-            logger.info("Initialize zmq publisher")
+            logger.info("Initialize zmq publisher with url " + str(self.pubUrl) + " for id " + str(id))
             self.publisher = self.context.socket(zmq.PUB)
-            self.publisher.bind(self.url)
+            self.publisher.connect(self.pubUrl)
             time.sleep(1)
             logger.info("publisher initialized")
         except Exception as e:
             logger.error(e)
 
     def stop(self):
-        self.publisher.unbind(self.url)
+        pass
 
-    def init_subscriber(self, topic):
+    def init_subscriber(self, topics, id=None):
         try:
-            logger.info("Initialize zmq subscriber")
+            logger.info("Initialize zmq subscriber with url " + str(self.subUrl) + " for id " + str(id))
             self.subscriber = self.context.socket(zmq.SUB)
-            if isinstance(self.url, list):
-                for url in self.url:
-                    self.subscriber.connect(url)
-            else:
-                self.subscriber.connect(self.url)
-            self.subscriber.setsockopt_string(zmq.SUBSCRIBE, topic)
-            logger.info("subscriber initialized")
-        except Exception as e:
-            logger.error(e)
-
-    def init_subscriber_byte(self, topic):
-        try:
-            logger.info("Initialize zmq subscriber byte")
-            self.subscriber = self.context.socket(zmq.SUB)
-            if isinstance(self.url, list):
-                for url in self.url:
-                    self.subscriber.connect(url)
-            else:
-                self.subscriber.connect(self.url)
-            self.subscriber.setsockopt(zmq.SUBSCRIBE, topic)
+            self.subscriber.connect(self.subUrl)
+            for topic in topics:
+                logger.debug("filter = " + str(topic))
+                self.subscriber.setsockopt_string(zmq.SUBSCRIBE, topic)
             logger.info("subscriber initialized")
         except Exception as e:
             logger.error(e)
@@ -67,6 +63,7 @@ class ZMQClient:
     def publish_message(self, topic, message):
         try:
             self.publisher.send_string("%s %s" % (topic, message))
+            logger.info("publish")
         except Exception as e:
             logger.error(e)
 
@@ -74,28 +71,67 @@ class ZMQClient:
         try:
             logger.debug("try receiving msg")
             messagedata = self.subscriber.recv_string()
-            topic, message = messagedata.split(" ",1)
+            topic, message = messagedata.split(" ", 1)
             logger.debug(topic + " " + message)
             return True, topic, message
         except zmq.Again as e:
-            logger.debug("No messages received yet. Error = "+str(e))
+            logger.debug("No messages received yet. Error = " + str(e))
             return False, None, None
         except Exception as e:
             logger.error(e)
             return False, None, None
 
-    def recreq_server(self, callback_function):
-        self.recreq = self.context.socket(zmq.REP)
-        self.recreq.bind(self.url)
 
-        while True:
-            #  Wait for next request from client
-            message = self.recreq.recv()
-            logger.info("Received request: %s" % message)
+class ForwarderDevice(threading.Thread):
 
-            result = callback_function()
-            #  Do some 'work'
-            time.sleep(1)
+    def __init__(self, host, pubPort, subPort):
+        super().__init__()
+        self.host = host
+        self.pubPort = pubPort
+        self.subPort = subPort
+        self.frontend = None
+        self.backend = None
+        self.context = None
 
-            #  Send reply back to client
-            self.recreq.send(bytes(result))
+    def run(self):
+        logger.info("init zmq forwarder")
+        #redisDB = RedisDB()
+        try:
+            self.context = zmq.Context(2)
+            # Socket facing clients
+            url = 'tcp://{}:{}'.format(self.host, self.pubPort)
+            self.frontend = self.context.socket(zmq.SUB)
+            self.frontend.bind(url)
+
+            self.frontend.setsockopt_string(zmq.SUBSCRIBE, "")
+
+            # Socket facing services
+            url = 'tcp://{}:{}'.format(self.host, self.subPort)
+            self.backend = self.context.socket(zmq.PUB)
+            self.backend.bind(url)
+
+            logger.info("create forwarder device")
+            #redisDB.set("forwarder", "True")
+            zmq.device(zmq.FORWARDER, self.frontend, self.backend)
+            logger.info("created forwarder device")
+        except Exception as e:
+            logger.error(e)
+            logger.info("bringing down zmq device")
+            #redisDB.set("forwarder", "False")
+        finally:
+            logger.info("finally forwarder device")
+            if self.frontend:
+                self.frontend.close()
+            if self.backend:
+                self.backend.close()
+            if self.context:
+                self.context.term()
+
+    def Stop(self):
+        logger.info("closing forwarder device")
+        if self.frontend:
+            self.frontend.close()
+        if self.backend:
+            self.backend.close()
+        if self.context:
+            self.context.term()

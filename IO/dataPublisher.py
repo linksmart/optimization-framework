@@ -19,11 +19,13 @@ logger = logging.getLogger(__file__)
 
 class DataPublisher(ABC,threading.Thread):
 
-    def __init__(self, internal, topic_params, config, publish_frequency):
+    def __init__(self, internal, topic_params, config, publish_frequency, id=None):
         super().__init__()
         self.internal = internal
         self.config = config
         self.channel = "MQTT"
+        self.id = id
+        logger.debug("id = " + str(self.id))
         if internal:
             self.channel = config.get("IO", "channel")
         self.topic_params = topic_params
@@ -45,9 +47,9 @@ class DataPublisher(ABC,threading.Thread):
 
     def init_zmq(self):
         self.host = self.config.get("IO", "zmq.host")
-        self.port = self.topic_params["zmq.port"]
-        self.zmq = ZMQClient(self.host, self.port)
-        self.zmq.init_publisher()
+        self.port = self.config.get("IO", "zmq.pub.port")
+        self.zmq = ZMQClient(self.host, self.port, None)
+        self.zmq.init_publisher(self.id)
 
     def join(self, timeout=None):
         super(DataPublisher, self).join(timeout)
@@ -79,16 +81,22 @@ class DataPublisher(ABC,threading.Thread):
 
     def mqtt_publish(self, data):
         try:
-            logger.info("Sending results to mqtt on this topic: " + self.topic_params["topic"])
-            logger.debug("MQTT Data: "+str(data))
-            self.mqtt.publish(self.topic_params["topic"], data, True)
+            topic = self.topic_params["topic"]
+            if self.internal:
+                topic = topic + "_" + self.id
+            logger.info("Sending results to mqtt on this topic: " + topic)
+            #logger.debug("MQTT Data: "+str(data))
+            self.mqtt.publish(topic, data, True)
             logger.debug("Results published")
         except Exception as e:
             logger.error(e)
 
     def zmq_publish(self, data):
-        logger.info("Sending results to zmq on this topic: " + self.topic_params["topic"])
-        self.zmq.publish_message(self.topic_params["topic"], data)
+        topic = self.topic_params["topic"]
+        if self.internal:
+            topic = topic + "_" + self.id
+        logger.info("Sending results to zmq on this topic: " + topic)
+        self.zmq.publish_message(topic, data)
         logger.debug("Results published")
 
     @abstractmethod

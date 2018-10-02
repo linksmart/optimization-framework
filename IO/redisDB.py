@@ -47,3 +47,6 @@ class RedisDB:
             return slist
         else:
             return None
+
+    def reset(self):
+        self.redis_db.flushall()

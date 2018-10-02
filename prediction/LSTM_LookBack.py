@@ -1,9 +1,11 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jun 26 14:42:24 2018
 
 @author: puri
 """
+'''
 import json
 import threading
 
@@ -210,4 +212,4 @@ class TSP:
             print("Epoch {:d}/{:d}".format(i + 1, NUM_EPOCHS))
             model.fit(Xtrain, Ytrain, batch_size=BATCH_SIZE, epochs=1, verbose=1, callbacks=callbacks_list,
                       shuffle=False)
-            model.reset_states()
+            model.reset_states() '''

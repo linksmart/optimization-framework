@@ -51,7 +51,7 @@ class OutputController:
 
     def publishController(self, id, data):
         data = self.senml_message_format(data)
-        logger.debug("Output controller: "+str(json.dumps(data, indent=4)))
+        #logger.debug("Output controller: "+str(json.dumps(data, indent=4)))
         try:
             for key, value in data.items():
                 v = json.dumps(data[key])

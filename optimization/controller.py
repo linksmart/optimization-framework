@@ -26,12 +26,20 @@ from IO.outputController import OutputController
 
 #from optimization.models.ReferenceModel import Model
 from optimization.models.InvalidModelException import InvalidModelException
-from optimization.optimizationDataReceiver import OptimizationDataReceiver
+from optimization.internalDataReceiver import InternalDataReceiver
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 class OptController(threading.Thread):
+
+    try:
+        name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
+        logger.debug("Name server started: " + str(name_server))
+        dispatch_server = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
+        logger.debug("Dispatch server started: " + str(dispatch_server))
+    except Exception as e:
+        logger.error("new name server error, "+str(e))
 
     def __init__(self, id, solver_name, model_path, time_step, repetition, output_config, input_config_parser, config):
         #threading.Thread.__init__(self)
@@ -80,17 +88,17 @@ class OptController(threading.Thread):
         if self.isAlive():
             self.join()
 
+    def exit(self):
+        self.name_server.kill()
+        logger.debug("Exit name server")
+        self.dispatch_server.kill()
+        logger.debug("Exit dispatch server")
 
     #Start the optimization process and gives back a result
     def run(self):
         logger.info("Starting optimization controller")
 
         ###Starts name server, dispatcher server and pyro_mip_server
-
-        name_server=subprocess.Popen(["/usr/local/bin/pyomo_ns"])
-        logger.debug("Name server started: "+str(name_server))
-        dispatch_server=subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
-        logger.debug("Dispatch server started: "+str(dispatch_server))
         pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
         logger.debug("Pyro mip server started: "+str(pyro_mip_server))
 
@@ -125,7 +133,7 @@ class OptController(threading.Thread):
                 logger.info("This is the id: "+self.id)
                 data_dict = self.input.get_data(self.id) #blocking call
                 #logger.info("data is "+str(data_dict))
-                logger.debug("Data is: "+json.dumps(data_dict, indent=4))
+                #logger.debug("Data is: "+json.dumps(data_dict, indent=4))
                 if self.stopRequest.isSet():
                     break
 
@@ -167,7 +175,7 @@ class OptController(threading.Thread):
                 if (self.results.solver.status == SolverStatus.ok) and (self.results.solver.termination_condition == TerminationCondition.optimal):
                     # this is feasible and optimal
                     logger.info("Solver status and termination condition ok")
-                    logger.debug("Results for " + self.solved_name)
+                    logger.debug("Results for " + self.solved_name + " with id: "+str(self.id))
                     logger.debug(self.results)
                     instance.solutions.load_from(self.results)
                     try:
@@ -213,11 +221,6 @@ class OptController(threading.Thread):
             logger.debug("Deactivating pyro servers")
             solver_manager.deactivate()
             logger.debug("Pyro servers deactivated: "+str(solver_manager))
-            logger.debug("name server: "+str(name_server))
-            name_server.kill()
-            logger.debug("Exit name server")
-            dispatch_server.kill()
-            logger.debug("Exit dispatch server")
             pyro_mip_server.kill()
             logger.debug("Exit pyro-mip-server server")
             #If Stop signal arrives it tries to disconnect all mqtt clients

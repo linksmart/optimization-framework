@@ -6,6 +6,7 @@ from queue import Queue
 import time
 
 import os
+from shutil import copyfile
 
 from prediction.utils import Utils
 from optimization.loadForecastPublisher import LoadForecastPublisher
@@ -17,8 +18,7 @@ logger = logging.getLogger(__file__)
 
 class LoadPrediction:
 
-    def __init__(self, config, input_config_parser, timesteps, horizon, topic):
-        #super().__init__()
+    def __init__(self, config, input_config_parser, timesteps, horizon, topic, id):
         self.stopRequest = threading.Event()
 
         self.topic = topic
@@ -30,15 +30,13 @@ class LoadPrediction:
         self.batch_size = 1
         self.num_epochs = 2  # 10
         self.min_training_size = self.num_timesteps+10
+        self.id = id
 
         self.utils = Utils()
         self.raw_data_file_container = os.path.join("/usr/src/app", "prediction", "raw_data.csv")
-        self.raw_data_file_host = os.path.join("/usr/src/app", "prediction/resources", "raw_data.csv")
         self.model_file_container = os.path.join("/usr/src/app", "prediction", "model.h5")
         self.model_file_container_temp = os.path.join("/usr/src/app", "prediction", "model_temp.h5")
-        self.model_file_host = os.path.join("/usr/src/app", "prediction/resources", "model.h5")
-        #self.utils.copy_files_from_host(self.raw_data_file_host, self.raw_data_file_container)
-        #self.utils.copy_files_from_host(self.model_file_host, self.model_file_container)
+        self.model_file_container_train = os.path.join("/usr/src/app", "prediction", "model_train.h5")
 
         self.input_config_parser = input_config_parser
 
@@ -50,7 +48,7 @@ class LoadPrediction:
 
         load_forecast_topic = config.get("IO", "load.forecast.topic")
         load_forecast_topic = json.loads(load_forecast_topic)
-        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60, self.topic)
+        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60, self.topic, self.id)
         self.load_forecast_pub.start()
 
         #self.trained = False
@@ -65,34 +63,10 @@ class LoadPrediction:
 
         self.training_thread = Training(self.length, self.horizon, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
-                                        self.raw_data, self.processingData, self.topic)
+                                        self.raw_data, self.processingData, self.model_file_container,
+                                        self.model_file_container_train, self.topic)
         self.training_thread.start()
 
-    """
-    def run(self):
-        while not self.stopRequest.is_set():
-            train = self.checktime()
-            self.today = datetime.datetime.now()
-            # get raw data from mqtt/zmq
-            data = self.raw_data.get_raw_data(train)
-            logger.debug("raw data ready " + str(len(data)))
-            if train:
-                if len(data) > self.min_training_size:
-                    self.trained = True
-                    logger.info("start training")
-                    Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True)
-                    #self.train_model(data)
-                    self.train_thread = threading.Thread(target=self.train_model,
-                                                         args=(Xtrain, Ytrain, self.num_epochs,
-                                                                self.batch_size, self.hidden_size, self.num_timesteps))
-                    self.train_thread.start()
-            # preprocess data
-            logger.info("len data = "+str(len(data)))
-            if len(data) >= self.num_timesteps:
-                self.predict_thread = threading.Thread(target=self.predict, args=(data,))
-                self.predict_thread.start()
-            time.sleep(1)
-    """
             # for testing
 
     def Stop(self):
@@ -102,17 +76,13 @@ class LoadPrediction:
         self.prediction_thread.Stop()
         self.training_thread.Stop()
         self.load_forecast_pub.Stop()
-        #if self.isAlive():
-        #    self.join()
         logger.info("load controller thread exit")
 
-    def save_file_to_host(self):
-        self.utils.copy_files_to_host(self.raw_data_file_container, self.raw_data_file_host)
-        pass
 
 class Training(threading.Thread):
 
-    def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData, topic):
+    def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
+                 model_file_container, model_file_container_train, topic):
         super().__init__()
         self.length = timesteps
         self.length = 24
@@ -122,7 +92,8 @@ class Training(threading.Thread):
         self.batch_size = batch_size
         self.num_epochs = num_epochs  # 10
         self.min_training_size = self.num_timesteps + 30
-        self.model_file_container = os.path.join("/usr/src/app", "prediction", "model.h5")
+        self.model_file_container = model_file_container
+        self.model_file_container_train = model_file_container_train
         self.today = datetime.datetime.now().day
         self.raw_data = raw_data
         self.processingData = processingData
@@ -145,12 +116,12 @@ class Training(threading.Thread):
                         Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True)
 
                         # preprocess data
-                        model_file_container = os.path.join("/usr/src/app", "prediction", "model.h5")
                         try:
                             from prediction.trainModel import TrainModel
                             trainModel = TrainModel()
                             trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
-                                             self.num_timesteps, model_file_container, self.topic)
+                                             self.num_timesteps, self.model_file_container_train, self.topic)
+                            copyfile(self.model_file_container_train, self.model_file_container)
                             logger.info("trained successfully")
                         except Exception as e:
                             self.trained = False
@@ -193,7 +164,7 @@ class Prediction(threading.Thread):
         self.stopRequest = threading.Event()
         from prediction.Models import Models
         self.models = Models(self.num_timesteps, self.hidden_size, self.batch_size, self.model_file_container,
-                        self.model_file_container_temp, topic)
+                        self.model_file_container_temp)
 
     def run(self):
         ctr = 0
@@ -212,9 +183,9 @@ class Prediction(threading.Thread):
                             model = model_temp
                         if model is not None:
                             Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
-                            from prediction.modelPrediction import ModelPrediction
-                            modelPrediction = ModelPrediction()
-                            test_predictions = modelPrediction.predict_next_day(model, Xtest, self.batch_size, self.length, graph)
+                            from prediction.predictModel import PredictModel
+                            predictModel = PredictModel()
+                            test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.length, graph)
                             data = self.processingData.to_dict_with_datetime(test_predictions,
                                                                              datetime.datetime(datetime.datetime.now().year, 12, 11,
                                                                                                6, 0), 60)

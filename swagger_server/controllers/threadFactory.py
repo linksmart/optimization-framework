@@ -111,7 +111,7 @@ class ThreadFactory:
                     logger.info("Creating load prediction controller thread for topic " + str(prediction_name))
                     self.prediction_threads[prediction_name] = LoadPrediction(config, input_config_parser,
                                                                               self.time_step, self.horizon,
-                                                                              prediction_name)
+                                                                              prediction_name, self.id)
                     #self.prediction_threads[prediction_name].start()
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_non_prediction_names()
@@ -120,9 +120,10 @@ class ThreadFactory:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
                     if non_prediction_name == "P_PV":
-                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser)
+                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id)
 
-        logger.debug("Start in threadfactory finished")
+
+
 
         # Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.time_step,

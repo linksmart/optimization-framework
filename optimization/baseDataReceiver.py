@@ -16,8 +16,8 @@ logger = logging.getLogger(__file__)
 
 class BaseDataReceiver(DataReceiver, ABC):
 
-    def __init__(self, internal, topic_params, config, generic_name):
-        super().__init__(internal, topic_params, config)
+    def __init__(self, internal, topic_params, config, generic_name, id):
+        super().__init__(internal, topic_params, config, id=id)
         self.generic_name = generic_name
 
     def on_msg_received(self, payload):

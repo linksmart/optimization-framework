@@ -12,7 +12,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 
-class ModelPrediction:
+class PredictModel:
 
     def __init__(self):
         pass
