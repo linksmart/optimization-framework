@@ -1,10 +1,8 @@
 import connexion
-import six
 import os, logging, json
 
 from IO.redisDB import RedisDB
 from swagger_server.models.output_source import OutputSource  # noqa: E501
-from swagger_server.models.path_definition import PathDefinition  # noqa: E501
 
 from optimization.utils import Utils
 

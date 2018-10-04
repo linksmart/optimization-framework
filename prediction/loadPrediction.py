@@ -8,10 +8,7 @@ import time
 import os
 from shutil import copyfile
 
-from prediction.utils import Utils
-from optimization.loadForecastPublisher import LoadForecastPublisher
 from prediction.processingData import ProcessingData
-from prediction.rawLoadDataReceiver import RawLoadDataReceiver
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -21,10 +18,12 @@ Creates a thread for prediction and a thread for training
 """
 class LoadPrediction:
 
-    def __init__(self, config, input_config_parser, timesteps, horizon, topic, id):
+    def __init__(self, config, timesteps, horizon, topic_name, topic_param, id, predictionFlag):
         self.stopRequest = threading.Event()
 
-        self.topic = topic
+        self.predictionFlag = predictionFlag
+
+        self.topic_name = topic_name
         self.length = timesteps
         self.length = 24
         self.horizon = horizon
@@ -35,50 +34,61 @@ class LoadPrediction:
         self.min_training_size = self.num_timesteps+10
         self.id = id
 
-        self.utils = Utils()
-        self.raw_data_file_container = os.path.join("/usr/src/app", "prediction", "raw_data.csv")
-        self.model_file_container = os.path.join("/usr/src/app", "prediction", "model.h5")
-        self.model_file_container_temp = os.path.join("/usr/src/app", "prediction", "model_temp.h5")
-        self.model_file_container_train = os.path.join("/usr/src/app", "prediction", "model_train.h5")
+        self.raw_data_file_container = os.path.join("/usr/src/app", "res", "raw_data_"+str(topic_name)+".csv")
+        self.model_file_container = os.path.join("/usr/src/app", "res", "model_"+str(topic_name)+".h5")
+        self.model_file_container_temp = os.path.join("/usr/src/app", "res", "model_temp_"+str(topic_name)+".h5")
+        self.model_file_container_train = os.path.join("/usr/src/app", "res", "model_train_"+str(topic_name)+".h5")
 
-        self.input_config_parser = input_config_parser
-
-        topic = self.input_config_parser.get_params("P_Load")
-        self.raw_data = RawLoadDataReceiver(topic, config, self.num_timesteps, 24 * 10, self.raw_data_file_container)
         self.processingData = ProcessingData()
 
-        self.q = Queue(maxsize=0)
+        self.load_forecast_pub = None
+        self.prediction_thread = None
+        self.training_thread = None
 
-        load_forecast_topic = config.get("IO", "load.forecast.topic")
-        load_forecast_topic = json.loads(load_forecast_topic)
-        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60, self.topic, self.id)
-        self.load_forecast_pub.start()
+        if self.predictionFlag:
+            from prediction.rawLoadDataReceiver import RawLoadDataReceiver
+            self.raw_data = RawLoadDataReceiver(topic_param, config, self.num_timesteps, 24 * 10,
+                                                self.raw_data_file_container)
 
-        #self.trained = False
-        #self.today = datetime.datetime.now().day
-        #self.train_thread = None
+            self.q = Queue(maxsize=0)
 
-        self.prediction_thread = Prediction(self.length, self.horizon, self.num_timesteps,
-                                        self.hidden_size, self.batch_size, self.num_epochs,
-                                        self.raw_data, self.processingData, self.model_file_container_temp,
-                                        self.model_file_container, self.q, self.topic)
-        self.prediction_thread.start()
+            from optimization.loadForecastPublisher import LoadForecastPublisher
+            load_forecast_topic = config.get("IO", "load.forecast.topic")
+            load_forecast_topic = json.loads(load_forecast_topic)
+            self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60, self.topic_name, self.id)
+            self.load_forecast_pub.start()
 
+            self.startPrediction()
+        else:
+            self.startTraining()
+
+    def startTraining(self):
         self.training_thread = Training(self.length, self.horizon, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
-                                        self.raw_data, self.processingData, self.model_file_container,
-                                        self.model_file_container_train, self.topic)
+                                        self.raw_data_file_container, self.processingData, self.model_file_container,
+                                        self.model_file_container_train)
         self.training_thread.start()
 
-            # for testing
+    def startPrediction(self):
+        self.prediction_thread = Prediction(self.length, self.horizon, self.num_timesteps,
+                                            self.hidden_size, self.batch_size, self.num_epochs,
+                                            self.raw_data, self.processingData, self.model_file_container_temp,
+                                            self.model_file_container, self.q, self.topic_name)
+        self.prediction_thread.start()
+
 
     def Stop(self):
         logger.info("start load controller thread exit")
         logger.info("Stopping load forecast thread")
         self.stopRequest.set()
-        self.prediction_thread.Stop()
-        self.training_thread.Stop()
-        self.load_forecast_pub.Stop()
+        if self.prediction_thread:
+            self.prediction_thread.Stop()
+        if self.training_thread:
+            self.training_thread.Stop()
+        if self.load_forecast_pub:
+            self.load_forecast_pub.Stop()
+        if self.raw_data:
+            self.raw_data.exit()
         logger.info("load controller thread exit")
 
 
@@ -92,8 +102,8 @@ class Training(threading.Thread):
     - After training is completed, copy the model_train.h5 to model.h5
     """
 
-    def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
-                 model_file_container, model_file_container_train, topic):
+    def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
+                 model_file_container, model_file_container_train):
         super().__init__()
         self.length = timesteps
         self.length = 24
@@ -106,11 +116,10 @@ class Training(threading.Thread):
         self.model_file_container = model_file_container
         self.model_file_container_train = model_file_container_train
         self.today = datetime.datetime.now().day
-        self.raw_data = raw_data
         self.processingData = processingData
         self.trained = False
+        self.raw_data_file = raw_data_file
         self.stopRequest = threading.Event()
-        self.topic = topic
 
     def run(self):
         while not self.stopRequest.isSet():
@@ -118,8 +127,10 @@ class Training(threading.Thread):
                 train = self.checktime()
                 self.today = datetime.datetime.now()
                 if train:
-                    # get raw data from mqtt/zmq
-                    data = self.raw_data.get_raw_data(train=True)
+                    # get raw data from file
+                    from prediction.rawDataReader import RawDataReader
+                    data = RawDataReader.get_raw_data(self.raw_data_file, 1000)
+                    #data = self.raw_data.get_raw_data(train=True)
                     logger.debug("raw data ready " + str(len(data)))
                     if len(data) > self.min_training_size:
                         self.trained = True
@@ -131,7 +142,7 @@ class Training(threading.Thread):
                             from prediction.trainModel import TrainModel
                             trainModel = TrainModel()
                             trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
-                                             self.num_timesteps, self.model_file_container_train, self.topic)
+                                             self.num_timesteps, self.model_file_container_train)
                             copyfile(self.model_file_container_train, self.model_file_container)
                             logger.info("trained successfully")
                         except Exception as e:

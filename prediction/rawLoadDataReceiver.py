@@ -6,9 +6,8 @@ Created on Jun 27 18:27 2018
 import json
 import logging
 
-import os
-
 from IO.dataReceiver import DataReceiver
+from prediction.rawDataReader import RawDataReader
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -25,23 +24,12 @@ class RawLoadDataReceiver(DataReceiver):
 
     def on_msg_received(self, payload):
         data = json.loads(payload)
-        data = self.add_formated_data(data)
+        data = RawDataReader.add_formated_data(data)
         for item in data:
             self.data.append(item)
         self.data_update = True
         self.save_to_file(data)
         logger.info("raw data size = " + str(len(data)))
-
-    def add_formated_data(self, data=[]):
-        new_data = []
-        for row in data:
-            cols = row.replace('\n', '').strip().split(",")
-            dateTime = cols[0]
-            cols = cols[1:]
-            cols = list(map(float, cols))
-            cols.insert(0, dateTime)
-            new_data.append(cols)
-        return new_data
 
     def save_to_file(self, data):
         try:
@@ -54,25 +42,12 @@ class RawLoadDataReceiver(DataReceiver):
             logger.error("failed to save "+ str(e))
         return True
 
-    def read_from_file(self):
-        try:
-            if os.path.exists(self.file_path):
-                with open(self.file_path) as file:
-                    data = file.readlines()
-                file.close()
-                return data
-            else:
-                return []
-        except Exception as e:
-            logger.error(e)
-        return []
-
     def get_raw_data(self, train=False):
         if train:
-            data = self.read_from_file()
+            data = RawDataReader.read_from_file(self.file_path)
             if len(data) > self.training_data:
                 data = data[-self.training_data:]
-            return self.add_formated_data(data)
+            return RawDataReader.add_formated_data(data)
         else:
             data = self.get_data(0, True)
             for item in data:

@@ -8,11 +8,13 @@ class TrainModel:
     def __init__(self):
         self.stop_request = False
 
-    def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, model_weights_path, topic):
+    def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, model_weights_path):
         """
         Creates a new model, compiles it and then trains it
         """
         import os
+        #os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'
+        #os.environ['OMP_NUM_THREAD'] = '8'
         #os.environ['KERAS_BACKEND'] = 'theano'
         from keras.callbacks import EarlyStopping
         from keras.callbacks import ReduceLROnPlateau

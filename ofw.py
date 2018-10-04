@@ -4,20 +4,12 @@
 """
 import configparser
 import  os, logging
-import subprocess # just to call an arbitrary command e.g. 'ls'
-import time
 import signal, sys
 
-import swagger_server.__main__ as webserver
-#import swagger_server.wsgi as webserver
-
-from optparse import OptionParser
-
-import sh as sh
+#import swagger_server.__main__ as webserver
+import swagger_server.wsgi as webserver
 
 from IO.ZMQClient import ForwarderDevice
-from optimization.controller import OptController
-
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)

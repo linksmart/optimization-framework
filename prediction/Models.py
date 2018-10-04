@@ -7,6 +7,8 @@ Created on Sep 19 16:19 2018
 import logging
 import os
 
+import sys
+
 """
 os.environ['PYTHONHASHSEED'] = '0'
 np.random.seed(42)
@@ -62,7 +64,9 @@ class Models:
 
     def load_saved_model(self, path):
         try:
-            # os.environ['KERAS_BACKEND'] = 'theano'
+            #os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'
+            #os.environ['OMP_NUM_THREAD'] = '8'
+            #os.environ['KERAS_BACKEND'] = 'theano'
             from keras.models import load_model
             from keras import backend as K
             import tensorflow as tf

@@ -21,7 +21,7 @@ class InputConfigParser:
         self.mqtt_params = {}
         self.generic_names = []
         self.generic_file_names = []
-        self.defined_prediction_names = ["P_Load", "P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T"]
+        self.defined_prediction_names = ["P_Load", "P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T", "Q_Load"]
         self.defined_non_prediction_names = ["P_PV"]
         self.defined_external_names = ["SoC_Value"]
         self.defined_receivers = []

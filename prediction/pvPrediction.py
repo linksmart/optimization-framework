@@ -24,12 +24,10 @@ class PVPrediction:
 
         pv_forecast_topic = config.get("IO", "pv.forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
-        logger.debug("id 4 = " + str(id))
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id)
         self.pv_forecast_pub.start()
 
     def Stop(self):
-        logger.info("start pv prediction thread exit")
-        logger.info("Stopping pv forecast thread")
+        logger.debug("Stopping pv forecast thread")
         self.pv_forecast_pub.Stop()
-        logger.info("pv prediction thread exit")
+        logger.debug("pv prediction thread exit")

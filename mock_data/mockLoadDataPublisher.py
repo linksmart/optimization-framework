@@ -14,7 +14,7 @@ from IO.dataPublisher import DataPublisher
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
-class MockPLoadDataPublisher(DataPublisher):
+class MockLoadDataPublisher(DataPublisher):
 
     def __init__(self, topic_params, config):
         super().__init__(False, topic_params, config, 1)
