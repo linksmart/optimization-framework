@@ -50,12 +50,11 @@ class OutputController:
             logger.error(e)
 
     def publishController(self, id, data):
-        data = self.senml_message_format(data)
-        #logger.debug("Output controller: "+str(json.dumps(data, indent=4)))
+        current_time = int(time.time())
+        senml_data = self.senml_message_format(data, current_time)
         try:
-            for key, value in data.items():
-                v = json.dumps(data[key])
-                self.save(id, key, v)
+            for key, value in senml_data.items():
+                v = json.dumps(value)
                 if key in self.output_mqtt.keys():
                     value2 = self.output_mqtt[key]
                     topic = value2["topic"]
@@ -64,39 +63,39 @@ class OutputController:
                     self.mqtt[str(host)].sendResults(topic, v)
         except Exception as e:
             logger.error(e)
+        self.save(id, data, current_time)
 
 
-    def senml_message_format(self, data):
+    def senml_message_format(self, data, time):
         new_data = {}
-        current_time = int(time.time())
         u = "W"
         for key, value in data.items():
-            topic_data = {}
-            for v in value[0]:
-                if v is not 0:
-                    meas = senml.SenMLMeasurement()
-                    meas.name = key
-                    meas.time = current_time
-                    meas.value = v
-                    meas.unit = u
-                    doc = senml.SenMLDocument([meas])
-                    topic_data["e"] = doc.to_json()
-            new_data[key] = topic_data.copy()
+            meas_list = []
+            for v in value:
+                meas = senml.SenMLMeasurement()
+                meas.name = key
+                meas.time = time
+                meas.value = v
+                meas.unit = u
+                meas_list.append(meas)
+                break  # only want the first value
+            if len(meas_list) > 0:
+                doc = senml.SenMLDocument(meas_list)
+                new_data[key] = doc.to_json()
         #logger.debug("Topic MQTT Senml message: "+str(new_data))
         return new_data
 
     def makeFile(self):
         return 0
 
-    def save(self, id, topic, value):
+    def save(self, id, data, time):
         try:
-            value = json.loads(value)
-            list_items = value["e"]
-            #  since we created it and it only has one element
-            v = list_items[0]["v"]
-            t = list_items[0]["t"]
-            key = "o:"+id+":"+topic+":"+str(t)
-            self.redisDB.set(key, v)
-            #self.redisDB.add_to_list(key, v)
+            part_key = "o:" + id + ":"
+            for key, value in data.items():
+                index = 0
+                for v in value:
+                    k = part_key + key + ":" + str(time) + ":" + str(index)
+                    self.redisDB.set(k, v)
+                    index += 1
         except Exception as e:
-            logger.error("error adding to redis "+str(e))
+            logger.error("error adding to redis " + str(e))

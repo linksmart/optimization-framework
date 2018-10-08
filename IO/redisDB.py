@@ -50,3 +50,6 @@ class RedisDB:
 
     def reset(self):
         self.redis_db.flushall()
+
+    def key_exists(self, key):
+        return self.redis_db.exists(key)

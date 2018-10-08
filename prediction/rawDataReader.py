@@ -14,7 +14,7 @@ logger = logging.getLogger(__file__)
 class RawDataReader:
 
     @staticmethod
-    def read_from_file(file_path):
+    def read_from_file(file_path, topic_name):
         try:
             if os.path.exists(file_path):
                 with open(file_path) as file:
@@ -22,7 +22,7 @@ class RawDataReader:
                 file.close()
                 return data
             else:
-                logger.info("File not found "+file_path)
+                logger.info("Training data not available "+str(topic_name))
                 return []
         except Exception as e:
             logger.error(e)
@@ -41,8 +41,8 @@ class RawDataReader:
         return new_data
 
     @staticmethod
-    def get_raw_data(file_path, data_length):
-        data = RawDataReader.read_from_file(file_path)
+    def get_raw_data(file_path, data_length, topic_name):
+        data = RawDataReader.read_from_file(file_path, topic_name)
         if len(data) > data_length:
             data = data[-data_length:]
         return RawDataReader.add_formated_data(data)

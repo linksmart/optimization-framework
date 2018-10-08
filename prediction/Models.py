@@ -32,7 +32,7 @@ class Models:
         self.model_weights_path = save_path
         self.model_weights_path_temp = save_path_temp
 
-    def get_model(self):
+    def get_model(self, id_topic):
         """manages which model to load
         If model.h5 present in disk
 	    then present then use model.h5
@@ -40,7 +40,7 @@ class Models:
 	    """
         temp = False
         if self.model:
-            logger.info("model present in memory")
+            logger.info(str(id_topic)+"model present in memory ")
             return self.model, self.model_temp, temp, self.graph
         model, graph = self.load_saved_model(self.model_weights_path)
         if model:
@@ -50,7 +50,7 @@ class Models:
         else:
             """try temp model"""
             if self.model_temp:
-                logger.info("temp model present in memory")
+                logger.info(str(id_topic)+"temp model present in memory")
                 temp = True
                 return model, self.model_temp, temp, self.graph
             model_temp, graph = self.load_saved_model(self.model_weights_path_temp)
@@ -74,6 +74,9 @@ class Models:
             if os.path.exists(path):
                 logger.info("Loading model from disk from path = " + str(path))
                 K.clear_session()
+                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
+                sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+                K.set_session(sess)
                 model = load_model(path)
                 model._make_predict_function()
                 graph = tf.get_default_graph()

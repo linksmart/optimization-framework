@@ -186,21 +186,19 @@ class OptController(threading.Thread):
                             #logger.debug("varobject: "+str(varobject))
                             #if str(v) == "P_PV_Output":
                                 #my_dict[str(v)]='2'
-                            for index in varobject:
-                                #logger.debug("index: "+str(index))
-                                if index==0:
-                                    list=[{index,varobject[index].value}]
-                                    try:
-                                        # Try and add to the dictionary by key ref
-                                        my_dict[str(v)]=list
-
-                                    except Exception as e:
-                                        logger.error(e)
-                                        # Append new index to currently existing items
-                                        #my_dict = {**my_dict, **{v: list}}
+                            var_list = []
+                            try:
+                                # Try and add to the dictionary by key ref
+                                for index in varobject:
+                                    var_list.append(varobject[index].value)
+                                my_dict[str(v)]=var_list
+                            except Exception as e:
+                                logger.error(e)
+                                # Append new index to currently existing items
+                                #my_dict = {**my_dict, **{v: list}}
 
 
-                        logger.debug("Variable in the optimization dict: "+str(my_dict))
+                        #logger.debug("Variable in the optimization dict: "+str(my_dict))
                         #logger.debug("Variable in the optimization dict: " + str(json.dumps(my_dict, indent=4)))
                         self.output.publishController(self.id, my_dict)
                     except Exception as e:

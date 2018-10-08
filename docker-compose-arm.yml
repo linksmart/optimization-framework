@@ -77,7 +77,7 @@ services:
       #- volume-glpsol:/usr/bin
       #- volume-glpk:/usr/local/lib
     volumes:
-      - /home/administrator/optimization-framework/prediction/resources:/usr/src/app/res
+      - ../optimization-framework/prediction/resources:/usr/src/app/res
     #restart: unless-stopped
     #command: ["echo", "que sera sera"]
     command: ["python3", "-u", "ofw.py"]
@@ -87,7 +87,7 @@ services:
       context: ""
       dockerfile: mock_data/docker-arm/Dockerfile-mock-arm
      # ../docker/App/Dockerfile
-    command: ["python3", "-u", "mockdata.py", "P_Load", "Q_Load"] #"SoC_Value",
+    command: ["python3", "-u", "mockdata.py", "ESS_Control~l:24~v:0", "SoC_Value" , "P_Load", "Q_Load"]
   ml:
     build:
       context: ""
@@ -95,7 +95,7 @@ services:
     depends_on:
       - redis
     volumes:
-      - /home/administrator/optimization-framework/prediction/resources:/usr/src/app/res
+      - ../optimization-framework/prediction/resources:/usr/src/app/res
     command: ["python3", "-u", "mlTraining.py"]
 
 volumes:

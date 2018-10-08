@@ -71,13 +71,16 @@ def output_source_file(id):  # noqa: E501
     output_keys = redisDB.get_keys_for_pattern("o:"+id+":*")
     if output_keys is not None:
         for key in output_keys:
-            time = key[key.rindex(":")+1:]
-            key_part = key[:key.rindex(":")]
-            topic = key_part[key_part.rindex(":")+1:]
+            sub_key = key.split(":")
+            topic = sub_key[2]
+            time = sub_key[3]
+            index = sub_key[4]
             value = redisDB.get(key)
             if topic not in result.keys():
                 result[topic] = {}
-            result[topic][time] = float(value)
+            if time not in result[topic]:
+                result[topic][time] = {}
+            result[topic][time][index] = float(value)
     return result
 
 

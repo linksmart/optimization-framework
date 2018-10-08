@@ -42,9 +42,9 @@ class RawLoadDataReceiver(DataReceiver):
             logger.error("failed to save "+ str(e))
         return True
 
-    def get_raw_data(self, train=False):
+    def get_raw_data(self, train=False, topic_name=None):
         if train:
-            data = RawDataReader.read_from_file(self.file_path)
+            data = RawDataReader.read_from_file(self.file_path, topic_name)
             if len(data) > self.training_data:
                 data = data[-self.training_data:]
             return RawDataReader.add_formated_data(data)

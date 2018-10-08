@@ -10,6 +10,8 @@ import os
 import random
 
 import time
+
+import math
 from senml import senml
 
 from IO.dataPublisher import DataPublisher
@@ -21,20 +23,20 @@ class MockSoCDataPublisher(DataPublisher):
 
     def __init__(self, topic_params, config):
         super().__init__(False, topic_params, config, 11)
-        self.index = 20
-        self.value=20
+        self.value = 25
+        self.name = "SoC_Value"
 
     def get_data(self):
         meas = senml.SenMLMeasurement()
-        #meas.name = "SoC_Value"
-        #meas.value = random.randint(20,100)
-        self.value= self.value + 1
         meas.value = self.value
-        meas.time = time.time()
-        logger.debug("meas: "+str(meas))
-        logger.debug("type meas: " + str(type(meas)))
-        val={"e":[json.loads(json.dumps(meas.to_json()))]}
-        logger.debug("Val: "+str(val))
-        val=json.dumps(val)
+        meas.time = int(math.floor(time.time()))
+        meas.name = self.name
+        doc = senml.SenMLDocument([meas])
+        val = doc.to_json()
+        logger.info(str(type(val)))
+        val = json.dumps(val)
         logger.debug("Sent MQTT:"+str(val))
+        self.value = self.value + 1
+        if self.value > 60:
+            self.value = 25
         return val

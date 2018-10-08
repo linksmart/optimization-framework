@@ -8,6 +8,7 @@ import time
 import os
 from shutil import copyfile
 
+from IO.redisDB import RedisDB
 from prediction.processingData import ProcessingData
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -66,14 +67,14 @@ class LoadPrediction:
         self.training_thread = Training(self.length, self.horizon, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
-                                        self.model_file_container_train)
+                                        self.model_file_container_train, self.topic_name, self.id)
         self.training_thread.start()
 
     def startPrediction(self):
         self.prediction_thread = Prediction(self.length, self.horizon, self.num_timesteps,
                                             self.hidden_size, self.batch_size, self.num_epochs,
                                             self.raw_data, self.processingData, self.model_file_container_temp,
-                                            self.model_file_container, self.q, self.topic_name)
+                                            self.model_file_container, self.q, self.topic_name, self.id)
         self.prediction_thread.start()
 
 
@@ -103,7 +104,7 @@ class Training(threading.Thread):
     """
 
     def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
-                 model_file_container, model_file_container_train):
+                 model_file_container, model_file_container_train, topic_name, id):
         super().__init__()
         self.length = timesteps
         self.length = 24
@@ -120,6 +121,10 @@ class Training(threading.Thread):
         self.trained = False
         self.raw_data_file = raw_data_file
         self.stopRequest = threading.Event()
+        self.redisDB = RedisDB()
+        self.training_lock_key = "training_lock"
+        self.topic_name = topic_name
+        self.id = id
 
     def run(self):
         while not self.stopRequest.isSet():
@@ -129,7 +134,7 @@ class Training(threading.Thread):
                 if train:
                     # get raw data from file
                     from prediction.rawDataReader import RawDataReader
-                    data = RawDataReader.get_raw_data(self.raw_data_file, 1000)
+                    data = RawDataReader.get_raw_data(self.raw_data_file, 1000, self.topic_name)
                     #data = self.raw_data.get_raw_data(train=True)
                     logger.debug("raw data ready " + str(len(data)))
                     if len(data) > self.min_training_size:
@@ -139,15 +144,18 @@ class Training(threading.Thread):
 
                         # preprocess data
                         try:
-                            from prediction.trainModel import TrainModel
-                            trainModel = TrainModel()
-                            trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
-                                             self.num_timesteps, self.model_file_container_train)
-                            copyfile(self.model_file_container_train, self.model_file_container)
-                            logger.info("trained successfully")
+                            if self.get_lock():
+                                from prediction.trainModel import TrainModel
+                                trainModel = TrainModel()
+                                trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
+                                                 self.num_timesteps, self.model_file_container_train)
+                                copyfile(self.model_file_container_train, self.model_file_container)
+                                logger.info("trained successfully")
                         except Exception as e:
                             self.trained = False
                             logger.error("error training model " + str(e))
+                        finally:
+                            self.release_lock()
                 time.sleep(1)
             except Exception as e:
                 logger.error("training thread exception "+str(e))
@@ -156,6 +164,25 @@ class Training(threading.Thread):
         return (not self.trained or datetime.datetime.now().day > self.today.day
                 or datetime.datetime.now().month > self.today.month
                 or datetime.datetime.now().year > self.today.year)
+
+    def get_lock(self):
+        status = self.redisDB.get(self.training_lock_key, "False")
+        while status is not "False":
+            status = self.redisDB.get(self.training_lock_key, "False")
+            time.sleep(1)
+        if not self.redisDB.key_exists(self.training_lock_key):
+            self.redisDB.set(self.training_lock_key, self.id+"_"+self.topic_name)
+            logger.debug("lock granted to "+str(self.id+"_"+self.topic_name))
+            return True
+        else:
+            logger.debug("lock not granted to " + str(self.id + "_" + self.topic_name))
+            return False
+
+    def release_lock(self):
+        status = self.redisDB.get(self.training_lock_key, "False")
+        if status == self.id+"_"+self.topic_name:
+            self.redisDB.remove(self.training_lock_key)
+            logger.debug("lock release from " + str(self.id+"_"+self.topic_name))
 
     def Stop(self):
         logger.info("start load controller thread exit")
@@ -175,7 +202,7 @@ class Prediction(threading.Thread):
     - predict for next 24 points (24 predictions)
     """
     def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
-                 model_file_container_temp, model_file_container, q, topic):
+                 model_file_container_temp, model_file_container, q, topic_name, id):
         super().__init__()
         self.length = timesteps
         self.length = 24
@@ -194,19 +221,20 @@ class Prediction(threading.Thread):
         from prediction.Models import Models
         self.models = Models(self.num_timesteps, self.hidden_size, self.batch_size, self.model_file_container,
                         self.model_file_container_temp)
+        self.topic_name = topic_name
+        self.id = id
 
     def run(self):
         ctr = 0
         while not self.stopRequest.isSet():
             try:
-                data = self.raw_data.get_raw_data(train=False)
+                data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 logger.info("len data = " + str(len(data)))
                 if len(data) >= self.num_timesteps:
                     ctr += 1
                     if ctr > 0:
-                        logger.info("in predict")
                         test_predictions = []
-                        model, model_temp, temp_flag, graph = self.models.get_model()
+                        model, model_temp, temp_flag, graph = self.models.get_model(self.id+"_"+self.topic_name)
                         if temp_flag:
                             logger.info("temp flag true")
                             model = model_temp
@@ -221,10 +249,10 @@ class Prediction(threading.Thread):
                             self.q.put(data)
                         else:
                             logger.info("prediction  model is none")
-                        logger.debug("predictions " + str(len(test_predictions)))
+                        logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
                 time.sleep(1)
             except Exception as e:
-                logger.error("prediction thread exception " + str(e))
+                logger.error(str(self.topic_name) + " prediction thread exception " + str(e))
 
     def Stop(self):
         logger.info("start load controller thread exit")

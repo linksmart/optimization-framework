@@ -48,10 +48,25 @@ class MockData:
             raw_generic_data_topic = self.config.get("IO", "raw.generic.data.topic", fallback=None)
             if raw_generic_data_topic is not None:
                 raw_generic_data_topic = json.loads(raw_generic_data_topic)
-                for generic_name in self.gereric_names:
+                for generic_name_param in self.gereric_names:
+                    length = 1
+                    const_value = None
+                    generic_name = generic_name_param
+                    if "~" in topic:
+                        parts = topic.split("~")
+                        for i, part in enumerate(parts, 0):
+                            if i == 0:
+                                generic_name = part
+                            if "l:" in part:
+                                sub = part.split(":")
+                                length = int(sub[1])
+                            elif "v:" in part:
+                                sub = part.split(":")
+                                const_value = float(sub[1])
                     generic_topic = raw_generic_data_topic.copy()
                     generic_topic["topic"] = generic_topic["topic"] + str(generic_name)
-                    self.mock_generic_data[generic_name] = MockGenericDataPublisher(generic_topic, config, generic_name)
+                    self.mock_generic_data[generic_name] = MockGenericDataPublisher(generic_topic, config, generic_name,
+                                                                                    length, const_value)
                     self.mock_generic_data[generic_name].start()
 
     def stopMockDataPublisherThreads(self):
