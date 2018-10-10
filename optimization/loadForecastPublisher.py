@@ -17,13 +17,13 @@ logger = logging.getLogger(__file__)
 
 class LoadForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, queue, publish_frequency, topic):
+    def __init__(self, internal_topic_params, config, queue, publish_frequency, topic, id):
         self.load_data = {}
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "optimization", "loadData.dat")
         self.q = queue
         self.topic = topic
-        super().__init__(True, internal_topic_params, config, publish_frequency)
+        super().__init__(True, internal_topic_params, config, publish_frequency, id)
 
     def get_data(self):
         #  check if new data is available

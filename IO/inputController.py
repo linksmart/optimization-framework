@@ -11,7 +11,7 @@ import re
 
 from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
-from optimization.optimizationDataReceiver import OptimizationDataReceiver
+from optimization.internalDataReceiver import InternalDataReceiver
 
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -58,7 +58,7 @@ class InputController:
                     topics.append(pv_forecast_topic)
 
         if len(topics) > 0:
-            self.internal_subscriber[self.id] = OptimizationDataReceiver(topics, config)
+            self.internal_subscriber[self.id] = InternalDataReceiver(topics, config, self.id)
         else:
             self.internal_subscriber[self.id] = None
 
@@ -69,14 +69,14 @@ class InputController:
                 if topic == "SoC_Value":
                     params = self.input_config_parser.get_params("SoC_Value")
                     logger.debug("params for MQTT SoC_Value: "+str(params))
-                    self.external_data_receiver[topic] = SoCValueDataReceiver(False, params, config)
+                    self.external_data_receiver[topic] = SoCValueDataReceiver(False, params, config, self.id)
 
         self.generic_data_receiver = {}
         if len(self.generic_data_mqtt) > 0:
             for generic_name, mqtt_flag in self.generic_data_mqtt.items():
                 if mqtt_flag:
                     topic = self.input_config_parser.get_params(generic_name)
-                    self.generic_data_receiver[generic_name] = GenericDataReceiver(False, topic, config, generic_name)
+                    self.generic_data_receiver[generic_name] = GenericDataReceiver(False, topic, config, generic_name, self.id)
 
 
     def get_forecast_files(self, id, output):

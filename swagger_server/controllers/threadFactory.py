@@ -4,11 +4,8 @@ import configparser
 import json
 
 from IO.inputConfigParser import InputConfigParser
-from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
-from mock_data.mockSoCDataPublisher import MockSoCDataPublisher
+from IO.redisDB import RedisDB
 from optimization.controller import OptController
-from mock_data.mockPLoadDataPublisher import MockPLoadDataPublisher
-from optimization.models.InvalidModelException import InvalidModelException
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 
@@ -25,6 +22,7 @@ class ThreadFactory:
         self.repetition = repetition
         self.solver = solver
         self.id = id
+        self.redisDB = RedisDB()
 
     def getFilePath(self, dir, file_name):
         # print(os.path.sep)
@@ -112,11 +110,14 @@ class ThreadFactory:
             for prediction_name in self.prediction_names:
                 flag = input_config_parser.get_forecast_flag(prediction_name)
                 if flag:
-                    logger.info("Creating load prediction controller thread for topic " + str(prediction_name))
-                    self.prediction_threads[prediction_name] = LoadPrediction(config, input_config_parser,
-                                                                              self.time_step, self.horizon,
-                                                                              prediction_name)
-                    self.prediction_threads[prediction_name].start()
+                    logger.info("Creating prediction controller thread for topic " + str(prediction_name))
+                    topic_param = input_config_parser.get_params(prediction_name)
+                    parameters = json.dumps({"time_step":self.time_step, "horizon":self.horizon,
+                                  "topic_param":topic_param})
+                    self.redisDB.set("train:"+self.id+":"+prediction_name, parameters)
+                    self.prediction_threads[prediction_name] = LoadPrediction(config, self.time_step, self.horizon,
+                                                                              prediction_name, topic_param, self.id, True)
+                    #self.prediction_threads[prediction_name].start()
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_non_prediction_names()
         if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:
@@ -124,9 +125,8 @@ class ThreadFactory:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
                     if non_prediction_name == "P_PV":
-                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser)
+                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id)
 
-        logger.debug("Start in threadfactory finished")
 
         # Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.time_step,

@@ -1,0 +1,44 @@
+
+# Use an official Python runtime as a parent image
+FROM garagon/solvers:arm_resin
+
+#FROM resin/raspberry-pi-python:latest
+
+# Set the working directory to usr/src/app
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+# Copy the current directory contents into the container usr/src/app
+COPY requirements-arm.txt /usr/src/app/
+
+RUN apt-get autoclean
+RUN apt-get clean
+
+RUN apt-get update -y && apt-get install -y \
+	gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev
+
+
+RUN pip3 install --upgrade pip
+
+RUN apt-get update -y && apt-get install -y \
+    libhdf5-serial-dev python3-scipy python3-h5py python3-numpy libatlas-dev python3-setuptools python3-pandas python3-sklearn
+
+
+#RUN pip3 install setuptools
+#RUN apt-get install libhdf5-serial-dev
+#RUN apt-get install python3-pandas==0.22.0
+#RUN apt-get install python3-sklearn
+#RUN apt-get install python3-h5py
+RUN pip3 install -U tensorflow==1.8.0
+RUN pip3 install -U keras==2.1.6
+RUN pip3 install -U redis
+RUN pip3 install -U Theano
+
+# Set the working directory to usr/src/app
+#RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+COPY mlTraining.py /usr/src/app/
+COPY prediction /usr/src/app/prediction
+COPY IO/redisDB.py /usr/src/app/IO/redisDB.py
+COPY utils /usr/src/app/utils

@@ -2,6 +2,7 @@ import connexion
 import six
 import logging, os
 from flask import json
+from flask import jsonify
 from os.path import isfile, join
 
 from optimization.utils import Utils
@@ -315,7 +316,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
                         else:
                             logger.debug("No data in "+str(key))
 
-        return 'Data source Id: ' + str(id)
+        return jsonify({'Data-Source-Id':str(id)})
     else:
         return 'Data is not in json format'
 
@@ -452,7 +453,6 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             json.dump(MQTT_Input_Source, outfile, ensure_ascii=False)
         logger.info("registry/input saved into memory")
 
-        return 'Data source Id: ' + str(id)
-
+        return jsonify({'Data-Source-Id':str(id)})
     else:
         return 'Data is not in json format'

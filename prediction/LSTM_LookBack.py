@@ -1,14 +1,16 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jun 26 14:42:24 2018
 
 @author: puri
 """
+'''
 import json
+import threading
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import keras as k
 from sklearn.preprocessing import MinMaxScaler
 from math import sqrt
@@ -49,19 +51,36 @@ class LSTMLookBack:
         data = self.add_formated_data(data)
         return data
 
-    def r(self):
+    def a(self):
+        Xtrain, Xtest, Ytrain, Ytest = self.rr()
+        self.train_thread = threading.Thread(target=self.r, args=(Xtrain, Xtest, Ytrain, Ytest))
+        self.train_thread.start()
+
+    @staticmethod
+    def t():
+        NUM_TIMESTEPS = 25
+        HIDDEN_SIZE = 10
+        BATCH_SIZE = 1
+        NUM_EPOCHS = 2
+        # Creating LSTM's structure
+        model = Sequential()
+        model.add(LSTM(HIDDEN_SIZE, stateful=True,
+                       batch_input_shape=(BATCH_SIZE, NUM_TIMESTEPS, 1),
+                       return_sequences=False))
+        model.add(Dense(1))
+
+        adam = k.optimizers.Adam(lr=0.01)
+        model.compile(loss="mean_squared_error", optimizer=adam,
+                      metrics=["mean_squared_error"])
+        return model
+
+    def rr(self):
         # Loading Data
-        file_path = os.path.join("/usr/src/app", "prediction", "USA_AK_King.Salmon.703260_TMY2.csv")
+        file = os.path.join("/usr/src/app", "prediction", "USA_AK_King.Salmon.703260_TMY2.csv")
 
-        l = self.dm(file_path)
-
-
-        #df = pd.read_csv(file_path)
-        col_heads = l[0]
-
-        raw_data = l[1:]
-        df = pd.DataFrame(raw_data, columns=col_heads)
-
+        # Loading Data
+        # file = 'USA_AK_King.Salmon.703260_TMY2.csv'
+        df = pd.read_csv(file)
         df = df[df.columns[:2]]
         df.columns = ['Time', 'Electricity']
 
@@ -92,10 +111,10 @@ class LSTMLookBack:
         new_df.isnull().sum()
         new_df.Electricity.fillna(method='pad', inplace=True)
 
-        NUM_TIMESTEPS = 200
+        NUM_TIMESTEPS = 25
         HIDDEN_SIZE = 10
         BATCH_SIZE = 1
-        NUM_EPOCHS = 20
+        NUM_EPOCHS = 2
 
         # scale the data to be in the range (0, 1)
         data = new_df.values.reshape(-1, 1)
@@ -121,40 +140,30 @@ class LSTMLookBack:
         sp = int(0.7 * len(data))
         Xtrain, Xtest, Ytrain, Ytest = x_train_reshaped[0:sp], x_train_reshaped[sp:], y_train_reshaped[
                                                                                       0:sp], y_train_reshaped[sp:]
+
+        Xtrain, Xtest, Ytrain, Ytest = Xtrain[0:100], Xtest[0:10], Ytrain[0:100], Ytest[0:10]
+
         print(Xtrain.shape, Xtest.shape, Ytrain.shape, Ytest.shape)
+        return Xtrain, Xtest, Ytrain, Ytest
 
-        # Creating LSTM's structure
-        model = Sequential()
-        model.add(LSTM(HIDDEN_SIZE, stateful=True,
-                       batch_input_shape=(BATCH_SIZE, NUM_TIMESTEPS, 1),
-                       return_sequences=False))
-        model.add(Dense(1))
+    def r(self, Xtrain, Xtest, Ytrain, Ytest):
+        NUM_TIMESTEPS = 25
+        HIDDEN_SIZE = 10
+        BATCH_SIZE = 1
+        NUM_EPOCHS = 2
 
-        adam = k.optimizers.Adam(lr=0.01)
-        model.compile(loss="mean_squared_error", optimizer=adam,
-                      metrics=["mean_squared_error"])
-
-        # define reduceLROnPlateau and early stopping callback
-        reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2,
-                                      patience=3, min_lr=0.001)
-        earlystop = EarlyStopping(monitor='loss', min_delta=0, patience=4, verbose=1, mode='auto')
-
-        callbacks_list = [reduce_lr, earlystop]
-
-        # Training a stateful LSTM
-        for i in range(NUM_EPOCHS):
-            print("Epoch {:d}/{:d}".format(i + 1, NUM_EPOCHS))
-            model.fit(Xtrain, Ytrain, batch_size=BATCH_SIZE, epochs=1, verbose=1, callbacks=callbacks_list,
-                      shuffle=False)
-            model.reset_states()
+        model = LSTMLookBack.t()
+        ts = TSP()
+        ts.train(BATCH_SIZE, NUM_EPOCHS, Xtrain, Ytrain, model)
 
         # Predicting for the test data
         pred = model.predict(Xtest, batch_size=BATCH_SIZE)
-
+        print(pred)
         score, _ = model.evaluate(Xtest, Ytest, batch_size=BATCH_SIZE)
         rmse = sqrt(score)
         print("\nMSE: {:.3f}, RMSE: {:.3f}".format(score, rmse))
 
+        """
         # Adding datetime to original test data
         new_df_date = new_df[-len(Ytest):]
         test_act = new_df_date.reset_index()
@@ -170,6 +179,8 @@ class LSTMLookBack:
         test_predictions['DateTime'] = test_act['DateTime']
         test_predictions = test_predictions.set_index('DateTime')
 
+        print(test_predictions)
+        
         # Writing predicitons to a csv file
         test_predictions.to_csv('test_lstm_timesteps.csv')
 
@@ -184,3 +195,21 @@ class LSTMLookBack:
         fig.set_size_inches(18.5, 10.5)
         orig = plt.plot(test_predictions, color='blue', label='predictions')
         plt.legend(loc='upper left')
+        
+        """
+
+
+class TSP:
+
+    def train(self, BATCH_SIZE, NUM_EPOCHS, Xtrain, Ytrain, model):
+        # define reduceLROnPlateau and early stopping callback
+        reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2,
+                                      patience=3, min_lr=0.001)
+        earlystop = EarlyStopping(monitor='loss', min_delta=0, patience=4, verbose=1, mode='auto')
+        callbacks_list = [reduce_lr, earlystop]
+        # Training a stateful LSTM
+        for i in range(NUM_EPOCHS):
+            print("Epoch {:d}/{:d}".format(i + 1, NUM_EPOCHS))
+            model.fit(Xtrain, Ytrain, batch_size=BATCH_SIZE, epochs=1, verbose=1, callbacks=callbacks_list,
+                      shuffle=False)
+            model.reset_states() '''

@@ -12,10 +12,10 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 
-class OptimizationDataReceiver(DataReceiver):
+class InternalDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config):
-        super().__init__(True, topic_params, config)
+    def __init__(self, topic_params, config, id):
+        super().__init__(True, topic_params, config, id=id)
 
     def on_msg_received(self, payload):
         logger.debug("Data received : " + payload)

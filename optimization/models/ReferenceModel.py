@@ -53,6 +53,7 @@ class Model:
     model.Grid_R = 0.67
     model.Grid_X = 0.282
     model.Grid_dV_Tolerance = 0.1
+    model.ESS_Control = Param(model.T, within=Reals)
 
     ################################################################################################
 
@@ -62,7 +63,6 @@ class Model:
     ################################################################################################
     model.P_PV_Output=Var(model.T,within=NonNegativeReals,bounds=(0,model.PV_Inv_Max_Power))                                    #Active power output of PV
     model.Q_PV_Output=Var(model.T,within=Reals,bounds=(-model.PV_Inv_Max_Power,model.PV_Inv_Max_Power))                         #Reactive power output of PV
-
     #model.P_ESS_Output=Var(model.N,model.T,within=Reals,bounds=(-model.ESS_Max_Charge_Power[n],model.ESS_Max_Discharge_Power[n]))      #Active power output of ESSs
 
     def ESS_Power_Bounds(model,n,t):

@@ -13,7 +13,7 @@ logger = logging.getLogger(__file__)
 
 class PVPrediction:
 
-    def __init__(self, config, input_config_parser):
+    def __init__(self, config, input_config_parser, id):
         self.config = config
         self.input_config_parser = input_config_parser
         raw_pv_data_topic = input_config_parser.get_params("P_PV")
@@ -24,11 +24,10 @@ class PVPrediction:
 
         pv_forecast_topic = config.get("IO", "pv.forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
-        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config)
+        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id)
         self.pv_forecast_pub.start()
 
     def Stop(self):
-        logger.info("start pv prediction thread exit")
-        logger.info("Stopping pv forecast thread")
+        logger.debug("Stopping pv forecast thread")
         self.pv_forecast_pub.Stop()
-        logger.info("pv prediction thread exit")
+        logger.debug("pv prediction thread exit")
