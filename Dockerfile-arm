@@ -2,6 +2,8 @@
 # Use an official Python runtime as a parent image
 FROM garagon/solvers:arm_resin
 
+#FROM resin/raspberry-pi-python:latest
+
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
@@ -33,16 +35,14 @@ RUN apt-get update -y && apt-get install -y \
 
 #RUN pip3 install setuptools
 #RUN apt-get install libhdf5-serial-dev
-#RUN apt-get install python3-pandas
+#RUN apt-get install python3-pandas==0.22.0
 #RUN apt-get install python3-sklearn
 #RUN apt-get install python3-h5py
-RUN pip3 install -U keras
+RUN pip3 install -U tensorflow==1.8.0
+RUN pip3 install -U keras==2.1.6
 RUN pip3 install -U senml
 RUN pip3 install -U redis
-#RUN pip3 install -U protobuf
-RUN pip3 install -U tensorflow==0.11.0
-#RUN apt-get install conda
-#RUN conda install tensorflow
+RUN pip3 install -U Theano
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app
@@ -55,7 +55,3 @@ COPY prediction /usr/src/app/prediction
 COPY swagger_server /usr/src/app/swagger_server
 COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
-
-#RUN pip3 install --ignore-installed --upgrade tensorflow
-#RUN pip3 install tensorflow==1.7.0
-# https://www.piwheels.org/simple/tensorflow/tensorflow-1.9.0-cp35-none-linux_armv7l.whl
