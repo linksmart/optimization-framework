@@ -5,7 +5,7 @@ import re
 import logging
 
 from IO.redisDB import RedisDB
-from optimization.models.InvalidModelException import InvalidModelException
+from optimization.InvalidModelException import InvalidModelException
 from swagger_server.models.start import Start  # noqa: E501
 
 from swagger_server.controllers.threadFactory import ThreadFactory

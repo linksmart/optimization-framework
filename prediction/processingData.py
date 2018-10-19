@@ -28,7 +28,6 @@ class ProcessingData:
         raw_data = raw_data[1:]
         """
         #df = pd.DataFrame(raw_data, columns=col_heads)
-
         df = pd.DataFrame(raw_data)
         df = df[df.columns[:2]]
         df.columns = ['Time', 'Electricity']

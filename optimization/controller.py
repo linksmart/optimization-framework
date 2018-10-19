@@ -4,11 +4,7 @@ Created on Fri Mar 16 15:05:36 2018
 
 @author: garagon
 """
-import json
 
-import optimization.models as models
-import os, logging
-import importlib
 import importlib.util
 import threading
 from pyomo.environ import *
@@ -17,19 +13,15 @@ from pyomo.opt.parallel import SolverManagerFactory
 from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
-import json
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
-
-
-
-#from optimization.models.ReferenceModel import Model
-from optimization.models.InvalidModelException import InvalidModelException
-from optimization.internalDataReceiver import InternalDataReceiver
+from optimization.InvalidModelException import InvalidModelException
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
+
+
 
 class OptController(threading.Thread):
 
@@ -243,4 +235,3 @@ class OptController(threading.Thread):
                 error_msg = e
             return error_msg
         self.finish_status = True
-
