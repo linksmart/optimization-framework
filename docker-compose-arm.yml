@@ -97,6 +97,13 @@ services:
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/res
     command: ["python3", "-u", "mlTraining.py"]
+  connector:
+    build:
+      context: ""
+      dockerfile: connector/docker/Dockerfile-arm
+    volumes:
+      - ../optimization-framework/connector/resources/
+    command: ["python3", "-u", "connectors.py"]
 
 volumes:
   volume-glpsol:

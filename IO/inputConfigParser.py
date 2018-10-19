@@ -146,3 +146,9 @@ class InputConfigParser:
 
     def get_external_names(self):
         return self.external_names
+
+    def get_variable_index(self, name):
+        if name in self.model_variables:
+            return self.model_variables[name]["indexing"]
+        else:
+            return None

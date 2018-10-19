@@ -184,6 +184,7 @@ class InputController:
             if self.internal_subscriber[id]:
                 logger.debug("Entered the prediction subscriber")
                 data = self.internal_subscriber[id].get_data()
+                data = self.set_indexing(data)
                 self.optimization_data.update(data)
                 for key in data.keys():
                     if key in name_check.keys():
@@ -198,6 +199,7 @@ class InputController:
                 else:
                     logger.debug("external mqtt True "+str(external_name))
                     data = self.external_data_receiver[external_name].get_data()
+                    data = self.set_indexing(data)
                     logger.debug("SoC_Value MQTT data: "+str(data))
                     self.optimization_data.update(data)
         logger.debug("self.generic_data_mqtt "+str(self.generic_data_mqtt))
@@ -210,6 +212,7 @@ class InputController:
                     self.read_input_data(id, generic_name, generic_name + ".txt")
                 else:
                     data = self.generic_data_receiver[generic_name].get_data()
+                    data = self.set_indexing(data)
                     self.optimization_data.update(data)
         return {None: self.optimization_data.copy()}
 
@@ -227,6 +230,20 @@ class InputController:
             self.external_data_receiver[external_name].exit()
         for generic_name in self.generic_data_receiver.keys():
             self.generic_data_receiver[generic_name].exit()
+
+    def set_indexing(self, data):
+        new_data = {}
+        for name in data.keys():
+            indexing = self.input_config_parser.get_variable_index(name)
+            # default indexing will be set to "index" in baseDataReceiver
+            if indexing == "None":
+                value = data[name]
+                if len(value) >= 1:
+                    k = value.keys()[0]
+                    v = value[k]
+                    new_data[name] = {None: v}
+        data.update(new_data)
+        return data
 
 
     """def set_params(self):

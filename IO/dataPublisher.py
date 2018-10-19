@@ -28,7 +28,10 @@ class DataPublisher(ABC,threading.Thread):
         logger.debug("id = " + str(self.id))
         if internal:
             self.channel = config.get("IO", "channel")
-        self.topic_params = topic_params
+        if topic_params is None:
+            self.topic_params = {}
+        else:
+            self.topic_params = topic_params
         self.stopRequest = threading.Event()
         if self.channel == "MQTT":
             self.init_mqtt()
@@ -36,13 +39,18 @@ class DataPublisher(ABC,threading.Thread):
             self.init_zmq()
         self.publish_frequency = publish_frequency
 
-        logger.info("Initializing data publisher thread for topic " + str(self.topic_params["topic"]))
+        logger.info("Initializing data publisher thread for topic " + str(self.topic_params))
 
     def init_mqtt(self):
-        self.host = self.config.get("IO", "mqtt.host")
-        self.port = self.topic_params["mqtt.port"]
+        if "pub.mqtt.host" in dict(self.config.items("IO")):
+            self.host = self.config.get("IO", "pub.mqtt.host")
+        else:
+            self.host = self.config.get("IO", "mqtt.host")
+        self.port = self.config.get("IO", "mqtt.port")
+        if "mqtt.port" in self.topic_params.keys():
+            self.port = self.topic_params["mqtt.port"]
         self.qos = 1
-        self.client_id = "client_publish" + str(randrange(100))
+        self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
         self.mqtt = MQTTClient(str(self.host), self.port, self.client_id)
 
     def init_zmq(self):
@@ -67,35 +75,45 @@ class DataPublisher(ABC,threading.Thread):
 
     def run(self):
         """Get data from internet or any other source"""
+        if "topic" not in self.topic_params.keys():
+            fetch_topic = True
+        else:
+            fetch_topic = False
+        topic = None
         while not self.stopRequest.is_set():
-            data = self.get_data()
+            if fetch_topic:
+                data, topic = self.get_data()
+            else:
+                data = self.get_data()
             if data:
-                self.data_publish(data)
+                self.data_publish(data, topic)
             time.sleep(self.publish_frequency)
 
-    def data_publish(self, data):
+    def data_publish(self, data, topic=None):
         if self.channel == "MQTT":
-            self.mqtt_publish(data)
+            self.mqtt_publish(data, topic)
         elif self.channel == "ZMQ":
-            self.zmq_publish(data)
+            self.zmq_publish(data, topic)
 
-    def mqtt_publish(self, data):
+    def mqtt_publish(self, data, topic=None):
         try:
-            topic = self.topic_params["topic"]
+            if topic is None:
+                topic = self.topic_params["topic"]
             if self.internal:
                 topic = topic + "_" + self.id
-            logger.info("Sending results to mqtt on this topic: " + topic)
+            logger.debug("Sending results to mqtt on this topic: " + topic)
             #logger.debug("MQTT Data: "+str(data))
             self.mqtt.publish(topic, data, True)
             logger.debug("Results published")
         except Exception as e:
             logger.error(e)
 
-    def zmq_publish(self, data):
-        topic = self.topic_params["topic"]
+    def zmq_publish(self, data, topic=None):
+        if topic is None:
+            topic = self.topic_params["topic"]
         if self.internal:
             topic = topic + "_" + self.id
-        logger.info("Sending results to zmq on this topic: " + topic)
+        logger.debug("Sending results to zmq on this topic: " + topic)
         self.zmq.publish_message(topic, data)
         logger.debug("Results published")
 

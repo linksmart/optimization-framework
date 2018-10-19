@@ -8,7 +8,7 @@ logger = logging.getLogger(__file__)
 class MQTTClient:
     def __init__(self, host, mqttPort, client_id, keepalive=60):
         self.host =host
-        self.port=mqttPort
+        self.port = int(mqttPort)
         self.keepalive=keepalive
         self.receivedMessages = []
         self.topic_ack_wait = []
@@ -53,7 +53,7 @@ class MQTTClient:
 
     def sendResults(self, topic, data):
         try:
-            logger.info("Sending results to this topic: "+topic)
+            logger.debug("Sending results to this topic: "+topic)
             self.publish(topic, data)
             logger.debug("Results published")
         except Exception as e:
@@ -63,7 +63,7 @@ class MQTTClient:
         mid = self.client.publish(topic, message, 2)[1]
         if (waitForAck):
             while mid not in self.receivedMessages:
-                logger.info("waiting for pub ack for topic "+str(topic))
+                logger.debug("waiting for pub ack for topic "+str(topic))
                 time.sleep(0.25)
 
     def on_publish(self,client, userdata, mid):
@@ -108,4 +108,5 @@ class MQTTClient:
                 logger.info("topic ack wait len = "+str(len(self.topic_ack_wait)))
             time.sleep(1)
             count+=1
+        self.topic_ack_wait.pop()
         return False

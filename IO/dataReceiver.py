@@ -52,11 +52,17 @@ class DataReceiver(ABC):
     def get_external_channel_params(self):
         topic_qos = []
         # read from config
-        host = self.config.get("IO", "mqtt.host")
+        if "sub.mqtt.host" in dict(self.config.items("IO")):
+            host = self.config.get("IO", "sub.mqtt.host")
+        else:
+            host = self.config.get("IO", "mqtt.host")
+        qos = 0
         if self.topic_params:
             topic = self.topic_params["topic"]
-            host = self.topic_params["host"]
-            qos = self.topic_params["qos"]
+            if "host" in self.topic_params.keys():
+                host = self.topic_params["host"]
+            if "qos" in self.topic_params.keys():
+                qos = self.topic_params["qos"]
             topic_qos.append((topic, qos))
         return topic_qos, host
 
