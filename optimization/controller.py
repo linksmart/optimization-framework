@@ -6,7 +6,10 @@ Created on Fri Mar 16 15:05:36 2018
 """
 
 import importlib.util
+import json
 import threading
+
+import os
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
@@ -16,6 +19,7 @@ import time
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
+from IO.redisDB import RedisDB
 from optimization.InvalidModelException import InvalidModelException
 import logging
 
@@ -48,6 +52,8 @@ class OptController(threading.Thread):
         self.input_config_parser=input_config_parser
         self.stopRequest=threading.Event()
         self.finish_status = False
+        self.redisDB = RedisDB()
+        self.lock_key = "id_lock"
 
         try:
             #dynamic load of a class
@@ -85,6 +91,36 @@ class OptController(threading.Thread):
         logger.debug("Exit name server")
         self.dispatch_server.kill()
         logger.debug("Exit dispatch server")
+
+    def update_count(self):
+        st = time.time()
+        if self.repetition > 0:
+            path = "/usr/src/app/utils/ids_status.txt"
+            if os.path.exists(path):
+                try:
+                    if self.redisDB.get_lock(self.lock_key, self.id):
+                        data = []
+                        with open(path, "r") as f:
+                            data = f.readlines()
+                        if len(data) > 0:
+                            line = None
+                            for s in data:
+                                if self.id in s and "repetition\": -1" not in s:
+                                    line = s
+                                    break
+                            if line is not None:
+                                i = data.index(line)
+                                line = json.loads(line.replace("\n",""))
+                                line["repetition"] -= 1
+                                data[i] = json.dumps(line)+"\n"
+                                with open(path, "w") as f:
+                                    f.writelines(data)
+                except Exception as e:
+                    logging.error("error updating count in file " + str(e))
+                finally:
+                    self.redisDB.release_lock(self.lock_key, self.id)
+        st = int(time.time() - st)
+        return st
 
     #Start the optimization process and gives back a result
     def run(self):
@@ -205,7 +241,8 @@ class OptController(threading.Thread):
                 if self.repetition > 0 and count >= self.repetition:
                     break
                 logger.info("Optimization thread going to sleep for "+str(self.time_step)+" seconds")
-                time.sleep(self.time_step)
+                time_spent = self.update_count()
+                time.sleep(self.time_step-time_spent)
 
             #Closing the pyomo servers
             logger.debug("Deactivating pyro servers")

@@ -75,21 +75,20 @@ class CommandController:
             self.horizon = dict_object["horizon"]
             self.repetition = dict_object["repetition"]
             self.solver = dict_object["solver"]
-        self.id = id
 
-        self.set(self.id,
-                 ThreadFactory(self.model_name, self.time_step, self.horizon, self.repetition, self.solver, self.id))
+        self.set(id,
+                 ThreadFactory(self.model_name, self.time_step, self.horizon, self.repetition, self.solver, id))
 
-        logger.info("Thread: " + str(self.get(self.id)))
-        self.get(self.id).startOptControllerThread()
+        logger.info("Thread: " + str(self.get(id)))
+        self.get(id).startOptControllerThread()
         logger.debug("Thread started")
-        self.set_isRunning(self.id, True)
+        self.set_isRunning(id, True)
         logger.debug("Flag isRunning set to True")
-        self.statusThread[self.id] = threading.Thread(target=self.run_status, args=(self.id,))
+        self.statusThread[id] = threading.Thread(target=self.run_status, args=(id,))
         logger.debug("Status of the Thread started")
-        self.statusThread[self.id].start()
-        self.redisDB.set("run:"+self.id, "running")
-        self.persist_id(self.id, True, {"id": self.id,
+        self.statusThread[id].start()
+        self.redisDB.set("run:"+id, "running")
+        self.persist_id(id, True, {"id": id,
                                         "model": self.model_name,
                                         "timestep": self.time_step,
                                         "horizon": self.horizon,
@@ -125,7 +124,7 @@ class CommandController:
     def persist_id(self, id, start, meta_data):
         path = "/usr/src/app/utils/ids_status.txt"
         try:
-            if self.redisDB.get_lock(self.lock_key, self.id):
+            if self.redisDB.get_lock(self.lock_key, id):
                 if start:
                     with open(path, "a+") as f:
                         f.write(json.dumps(meta_data,sort_keys=True,separators=(', ', ': '))+"\n")
@@ -134,20 +133,20 @@ class CommandController:
                         data = []
                         with open(path, "r") as f:
                             data = f.readlines()
-                        line = None
+                        lines = []
                         if len(data) > 0:
                             for s in data:
                                 if id in s:
-                                    line = s
-                                    break
-                            if line is not None and line in data:
-                                data.remove(line)
+                                    lines.append(s)
+                            for line in lines:
+                                if line in data:
+                                    data.remove(line)
                             with open(path, "w") as f:
                                 f.writelines(data)
         except Exception as e:
             logging.error("error persisting id " + id + " " + str(start) + " " + str(e))
         finally:
-            self.redisDB.release_lock(self.lock_key, self.id)
+            self.redisDB.release_lock(self.lock_key, id)
 
     def get_ids(self):
         path = "/usr/src/app/utils/ids_status.txt"
