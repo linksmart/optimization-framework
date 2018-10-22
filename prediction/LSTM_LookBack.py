@@ -26,7 +26,7 @@ import os
 
 class LSTMLookBack:
 
-    def add_formated_data(self, data=[]):
+    def format_data(self, data=[]):
         new_data = []
         i = 0
         for row in data:
@@ -48,7 +48,7 @@ class LSTMLookBack:
             data = json.dumps(f.readlines())
 
         data = json.loads(data)
-        data = self.add_formated_data(data)
+        data = self.format_data(data)
         return data
 
     def a(self):

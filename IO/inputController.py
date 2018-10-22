@@ -81,7 +81,7 @@ class InputController:
 
     def get_forecast_files(self, id, output):
         f = []
-        mypath = os.path.join("/usr/src/app/optimization/",str(id),"file")
+        mypath = os.path.join("/usr/src/app/optimization/resources",str(id),"file")
         logger.debug("This is mypath: "+str(mypath))
 
         for (dirpath, dirnames, filenames) in os.walk(mypath):
@@ -147,8 +147,8 @@ class InputController:
 
     def read_input_data(self, id, topic, file):
         data = {}
-        """"/ usr / src / app / optimization / 95c38e56d913 / p_load.txt"""
-        path = os.path.join("/usr/src/app", "optimization", str(id), "file", file)
+        """"/ usr / src / app / optimization / resources / 95c38e56d913 / p_load.txt"""
+        path = os.path.join("/usr/src/app", "optimization/resources", str(id), "file", file)
         logger.debug("Data path: "+str(path))
         rows = []
         i = 0

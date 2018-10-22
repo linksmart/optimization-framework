@@ -17,10 +17,10 @@ import time
 from IO.inputController import InputController
 from IO.outputController import OutputController
 from optimization.InvalidModelException import InvalidModelException
+import logging
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
-
 
 
 class OptController(threading.Thread):

@@ -6,6 +6,7 @@ Created on Aug 16 11:57 2018
 import logging
 
 import redis
+import time
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -53,3 +54,25 @@ class RedisDB:
 
     def key_exists(self, key):
         return self.redis_db.exists(key)
+
+    def get_lock(self, key, value):
+        status = self.get(key, "False")
+        while status is not "False":
+            status = self.get(key, "False")
+            time.sleep(0.5)
+        if not self.key_exists(key):
+            self.set(key, value)
+            logger.debug("lock granted to "+str(value))
+            return True
+        else:
+            logger.debug("lock not granted to " + str(value))
+            return False
+
+    def release_lock(self, key, value):
+        status = self.get(key, "False")
+        if status == value:
+            self.remove(key)
+            logger.debug("lock release from " + str(value))
+
+    def get_start_time(self):
+        return float(self.redis_db.get("time"))

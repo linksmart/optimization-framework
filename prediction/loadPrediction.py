@@ -56,7 +56,7 @@ class LoadPrediction:
             from optimization.loadForecastPublisher import LoadForecastPublisher
             load_forecast_topic = config.get("IO", "load.forecast.topic")
             load_forecast_topic = json.loads(load_forecast_topic)
-            self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 60, self.topic_name, self.id)
+            self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 5, self.topic_name, self.id)
             self.load_forecast_pub.start()
 
             self.startPrediction()
@@ -144,7 +144,7 @@ class Training(threading.Thread):
 
                         # preprocess data
                         try:
-                            if self.get_lock():
+                            if self.redisDB.get_lock(self.training_lock_key, self.id+"_"+self.topic_name):
                                 from prediction.trainModel import TrainModel
                                 trainModel = TrainModel()
                                 trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
@@ -155,7 +155,7 @@ class Training(threading.Thread):
                             self.trained = False
                             logger.error("error training model " + str(e))
                         finally:
-                            self.release_lock()
+                            self.redisDB.release_lock(self.training_lock_key, self.id+"_"+self.topic_name)
                 time.sleep(1)
             except Exception as e:
                 logger.error("training thread exception "+str(e))
@@ -164,25 +164,6 @@ class Training(threading.Thread):
         return (not self.trained or datetime.datetime.now().day > self.today.day
                 or datetime.datetime.now().month > self.today.month
                 or datetime.datetime.now().year > self.today.year)
-
-    def get_lock(self):
-        status = self.redisDB.get(self.training_lock_key, "False")
-        while status is not "False":
-            status = self.redisDB.get(self.training_lock_key, "False")
-            time.sleep(1)
-        if not self.redisDB.key_exists(self.training_lock_key):
-            self.redisDB.set(self.training_lock_key, self.id+"_"+self.topic_name)
-            logger.debug("lock granted to "+str(self.id+"_"+self.topic_name))
-            return True
-        else:
-            logger.debug("lock not granted to " + str(self.id + "_" + self.topic_name))
-            return False
-
-    def release_lock(self):
-        status = self.redisDB.get(self.training_lock_key, "False")
-        if status == self.id+"_"+self.topic_name:
-            self.redisDB.remove(self.training_lock_key)
-            logger.debug("lock release from " + str(self.id+"_"+self.topic_name))
 
     def Stop(self):
         logger.info("start load controller thread exit")

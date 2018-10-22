@@ -6,6 +6,7 @@ Created on Okt 04 13:51 2018
 import os
 
 import logging
+from datetime import datetime
 
 from senml import senml
 
@@ -31,7 +32,7 @@ class RawDataReader:
         return []
 
     @staticmethod
-    def add_formated_data(data=[]):
+    def format_data(data=[]):
         new_data = []
         doc = None
         try:
@@ -49,6 +50,7 @@ class RawDataReader:
                 n = meas.name
                 v = meas.value
                 t = meas.time
+                t = datetime.fromtimestamp(t).strftime("%m/%d  %H:%M:%S")
                 cols = [t,v]
                 new_data.append(cols)
             return new_data
@@ -67,4 +69,4 @@ class RawDataReader:
         data = RawDataReader.read_from_file(file_path, topic_name)
         if len(data) > data_length:
             data = data[-data_length:]
-        return RawDataReader.add_formated_data(data)
+        return RawDataReader.format_data(data)

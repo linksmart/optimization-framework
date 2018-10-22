@@ -78,6 +78,8 @@ services:
       #- volume-glpk:/usr/local/lib
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/res
+      - ../optimization-framework/optimization/resources:/usr/src/app/optimization/resources
+      - ../optimization-framework/utils:/usr/src/app/utils
     #restart: unless-stopped
     #command: ["echo", "que sera sera"]
     command: ["python3", "-u", "ofw.py"]
@@ -102,7 +104,7 @@ services:
       context: ""
       dockerfile: connector/docker/Dockerfile-arm
     volumes:
-      - ../optimization-framework/connector/resources/
+      - ../optimization-framework/connector/resources/:/usr/src/app/connector/resources
     command: ["python3", "-u", "connectors.py"]
 
 volumes:

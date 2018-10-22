@@ -1,3 +1,4 @@
+import json
 import threading
 
 import connexion
@@ -31,6 +32,7 @@ class CommandController:
         self.statusThread = {}
         self.running = {}
         self.redisDB = RedisDB()
+        self.lock_key = "id_lock"
 
     def set(self, id, object):
         self.factory[id] = object
@@ -60,12 +62,19 @@ class CommandController:
     def get_statusThread(self, id):
         return self.statusThread[id]
 
-    def start(self, id, json_object):
-        self.model_name = json_object.model_name
-        self.time_step = json_object.time_step
-        self.horizon = json_object.horizon
-        self.repetition = json_object.repetition
-        self.solver = json_object.solver
+    def start(self, id, json_object, dict_object=None):
+        if json_object is not None:
+            self.model_name = json_object.model_name
+            self.time_step = json_object.time_step
+            self.horizon = json_object.horizon
+            self.repetition = json_object.repetition
+            self.solver = json_object.solver
+        elif dict_object is not None:
+            self.model_name = dict_object["model"]
+            self.time_step = dict_object["timestep"]
+            self.horizon = dict_object["horizon"]
+            self.repetition = dict_object["repetition"]
+            self.solver = dict_object["solver"]
         self.id = id
 
         self.set(self.id,
@@ -79,14 +88,22 @@ class CommandController:
         self.statusThread[self.id] = threading.Thread(target=self.run_status, args=(self.id,))
         logger.debug("Status of the Thread started")
         self.statusThread[self.id].start()
-        logger.debug("Command controller start finished")
-        logger.info("running status " + str(self.running))
         self.redisDB.set("run:"+self.id, "running")
+        self.persist_id(self.id, True, {"id": self.id,
+                                        "model": self.model_name,
+                                        "timestep": self.time_step,
+                                        "horizon": self.horizon,
+                                        "repetition": self.repetition,
+                                        "solver": self.solver,
+                                        "ztarttime": time.time()})
+        logger.info("running status " + str(self.running))
+        logger.debug("Command controller start finished")
 
     def stop(self, id):
         logger.debug("Stop signal received")
         logger.debug("This is the factory object: " + str(self.get(id)))
         if self.factory[id]:
+            self.persist_id(id, False, None)
             self.factory[id].stopOptControllerThread()
             self.set_isRunning(id, False)
             message = "System stopped succesfully"
@@ -105,7 +122,63 @@ class CommandController:
                 break
             time.sleep(1)
 
+    def persist_id(self, id, start, meta_data):
+        path = "/usr/src/app/utils/ids_status.txt"
+        try:
+            if self.redisDB.get_lock(self.lock_key, self.id):
+                if start:
+                    with open(path, "a+") as f:
+                        f.write(json.dumps(meta_data,sort_keys=True,separators=(', ', ': '))+"\n")
+                else:
+                    if os.path.exists(path):
+                        data = []
+                        with open(path, "r") as f:
+                            data = f.readlines()
+                        line = None
+                        if len(data) > 0:
+                            for s in data:
+                                if id in s:
+                                    line = s
+                                    break
+                            if line is not None and line in data:
+                                data.remove(line)
+                            with open(path, "w") as f:
+                                f.writelines(data)
+        except Exception as e:
+            logging.error("error persisting id " + id + " " + str(start) + " " + str(e))
+        finally:
+            self.redisDB.release_lock(self.lock_key, self.id)
+
+    def get_ids(self):
+        path = "/usr/src/app/utils/ids_status.txt"
+        if os.path.exists(path):
+            old_ids = []
+            try:
+                if self.redisDB.get_lock(self.lock_key, "start"):
+                    data = []
+                    with open(path, "r") as f:
+                        data = f.readlines()
+                    if len(data) > 0:
+                        for s in data:
+                            a = s.replace("\n", "")
+                            if self.redisDB.get_start_time() > float(a[a.find("\"ztarttime\": ") + 13:-1]):
+                                old_ids.append(s)
+                        for s in old_ids:
+                            if s in data:
+                                data.remove(s)
+                        with open(path, "w") as f:
+                            f.writelines(data)
+            except Exception as e:
+                logging.error("error reading ids file " + str(e))
+            finally:
+                self.redisDB.release_lock(self.lock_key, "start")
+            for s in old_ids:
+                val = json.loads(s)
+                self.start(val["id"], None, val)
+
+
 variable = CommandController()
+variable.get_ids()
 
 def get_models():
     f = []

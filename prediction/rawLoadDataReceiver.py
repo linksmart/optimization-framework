@@ -24,7 +24,7 @@ class RawLoadDataReceiver(DataReceiver):
 
     def on_msg_received(self, payload):
         data = json.loads(payload)
-        data = RawDataReader.add_formated_data(data)
+        data = RawDataReader.format_data(data)
         for item in data:
             self.data.append(item)
         self.data_update = True
@@ -47,7 +47,7 @@ class RawLoadDataReceiver(DataReceiver):
             data = RawDataReader.read_from_file(self.file_path, topic_name)
             if len(data) > self.training_data:
                 data = data[-self.training_data:]
-            return RawDataReader.add_formated_data(data)
+            return RawDataReader.format_data(data)
         else:
             data = self.get_data(0, True)
             for item in data:

@@ -28,11 +28,17 @@ class Connector(RecPub):
         data = json.loads(data)
         self.new_data = {}
         self.timestamp = int(time.time())
-        """
         if self.key_level == 1:
             if "Time_Stamp" in data.keys():
                 self.timestamp = data["Time_Stamp"]
-        """
+                if "." not in self.timestamp:
+                    if len(self.timestamp) >= 19:
+                        self.timestamp = int(self.timestamp)
+                        self.timestamp /= 1000000000
+                    else:
+                        self.timestamp = int(self.timestamp)
+                else:
+                    self.timestamp = float(self.timestamp)
         self.level_traverse("", data, 0)
         return self.new_data.copy()
 

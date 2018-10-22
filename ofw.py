@@ -7,6 +7,8 @@ import  os, logging
 import signal, sys
 
 #import swagger_server.__main__ as webserver
+import time
+
 import swagger_server.wsgi as webserver
 
 from IO.ZMQClient import ForwarderDevice
@@ -37,7 +39,6 @@ def main():
     logger.info("Starting webserver")
     webserver.main()
 
-
     #while True:
 
        #results=opt.start()
@@ -55,6 +56,7 @@ def signal_handler(sig, frame):
 
 def setup():
     clear_redis()
+
     signal.signal(signal.SIGINT, signal_handler)
     # Creating an object of the configuration file (standard values)
     try:
@@ -76,6 +78,7 @@ def clear_redis():
     from IO.redisDB import RedisDB
     redisDB = RedisDB()
     redisDB.reset()
+    redisDB.set("time", time.time())
 
 if __name__ == "__main__":
         # execute only if run as a script

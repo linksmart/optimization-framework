@@ -17,7 +17,7 @@ utils = Utils()
 # mqtt flag to be removed after corresponding changes in file api
 def store_data(dataset, id,source):
     try:
-        dir_data = os.path.join(os.getcwd(), "optimization", str(id), source)
+        dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id), source)
         if not os.path.exists(dir_data):
             os.makedirs(dir_data)
     except Exception as e:
@@ -38,7 +38,7 @@ def store_data(dataset, id,source):
                             name = item["name"]
                             file_name = str(name) + ".txt"
                             logger.debug("This is the file name for generic: " + str(file_name))
-                            path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
+                            path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             # dataset = dataset.split(",")
                             if os.path.isfile(path):
@@ -46,7 +46,7 @@ def store_data(dataset, id,source):
                                 os.remove(path)
                                 logger.debug("File erased")
 
-                            path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
+                            path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             with open(path, 'w') as outfile:
                                 outfile.writelines(str(i) + '\n' for i in data)
@@ -61,7 +61,7 @@ def store_data(dataset, id,source):
                     logger.debug("Data is not None")
                     if "meta" in key:
                         file_name = str(header) + "_" + str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization", str(id),source, file_name)
+                        path = os.path.join(os.getcwd(), "optimization/resources", str(id),source, file_name)
                         logger.debug("Path where the data is stored" + str(path))
                         # dataset = dataset.split(",")
                         if os.path.isfile(path):
@@ -71,7 +71,7 @@ def store_data(dataset, id,source):
                             outfile.writelines(data)
                     elif "SoC_Value" in key:
                         file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
+                        path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
                         logger.debug("Path where the data is stored" + str(path))
                         # dataset = dataset.split(",")
                         if os.path.isfile(path):
@@ -80,7 +80,7 @@ def store_data(dataset, id,source):
                             outfile.write(str(data))
                     else:
                         file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization", str(id), source, file_name)
+                        path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
                         logger.debug("Path where the data is stored" + str(path))
                         # dataset = dataset.split(",")
                         if os.path.isfile(path):
@@ -105,7 +105,7 @@ def delete_data(id, registry_file, source):
             dir_files = os.listdir(dir)
             if dir_files is not None and len(dir_files) == 0:
                 os.rmdir(dir)
-            path = os.path.join(os.getcwd(), "optimization", str(id), source)
+            path = os.path.join(os.getcwd(), "optimization/resources", str(id), source)
             if os.path.exists(path):
                 files = os.listdir(path)
                 if files is not None:
@@ -116,7 +116,7 @@ def delete_data(id, registry_file, source):
                 files = os.listdir(path)
                 if files is not None and len(files) == 0:
                     os.rmdir(path)
-            path = os.path.join(os.getcwd(), "optimization", str(id))
+            path = os.path.join(os.getcwd(), "optimization/resources", str(id))
             if os.path.exists(path):
                 dir_files = os.listdir(path)
                 if dir_files is not None and len(dir_files) == 0:
@@ -237,7 +237,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
 
         try:
             id = utils.create_and_get_ID()
-            dir_data = os.path.join(os.getcwd(), "optimization", str(id),"file")
+            dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id),"file")
             if not os.path.exists(dir_data):
                 os.makedirs(dir_data)
             dir_data = os.path.join(os.getcwd(), "utils", str(id))
@@ -267,7 +267,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
                             name = v["name"]
                             file_name = str(name) + ".txt"
                             logger.debug("This is the file name for generic: " + str(file_name))
-                            path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
+                            path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             # dataset = dataset.split(",")
                             with open(path, 'w') as outfile:
@@ -292,21 +292,21 @@ def file_input_source(File_Input_Source):  # noqa: E501
 
                             if "meta" in key:
                                 file_name = str(header) + "_" + str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
+                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
                                 logger.debug("Path where the data is stored" + str(path))
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
                                     outfile.writelines(dataset)
                             elif "SoC_Value" in key:
                                 file_name = str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
+                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
                                 logger.debug("Path where the data is stored" + str(path))
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
                                     outfile.write(str(dataset))
                             else:
                                 file_name = str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization", str(id),"file", file_name)
+                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
                                 logger.debug("Path where the data is stored" + str(path))
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
@@ -441,7 +441,7 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             dir = os.path.join(os.getcwd(), "utils", str(id))
             if not os.path.exists(dir):
                 os.makedirs(dir)
-            dir_data = os.path.join(os.getcwd(), "optimization", str(id), "mqtt")
+            dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id), "mqtt")
             if not os.path.exists(dir_data):
                 os.makedirs(dir_data)
         except Exception as e:
