@@ -13,20 +13,6 @@ from swagger_server.test import BaseTestCase
 class TestDataSourceController(BaseTestCase):
     """DataSourceController integration test stubs"""
 
-    def test_data_in_parameter(self):
-        """Test case for data_in_parameter
-
-        Submits data to the framework
-        """
-        dataset = None
-        response = self.client.open(
-            '/v1/data_source/{param_name}/{id}'.format(param_name='param_name_example', id='id_example'),
-            method='PUT',
-            data=json.dumps(dataset),
-            content_type='application/json')
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
-
     def test_delete_data_source_all(self):
         """Test case for delete_data_source_all
 
@@ -39,14 +25,40 @@ class TestDataSourceController(BaseTestCase):
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
-    def test_delete_parameter_data(self):
-        """Test case for delete_parameter_data
+    def test_delete_file_registry(self):
+        """Test case for delete_file_registry
 
         Deletes the loaded data
         """
         response = self.client.open(
-            '/v1/data_source/{param_name}/{id}'.format(param_name='param_name_example', id='id_example'),
+            '/v1/data_source/file/{id}'.format(id='id_example'),
             method='DELETE',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_delete_mqtt_registry(self):
+        """Test case for delete_mqtt_registry
+
+        Deletes the loaded data
+        """
+        response = self.client.open(
+            '/v1/data_source/mqtt/{id}'.format(id='id_example'),
+            method='DELETE',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_file_input_put(self):
+        """Test case for file_input_put
+
+        Submits data to the framework
+        """
+        dataset = FileInputSource()
+        response = self.client.open(
+            '/v1/data_source/file/{id}'.format(id='id_example'),
+            method='PUT',
+            data=json.dumps(dataset),
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -71,8 +83,22 @@ class TestDataSourceController(BaseTestCase):
         Receives data from the framework
         """
         response = self.client.open(
-            '/v1/data_source/{param_name}/{id}'.format(param_name='param_name_example', id='id_example'),
+            '/v1/data_source/file/{id}'.format(param_name='param_name_example', id='id_example'),
             method='GET',
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_mqtt_input_put(self):
+        """Test case for mqtt_input_put
+
+        Submits data to the framework
+        """
+        dataset = MQTTInputSource()
+        response = self.client.open(
+            '/v1/data_source/mqtt/{id}'.format(id='id_example'),
+            method='PUT',
+            data=json.dumps(dataset),
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))

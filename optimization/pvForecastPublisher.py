@@ -19,10 +19,9 @@ logger = logging.getLogger(__file__)
 
 class PVForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, id):
+    def __init__(self, internal_topic_params, config, id, location, maxPV):
         self.pv_data = {}
-        city = "Bonn, Germany"
-        radiation = Radiation(city, True)
+        radiation = Radiation(location, True, maxPV)
         self.q = Queue(maxsize=0)
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
         self.pv_thread.start()

@@ -1,10 +1,13 @@
 import configparser
 import datetime
 import json
-import threading
+import logging
 
 import requests
-from IO.MQTTClient import MQTTClient
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__file__)
+
 
 # Date  = Date & time (UTC)
 # EPV   = PV power output if requested (W)
@@ -14,7 +17,6 @@ from IO.MQTTClient import MQTTClient
 # As    = Sun elevation (degrees above horizon)
 # Tamb  = Air temperature (°C)
 # W10   = Wind speed at 10m (m/s)
-
 
 class RadiationData:
     def __init__(self, date=datetime.datetime.now(), pv_output=0.0, beam_irradiance=0.0,
@@ -44,14 +46,15 @@ class SolarRadiation:
     Radiation Service that collects data and grep the next 48h
     """
     @staticmethod
-    def get_rad(city):
+    def get_rad(city, maxPV):
         rad_data = []
         coord = SolarRadiation.get_coordinate(city)
+        logger.info("coord "+str(coord))
         rad = requests.get("http://re.jrc.ec.europa.eu/pvgis5/seriescalc.php?lat=" +
                            "{:.3f}".format(coord["lat"]) + "&lon=" + "{:.3f}".format(coord['lng']) + "&raddatabase=" +
                            "PVGIS-CMSAF&usehorizon=1&startyear=2016&endyear=2016&mountingplace=free&" +
                            "optimalinclination=0&optimalangles=1&hourlyoptimalangles=1&PVcalculation=1&" +
-                           "pvtechchoice=crystSi&peakpower=1&loss=14&components=1")
+                           "pvtechchoice=crystSi&peakpower=" + str(maxPV) + "&loss=14&components=1")
         red_arr = str(rad.content).split("\\n")
         for x in range(11):
             del red_arr[0]
@@ -104,13 +107,15 @@ class SolarRadiation:
 
 class Radiation:
 
-    def __init__(self, city, hours):
+    def __init__(self, city, hours, maxPV):
         self.data = {}
         self.city = city
         self.hours = hours
+        self.maxPV = maxPV
+        self.maxPV /= 1000  # pv in kW
 
     def get_data(self):
-        we = SolarRadiation.get_rad(self.city)
+        we = SolarRadiation.get_rad(self.city, self.maxPV)
         if self.hours:
             jsh = json.dumps([wea.__dict__ for wea in we], default=str)
             return jsh

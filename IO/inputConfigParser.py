@@ -97,15 +97,18 @@ class InputConfigParser:
         for input_config in [self.input_config_file, self.input_config_mqtt]:
             for k, v in input_config.items():
                 if isinstance(v, dict):
-                    logger.debug("k: "+str(k)+" v: "+str(v))
+                    #logger.debug("k: "+str(k)+" v: "+str(v))
                     for k1, v1 in v.items():
                         #logger.debug("k1: " + str(k1) + " v1: " + str(v1))
                         if k1 == Constants.meta:
                             for k2, v2 in v1.items():
-                                logger.debug("k2: " + str(k2) + " v2: " + str(v2))
-                                v2 = float(v2)
-                                if v2.is_integer():
-                                    v2 = int(v2)
+                                #logger.debug("k2: " + str(k2) + " v2: " + str(v2))
+                                try:
+                                    v2 = float(v2)
+                                except ValueError:
+                                    pass
+                                if isinstance(v2, float) and v2.is_integer():
+                                        v2 = int(v2)
                                 if k2 in self.model_variables.keys():
                                     indexing = self.model_variables[k2]["indexing"]
                                     if indexing == "index":

@@ -129,7 +129,6 @@ class DataReceiver(ABC):
             logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
             logger.debug("zmq subscription msg received for topic "+str(topic)+" for id "+str(self.id))
-            logger.info(message)
             if flag:
                 self.on_msg_received(message)
                 break

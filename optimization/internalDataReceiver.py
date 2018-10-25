@@ -21,7 +21,6 @@ class InternalDataReceiver(DataReceiver):
         logger.debug("Data received : " + payload)
         data = json.loads(payload)
         self.data.update(self.add_formated_data(data))
-        logger.info(self.data)
         self.data_update = True
 
     def add_formated_data(self, data={}):

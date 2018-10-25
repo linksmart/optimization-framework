@@ -22,9 +22,18 @@ class PVPrediction:
         setup q to send data to internal mqtt/zmq for predicted pv data
         """
 
+        opt_values = input_config_parser.get_optimization_values()
+        location = "Bonn, Germany"
+        try:
+            city = opt_values["City"][None]
+            country = opt_values["Country"][None]
+            location = city + ", " + country
+        except Exception:
+            logger.error("City or country not present in pv meta")
+        maxPV = float(opt_values["PV_Inv_Max_Power"][None])
         pv_forecast_topic = config.get("IO", "pv.forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
-        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id)
+        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, location, maxPV)
         self.pv_forecast_pub.start()
 
     def Stop(self):

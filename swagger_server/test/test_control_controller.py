@@ -6,7 +6,6 @@ from flask import json
 from six import BytesIO
 
 from swagger_server.models.output_source import OutputSource  # noqa: E501
-from swagger_server.models.path_definition import PathDefinition  # noqa: E501
 from swagger_server.test import BaseTestCase
 
 
@@ -16,7 +15,7 @@ class TestControlController(BaseTestCase):
     def test_delete_file_output(self):
         """Test case for delete_file_output
 
-        Deletes the registration output of the framework
+        Deletes the output of the framework
         """
         response = self.client.open(
             '/v1/control/file/{id}'.format(id='id_example'),
@@ -40,13 +39,11 @@ class TestControlController(BaseTestCase):
     def test_output_source_file(self):
         """Test case for output_source_file
 
-        Creates a new data source as ouput
+        Get ouput of the optimization
         """
-        Output_Source = PathDefinition()
         response = self.client.open(
             '/v1/control/file/{id}'.format(id='id_example'),
-            method='PUT',
-            data=json.dumps(Output_Source),
+            method='GET',
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))

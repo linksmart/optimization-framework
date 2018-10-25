@@ -15,21 +15,31 @@ class MetaPV(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, pv_inv_max_power: int=None):  # noqa: E501
+    def __init__(self, pv_inv_max_power: int=None, city: str=None, country: str=None):  # noqa: E501
         """MetaPV - a model defined in Swagger
 
         :param pv_inv_max_power: The pv_inv_max_power of this MetaPV.  # noqa: E501
         :type pv_inv_max_power: int
+        :param city: The city of this MetaPV.  # noqa: E501
+        :type city: str
+        :param country: The country of this MetaPV.  # noqa: E501
+        :type country: str
         """
         self.swagger_types = {
-            'pv_inv_max_power': int
+            'pv_inv_max_power': int,
+            'city': str,
+            'country': str
         }
 
         self.attribute_map = {
-            'pv_inv_max_power': 'PV_Inv_Max_Power'
+            'pv_inv_max_power': 'PV_Inv_Max_Power',
+            'city': 'City',
+            'country': 'Country'
         }
 
         self._pv_inv_max_power = pv_inv_max_power
+        self._city = city
+        self._country = country
 
     @classmethod
     def from_dict(cls, dikt) -> 'MetaPV':
@@ -62,3 +72,45 @@ class MetaPV(Model):
         """
 
         self._pv_inv_max_power = pv_inv_max_power
+
+    @property
+    def city(self) -> str:
+        """Gets the city of this MetaPV.
+
+
+        :return: The city of this MetaPV.
+        :rtype: str
+        """
+        return self._city
+
+    @city.setter
+    def city(self, city: str):
+        """Sets the city of this MetaPV.
+
+
+        :param city: The city of this MetaPV.
+        :type city: str
+        """
+
+        self._city = city
+
+    @property
+    def country(self) -> str:
+        """Gets the country of this MetaPV.
+
+
+        :return: The country of this MetaPV.
+        :rtype: str
+        """
+        return self._country
+
+    @country.setter
+    def country(self, country: str):
+        """Sets the country of this MetaPV.
+
+
+        :param country: The country of this MetaPV.
+        :type country: str
+        """
+
+        self._country = country
