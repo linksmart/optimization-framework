@@ -34,11 +34,11 @@ class LoadForecastPublisher(DataPublisher):
                 self.load_data = new_data
             except Exception:
                 logger.debug("Queue empty")
-        logger.debug("extract load data")
         if not self.load_data:
             return None
+        logger.debug("extract load data")
         data = self.extract_1day_data()
-        logger.debug(str(data))
+        #logger.debug(str(data))
         return data
 
     def current_datetime(self, delta):
@@ -54,6 +54,6 @@ class LoadForecastPublisher(DataPublisher):
             date = self.current_datetime(delta)
             data[int(delta-1)] = self.load_data[date]
             delta += 1
-        logger.info("load d = "+str(data))
+        #logger.info("load d = "+str(data))
         return json.dumps({self.topic: data})
 

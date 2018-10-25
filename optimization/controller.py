@@ -112,7 +112,7 @@ class OptController(threading.Thread):
                                 i = data.index(line)
                                 line = json.loads(line.replace("\n",""))
                                 line["repetition"] -= 1
-                                data[i] = json.dumps(line)+"\n"
+                                data[i] = json.dumps(line, sort_keys=True, separators=(', ', ': ')) +"\n"
                                 with open(path, "w") as f:
                                     f.writelines(data)
                 except Exception as e:
@@ -129,7 +129,7 @@ class OptController(threading.Thread):
         ###Starts name server, dispatcher server and pyro_mip_server
         pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
         logger.debug("Pyro mip server started: "+str(pyro_mip_server))
-
+        return_msg = "success"
         try:
             ###maps action handles to instances
             action_handle_map={}
@@ -255,8 +255,6 @@ class OptController(threading.Thread):
                 object.MQTTExit()
                 logger.debug("Client "+key+" is being disconnected")
             ###close subprocesses
-
-
         except Exception as e:
             logger.error(e)
             e = str(e)
@@ -266,9 +264,10 @@ class OptController(threading.Thread):
                 i_start = e.index("\"",i)
                 i_end = e.index("\"",i_start+1)
                 solver = e[i_start+1: i_end]
-                error_msg = "Incorrect solver "+str(solver)+" used"
-                logger.error(error_msg)
+                return_msg = "Incorrect solver "+str(solver)+" used"
             else:
-                error_msg = e
-            return error_msg
-        self.finish_status = True
+                return_msg = e
+        finally:
+            logger.error(return_msg)
+            self.finish_status = True
+            return return_msg

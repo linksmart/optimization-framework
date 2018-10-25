@@ -56,7 +56,7 @@ class LoadPrediction:
             from optimization.loadForecastPublisher import LoadForecastPublisher
             load_forecast_topic = config.get("IO", "load.forecast.topic")
             load_forecast_topic = json.loads(load_forecast_topic)
-            self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 5, self.topic_name, self.id)
+            self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 1, self.topic_name, self.id)
             self.load_forecast_pub.start()
 
             self.startPrediction()
@@ -223,7 +223,7 @@ class Prediction(threading.Thread):
                             Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel()
-                            test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.length, graph)
+                            test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.length, graph, data)
                             data = self.processingData.to_dict_with_datetime(test_predictions,
                                                                              datetime.datetime(datetime.datetime.now().year, 12, 11,
                                                                                                6, 0), 60)
