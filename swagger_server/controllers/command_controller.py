@@ -65,19 +65,22 @@ class CommandController:
     def start(self, id, json_object, dict_object=None):
         if json_object is not None:
             self.model_name = json_object.model_name
-            self.time_step = json_object.time_step
-            self.horizon = json_object.horizon
+            self.control_frequency = json_object.control_frequency
+            self.horizon_in_steps = json_object.horizon_in_steps
+            self.dT_in_seconds = json_object.d_t_in_seconds
             self.repetition = json_object.repetition
             self.solver = json_object.solver
         elif dict_object is not None:
             self.model_name = dict_object["model"]
-            self.time_step = dict_object["timestep"]
-            self.horizon = dict_object["horizon"]
+            self.control_frequency = dict_object["control_frequency"]
+            self.horizon_in_steps = dict_object["horizon_in_steps"]
+            self.dT_in_seconds = dict_object["dT_in_seconds"]
             self.repetition = dict_object["repetition"]
             self.solver = dict_object["solver"]
 
         self.set(id,
-                 ThreadFactory(self.model_name, self.time_step, self.horizon, self.repetition, self.solver, id))
+                 ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
+                               self.repetition, self.solver, id))
 
         logger.info("Thread: " + str(self.get(id)))
         self.get(id).startOptControllerThread()
@@ -90,8 +93,9 @@ class CommandController:
         self.redisDB.set("run:"+id, "running")
         self.persist_id(id, True, {"id": id,
                                         "model": self.model_name,
-                                        "timestep": self.time_step,
-                                        "horizon": self.horizon,
+                                        "control_frequency": self.control_frequency,
+                                        "horizon_in_steps": self.horizon_in_steps,
+                                        "dT_in_seconds": self.dT_in_seconds,
                                         "repetition": self.repetition,
                                         "solver": self.solver,
                                         "ztarttime": time.time()})

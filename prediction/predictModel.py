@@ -39,7 +39,7 @@ class PredictModel:
                 pred = self.predict(model, Xvals, model_batch_size)
                 Xvals = self.getDF(pred, Xvals)
                 prediction.put(indices=i, values=pred)
-        #self.save_to_file(Xvals, prediction, raw_data)
+        self.save_to_file(Xvals, prediction, raw_data)
         return prediction
 
     def getDF(self, pred, Xvals):

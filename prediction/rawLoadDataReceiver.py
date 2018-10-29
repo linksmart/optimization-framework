@@ -6,6 +6,8 @@ Created on Jun 27 18:27 2018
 import json
 import logging
 
+import datetime
+
 from IO.dataReceiver import DataReceiver
 from prediction.rawDataReader import RawDataReader
 
@@ -21,12 +23,17 @@ class RawLoadDataReceiver(DataReceiver):
         self.buffer_data = []
         self.buffer = buffer
         self.training_data = training_data
+        self.prev_data = {"date": datetime.datetime.now(), "val":0}
+        self.threshold = 6
 
     def on_msg_received(self, payload):
         data = json.loads(payload)
         data = RawDataReader.format_data(data)
         for item in data:
-            self.data.append(item)
+            dt = datetime.datetime.strptime(item[0], "%m/%d  %H:%M:%S")
+            if not (item[1] == self.prev_data["val"] and (dt - self.prev_data["date"]) < datetime.timedelta(self.threshold)):
+                self.prev_data.update({"date": dt, "val": item[1]})
+                self.data.append(item)
         self.data_update = True
         self.save_to_file(data)
         logger.info("raw data size = " + str(len(data)))

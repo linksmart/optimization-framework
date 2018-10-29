@@ -17,12 +17,14 @@ logger = logging.getLogger(__file__)
 
 class LoadForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, queue, publish_frequency, topic, id):
+    def __init__(self, internal_topic_params, config, queue, publish_frequency, topic, id, horizon_in_steps, dT_in_seconds):
         self.load_data = {}
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "optimization", "loadData.dat")
         self.q = queue
         self.topic = topic
+        self.horizon_in_steps = horizon_in_steps
+        self.dT_in_seconds = dT_in_seconds
         super().__init__(True, internal_topic_params, config, publish_frequency, id)
 
     def get_data(self):
@@ -41,19 +43,45 @@ class LoadForecastPublisher(DataPublisher):
         #logger.debug(str(data))
         return data
 
-    def current_datetime(self, delta):
+    def current_datetime(self, delta, unit):
         date = datetime.datetime.now()
-        currentHour = datetime.datetime(datetime.datetime.now().year, 12, 11, 5, 0) + \
-            datetime.timedelta(hours=delta)
+        if unit == "h":
+            currentHour = datetime.datetime(datetime.datetime.now().year, 12, 11, 5, 0) + \
+                datetime.timedelta(hours=delta)
+        elif unit == "m":
+            currentHour = datetime.datetime(datetime.datetime.now().year, 12, 11, 5, 0) + \
+                          datetime.timedelta(minutes=delta)
+        elif unit == "s":
+            currentHour = datetime.datetime(datetime.datetime.now().year, 12, 11, 5, 0) + \
+                          datetime.timedelta(seconds=delta)
         return currentHour
 
     def extract_1day_data(self):
         delta = 1
         data = {}
         while delta <= 24:
-            date = self.current_datetime(delta)
+            date = self.current_datetime(delta, "h")
             data[int(delta-1)] = self.load_data[date]
             delta += 1
         #logger.info("load d = "+str(data))
+        return json.dumps({self.topic: data})
+
+    def extract_horizon_data(self):
+        data = {}
+        date = datetime.datetime.now()
+        diff = datetime.timedelta(days=365)
+        nearest = None
+        for k in self.load_data.keys():
+            if abs(date - k) < diff:
+                nearest = k
+                diff = abs(date - k)
+        # TODO: dict obj is not efficient here
+        for i in range(self.horizon_in_steps):
+            try:
+                data[i] = self.load_data[nearest]
+                nearest += datetime.timedelta(seconds=self.dT_in_seconds)
+            except Exception as e:
+                logger.error(e)
+        # logger.info("load d = "+str(data))
         return json.dumps({self.topic: data})
 

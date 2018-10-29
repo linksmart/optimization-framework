@@ -19,20 +19,19 @@ Creates a thread for prediction and a thread for training
 """
 class LoadPrediction:
 
-    def __init__(self, config, timesteps, horizon, topic_name, topic_param, id, predictionFlag):
+    def __init__(self, config, control_frequency, horizon_in_steps, topic_name, topic_param, dT_in_seconds, id, predictionFlag):
         self.stopRequest = threading.Event()
 
         self.predictionFlag = predictionFlag
 
         self.topic_name = topic_name
-        self.length = timesteps
-        self.length = 24
-        self.horizon = horizon
+        self.control_frequency = control_frequency  # determines minute or hourly etc
+        self.horizon_in_steps = horizon_in_steps
+        self.dT_in_seconds = dT_in_seconds
         self.num_timesteps = 25
         self.hidden_size = 40
         self.batch_size = 1
         self.num_epochs = 2  # 10
-        self.min_training_size = self.num_timesteps+10
         self.id = id
 
         self.raw_data_file_container = os.path.join("/usr/src/app", "res", "raw_data_"+str(topic_name)+".csv")
@@ -48,7 +47,7 @@ class LoadPrediction:
 
         if self.predictionFlag:
             from prediction.rawLoadDataReceiver import RawLoadDataReceiver
-            self.raw_data = RawLoadDataReceiver(topic_param, config, self.num_timesteps, 24 * 10,
+            self.raw_data = RawLoadDataReceiver(topic_param, config, self.num_timesteps, self.horizon_in_steps * 25,
                                                 self.raw_data_file_container)
 
             self.q = Queue(maxsize=0)
@@ -56,7 +55,9 @@ class LoadPrediction:
             from optimization.loadForecastPublisher import LoadForecastPublisher
             load_forecast_topic = config.get("IO", "load.forecast.topic")
             load_forecast_topic = json.loads(load_forecast_topic)
-            self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q, 1, self.topic_name, self.id)
+            self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q,
+                                                           self.control_frequency, self.topic_name, self.id,
+                                                           self.horizon_in_steps, self.dT_in_seconds)
             self.load_forecast_pub.start()
 
             self.startPrediction()
@@ -64,17 +65,17 @@ class LoadPrediction:
             self.startTraining()
 
     def startTraining(self):
-        self.training_thread = Training(self.length, self.horizon, self.num_timesteps,
+        self.training_thread = Training(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
                                         self.model_file_container_train, self.topic_name, self.id)
         self.training_thread.start()
 
     def startPrediction(self):
-        self.prediction_thread = Prediction(self.length, self.horizon, self.num_timesteps,
+        self.prediction_thread = Prediction(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                             self.hidden_size, self.batch_size, self.num_epochs,
                                             self.raw_data, self.processingData, self.model_file_container_temp,
-                                            self.model_file_container, self.q, self.topic_name, self.id)
+                                            self.model_file_container, self.q, self.topic_name, self.id, self.dT_in_seconds)
         self.prediction_thread.start()
 
 
@@ -103,12 +104,11 @@ class Training(threading.Thread):
     - After training is completed, copy the model_train.h5 to model.h5
     """
 
-    def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
+    def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
                  model_file_container, model_file_container_train, topic_name, id):
         super().__init__()
-        self.length = timesteps
-        self.length = 24
-        self.horizon = horizon
+        self.control_frequency = control_frequency
+        self.horizon_in_steps = horizon_in_steps
         self.num_timesteps = num_timesteps
         self.hidden_size = hidden_size
         self.batch_size = batch_size
@@ -182,17 +182,16 @@ class Prediction(threading.Thread):
         else load model_temp.h5 from disk (temp pre-trained model)
     - predict for next 24 points (24 predictions)
     """
-    def __init__(self, timesteps, horizon, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
-                 model_file_container_temp, model_file_container, q, topic_name, id):
+    def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
+                 model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds):
         super().__init__()
-        self.length = timesteps
-        self.length = 24
-        self.horizon = horizon
+        self.control_frequency = control_frequency
+        self.horizon_in_steps = horizon_in_steps
         self.num_timesteps = num_timesteps
         self.hidden_size = hidden_size
+        self.dT_in_seconds = dT_in_seconds
         self.batch_size = batch_size
         self.num_epochs = num_epochs  # 10
-        self.min_training_size = self.num_timesteps + 30
         self.raw_data = raw_data
         self.processingData = processingData
         self.model_file_container_temp = model_file_container_temp
@@ -212,6 +211,7 @@ class Prediction(threading.Thread):
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 logger.info("len data = " + str(len(data)))
                 if len(data) >= self.num_timesteps:
+                    st = time.time()
                     ctr += 1
                     if ctr > 0:
                         test_predictions = []
@@ -223,15 +223,21 @@ class Prediction(threading.Thread):
                             Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel()
-                            test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.length, graph, data)
+                            test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
+                            #  TODO: need to append correct date time. make changes in load forecast too
                             data = self.processingData.to_dict_with_datetime(test_predictions,
-                                                                             datetime.datetime(datetime.datetime.now().year, 12, 11,
-                                                                                               6, 0), 60)
+                                                                             datetime.datetime.now(), self.dT_in_seconds, "s")
                             self.q.put(data)
                         else:
                             logger.info("prediction  model is none")
                         logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
-                time.sleep(1)
+                    st = time.time() - st
+                    ss = self.control_frequency - st
+                    if ss < 0:
+                        ss = 0
+                    time.sleep(ss)
+                else:
+                    time.sleep(1)
             except Exception as e:
                 logger.error(str(self.topic_name) + " prediction thread exception " + str(e))
 

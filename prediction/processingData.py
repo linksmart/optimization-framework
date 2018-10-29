@@ -122,6 +122,7 @@ class ProcessingData:
         test_predictions = test_predictions.set_index('DateTime')
         return test_predictions
 
+    # not used
     def hour_range(self):
         date = datetime.datetime.now()
         startHour = datetime.datetime(datetime.datetime.now().year, 12, 11, 5, 0) + \
@@ -130,6 +131,7 @@ class ProcessingData:
                       datetime.timedelta(hours=25)
         return startHour, endHr
 
+    # not used
     def to_python_dict_data(self, prediction):
             starthr, endhr = self.hour_range()
             data = {}
@@ -145,9 +147,14 @@ class ProcessingData:
                 data[date] = value[i][0]
             return data
 
-    def to_dict_with_datetime(self, prediction, startTime, deltaMinutes):
+    def to_dict_with_datetime(self, prediction, startTime, delta, unit):
         data = {}
         for pred in prediction:
             data[startTime] = pred
-            startTime += datetime.timedelta(minutes=deltaMinutes)
+            if unit == "h":
+                startTime += datetime.timedelta(hours=delta)
+            elif unit == "m":
+                startTime += datetime.timedelta(minutes=delta)
+            elif unit == "s":
+                startTime += datetime.timedelta(seconds=delta)
         return data

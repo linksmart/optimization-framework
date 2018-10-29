@@ -66,6 +66,11 @@ class Connector(RecPub):
     def to_senml(self, name, value, timestamp):
         meas = senml.SenMLMeasurement()
         meas.name = name
+        if isinstance(value, str):
+            try:
+                value = float(value)
+            except Exception:
+                pass
         meas.value = value
         meas.time = timestamp
         doc = senml.SenMLDocument([meas])

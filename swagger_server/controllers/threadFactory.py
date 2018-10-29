@@ -15,10 +15,11 @@ logger = logging.getLogger(__file__)
 
 class ThreadFactory:
 
-    def __init__(self, model_name, time_step, horizon, repetition, solver, id):
+    def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id):
         self.model_name = model_name
-        self.time_step = time_step
-        self.horizon = horizon
+        self.control_frequency = control_frequency
+        self.horizon_in_steps = horizon_in_steps
+        self.dT_in_seconds = dT_in_seconds
         self.repetition = repetition
         self.solver = solver
         self.id = id
@@ -34,8 +35,9 @@ class ThreadFactory:
     def startOptControllerThread(self):
         logger.info("Creating optimization controller thread")
         logger.info("Number of repetitions: " + str(self.repetition))
-        logger.info("Output with the following time steps: " + str(self.time_step))
-        logger.info("Optimization calculated with the following horizon: " + str(self.horizon))
+        logger.info("Output with the following control_frequency: " + str(self.control_frequency))
+        logger.info("Optimization calculated with the following horizon_in_steps: " + str(self.horizon_in_steps))
+        logger.info("Optimization calculated with the following dT_in_seconds: " + str(self.dT_in_seconds))
         logger.info("Optimization calculated with the following model: " + self.model_name)
         logger.info("Optimization calculated with the following solver: " + self.solver)
 
@@ -112,12 +114,15 @@ class ThreadFactory:
                 if flag:
                     logger.info("Creating prediction controller thread for topic " + str(prediction_name))
                     topic_param = input_config_parser.get_params(prediction_name)
-                    parameters = json.dumps({"time_step":self.time_step, "horizon":self.horizon,
-                                  "topic_param":topic_param})
-                    self.redisDB.set("train:"+self.id+":"+prediction_name, parameters)
-                    self.prediction_threads[prediction_name] = LoadPrediction(config, self.time_step, self.horizon,
-                                                                              prediction_name, topic_param, self.id, True)
-                    #self.prediction_threads[prediction_name].start()
+                    parameters = json.dumps(
+                        {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
+                         "topic_param": topic_param, "dT_in_seconds": self.dT_in_seconds})
+                    self.redisDB.set("train:" + self.id + ":" + prediction_name, parameters)
+                    self.prediction_threads[prediction_name] = LoadPrediction(config, self.control_frequency,
+                                                                              self.horizon_in_steps, prediction_name,
+                                                                              topic_param, self.dT_in_seconds, self.id,
+                                                                              True)
+                    # self.prediction_threads[prediction_name].start()
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_non_prediction_names()
         if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:
@@ -125,12 +130,14 @@ class ThreadFactory:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
                     if non_prediction_name == "P_PV":
-                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id)
-
+                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id,
+                                                                                        self.control_frequency, self.horizon_in_steps,
+                                                                                        self.dT_in_seconds)
 
         # Initializing constructor of the optimization controller thread
-        self.opt = OptController(self.id, self.solver_name, self.model_path, self.time_step,
-                                 self.repetition, output_config, input_config_parser, config)
+        self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,
+                                 self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
+                                 self.dT_in_seconds)
 
         ####starts the optimization controller thread
         try:

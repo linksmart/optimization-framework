@@ -19,13 +19,16 @@ logger = logging.getLogger(__file__)
 
 class PVForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, id, location, maxPV):
+    def __init__(self, internal_topic_params, config, id, location, maxPV, control_frequency, horizon_in_steps, dT_in_seconds):
         self.pv_data = {}
-        radiation = Radiation(location, True, maxPV)
+        radiation = Radiation(location, maxPV, dT_in_seconds)
         self.q = Queue(maxsize=0)
+        self.control_frequency = control_frequency
+        self.horizon_in_steps = horizon_in_steps
+        self.dT_in_seconds = dT_in_seconds
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
         self.pv_thread.start()
-        super().__init__(True, internal_topic_params, config, 30, id)
+        super().__init__(True, internal_topic_params, config, control_frequency, id)
 
     def get_pv_data_from_source(self, radiation, q):
         """PV Data fetch thread. Runs at 23:30 every day"""
@@ -40,12 +43,23 @@ class PVForecastPublisher(DataPublisher):
             except Exception as e:
                 logger.error(e)
 
-    def current_hour(self):
+    def current_time(self, unit):
         date = datetime.datetime.now()
-        currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour, 0) + \
-            datetime.timedelta(hours=1)
-        logger.debug(currentHour.hour)
-        return int(currentHour.hour)
+        result = None
+        if unit == "h":
+            currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour, 0) + \
+                datetime.timedelta(hours=1)
+            result = currentHour.hour
+        elif unit == "m":
+            currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour, date.minute) + \
+                          datetime.timedelta(minutes=1)
+            result = currentHour.minute
+        elif unit == "sec":
+            currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour,
+                                            date.minute, date.second) + \
+                          datetime.timedelta(seconds=1)
+            result = currentHour.second
+        return int(result)
 
     def get_delay_time(self, hour, min):
         date = datetime.datetime.now()
@@ -53,7 +67,7 @@ class PVForecastPublisher(DataPublisher):
         return requestedTime.timestamp() - time.time()
 
     def extract_1day_data(self):
-        currenthr = self.current_hour()
+        currenthr = self.current_time("h")
         i = 0
         flag = False
         data = {}
@@ -72,6 +86,29 @@ class PVForecastPublisher(DataPublisher):
         else:
             return json.dumps({"P_PV": data})
 
+    def extract_horizon_data(self):
+        if len(self.pv_data) > 0:
+            date = datetime.datetime.now()
+            closest_date_data = min(self.pv_data,
+                                    key=lambda pv: abs(datetime.datetime.strptime(pv["date"], "%Y-%m-%d %H:%M:%S") - date))
+            i = 0
+            data = {}
+            flag = False
+            for row in self.pv_data:
+                if row["date"] == closest_date_data["date"]:
+                   flag = True
+                if flag and i < self.horizon_in_steps:
+                    data[i] = float(row["pv_output"])
+                    i = i + 1
+                if i > self.horizon_in_steps - 1:
+                    break
+            if not data:
+                return None
+            else:
+                return json.dumps({"P_PV": data})
+        else:
+            return json.dumps({"P_PV": {}})
+
     def get_data(self):
         #  check if new data is available
         if not self.q.empty():
@@ -82,8 +119,8 @@ class PVForecastPublisher(DataPublisher):
             except Exception:
                 logger.debug("Queue empty")
         logger.debug("extract pv data")
-        data = self.extract_1day_data()
-        #logger.debug(str(data))
+        #data = self.extract_1day_data()
+        data = self.extract_horizon_data()
         return data
         #return self.sample_data()
 

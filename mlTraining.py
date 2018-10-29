@@ -34,8 +34,8 @@ def check_training(config):
                     value = redisDB.get(key)
                     value = json.loads(value)
                     logger.info("creating new training thread for topic "+prediction_name)
-                    training_threads[key] = LoadPrediction(config, value["time_step"], value["horizon"],
-                                                           prediction_name, value["topic_param"], id, False)
+                    training_threads[key] = LoadPrediction(config, value["control_frequency"], value["horizon_in_steps"],
+                                                           prediction_name, value["topic_param"], value["dT_in_seconds"], id, False)
                 elif key in training_threads.keys() and key not in keys:
                     logger.info("stoping training thread for topic "+key)
                     training_threads[key].Stop()

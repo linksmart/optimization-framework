@@ -37,19 +37,21 @@ class OptController(threading.Thread):
     except Exception as e:
         logger.error("new name server error, "+str(e))
 
-    def __init__(self, id, solver_name, model_path, time_step, repetition, output_config, input_config_parser, config):
+    def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser, config, horizon_in_steps, dT_in_seconds):
         #threading.Thread.__init__(self)
         super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
         #Loading variables
         self.id = id
-        self.results=""
+        self.results = ""
         self.model_path = model_path
         self.solver_name = solver_name
-        self.time_step=time_step
+        self.control_frequency = control_frequency
         self.repetition = repetition
-        self.output_config=output_config
-        self.input_config_parser=input_config_parser
+        self.horizon_in_steps = horizon_in_steps
+        self.dT_in_seconds = dT_in_seconds
+        self.output_config = output_config
+        self.input_config_parser = input_config_parser
         self.stopRequest=threading.Event()
         self.finish_status = False
         self.redisDB = RedisDB()
@@ -67,7 +69,8 @@ class OptController(threading.Thread):
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
         self.output = OutputController(self.output_config)
-        self.input = InputController(self.id, self.input_config_parser, config, 24)
+        self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
+                                     self.horizon_in_steps, self.dT_in_seconds)
 
 
 
@@ -240,9 +243,9 @@ class OptController(threading.Thread):
                 count += 1
                 if self.repetition > 0 and count >= self.repetition:
                     break
-                logger.info("Optimization thread going to sleep for "+str(self.time_step)+" seconds")
+                logger.info("Optimization thread going to sleep for "+str(self.control_frequency)+" seconds")
                 time_spent = self.update_count()
-                time.sleep(self.time_step-time_spent)
+                time.sleep(self.control_frequency-time_spent)
 
             #Closing the pyomo servers
             logger.debug("Deactivating pyro servers")
