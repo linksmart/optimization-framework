@@ -22,7 +22,7 @@ logger = logging.getLogger(__file__)
 
 class DataReceiver(ABC):
 
-    def __init__(self, internal, topic_params, config, emptyValue={}, id=None):
+    def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None):
         super().__init__()
         self.stop_request = False
         self.internal = internal
@@ -35,6 +35,9 @@ class DataReceiver(ABC):
         self.topics = None
         self.port = None
         self.id = id
+        self.section = section
+        if self.section is None:
+            self.section = "IO"
         self.setup()
 
         if self.channel == "MQTT":
@@ -52,8 +55,8 @@ class DataReceiver(ABC):
     def get_external_channel_params(self):
         topic_qos = []
         # read from config
-        if "sub.mqtt.host" in dict(self.config.items("IO")):
-            host = self.config.get("IO", "sub.mqtt.host")
+        if "sub.mqtt.host" in dict(self.config.items(self.section)):
+            host = self.config.get(self.section, "sub.mqtt.host")
         else:
             host = self.config.get("IO", "mqtt.host")
         qos = 0

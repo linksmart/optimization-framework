@@ -23,16 +23,16 @@ class RecPub:
     def data_formater(self, data):
         pass
 
-    def __init__(self, receiver_params, publisher_params, config):
+    def __init__(self, receiver_params, publisher_params, config, section):
         self.q = Queue(maxsize=0)
         self.pub = Publisher(False, publisher_params, config, self.q, 0.1)
         self.pub.start()
-        self.rec = Receiver(False, receiver_params, config, self.q, self.data_formater)
+        self.rec = Receiver(False, receiver_params, config, self.q, self.data_formater, section)
 
 class Receiver(DataReceiver):
 
-    def __init__(self, internal, topic_params, config, q, data_formater):
-        super().__init__(internal, topic_params, config)
+    def __init__(self, internal, topic_params, config, q, data_formater, section):
+        super().__init__(internal, topic_params, config, section=section)
         self.q = q
         self.data_formater = data_formater
 

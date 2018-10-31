@@ -24,7 +24,14 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(e)
 
-    rec_params = config.get("IO", "con.topic")
-    rec_params = json.loads(rec_params)
-
-    connector = Connector(rec_params, config)
+    try:
+        connector_list = []
+        for section in config.sections():
+            if (section.startswith('HOUSE')):
+                logger.info("House: " + section)
+                rec_params = config.get(section, "con.topic")
+                rec_params = json.loads(rec_params)
+                connector = Connector(rec_params, config, section)
+                connector_list.append(connector)
+    except Exception as e:
+        logger.error(e)
