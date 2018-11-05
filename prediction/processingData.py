@@ -4,8 +4,8 @@ Created on Jun 28 10:39 2018
 @author: nishit
 """
 import datetime
-import json
 
+import math
 import pandas as pd
 import numpy as np
 import logging
@@ -21,20 +21,42 @@ class ProcessingData:
     def __init__(self):
         self.new_df = None
 
-    def preprocess_data(self, raw_data, num_timesteps, train):
+    def resample(self, raw_data, dT):
+        step = float(dT/60.0)
+        j = len(raw_data)
+        new_data = []
+        while j > 0:
+            if j.is_integer():
+                i = int(j)
+                new_data.append(raw_data[i])
+            else:
+                i = math.ceil(j)
+                ratio = i - j
+                startdate = datetime.datetime.fromtimestamp(raw_data[i][0])
+                sec = int(60.0 * ratio)
+                date = startdate + datetime.timedelta(seconds=sec)
+                start = float(raw_data[i][1])
+                end = float(raw_data[i-1][1])
+                val = start + (end - start) * ratio
+                new_data.append([date.timestamp(), val])
+            j -= step
+        return new_data
+
+    def preprocess_data(self, raw_data, num_timesteps, train, dT):
         # Loading Data
         """
         col_heads = raw_data[0]
         raw_data = raw_data[1:]
         """
+
+        raw_data = self.resample(raw_data, dT)
+        print(raw_data)
         #df = pd.DataFrame(raw_data, columns=col_heads)
         df = pd.DataFrame(raw_data)
         df = df[df.columns[:2]]
         df.columns = ['Time', 'Electricity']
 
-        new_df = df['Time'].str.split('  ', 1, expand=True)
-        new_df.columns = ['Date', 'Time']
-
+        """
         new_df = df['Time'].str.split('  ', 1, expand=True)
         new_df.columns = ['Date', 'Time']
 
@@ -49,9 +71,14 @@ class ProcessingData:
         new_df = new_df.drop('Date', axis=1)
         new_df = new_df.drop('Time', axis=1)
         new_df['Electricity'] = df['Electricity']
+        """
+
+        df["Time"] = datetime.datetime.fromtimestamp(df["Time"]).strftime('%Y/%m/%d %H:%M:%S')
+        new_df = df
+        new_df.columns = ['DateTime', 'Electricity']
 
         # Changing dtype to pandas datetime format
-        new_df['DateTime'] = pd.to_datetime('2018/' + new_df['DateTime'].str.strip(), format='%Y/%m/%d %H:%M:%S')
+        new_df['DateTime'] = pd.to_datetime(new_df['DateTime'].str.strip(), format='%Y/%m/%d %H:%M:%S')
         # new_df['DateTime'].astype(str)
         new_df = new_df.set_index('DateTime')
 

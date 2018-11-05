@@ -23,20 +23,35 @@ class RawLoadDataReceiver(DataReceiver):
         self.buffer_data = []
         self.buffer = buffer
         self.training_data = training_data
-        self.prev_data = {"date": datetime.datetime.now(), "val":0}
-        self.threshold = 6
+        self.current_minute = None
+        self.sum = 0
+        self.count = 0
 
     def on_msg_received(self, payload):
         data = json.loads(payload)
         data = RawDataReader.format_data(data)
+        mod_data = []
         for item in data:
-            dt = datetime.datetime.strptime(item[0], "%m/%d  %H:%M:%S")
-            if not (item[1] == self.prev_data["val"] and (dt - self.prev_data["date"]) < datetime.timedelta(self.threshold)):
-                self.prev_data.update({"date": dt, "val": item[1]})
-                self.data.append(item)
+            dt = datetime.datetime.fromtimestamp(item[0]).replace(second=0, microsecond=0)
+            if self.current_minute is None:
+                self.current_minute = dt
+            logger.info(str(dt)+" "+str(self.current_minute))
+            if dt == self.current_minute:
+                self.sum += item[1]
+                self.count += 1
+            else:
+                logger.info("diff "+str(self.count)+str(self.sum))
+                if self.count > 0:
+                    val = self.sum/self.count
+                    row = [self.current_minute.timestamp(), val]
+                    self.data.append(row)
+                    mod_data.append(row)
+                self.current_minute = dt
+                self.sum = item[1]
+                self.count = 1
         self.data_update = True
-        self.save_to_file(data)
-        logger.info("raw data size = " + str(len(data)))
+        self.save_to_file(mod_data)
+        logger.info("raw data size = " + str(len(mod_data)))
 
     def save_to_file(self, data):
         try:

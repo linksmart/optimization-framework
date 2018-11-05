@@ -28,20 +28,24 @@ class LoadForecastPublisher(DataPublisher):
         super().__init__(True, internal_topic_params, config, publish_frequency, id)
 
     def get_data(self):
-        #  check if new data is available
-        if not self.q.empty():
-            try:
-                new_data = self.q.get_nowait()
-                self.q.task_done()
-                self.load_data = new_data
-            except Exception:
-                logger.debug("Queue empty")
-        if not self.load_data:
+        try:
+            #  check if new data is available
+            if not self.q.empty():
+                try:
+                    new_data = self.q.get_nowait()
+                    self.q.task_done()
+                    self.load_data = new_data
+                except Exception:
+                    logger.debug("Queue empty")
+            if not self.load_data:
+                return None
+            logger.debug("extract load data")
+            data = self.extract_1day_data()
+            #logger.debug(str(data))
+            return data
+        except Exception as e:
+            logger.error(str(e))
             return None
-        logger.debug("extract load data")
-        data = self.extract_1day_data()
-        #logger.debug(str(data))
-        return data
 
     def current_datetime(self, delta, unit):
         date = datetime.datetime.now()

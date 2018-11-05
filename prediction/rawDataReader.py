@@ -50,14 +50,13 @@ class RawDataReader:
                 n = meas.name
                 v = meas.value
                 t = meas.time
-                t = datetime.fromtimestamp(t).strftime("%m/%d  %H:%M:%S")
                 cols = [t,v]
                 new_data.append(cols)
             return new_data
         else:
             for row in data:
                 cols = row.replace('\n', '').strip().split(",")
-                dateTime = cols[0]
+                dateTime = float(cols[0])
                 cols = cols[1:]
                 cols = list(map(float, cols))
                 cols.insert(0, dateTime)

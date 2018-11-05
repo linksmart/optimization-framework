@@ -45,9 +45,13 @@ class LoadPrediction:
         self.prediction_thread = None
         self.training_thread = None
 
+        total_mins = int(float(self.horizon_in_steps * self.dT_in_seconds)/60.0) + 1
+        if total_mins < self.num_timesteps:
+            total_mins = self.num_timesteps
+
         if self.predictionFlag:
             from prediction.rawLoadDataReceiver import RawLoadDataReceiver
-            self.raw_data = RawLoadDataReceiver(topic_param, config, self.num_timesteps, self.horizon_in_steps * 25,
+            self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins, self.horizon_in_steps * 25,
                                                 self.raw_data_file_container)
 
             self.q = Queue(maxsize=0)
@@ -68,7 +72,7 @@ class LoadPrediction:
         self.training_thread = Training(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
-                                        self.model_file_container_train, self.topic_name, self.id)
+                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds)
         self.training_thread.start()
 
     def startPrediction(self):
@@ -105,7 +109,7 @@ class Training(threading.Thread):
     """
 
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
-                 model_file_container, model_file_container_train, topic_name, id):
+                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -125,6 +129,7 @@ class Training(threading.Thread):
         self.training_lock_key = "training_lock"
         self.topic_name = topic_name
         self.id = id
+        self.dT_in_seconds = dT_in_seconds
 
     def run(self):
         while not self.stopRequest.isSet():
@@ -140,7 +145,7 @@ class Training(threading.Thread):
                     if len(data) > self.min_training_size:
                         self.trained = True
                         logger.info("start training")
-                        Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True)
+                        Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True, self.dT_in_seconds)
 
                         # preprocess data
                         try:
@@ -220,7 +225,7 @@ class Prediction(threading.Thread):
                             logger.info("temp flag true")
                             model = model_temp
                         if model is not None:
-                            Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
+                            Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False, self.dT_in_seconds)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel()
                             test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
