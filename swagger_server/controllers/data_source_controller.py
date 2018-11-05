@@ -320,15 +320,11 @@ def file_input_source(File_Input_Source):  # noqa: E501
     else:
         return 'Data is not in json format'
 
-
-
-def get_data_source_values(param_name, id):  # noqa: E501
+def get_data_source_values(id):  # noqa: E501
     """Receives data from the framework
 
      # noqa: E501
 
-    :param param_name: Name of the parameter of the optimization model
-    :type param_name: str
     :param id: ID of the data source
     :type id: str
 
@@ -344,14 +340,14 @@ def get_data_source_values(param_name, id):  # noqa: E501
             if os.path.exists(file_registry):
                 with open(file_registry, "r") as infile:
                     file_data = infile.readlines()
-                    data = "File registry = " + file_data
+                    data = "File registry = " + "\n".join(file_data)
             mqtt_registry = os.path.join(dir, "Input.registry.mqtt")
             if os.path.exists(mqtt_registry):
                 with open(mqtt_registry, "r") as infile:
                     mqtt_data = infile.readlines()
-                    data = data + "\n" + mqtt_data
+                    data = data + "\n MQTT registry" + "\n".join(mqtt_data)
     except Exception as e:
-        logger.error("error reading registry "+str(e))
+        logger.error("error reading registry " + str(e))
         data = "error"
     return data
 

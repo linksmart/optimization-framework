@@ -48,10 +48,22 @@ def delete_models(name):  # noqa: E501
         file_path= os.path.join("/usr/src/app/optimization/models", file_name)
         try:
             os.remove(file_path)
+            # Creating an object of the configuration file in order to change the model.name into the SolverSection
+            config = configparser.RawConfigParser()
+            config.read(getFilePath("utils", "ConfigFile.properties"))
+            model_name = config.get('SolverSection', 'model.name')
+            if model_name == name:
+                config.set('SolverSection', 'model.name', "ReferenceModel")
+                with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
+                    config.write(configfile)
+                config.read(getFilePath("utils", "ConfigFile.properties"))
+                logger.info("The model name was changed in the configuration file: " + config['SolverSection']['model.name'])
             answer="OK"
         except Exception as e:
             logger.error(e)
             answer= str(e)
+    else:
+        answer = "Cannot remove ReferenceModel"
     return answer
 
 
