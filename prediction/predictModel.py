@@ -32,6 +32,7 @@ class PredictModel:
     def predict_next_day(self, model, Xvals, model_batch_size, length, graph, raw_data=None):
         # predict, pop first xval and push the predicted result
         # repeat
+        input_data = Xvals
         prediction = np.zeros(length)
         for i in range(length):
             """calls predict n times to predict n points, use the prev prediction to predict next value"""
@@ -39,7 +40,7 @@ class PredictModel:
                 pred = self.predict(model, Xvals, model_batch_size)
                 Xvals = self.getDF(pred, Xvals)
                 prediction.put(indices=i, values=pred)
-        self.save_to_file(Xvals, prediction, raw_data)
+        #self.save_to_file(input_data, prediction, raw_data)
         return prediction
 
     def getDF(self, pred, Xvals):

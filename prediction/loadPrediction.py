@@ -139,7 +139,8 @@ class Training(threading.Thread):
                 if train:
                     # get raw data from file
                     from prediction.rawDataReader import RawDataReader
-                    data = RawDataReader.get_raw_data(self.raw_data_file, 1000, self.topic_name)
+                    # atmost last 5 days' data
+                    data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
                     logger.debug("raw data ready " + str(len(data)))
                     data = self.processingData.resample(data, self.dT_in_seconds)
                     logger.debug("resampled data ready " + str(len(data)))
@@ -211,30 +212,12 @@ class Prediction(threading.Thread):
         self.id = id
 
     def mock_data(self):
-        vals = [-2658.819940570742,
-                -2213.156421120333,
-                -2293.3003835233494,
-                -2511.9858622200863,
-                -2599.873615357683,
-                -2046.833423637462,
-                -2236.2930112394447,
-                -2511.570352025292,
-                -2424.498109073549,
-                -2824.9929980809743,
-                -2824.5585368661955,
-                -1953.771180819606,
-                -1800.771180819606,
-                -1700.771180819606,
-                -2000.771180819606,
-                -2200.771180819606,
-                -2500.771180819606,
-                -2400.771180819606,
-                -2800.771180819606,
-                -2700.771180819606,
-                -1950.771180819606,
-                -2200.771180819606,
-                -2500.771180819606,
-                -2600.771180819606,
+        vals = [-2658.819940570742,-2213.156421120333,-2293.300383523349,-2511.985862220086,
+                -2599.873615357683,-2046.833423637462,-2236.293011239444,-2511.570352025292,
+                -2424.498109073549,-2824.992998080974,-2824.558536866195,-1953.771180819606,
+                -1800.771180819606,-1700.771180819606,-2000.771180819606,-2200.771180819606,
+                -2500.771180819606,-2400.771180819606,-2800.771180819606,-2700.771180819606,
+                -1950.771180819606,-2200.771180819606,-2500.771180819606,-2600.771180819606,
                 -2300.771180819606]
 
         date = datetime.datetime.now().replace(second=0, microsecond=0)
@@ -249,26 +232,27 @@ class Prediction(threading.Thread):
         while not self.stopRequest.isSet():
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
-                logger.info("len data = " + str(len(data)))
+                logger.debug("len data = " + str(len(data)))
                 data = self.processingData.resample(data, self.dT_in_seconds)
-                logger.info("len resample data = " + str(len(data)))
+                logger.debug("len resample data = " + str(len(data)))
+                if len(data) > 0:
+                    data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
+                    logger.debug("len appended data = " + str(len(data)))
                 #data = self.mock_data()
                 if len(data) >= self.num_timesteps:
                     st = time.time()
                     test_predictions = []
                     model, model_temp, temp_flag, graph = self.models.get_model(self.id+"_"+self.topic_name)
                     if temp_flag:
-                        logger.info("temp flag true")
+                        logger.debug("temp flag true")
                         model = model_temp
                     if model is not None:
                         try:
-                            Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
+                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data(data, self.num_timesteps, False)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel()
                             test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
-                            #  TODO: need to append correct date time. make changes in load forecast too
-                            data = self.processingData.to_dict_with_datetime(test_predictions,
-                                                                             datetime.datetime.now(), self.dT_in_seconds, "s")
+                            data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
                         except Exception as e:
                             logger.error(str(e))

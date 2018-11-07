@@ -22,7 +22,8 @@ class Model:
     model.dT=Param(within=PositiveIntegers)                         #Number of seconds in one time step
     model.dT=Param(within=PositiveIntegers)                         #Number of seconds in one time step
 
-    model.P_Load=Param(model.T,within=NonNegativeReals)    #Active power demand forecast
+    model.P_Load=Param(model.T,within=Reals)    #Active power demand forecast
+    #model.P_Load=Param(model.T,within=NonNegativeReals)    #Active power demand forecast
     model.Q_Load=Param(model.T,within=Reals)               #Reactive demand forecast
     #TODO: Assign a default
 
