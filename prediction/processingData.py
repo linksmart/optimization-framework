@@ -23,7 +23,7 @@ class ProcessingData:
 
     def resample(self, raw_data, dT):
         step = float(dT/60.0)
-        j = len(raw_data)
+        j = float(len(raw_data)-1)
         new_data = []
         while j > 0:
             if j.is_integer():
@@ -42,20 +42,17 @@ class ProcessingData:
             j -= step
         return new_data
 
-    def preprocess_data(self, raw_data, num_timesteps, train, dT):
+    def preprocess_data(self, raw_data, num_timesteps, train):
         # Loading Data
         """
         col_heads = raw_data[0]
         raw_data = raw_data[1:]
         """
 
-        raw_data = self.resample(raw_data, dT)
-        print(raw_data)
         #df = pd.DataFrame(raw_data, columns=col_heads)
         df = pd.DataFrame(raw_data)
         df = df[df.columns[:2]]
         df.columns = ['Time', 'Electricity']
-
         """
         new_df = df['Time'].str.split('  ', 1, expand=True)
         new_df.columns = ['Date', 'Time']
@@ -73,13 +70,10 @@ class ProcessingData:
         new_df['Electricity'] = df['Electricity']
         """
 
-        df["Time"] = datetime.datetime.fromtimestamp(df["Time"]).strftime('%Y/%m/%d %H:%M:%S')
         new_df = df
         new_df.columns = ['DateTime', 'Electricity']
-
         # Changing dtype to pandas datetime format
-        new_df['DateTime'] = pd.to_datetime(new_df['DateTime'].str.strip(), format='%Y/%m/%d %H:%M:%S')
-        # new_df['DateTime'].astype(str)
+        new_df['DateTime'] = pd.to_datetime(new_df['DateTime'], unit='s')
         new_df = new_df.set_index('DateTime')
 
         # checking for null values and if any, replacing them with last valid observation

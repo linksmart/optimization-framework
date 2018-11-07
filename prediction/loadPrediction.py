@@ -140,12 +140,13 @@ class Training(threading.Thread):
                     # get raw data from file
                     from prediction.rawDataReader import RawDataReader
                     data = RawDataReader.get_raw_data(self.raw_data_file, 1000, self.topic_name)
-                    #data = self.raw_data.get_raw_data(train=True)
                     logger.debug("raw data ready " + str(len(data)))
+                    data = self.processingData.resample(data, self.dT_in_seconds)
+                    logger.debug("resampled data ready " + str(len(data)))
                     if len(data) > self.min_training_size:
                         self.trained = True
                         logger.info("start training")
-                        Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True, self.dT_in_seconds)
+                        Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True)
 
                         # preprocess data
                         try:
@@ -209,23 +210,59 @@ class Prediction(threading.Thread):
         self.topic_name = topic_name
         self.id = id
 
+    def mock_data(self):
+        vals = [-2658.819940570742,
+                -2213.156421120333,
+                -2293.3003835233494,
+                -2511.9858622200863,
+                -2599.873615357683,
+                -2046.833423637462,
+                -2236.2930112394447,
+                -2511.570352025292,
+                -2424.498109073549,
+                -2824.9929980809743,
+                -2824.5585368661955,
+                -1953.771180819606,
+                -1800.771180819606,
+                -1700.771180819606,
+                -2000.771180819606,
+                -2200.771180819606,
+                -2500.771180819606,
+                -2400.771180819606,
+                -2800.771180819606,
+                -2700.771180819606,
+                -1950.771180819606,
+                -2200.771180819606,
+                -2500.771180819606,
+                -2600.771180819606,
+                -2300.771180819606]
+
+        date = datetime.datetime.now().replace(second=0, microsecond=0)
+        new_data = []
+        for val in reversed(vals):
+            new_data.append([int(date.timestamp()), val])
+            date = date - datetime.timedelta(seconds=self.dT_in_seconds)
+        new_data.reverse()
+        return new_data
+
     def run(self):
-        ctr = 0
         while not self.stopRequest.isSet():
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 logger.info("len data = " + str(len(data)))
+                data = self.processingData.resample(data, self.dT_in_seconds)
+                logger.info("len resample data = " + str(len(data)))
+                #data = self.mock_data()
                 if len(data) >= self.num_timesteps:
                     st = time.time()
-                    ctr += 1
-                    if ctr > 0:
-                        test_predictions = []
-                        model, model_temp, temp_flag, graph = self.models.get_model(self.id+"_"+self.topic_name)
-                        if temp_flag:
-                            logger.info("temp flag true")
-                            model = model_temp
-                        if model is not None:
-                            Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False, self.dT_in_seconds)
+                    test_predictions = []
+                    model, model_temp, temp_flag, graph = self.models.get_model(self.id+"_"+self.topic_name)
+                    if temp_flag:
+                        logger.info("temp flag true")
+                        model = model_temp
+                    if model is not None:
+                        try:
+                            Xtest = self.processingData.preprocess_data(data, self.num_timesteps, False)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel()
                             test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
@@ -233,9 +270,11 @@ class Prediction(threading.Thread):
                             data = self.processingData.to_dict_with_datetime(test_predictions,
                                                                              datetime.datetime.now(), self.dT_in_seconds, "s")
                             self.q.put(data)
-                        else:
-                            logger.info("prediction  model is none")
-                        logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
+                        except Exception as e:
+                            logger.error(str(e))
+                    else:
+                        logger.info("prediction  model is none")
+                    logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
                     st = time.time() - st
                     ss = self.control_frequency - st
                     if ss < 0:
