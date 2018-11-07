@@ -1,6 +1,27 @@
 
-# Use an official Python runtime as a parent image
-FROM garagon/ipopt:V0.2
+
+###################################################################################################
+# Dockerfile to build ipopt container images
+# Based on Ubuntu
+###################################################################################################
+# Set the base image to Ubuntu
+#FROM ubuntu:16.04
+FROM python:3.6.4-jessie
+# Switch to root for install
+USER root
+
+
+RUN apt-get update -y && apt-get install -y \
+    wget \
+    ca-certificates \
+	gcc \
+	g++ \
+	patch \
+	gfortran \
+	subversion \
+	build-essential \
+	--no-install-recommends \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
@@ -18,17 +39,18 @@ RUN apt-get update -y && apt-get install -y \
 
 RUN pip3 install --upgrade pip
 
+
 RUN pip3 install -U paho-mqtt
 RUN pip3 install -U pyzmq
 
 RUN pip3 install -U senml
 RUN pip3 install -U redis
 
+# Set the working directory to usr/src/app
+#RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 COPY utils /usr/src/app/utils
 COPY IO /usr/src/app/IO
-COPY mock_data /usr/src/app/mock_data
-COPY mockdata.py /usr/src/app/
-
-
+COPY connector /usr/src/app/connector
+COPY connectors.py /usr/src/app/connectors.py
