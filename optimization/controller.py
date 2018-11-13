@@ -22,6 +22,7 @@ from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.InvalidModelException import InvalidModelException
 import logging
+from threading import Event
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -29,13 +30,7 @@ logger = logging.getLogger(__file__)
 
 class OptController(threading.Thread):
 
-    try:
-        name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
-        logger.debug("Name server started: " + str(name_server))
-        dispatch_server = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
-        logger.debug("Dispatch server started: " + str(dispatch_server))
-    except Exception as e:
-        logger.error("new name server error, "+str(e))
+
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser, config, horizon_in_steps, dT_in_seconds):
         #threading.Thread.__init__(self)
@@ -68,6 +63,14 @@ class OptController(threading.Thread):
             logger.error(e)
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
+        try:
+            self.name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
+            logger.debug("Name server started: " + str(self.name_server))
+            self.dispatch_server = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
+            logger.debug("Dispatch server started: " + str(self.dispatch_server))
+        except Exception as e:
+            logger.error("new name server error, " + str(e))
+
         self.output = OutputController(self.output_config)
         self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
                                      self.horizon_in_steps, self.dT_in_seconds)
@@ -87,7 +90,7 @@ class OptController(threading.Thread):
     def Stop(self, id):
         self.input.Stop(id)
         if self.isAlive():
-            self.join()
+            self.join(1)
 
     def exit(self):
         self.name_server.kill()
@@ -130,16 +133,20 @@ class OptController(threading.Thread):
         logger.info("Starting optimization controller")
 
         ###Starts name server, dispatcher server and pyro_mip_server
-        pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
-        logger.debug("Pyro mip server started: "+str(pyro_mip_server))
-        return_msg = "success"
+        try:
+            pyro_mip_server=subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
+            logger.debug("Pyro mip server started: "+str(pyro_mip_server))
+            return_msg = "success"
+        except Exception as e:
+            logger.error(e)
         try:
             ###maps action handles to instances
             action_handle_map={}
 
             #####create a solver
             optsolver = SolverFactory(self.solver_name)
-            optsolver.options["max_iter"]=5000
+            logger.debug("Solver factory: "+str(optsolver))
+            #optsolver.options["max_iter"]=5000
             logger.info("solver instantiated with "+self.solver_name)
 
             ###create a solver manager
@@ -170,6 +177,7 @@ class OptController(threading.Thread):
 
                 # Creating an optimization instance with the referenced model
                 try:
+                    logger.debug("Creating an optimization instance")
                     instance = self.my_class.model.create_instance(data_dict)
                 except Exception as e:
                     logger.error(e)
@@ -177,10 +185,14 @@ class OptController(threading.Thread):
                 logger.info("Instance created with pyomo")
 
                 #logger.info(instance.pprint())
-
+                logger.debug("Name server: " + str(self.name_server))
+                logger.debug("Dispatch server: " + str(self.dispatch_server))
                 action_handle = solver_manager.queue(instance, opt=optsolver)
-                action_handle_map[action_handle] = "myOptimizationModel_1"
+                logger.debug("Solver queue created "+str(action_handle))
+                action_handle_map[action_handle] = str(self.id)
+                logger.debug("Action handle map: "+str(action_handle_map))
                 start_time = time.time()
+                logger.debug("Optimization starting time: "+str(start_time))
                 ###retrieve the solutions
                 for i in range(1):
                     this_action_handle=solver_manager.wait_any()
@@ -243,9 +255,13 @@ class OptController(threading.Thread):
                 count += 1
                 if self.repetition > 0 and count >= self.repetition:
                     break
+
                 logger.info("Optimization thread going to sleep for "+str(self.control_frequency)+" seconds")
                 time_spent = self.update_count()
-                time.sleep(self.control_frequency-time_spent)
+                for i in range(self.control_frequency-time_spent):
+                    time.sleep(1)
+                    if self.stopRequest.isSet():
+                        break
 
             #Closing the pyomo servers
             logger.debug("Deactivating pyro servers")
@@ -253,6 +269,7 @@ class OptController(threading.Thread):
             logger.debug("Pyro servers deactivated: "+str(solver_manager))
             pyro_mip_server.kill()
             logger.debug("Exit pyro-mip-server server")
+            self.exit()
             #If Stop signal arrives it tries to disconnect all mqtt clients
             for key,object in self.output.mqtt.items():
                 object.MQTTExit()
