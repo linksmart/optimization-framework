@@ -44,6 +44,8 @@ RUN pip3 install -U senml
 RUN pip3 install -U redis
 RUN pip3 install -U Theano
 
+RUN pip3 install --upgrade pyomo
+
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
@@ -55,3 +57,4 @@ COPY prediction /usr/src/app/prediction
 COPY swagger_server /usr/src/app/swagger_server
 COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
+
