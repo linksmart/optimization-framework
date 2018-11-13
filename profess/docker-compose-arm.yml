@@ -1,16 +1,17 @@
 version: '3.2'
 services:
-  mosquitto:
-    image: pascaldevink/rpi-mosquitto
-    container_name: "mosquito_S4G"
-    ports:
-      - "1883:1883"
+  #mosquitto:
+    #image: pascaldevink/rpi-mosquitto
+    #container_name: "mosquito_S4G"
+    #ports:
+      #- "1883:1883"
   redis:
     image: redis:latest
     container_name: "redis_S4G"
     command: redis-server
     ports:
       - "6379:6379"
+    restart: "always"
   ofw:
     image: garagon/optimization:arm
     container_name: "ofw"
@@ -18,11 +19,25 @@ services:
       - "8080:8080"
     depends_on:
       - redis
+    volumes:
+      - ./optimization-framework/prediction/resources:/usr/src/app/res
+      - ./optimization-framework/optimization/resources:/usr/src/app/optimization/resources
+      - ./optimization-framework/utils:/usr/src/app/utils
     command: ["python3", "-u", "ofw.py"]
-  mock:
-    image: garagon/optimization:mock
-    container_name: "mock"
-    command: ["python3", "-u", "mockdata.py", "SoC_Value"]
+    restart: "always"
+  ml:
+    image: garagon/optimization:arm_training
+    container_name: "ml"
+    depends_on:
+      - redis
+    volumes:
+      - ./optimization-framework/prediction/resources:/usr/src/app/res
+    command: ["python3", "-u", "mlTraining.py"]
+    restart: "always"
+  #mock:
+    #image: garagon/optimization:mock
+    #container_name: "mock"
+    #command: ["python3", "-u", "mockdata.py", "SoC_Value"]
 
 #volumes:
   #volume-glpsol:
