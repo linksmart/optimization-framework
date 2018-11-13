@@ -28,30 +28,32 @@ class RawLoadDataReceiver(DataReceiver):
         self.count = 0
 
     def on_msg_received(self, payload):
-        data = json.loads(payload)
-        data = RawDataReader.format_data(data)
-        mod_data = []
-        for item in data:
-            dt = datetime.datetime.fromtimestamp(item[0]).replace(second=0, microsecond=0)
-            if self.current_minute is None:
-                self.current_minute = dt
-            logger.info(str(dt)+" "+str(self.current_minute))
-            if dt == self.current_minute:
-                self.sum += item[1]
-                self.count += 1
-            else:
-                logger.info("diff "+str(self.count)+str(self.sum))
-                if self.count > 0:
-                    val = self.sum/self.count
-                    row = [self.current_minute.timestamp(), val]
-                    self.data.append(row)
-                    mod_data.append(row)
-                self.current_minute = dt
-                self.sum = item[1]
-                self.count = 1
-        self.data_update = True
-        self.save_to_file(mod_data)
-        logger.info("raw data size = " + str(len(mod_data)))
+        try:
+            data = json.loads(payload)
+            data = RawDataReader.format_data(data)
+            mod_data = []
+            for item in data:
+                dt = datetime.datetime.fromtimestamp(item[0]).replace(second=0, microsecond=0)
+                if self.current_minute is None:
+                    self.current_minute = dt
+                logger.info(str(dt)+" "+str(self.current_minute))
+                if dt == self.current_minute:
+                    self.sum += item[1]
+                    self.count += 1
+                else:
+                    if self.count > 0:
+                        val = self.sum/self.count
+                        row = [self.current_minute.timestamp(), val]
+                        self.data.append(row)
+                        mod_data.append(row)
+                    self.current_minute = dt
+                    self.sum = item[1]
+                    self.count = 1
+            self.data_update = True
+            self.save_to_file(mod_data)
+            logger.info("raw data size = " + str(len(mod_data)))
+        except Exception as e:
+            logger.error(e)
 
     def save_to_file(self, data):
         try:

@@ -33,7 +33,7 @@ class Model:
     model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
 
     #definition of the load
-    model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
+    model.P_Load = Param(model.T, within=NegativeReals)  # Active power demand
 
 
     ################################################################################################
@@ -65,7 +65,7 @@ class Model:
 
     #Definition of the energy balance in the system
     def con_rule_energy_balance(model,t):
-        return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
+        return 0 == model.P_Load[t] + model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 
     # Generation-feed in balance
     #def con_rule_generation_feedin(model, t):

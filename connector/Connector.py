@@ -23,6 +23,9 @@ class Connector(RecPub):
         self.key_level = int(config.get("KEY_META","level"))
         self.key_separator = config.get("KEY_META","key.separator")
         self.key_map = dict(config.items("KEYS"))
+        self.house = house
+        self.base = senml.SenMLMeasurement()
+        self.base.name = house + "/"
 
     def data_formater(self, data):
         data = json.loads(data)
@@ -73,7 +76,7 @@ class Connector(RecPub):
                 pass
         meas.value = value
         meas.time = timestamp
-        doc = senml.SenMLDocument([meas])
+        doc = senml.SenMLDocument([meas], base=self.base)
         val = doc.to_json()
         val = json.dumps(val)
         return val

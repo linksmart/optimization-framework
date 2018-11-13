@@ -54,13 +54,19 @@ class BaseDataReceiver(DataReceiver, ABC):
                 v = meas.value
                 if not u:
                     u = bu
+                # dont check bn
+                """
                 if bn and n and bn != n:
                     n = bn + n
+                """
                 if not n:
+                    """
                     if not bn:
                         n = self.generic_name
                     else:
                         n = bn
+                    """
+                    n = self.generic_name
                 try:
                     v = self.unit_value_change(v, u)
                     if n not in index.keys():
