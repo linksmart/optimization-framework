@@ -232,20 +232,13 @@ class InputController:
 
     def set_indexing(self, data):
         new_data = {}
-        logger.debug("Data in set_indexing: "+str(data))
-        logger.debug("Type data in set_indexing: " + str(type(data)))
-        for name, values in data.items():
+        for name, value in data.items():
             indexing = self.input_config_parser.get_variable_index(name)
             # default indexing will be set to "index" in baseDataReceiver
-            logger.debug("Indexing result "+str(indexing))
             if indexing == "None":
-                value = values
-                logger.debug("value: "+str(values))
                 if len(value) >= 1:
-                    #k = (value.keys())[0]
-                    for i in range (len(value)):
-                        v = value[i]
-                        logger.debug("v: "+str(v))
+                    if isinstance(value, dict):
+                        v = value[0]  # 0 is the key
                         new_data[name] = {None: v}
         data.update(new_data)
         return data

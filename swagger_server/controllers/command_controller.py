@@ -1,4 +1,5 @@
 import json
+import signal
 import threading
 
 import connexion
@@ -12,6 +13,8 @@ from swagger_server.models.start import Start  # noqa: E501
 from swagger_server.controllers.threadFactory import ThreadFactory
 
 import os, time
+import subprocess
+
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -33,6 +36,8 @@ class CommandController:
         self.running = {}
         self.redisDB = RedisDB()
         self.lock_key = "id_lock"
+        self.name_server_key = "name_server"
+        self.dispatch_server_key = "dispatch_server"
 
     def set(self, id, object):
         self.factory[id] = object
@@ -82,6 +87,7 @@ class CommandController:
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
                                self.repetition, self.solver, id))
 
+        self.start_name_servers()
         logger.info("Thread: " + str(self.get(id)))
         self.get(id).startOptControllerThread()
         logger.debug("Thread started")
@@ -108,6 +114,7 @@ class CommandController:
         if self.factory[id]:
             self.persist_id(id, False, None)
             self.factory[id].stopOptControllerThread()
+            self.stop_name_servers()
             self.set_isRunning(id, False)
             message = "System stopped succesfully"
             logger.debug(message)
@@ -179,6 +186,63 @@ class CommandController:
                 val = json.loads(s)
                 self.start(val["id"], None, val)
 
+    def number_of_active_ids(self):
+        num = 0
+        path = "/usr/src/app/utils/ids_status.txt"
+        if os.path.exists(path):
+            try:
+                if self.redisDB.get_lock(self.lock_key, "start"):
+                    data = []
+                    with open(path, "r") as f:
+                        data = f.readlines()
+                        num = len(data)
+            except Exception as e:
+                logging.error("error reading ids file " + str(e))
+            finally:
+                self.redisDB.release_lock(self.lock_key, "start")
+        return num
+
+    def start_name_servers(self):
+        pid = self.redisDB.get(self.name_server_key)
+        if pid is None:
+            # initializes the name server and dispatcher server for pyomo
+            try:
+                name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
+                logger.debug("Name server started: " + str(name_server) + " pid = "+str(name_server.pid))
+                self.redisDB.set(self.name_server_key, name_server.pid)
+            except Exception as e:
+                logger.error("name server already exists error")
+        pid = self.redisDB.get(self.dispatch_server_key)
+        if pid is None:
+            # initializes the name server and dispatcher server for pyomo
+            try:
+                dispatch_server = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
+                logger.debug("Dispatch server started: " + str(dispatch_server) + " pid = " + str(dispatch_server.pid))
+                self.redisDB.set(self.dispatch_server_key, dispatch_server.pid)
+            except Exception as e:
+                logger.error("dispatch server already exists error")
+
+    def stop_name_servers(self):
+        if self.number_of_active_ids() == 0:
+            pid = self.redisDB.get(self.name_server_key)
+            if pid is not None:
+                # initializes the name server and dispatcher server for pyomo
+                try:
+                    os.killpg(pid, signal.SIGTERM)
+                    logger.debug("Name server stoped : " + str(pid))
+                    self.redisDB.remove(self.name_server_key)
+                except Exception as e:
+                    logger.error("name server kill error")
+            pid = self.redisDB.get(self.dispatch_server_key)
+            if pid is not None:
+                # initializes the name server and dispatcher server for pyomo
+                try:
+                    os.killpg(pid, signal.SIGTERM)
+                    logger.debug("Dispatch server stoped : " + str(pid))
+                    self.redisDB.remove(self.dispatch_server_key)
+                except Exception as e:
+                    logger.error("dispatch server kill error")
+
 
 variable = CommandController()
 variable.get_ids()
@@ -219,27 +283,17 @@ def framework_start(id, startOFW):  # noqa: E501
         dir = os.path.join(os.getcwd(), "utils", str(id))
         if not os.path.exists(dir):
             return "Id not existing"
-        if variable.isRunningExists():
-            logger.debug("isRunning exists")
-            if not variable.get_isRunning(id):
-                try:
-                    variable.start(id, startOFW)
-                    return "System started succesfully"
-                except InvalidModelException as e:
-                    logger.error("Error "+str(e))
-                    return str(e)
-            else:
-                logger.debug("System already running")
-                return "System already running"
+        redis_db = RedisDB()
+        flag = redis_db.get("run:" + id)
+        if flag is not None and flag == "running":
+            return "System already running"
         else:
-            logger.debug("isRunning not created yet")
             try:
                 variable.start(id, startOFW)
                 return "System started succesfully"
             except InvalidModelException as e:
                 logger.error("Error " + str(e))
                 return str(e)
-
     else:
         logger.error("Wrong Content-Type")
         return "Wrong Content-Type"

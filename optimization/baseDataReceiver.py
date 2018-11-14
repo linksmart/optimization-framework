@@ -25,10 +25,8 @@ class BaseDataReceiver(DataReceiver, ABC):
         formated_data = self.add_formated_data(senml_data)
         self.data.update(formated_data)
         self.data_update = True
-        logger.debug("generic data received")
 
     def add_formated_data(self, json_data):
-        logger.debug("add formatted data json: "+str(json_data))
         doc = None
         try:
             doc = senml.SenMLDocument.from_json(json_data)

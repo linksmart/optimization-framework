@@ -36,7 +36,6 @@ class RawLoadDataReceiver(DataReceiver):
                 dt = datetime.datetime.fromtimestamp(item[0]).replace(second=0, microsecond=0)
                 if self.current_minute is None:
                     self.current_minute = dt
-                logger.info(str(dt)+" "+str(self.current_minute))
                 if dt == self.current_minute:
                     self.sum += item[1]
                     self.count += 1

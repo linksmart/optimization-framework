@@ -8,7 +8,6 @@ from IO.redisDB import RedisDB
 from optimization.controller import OptController
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
-import subprocess
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -135,19 +134,10 @@ class ThreadFactory:
                                                                                         self.control_frequency, self.horizon_in_steps,
                                                                                         self.dT_in_seconds)
 
-        #initializes the name server and dispatcher server for pyomo
-        try:
-            self.name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
-            logger.debug("Name server started: " + str(self.name_server))
-            self.dispatch_server = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
-            logger.debug("Dispatch server started: " + str(self.dispatch_server))
-        except Exception as e:
-            logger.error("new name server error, " + str(e))
-
         # Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,
                                  self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
-                                 self.dT_in_seconds, self.name_server,self.dispatch_server)
+                                 self.dT_in_seconds)
 
         ####starts the optimization controller thread
         try:
@@ -166,10 +156,6 @@ class ThreadFactory:
             logger.info("Stopping optimization controller thread")
             self.opt.Stop(self.id)
             logger.info("Optimization controller thread stopped")
-            self.name_server.kill()
-            logger.debug("Exit name server")
-            self.dispatch_server.kill()
-            logger.debug("Exit dispatch server")
             return "Optimization controller thread stopped"
         except Exception as e:
             logger.error(e)
