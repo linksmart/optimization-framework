@@ -32,7 +32,7 @@ class OptController(threading.Thread):
 
 
 
-    def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser, config, horizon_in_steps, dT_in_seconds):
+    def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser, config, horizon_in_steps, dT_in_seconds,name_server,dispatch_server):
         #threading.Thread.__init__(self)
         super(OptController,self).__init__()
         logger.info("Initializing optimization controller")
@@ -51,6 +51,8 @@ class OptController(threading.Thread):
         self.finish_status = False
         self.redisDB = RedisDB()
         self.lock_key = "id_lock"
+        self.name_server=name_server
+        self.dispatch_server=dispatch_server
 
         try:
             #dynamic load of a class
@@ -63,13 +65,6 @@ class OptController(threading.Thread):
             logger.error(e)
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
-        try:
-            self.name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
-            logger.debug("Name server started: " + str(self.name_server))
-            self.dispatch_server = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
-            logger.debug("Dispatch server started: " + str(self.dispatch_server))
-        except Exception as e:
-            logger.error("new name server error, " + str(e))
 
         self.output = OutputController(self.output_config)
         self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
@@ -269,7 +264,7 @@ class OptController(threading.Thread):
             logger.debug("Pyro servers deactivated: "+str(solver_manager))
             pyro_mip_server.kill()
             logger.debug("Exit pyro-mip-server server")
-            self.exit()
+
             #If Stop signal arrives it tries to disconnect all mqtt clients
             for key,object in self.output.mqtt.items():
                 object.MQTTExit()
