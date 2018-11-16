@@ -6,6 +6,8 @@ import connexion
 import re
 import logging
 
+from pyutilib.pyro import shutdown_pyro_components
+
 from IO.redisDB import RedisDB
 from optimization.InvalidModelException import InvalidModelException
 from swagger_server.models.start import Start  # noqa: E501
@@ -84,11 +86,10 @@ class CommandController:
             self.solver = dict_object["solver"]
 
 
-        self.start_name_servers()
-
+        #self.start_name_servers()
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
-                               self.repetition, self.solver, id))
+                               self.repetition, self.solver, id, self.number_of_active_ids()))
 
 
         logger.info("Thread: " + str(self.get(id)))
@@ -118,6 +119,7 @@ class CommandController:
             self.persist_id(id, False, None)
             self.factory[id].stopOptControllerThread()
             #self.stop_name_servers()
+            #self.stop_pyro_servers()
             self.set_isRunning(id, False)
             message = "System stopped succesfully"
             logger.debug(message)
@@ -271,6 +273,27 @@ class CommandController:
                 except Exception as e:
                     logger.error("dispatch server kill error")
 
+    def stop_pyro_servers(self):
+        logger.info("stop pyro server init")
+        logger.debug("active ids = "+str(self.number_of_active_ids()))
+        count = 0
+        if self.number_of_active_ids() == 0:
+            keys = self.redisDB.get_keys_for_pattern("pyro_mip_pid:*")
+            if keys is not None:
+                for key in keys:
+                    logger.info("key = "+str(key))
+                    pid = int(self.redisDB.get(key))
+                    os.killpg(pid, signal.SIGTERM)
+                    count +=1
+                    logger.info("pyro mip stopped")
+                active_pyro_servers = int(self.redisDB.get("pyro_mip", 0))
+                active_pyro_servers -= count
+                if active_pyro_servers < 0:
+                    active_pyro_servers = 0
+                self.redisDB.set("pyro_mip", active_pyro_servers)
+            else:
+                logger.info("keys is none")
+            #shutdown_pyro_components()
 
 variable = CommandController()
 variable.get_ids()

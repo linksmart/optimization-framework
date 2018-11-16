@@ -5,6 +5,8 @@
 import configparser
 import  os, logging
 import signal, sys
+import subprocess
+
 
 #import swagger_server.__main__ as webserver
 import time
@@ -71,6 +73,11 @@ def setup():
     subPort = config.get("IO", "zmq.sub.port")
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
+
+    ns = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
+    ds = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
+    logger.info("ns = "+str(ns.pid))
+    logger.info("ds = "+str(ds.pid))
 
 
 def clear_redis():

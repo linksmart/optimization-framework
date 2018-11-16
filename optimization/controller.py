@@ -17,6 +17,8 @@ from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
 
+from pyutilib.pyro import shutdown_pyro_components
+
 from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
@@ -118,10 +120,6 @@ class OptController(threading.Thread):
         solver_manager = None
         return_msg = "success"
         try:
-            ###pyro_mip_server
-            pyro_mip_server = subprocess.Popen(["/usr/local/bin/pyro_mip_server"])
-            logger.debug("Pyro mip server started: " + str(pyro_mip_server))
-
             ###maps action handles to instances
             action_handle_map = {}
 
@@ -137,7 +135,7 @@ class OptController(threading.Thread):
             if solver_manager is None:
                 logger.error("Failed to create a solver manager")
             else:
-                logger.debug("Solver manager created: " + str(solver_manager))
+                logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
 
             count = 0
             logger.info("This is the id: " + self.id)
@@ -157,15 +155,23 @@ class OptController(threading.Thread):
                 # instance = self.my_class.model.create_instance(self.data_path)
                 logger.info("Instance created with pyomo")
 
-                # logger.info(instance.pprint())
-                action_handle = solver_manager.queue(instance, opt=optsolver)
-                logger.debug("Solver queue created " + str(action_handle))
-                action_handle_map[action_handle] = str(self.id)
-                logger.debug("Action handle map: " + str(action_handle_map))
-                start_time = time.time()
-                logger.debug("Optimization starting time: " + str(start_time))
-
-                logger.debug("pyro mip server "+str(pyro_mip_server.pid))
+                run_count = 0
+                while True:
+                    try:
+                        # logger.info(instance.pprint())
+                        action_handle = solver_manager.queue(instance, opt=optsolver)
+                        logger.debug("Solver queue created " + str(action_handle))
+                        action_handle_map[action_handle] = str(self.id)
+                        logger.debug("Action handle map: " + str(action_handle_map))
+                        start_time = time.time()
+                        logger.debug("Optimization starting time: " + str(start_time))
+                        break
+                    except Exception as e:
+                        logger.error("exception "+str(e))
+                        if run_count == 5:
+                            raise e
+                        time.sleep(5)
+                    run_count += 1
 
                 ###retrieve the solutions
                 for i in range(1):
@@ -232,9 +238,12 @@ class OptController(threading.Thread):
         finally:
             # Closing the pyomo servers
             logger.debug("Deactivating pyro servers")
+            #solver_manager.release_server()
+            #solver_manager.shutdown_workers()
             solver_manager.deactivate()
             logger.debug("Pyro servers deactivated: " + str(solver_manager))
-            pyro_mip_server.kill()
+            #shutdown_pyro_components(num_retries = 0)
+            #pyro_mip_server.terminate()
             logger.debug("Exit pyro-mip-server server")
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
