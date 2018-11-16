@@ -83,11 +83,14 @@ class CommandController:
             self.repetition = dict_object["repetition"]
             self.solver = dict_object["solver"]
 
+
+        self.start_name_servers()
+
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
                                self.repetition, self.solver, id))
 
-        self.start_name_servers()
+
         logger.info("Thread: " + str(self.get(id)))
         self.get(id).startOptControllerThread()
         logger.debug("Thread started")
@@ -114,7 +117,7 @@ class CommandController:
         if self.factory[id]:
             self.persist_id(id, False, None)
             self.factory[id].stopOptControllerThread()
-            self.stop_name_servers()
+            #self.stop_name_servers()
             self.set_isRunning(id, False)
             message = "System stopped succesfully"
             logger.debug(message)
@@ -203,24 +206,49 @@ class CommandController:
         return num
 
     def start_name_servers(self):
+        logger.debug("Starting name_server and dispatch_server")
         pid = self.redisDB.get(self.name_server_key)
+        logger.debug("PID name_server: "+str(pid))
         if pid is None:
             # initializes the name server and dispatcher server for pyomo
             try:
-                name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
-                logger.debug("Name server started: " + str(name_server) + " pid = "+str(name_server.pid))
-                self.redisDB.set(self.name_server_key, name_server.pid)
+                logger.debug("Trying to start name_server")
+                self.name_server = subprocess.Popen(["/usr/local/bin/pyomo_ns"])#,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                #out_name_server, out_name_server_err = self.name_server.communicate()
+                #logger.debug("Name_server output: " + str(out_name_server)+" Name_server_err output: " + str(out_name_server_err))
+                #self.name_server.stdout.close()
+                logger.debug("Name server started: " + str(self.name_server) + " pid = "+str(self.name_server.pid))
+                self.redisDB.set(self.name_server_key, self.name_server.pid)
             except Exception as e:
                 logger.error("name server already exists error")
+        else:
+            logger.debug("Name_server already running")
+            proc1=subprocess.Popen(['ps','aux'], stdout=subprocess.PIPE)
+            out=proc1.communicate()
+            logger.debug("Proc1 output1: "+str(out))
+            proc1 = subprocess.Popen(['ps', '-p',str(pid)], stdout=subprocess.PIPE)
+            out = proc1.communicate()
+            logger.debug("Proc1 output2: " + str(out))
+            #out_name_server, out_name_server_err = self.name_server.communicate()
+            #logger.debug("Name_server output: " + str(out_name_server) + " Name_server_err output: " + str(out_name_server_err))
+            #self.name_server.stdout.close()
+
         pid = self.redisDB.get(self.dispatch_server_key)
+        logger.debug("PID dispatch_server: " + str(pid))
         if pid is None:
             # initializes the name server and dispatcher server for pyomo
             try:
+                logger.debug("Trying to start dispatch_server")
                 dispatch_server = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
                 logger.debug("Dispatch server started: " + str(dispatch_server) + " pid = " + str(dispatch_server.pid))
                 self.redisDB.set(self.dispatch_server_key, dispatch_server.pid)
             except Exception as e:
                 logger.error("dispatch server already exists error")
+        else:
+            logger.debug("Dispatch_server already running")
+            proc1 = subprocess.Popen(['ps', '-p',str(pid)], stdout=subprocess.PIPE)
+            out = proc1.communicate()
+            logger.debug("Proc1 output3: " + str(out))
 
     def stop_name_servers(self):
         if self.number_of_active_ids() == 0:
