@@ -42,6 +42,34 @@ class ProcessingData:
             j -= step
         return new_data
 
+    def expand_and_resample(self, raw_data, dT):
+        step = float(dT)
+        j = len(raw_data)
+        new_data = []
+        sec_diff = 0
+        current_step = 0
+        first = True
+        if j > 1:
+            while j > 0:
+                if current_step <= 0:
+                    j -= 1
+                    start_date = datetime.datetime.fromtimestamp(raw_data[j][0])
+                    start_val = float(raw_data[j][1])
+                    end_date = datetime.datetime.fromtimestamp(raw_data[j - 1][0])
+                    end_val = float(raw_data[j - 1][1])
+                    sec_diff = start_date - end_date
+                    sec_diff = sec_diff.total_seconds()
+                    current_step = sec_diff
+                if current_step >= step or first:
+                    ratio = float(current_step / sec_diff)
+                    sec = sec_diff - current_step
+                    date = start_date - datetime.timedelta(seconds=sec)
+                    val = end_val + (start_val - end_val) * ratio
+                    new_data.append([date.timestamp(), val])
+                    first = False
+                current_step -= step
+        return new_data
+
     def preprocess_data(self, raw_data, num_timesteps, train):
         # Loading Data
         latest_timestamp = raw_data[-1:][0][0]

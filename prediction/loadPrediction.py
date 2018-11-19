@@ -142,7 +142,7 @@ class Training(threading.Thread):
                     # atmost last 5 days' data
                     data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
                     logger.debug("raw data ready " + str(len(data)))
-                    data = self.processingData.resample(data, self.dT_in_seconds)
+                    data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
                     logger.debug("resampled data ready " + str(len(data)))
                     if len(data) > self.min_training_size:
                         self.trained = True
@@ -233,8 +233,9 @@ class Prediction(threading.Thread):
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 logger.debug("len data = " + str(len(data)))
-                data = self.processingData.resample(data, self.dT_in_seconds)
+                data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
                 logger.debug("len resample data = " + str(len(data)))
+                logger.info(data)
                 if len(data) > 0:
                     data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
                     logger.debug("len appended data = " + str(len(data)))
