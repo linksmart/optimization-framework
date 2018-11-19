@@ -19,7 +19,7 @@ logger = logging.getLogger(__file__)
 
 class ThreadFactory:
 
-    def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id, num_active_ids):
+    def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id):
         self.model_name = model_name
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -29,8 +29,6 @@ class ThreadFactory:
         self.id = id
         self.redisDB = RedisDB()
         self.pyro_mip_server = None
-        self.num_active_ids = num_active_ids
-
 
     def getFilePath(self, dir, file_name):
         # print(os.path.sep)
@@ -141,7 +139,6 @@ class ThreadFactory:
                                                                                         self.control_frequency, self.horizon_in_steps,
                                                                                         self.dT_in_seconds)
 
-        self.start_pryo_mip_server()
         # Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,
                                  self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
@@ -171,12 +168,3 @@ class ThreadFactory:
 
     def is_running(self):
         return not self.opt.finish_status
-
-    def start_pryo_mip_server(self):
-        active_pyro_servers = int(self.redisDB.get("pyro_mip",0))
-        if active_pyro_servers <= self.num_active_ids:
-            ###pyro_mip_server
-            self.pyro_mip_server = subprocess.Popen(["/usr/local/bin/pyro_mip_server"], preexec_fn=os.setsid)
-            logger.debug("Pyro mip server started: " + str(self.pyro_mip_server)+ " "+str(self.pyro_mip_server.pid))
-            self.redisDB.set("pyro_mip", active_pyro_servers+1)
-            self.redisDB.set("pyro_mip_pid:"+str(self.pyro_mip_server.pid), self.pyro_mip_server.pid)

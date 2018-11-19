@@ -74,12 +74,6 @@ def setup():
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
 
-    ns = subprocess.Popen(["/usr/local/bin/pyomo_ns"])
-    ds = subprocess.Popen(["/usr/local/bin/dispatch_srvr"])
-    logger.info("ns = "+str(ns.pid))
-    logger.info("ds = "+str(ds.pid))
-
-
 def clear_redis():
     logger.info("reset redis")
     from IO.redisDB import RedisDB
