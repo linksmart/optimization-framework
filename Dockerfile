@@ -64,7 +64,8 @@ RUN pip3 install -U Theano
 #ENTRYPOINT ["python3", "prediction/training/pyroAdapter.py"]
 #ENTRYPOINT ["python3", "webServices/webcontroller.py"]
 
-pip3 install --upgrade pyomo
+RUN pip3 install --upgrade pyomo
+#RUN pip3 install -U pyomo.extras
 
 WORKDIR /usr/src/app
 
