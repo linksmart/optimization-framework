@@ -72,20 +72,18 @@ class DataReceiver(ABC):
     def get_internal_channel_params(self):
         if self.channel == "MQTT":
             topic_qos = []
-            for topic in self.topic_params:
-                for k, v in topic.items():
-                    if k == "topic":
-                        topic_qos.append((v + "_" + self.id,1))
-                    elif k == "mqtt.port":
-                        self.port = v
+            for k, v in self.topic_params.items():
+                if k == "topic":
+                    topic_qos.append((v + "_" + self.id,1))
+                elif k == "mqtt.port":
+                    self.port = v
             self.host = self.config.get("IO", "mqtt.host")
             return topic_qos
         elif self.channel == "ZMQ":
             topics = []
-            for topic in self.topic_params:
-                for k, v in topic.items():
-                    if k == "topic":
-                        topics.append(v + "_" + self.id)
+            for k, v in self.topic_params.items():
+                if k == "topic":
+                    topics.append(v + "_" + self.id)
             self.port = self.config.get("IO", "zmq.sub.port")
             self.host = self.config.get("IO", "zmq.host")
             return topics

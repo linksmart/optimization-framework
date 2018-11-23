@@ -159,7 +159,7 @@ class ThreadFactory:
             for name, obj in self.non_prediction_threads.items():
                 obj.Stop()
             logger.info("Stopping optimization controller thread")
-            self.opt.Stop(self.id)
+            self.opt.Stop()
             logger.info("Optimization controller thread stopped")
             return "Optimization controller thread stopped"
         except Exception as e:

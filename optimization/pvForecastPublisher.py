@@ -11,11 +11,14 @@ import threading
 import time
 from queue import Queue
 
+from senml import senml
+
 from IO.dataPublisher import DataPublisher
 from IO.radiation import Radiation
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
+
 
 class PVForecastPublisher(DataPublisher):
 
@@ -29,6 +32,7 @@ class PVForecastPublisher(DataPublisher):
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
         self.pv_thread.start()
         super().__init__(True, internal_topic_params, config, control_frequency, id)
+        self.topic = "P_PV"
 
     def get_pv_data_from_source(self, radiation, q):
         """PV Data fetch thread. Runs at 23:30 every day"""
@@ -43,71 +47,10 @@ class PVForecastPublisher(DataPublisher):
             except Exception as e:
                 logger.error(e)
 
-    def current_time(self, unit):
-        date = datetime.datetime.now()
-        result = None
-        if unit == "h":
-            currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour, 0) + \
-                datetime.timedelta(hours=1)
-            result = currentHour.hour
-        elif unit == "m":
-            currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour, date.minute) + \
-                          datetime.timedelta(minutes=1)
-            result = currentHour.minute
-        elif unit == "sec":
-            currentHour = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour,
-                                            date.minute, date.second) + \
-                          datetime.timedelta(seconds=1)
-            result = currentHour.second
-        return int(result)
-
     def get_delay_time(self, hour, min):
         date = datetime.datetime.now()
         requestedTime = datetime.datetime(datetime.datetime.now().year, date.month, date.day, hour, min, 0)
         return requestedTime.timestamp() - time.time()
-
-    def extract_1day_data(self):
-        currenthr = self.current_time("h")
-        i = 0
-        flag = False
-        data = {}
-        for row in self.pv_data:
-            date = row["date"]
-            hr = int(date.split(" ")[1].split(":")[0])
-            if currenthr == hr:
-                flag = True
-            if flag and i < 24:
-                data[i] = float(row["pv_output"])
-                i = i + 1
-            if i > 23:
-                break
-        if not data:
-            return None
-        else:
-            return json.dumps({"P_PV": data})
-
-    def extract_horizon_data(self):
-        if len(self.pv_data) > 0:
-            date = datetime.datetime.now()
-            closest_date_data = min(self.pv_data,
-                                    key=lambda pv: abs(datetime.datetime.strptime(pv["date"], "%Y-%m-%d %H:%M:%S") - date))
-            i = 0
-            data = {}
-            flag = False
-            for row in self.pv_data:
-                if row["date"] == closest_date_data["date"]:
-                   flag = True
-                if flag and i < self.horizon_in_steps:
-                    data[i] = float(row["pv_output"])
-                    i = i + 1
-                if i > self.horizon_in_steps - 1:
-                    break
-            if not data:
-                return None
-            else:
-                return json.dumps({"P_PV": data})
-        else:
-            return json.dumps({"P_PV": {}})
 
     def get_data(self):
         #  check if new data is available
@@ -119,36 +62,35 @@ class PVForecastPublisher(DataPublisher):
             except Exception:
                 logger.debug("Queue empty")
         logger.debug("extract pv data")
-        #data = self.extract_1day_data()
         data = self.extract_horizon_data()
         return data
-        #return self.sample_data()
 
-    def sample_data(self):
-        data = {
-                0:0,
-                1:0,
-                2: 0,
-                3:0,
-                4:0,
-                5:0,
-                6:0,
-                7:0,
-                8:1.13248512,
-                9:3.016735616,
-                10:4.823979947,
-                11:6.329861639,
-                12:7.06663104,
-                13:7.42742784,
-                14: 7.420178035,
-                15:7.077290784,
-                16:5.99361984,
-                17:4.036273408,
-                18:1.462618829,
-                19: 0,
-                20:0,
-                21:0,
-                22:0,
-                23:0
-        }
-        return json.dumps({"P_PV": data})
+    def extract_horizon_data(self):
+        meas = []
+        if len(self.pv_data) > 0:
+            date = datetime.datetime.now()
+            closest_date_data = min(self.pv_data,
+                                    key=lambda pv: abs(
+                                        datetime.datetime.strptime(pv["date"], "%Y-%m-%d %H:%M:%S") - date))
+            i = 0
+            flag = False
+            for row in self.pv_data:
+                if row["date"] == closest_date_data["date"]:
+                    flag = True
+                if flag and i < self.horizon_in_steps:
+                    meas.append(self.get_senml_meas(float(row["pv_output"]), datetime.datetime.strptime(row["date"], "%Y-%m-%d %H:%M:%S")))
+                    i = i + 1
+                if i > self.horizon_in_steps - 1:
+                    break
+        doc = senml.SenMLDocument(meas)
+        val = doc.to_json()
+        return json.dumps(val)
+
+    def get_senml_meas(self, value, time):
+        if not isinstance(time, float):
+            time = float(time.timestamp())
+        meas = senml.SenMLMeasurement()
+        meas.time = time
+        meas.value = value
+        meas.name = self.topic
+        return meas
