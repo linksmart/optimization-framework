@@ -7,7 +7,7 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy the current directory contents into the container usr/src/app
-COPY requirements.txt /usr/src/app/
+COPY mock_data/docker/requirements-mock-arm.txt /usr/src/app/
 
 # #new addition
 RUN apt-get autoclean
@@ -30,5 +30,5 @@ COPY utils /usr/src/app/utils
 COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
 COPY mockdata.py /usr/src/app/
-
+COPY utils/default/ConfigFile.properties /usr/src/app/utils/ConfigFile.properties
 

@@ -15,7 +15,7 @@ class Model:
     # model.Price_Forecast=Param(model.T)                             #Electric price forecast
 
     # definition of the energy storage system
-    model.ESS_Min_SoC = Param(within=PositiveReals)  # Minimum SoC of ESSs
+    model.ESS_Min_SoC = Param(within=NonNegativeReals)  # Minimum SoC of ESSs
     model.ESS_Max_SoC = Param(within=PositiveReals)  # Maximum SoC of ESSs
     model.SoC_Value = Param(within=PositiveReals)
     model.ESS_Capacity = Param(within=PositiveReals)  # Storage Capacity of ESSs

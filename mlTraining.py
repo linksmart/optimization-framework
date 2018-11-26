@@ -47,6 +47,7 @@ def clear_redis():
     from IO.redisDB import RedisDB
     redisDB = RedisDB()
     redisDB.reset()
+    redisDB.set("time", time.time())
 
 if __name__ == '__main__':
     try:

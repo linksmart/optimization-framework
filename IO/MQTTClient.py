@@ -6,7 +6,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 class MQTTClient:
-    def __init__(self, host, mqttPort, client_id, keepalive=60):
+    def __init__(self, host, mqttPort, client_id, keepalive=60, username=None, password=None, ca_cert_path=None, set_insecure=False):
         self.host =host
         self.port = int(mqttPort)
         self.keepalive=keepalive
@@ -15,13 +15,20 @@ class MQTTClient:
         self.callback_function = None
         self.client_id = client_id
         self.client = mqtt.Client(client_id)
-        #client.username_pw_set("<<tenant>>/<<username>>", "<<password>>")
+        if username is not None and password is not None:
+            logger.debug("u "+username+" p "+password)
+            self.client.username_pw_set(username, password)
+        if ca_cert_path is not None and len(ca_cert_path) > 0:
+            logger.debug("ca " + ca_cert_path)
+            self.client.tls_set(ca_certs=ca_cert_path)
+            logger.debug("insec "+str(set_insecure))
+            self.client.tls_insecure_set(set_insecure)
         self.client.on_message = self.on_message
         self.client.on_publish = self.on_publish
         self.client.on_connect = self.on_connect
         self.client.on_subscribe = self.on_subscribe
 
-        logger.info("Trying to connect to the MQTT broker")
+        logger.info("Trying to connect to the MQTT broker "+str(self.host)+" "+str(self.port))
         try:
             self.client.connect(self.host, self.port, self.keepalive)
 

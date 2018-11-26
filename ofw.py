@@ -6,6 +6,7 @@ import configparser
 import  os, logging
 import signal, sys
 import subprocess
+import shutil
 
 
 #import swagger_server.__main__ as webserver
@@ -57,6 +58,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def setup():
+    shutil.copyfile("/usr/src/app/utils/default/ConfigFile.properties", "/usr/src/app/utils/ConfigFile.properties")
     clear_redis()
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -73,6 +75,8 @@ def setup():
     subPort = config.get("IO", "zmq.sub.port")
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
+
+
 
 def clear_redis():
     logger.info("reset redis")
