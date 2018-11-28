@@ -155,6 +155,7 @@ class ThreadFactory:
         try:
             # stop as per ID
             for name, obj in self.prediction_threads.items():
+                self.redisDB.remove("train:" + self.id + ":" + name)
                 obj.Stop()
             for name, obj in self.non_prediction_threads.items():
                 obj.Stop()

@@ -15,8 +15,8 @@ logger = logging.getLogger(__file__)
 
 class PredictModel:
 
-    def __init__(self):
-        pass
+    def __init__(self, callback_stop_request):
+        self.callback_stop_request = callback_stop_request
 
     def predict(self, model, Xvals, model_batch_size):
         # Predicting for the test data
@@ -35,6 +35,8 @@ class PredictModel:
         input_data = Xvals
         prediction = np.zeros(length)
         for i in range(length):
+            if self.callback_stop_request():
+                break
             """calls predict n times to predict n points, use the prev prediction to predict next value"""
             with graph.as_default():
                 pred = self.predict(model, Xvals, model_batch_size)

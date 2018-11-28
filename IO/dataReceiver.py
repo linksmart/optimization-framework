@@ -154,6 +154,8 @@ class DataReceiver(ABC):
         self.stop_request = True
         if self.channel == "MQTT":
             self.mqtt.MQTTExit()
+        elif self.channel == "ZMQ":
+            self.zmq.stop()
         logger.info("InputController safe exit")
 
     def get_zmq_msg(self, clearData):

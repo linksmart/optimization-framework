@@ -74,7 +74,7 @@ class DataPublisher(ABC,threading.Thread):
         elif self.channel == "ZMQ":
             self.zmq.stop()
         if self.isAlive():
-            self.join()
+            self.join(4)
         logger.info("data publisher thread exit")
 
     def run(self):
