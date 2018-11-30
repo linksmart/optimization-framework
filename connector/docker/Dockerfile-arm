@@ -33,4 +33,4 @@ COPY utils /usr/src/app/utils
 COPY IO /usr/src/app/IO
 COPY connector /usr/src/app/connector
 COPY connectors.py /usr/src/app/connectors.py
-COPY utils/default/ConfigFile.properties /usr/src/app/utils/ConfigFile.properties
+COPY config /usr/src/app/config

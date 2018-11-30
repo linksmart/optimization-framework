@@ -58,15 +58,15 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def setup():
-    shutil.copyfile("/usr/src/app/utils/default/ConfigFile.properties", "/usr/src/app/utils/ConfigFile.properties")
+    config_path = "/usr/src/app/utils/ConfigFile.properties"
+    if not os.path.exists(config_path):
+        shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
     clear_redis()
-
     signal.signal(signal.SIGINT, signal_handler)
     # Creating an object of the configuration file (standard values)
     try:
         config = configparser.RawConfigParser()
-        data_file = os.path.join("/usr/src/app", "utils", "ConfigFile.properties")
-        config.read(data_file)
+        config.read(config_path)
     except Exception as e:
         logger.error(e)
 

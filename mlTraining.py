@@ -11,6 +11,8 @@ import os
 
 import time
 
+import shutil
+
 from IO.redisDB import RedisDB
 from prediction.loadPrediction import LoadPrediction
 
@@ -24,7 +26,6 @@ training_threads = {}
 def check_training(config):
     while True:
         keys = redisDB.get_keys_for_pattern("train:*")
-        logger.debug(keys)
         if keys is not None:
             keys_union = set(training_threads.keys()).union(keys)
             for key in keys_union:
@@ -51,11 +52,13 @@ def clear_redis():
     redisDB.set("time", time.time())
 
 if __name__ == '__main__':
+    config_path = "/usr/src/app/utils/ConfigFile.properties"
+    if not os.path.exists(config_path):
+        shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
     try:
         clear_redis()
         config = configparser.RawConfigParser()
-        data_file = os.path.join("/usr/src/app", "utils", "ConfigFile.properties")
-        config.read(data_file)
+        config.read(config_path)
         check_training(config)
     except Exception as e:
         logger.error(e)

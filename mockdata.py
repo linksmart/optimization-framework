@@ -11,6 +11,8 @@ import os
 
 import sys
 
+import shutil
+
 from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
 from mock_data.mockLoadDataPublisher import MockLoadDataPublisher
 from mock_data.mockSoCDataPublisher import MockSoCDataPublisher
@@ -103,10 +105,12 @@ if __name__ == '__main__':
         else:
             generic_topic_list.append(topic)
     config = None
+    config_path = "/usr/src/app/utils/ConfigFile.properties"
+    if not os.path.exists(config_path):
+        shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
     try:
         config = configparser.RawConfigParser()
-        data_file = os.path.join("/usr/src/app", "utils", "ConfigFile.properties")
-        config.read(data_file)
+        config.read(config_path)
     except Exception as e:
         logger.error(e)
 

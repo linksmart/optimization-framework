@@ -24,7 +24,7 @@ class PVForecastPublisher(DataPublisher):
 
     def __init__(self, internal_topic_params, config, id, location, maxPV, control_frequency, horizon_in_steps, dT_in_seconds):
         self.pv_data = {}
-        radiation = Radiation(location, maxPV, dT_in_seconds)
+        radiation = Radiation(location, maxPV, dT_in_seconds, config)
         self.q = Queue(maxsize=0)
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps

@@ -47,9 +47,9 @@ class SolarRadiation:
     Radiation Service that collects data and grep the next 48h
     """
     @staticmethod
-    def get_rad(city, maxPV):
+    def get_rad(city, maxPV, googleKey):
         rad_data = []
-        coord = SolarRadiation.get_coordinate(city)
+        coord = SolarRadiation.get_coordinate(city, googleKey)
         logger.info("coord "+str(coord))
         rad = requests.get("http://re.jrc.ec.europa.eu/pvgis5/seriescalc.php?lat=" +
                            "{:.3f}".format(coord["lat"]) + "&lon=" + "{:.3f}".format(coord['lng']) + "&raddatabase=" +
@@ -114,18 +114,15 @@ class SolarRadiation:
         return new_rad
 
     @staticmethod
-    def get_coordinate(city):
+    def get_coordinate(city, googleKey):
         """
         Get geocoordinate from City name
         :param city:
         :return: Union[Type[JSONDecoder], Any]
         """
         try:
-            config = configparser.RawConfigParser()
-            config.read("utils/ConfigFile.properties")
-            googlekey = config.get("SolverSection", "googleapikey")
             request = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + city + "&key=" +
-                                   googlekey)
+                                   googleKey)
             text = request.json()
             return text["results"][0]["geometry"]["location"]
         except KeyError:
@@ -134,7 +131,7 @@ class SolarRadiation:
 
 class Radiation:
 
-    def __init__(self, city, maxPV, dT_in_seconds):
+    def __init__(self, city, maxPV, dT_in_seconds, config):
         self.data = {}
         self.city = city
         self.maxPV = maxPV
@@ -144,9 +141,10 @@ class Radiation:
         if self.dT_in_seconds == 3600:
             self.hours = True
         self.step = float(self.dT_in_seconds/3600.0)
+        self.googleKey = config.get("SolverSection", "googleapikey")
 
     def get_data(self):
-        we = SolarRadiation.get_rad(self.city, self.maxPV)
+        we = SolarRadiation.get_rad(self.city, self.maxPV, self.googleKey)
         if self.hours:
             jsh = json.dumps([wea.__dict__ for wea in we], default=str)
             return jsh

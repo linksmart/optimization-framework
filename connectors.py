@@ -9,6 +9,8 @@ import logging
 
 import os
 
+import shutil
+
 from connector.Connector import Connector
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -16,11 +18,13 @@ logger = logging.getLogger(__file__)
 
 if __name__ == '__main__':
     config = None
+    config_path = "/usr/src/app/connector/resources/connectorConfig.properties"
+    if not os.path.exists(config_path):
+        shutil.copyfile("/usr/src/app/config/connectorConfig.properties", config_path)
     try:
         config = configparser.ConfigParser()
         config.optionxform = str
-        data_file = os.path.join("/usr/src/app", "connector/resources", "connectorConfig.properties")
-        config.read(data_file)
+        config.read(config_path)
     except Exception as e:
         logger.error(e)
 
