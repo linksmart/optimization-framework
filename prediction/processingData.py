@@ -116,7 +116,7 @@ class ProcessingData:
                                                                                           0:sp], y_train_reshaped[sp:]
             # logger.debug(str(Xtrain.shape) + " " + str(Xtest.shape) + " " + str(Ytrain.shape) + " " + str(Ytest.shape))
             # TODO: check the capacity of RPi to operate with more data size
-            return Xtrain[0:1000], Xtest[0:500], Ytrain[0:1000], Ytest[0:500]
+            return Xtrain[0:10000], Ytrain[0:10000]
         else:
             Xtest = x_train_reshaped[-1:]
             logger.debug(str(Xtest.shape))

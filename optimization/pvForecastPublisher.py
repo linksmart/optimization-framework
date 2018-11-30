@@ -49,8 +49,10 @@ class PVForecastPublisher(DataPublisher):
 
     def get_delay_time(self, hour, min):
         date = datetime.datetime.now()
-        requestedTime = datetime.datetime(datetime.datetime.now().year, date.month, date.day, hour, min, 0)
-        return requestedTime.timestamp() - time.time()
+        requestedTime = datetime.datetime(date.year, date.month, date.day, hour, min, 0)
+        if requestedTime < date:
+            requestedTime = requestedTime + datetime.timedelta(days=1)
+        return requestedTime.timestamp() - date.timestamp()
 
     def get_data(self):
         #  check if new data is available

@@ -160,6 +160,7 @@ class OptController(threading.Thread):
                         # logger.info(instance.pprint())
                         action_handle = solver_manager.queue(instance, opt=optsolver)
                         logger.debug("Solver queue created " + str(action_handle))
+                        logger.debug("solver queue actions = "+ str(solver_manager.num_queued()))
                         action_handle_map[action_handle] = str(self.id)
                         logger.debug("Action handle map: " + str(action_handle_map))
                         start_time = time.time()
@@ -175,8 +176,12 @@ class OptController(threading.Thread):
                 ###retrieve the solutions
                 for i in range(1):
                     this_action_handle = solver_manager.wait_any()
-                    self.solved_name = action_handle_map[this_action_handle]
                     self.results = solver_manager.get_results(this_action_handle)
+                    logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                    if this_action_handle in action_handle_map.keys():
+                        self.solved_name = action_handle_map.pop(this_action_handle)
+                    else:
+                        self.solved_name = None
 
                 start_time = time.time() - start_time
                 logger.info("Time to run optimizer = " + str(start_time) + " sec.")

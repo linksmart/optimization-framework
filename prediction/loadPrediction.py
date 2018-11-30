@@ -149,7 +149,7 @@ class Training(threading.Thread):
                     if len(data) > self.min_training_size:
                         self.trained = True
                         logger.info("start training")
-                        Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, True)
+                        Xtrain, Ytrain = self.processingData.preprocess_data(data, self.num_timesteps, True)
 
                         # preprocess data
                         try:
