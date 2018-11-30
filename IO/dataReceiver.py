@@ -34,6 +34,7 @@ class DataReceiver(ABC):
         self.channel = "MQTT"
         self.topics = None
         self.port = None
+        self.host_params = {}
         self.id = id
         self.section = section
         if self.section is None:
@@ -48,17 +49,30 @@ class DataReceiver(ABC):
     def setup(self):
         if self.internal:
             self.channel = self.config.get("IO", "channel")
-            self.topics = self.get_internal_channel_params()
+            self.topics, self.host_params = self.get_internal_channel_params()
         else:
-            self.topics, self.host = self.get_external_channel_params()
+            self.topics, self.host, self.host_params = self.get_external_channel_params()
 
     def get_external_channel_params(self):
         topic_qos = []
+        host_params = {}
         # read from config
         if "sub.mqtt.host" in dict(self.config.items(self.section)):
             host = self.config.get(self.section, "sub.mqtt.host")
         else:
             host = self.config.get("IO", "mqtt.host")
+        host_params["username"] = self.config.get("IO", "mqtt.username", fallback=None)
+        host_params["password"] = self.config.get("IO", "mqtt.password", fallback=None)
+        host_params["ca_cert_path"] = self.config.get("IO", "mqtt.ca.cert.path", fallback=None)
+        host_params["insecure_flag"] = bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False))
+        if "mqtt.username" in dict(self.config.items(self.section)):
+            host_params["username"] = self.config.get(self.section, "mqtt.username", fallback=None)
+        if "mqtt.password" in dict(self.config.items(self.section)):
+            host_params["password"] = self.config.get(self.section, "mqtt.password", fallback=None)
+        if "mqtt.ca.cert.path" in dict(self.config.items(self.section)):
+            host_params["ca_cert_path"] = self.config.get(self.section, "mqtt.ca.cert.path", fallback=None)
+        if "mqtt.insecure.flag" in dict(self.config.items(self.section)):
+            host_params["insecure_flag"] = bool(self.config.get(self.section, "mqtt.insecure.flag", fallback=False))
         qos = 0
         if self.topic_params:
             topic = self.topic_params["topic"]
@@ -66,29 +80,42 @@ class DataReceiver(ABC):
                 host = self.topic_params["host"]
             if "qos" in self.topic_params.keys():
                 qos = self.topic_params["qos"]
+            if "mqtt.port" in self.topic_params.keys():
+                self.port = self.topic_params["mqtt.port"]
+            if "username" in self.topic_params.keys():
+                host_params["username"] = self.topic_params["username"]
+            if "password" in self.topic_params.keys():
+                host_params["password"] = self.topic_params["password"]
+            if "ca_cert_path" in self.topic_params.keys():
+                host_params["ca_cert_path"] = self.topic_params["ca_cert_path"]
+            if "insecure" in self.topic_params.keys():
+                host_params["insecure_flag"] = self.topic_params["insecure"]
             topic_qos.append((topic, qos))
-        return topic_qos, host
+        return topic_qos, host, host_params
 
     def get_internal_channel_params(self):
         if self.channel == "MQTT":
             topic_qos = []
-            for topic in self.topic_params:
-                for k, v in topic.items():
-                    if k == "topic":
-                        topic_qos.append((v + "_" + self.id,1))
-                    elif k == "mqtt.port":
-                        self.port = v
+            host_params = {}
+            for k, v in self.topic_params.items():
+                if k == "topic":
+                    topic_qos.append((v + "_" + self.id,1))
+                elif k == "mqtt.port":
+                    self.port = v
             self.host = self.config.get("IO", "mqtt.host")
-            return topic_qos
+            host_params["username"] = self.config.get("IO", "mqtt.username", fallback=None)
+            host_params["password"] = self.config.get("IO", "mqtt.password", fallback=None)
+            host_params["ca_cert_path"] = self.config.get("IO", "mqtt.ca.cert.path", fallback=None)
+            host_params["insecure_flag"] = bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False))
+            return topic_qos, host_params
         elif self.channel == "ZMQ":
             topics = []
-            for topic in self.topic_params:
-                for k, v in topic.items():
-                    if k == "topic":
-                        topics.append(v + "_" + self.id)
+            for k, v in self.topic_params.items():
+                if k == "topic":
+                    topics.append(v + "_" + self.id)
             self.port = self.config.get("IO", "zmq.sub.port")
             self.host = self.config.get("IO", "zmq.host")
-            return topics
+            return topics, None
 
     def init_mqtt(self, topic_qos):
         logger.info("Initializing mqtt subscription client")
@@ -96,7 +123,9 @@ class DataReceiver(ABC):
             self.port = 1883
             #read from config
         self.client_id = "client_receive" + str(randrange(100000)) + str(time.time()).replace(".","")
-        self.mqtt = MQTTClient(str(self.host), self.port, self.client_id)
+        self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
+                               username=self.host_params["username"], password=self.host_params["password"],
+                               ca_cert_path=self.host_params["ca_cert_path"], set_insecure=self.host_params["insecure_flag"])
         self.mqtt.subscribe(topic_qos, self.on_msg_received)
         while not self.mqtt.subscribe_ack_wait():
             self.mqtt.subscribe(topic_qos, self.on_msg_received)
@@ -125,6 +154,8 @@ class DataReceiver(ABC):
         self.stop_request = True
         if self.channel == "MQTT":
             self.mqtt.MQTTExit()
+        elif self.channel == "ZMQ":
+            self.zmq.stop()
         logger.info("InputController safe exit")
 
     def get_zmq_msg(self, clearData):

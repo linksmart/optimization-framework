@@ -5,6 +5,8 @@ Created on Aug 03 14:22 2018
 """
 import logging
 
+import os
+
 from IO.constants import Constants
 from optimization.ModelParamsInfo import ModelParamsInfo
 
@@ -43,14 +45,31 @@ class InputConfigParser:
             host = None
             topic = None
             qos = 0
+            port = None
+            username = None
+            password = None
+            ca_cert_path = None
+            insecure = False
             if "host" in value2[Constants.mqtt].keys():
                 host = value2[Constants.mqtt]["host"]
             if "topic" in value2[Constants.mqtt].keys():
                 topic = value2[Constants.mqtt]["topic"]
             if "qos" in value2[Constants.mqtt].keys():
                 qos = value2[Constants.mqtt]["qos"]
+            if "port" in value2[Constants.mqtt].keys():
+                port = value2[Constants.mqtt]["port"]
+            if "username" in value2[Constants.mqtt].keys():
+                username = value2[Constants.mqtt]["username"]
+            if "password" in value2[Constants.mqtt].keys():
+                password = value2[Constants.mqtt]["password"]
+            if "ca_cert_path" in value2[Constants.mqtt].keys():
+                ca_cert_path = value2[Constants.mqtt]["ca_cert_path"]
+                ca_cert_path = os.path.join("/usr/src/app", ca_cert_path)
+            if "insecure" in value2[Constants.mqtt].keys():
+                insecure = value2[Constants.mqtt]["insecure"]
             if host is not None and topic is not None:
-                return {"host": host, "topic": topic, "qos": qos}
+                return {"host": host, "topic": topic, "qos": qos, "mqtt.port": port, "username":username,
+                        "password":password, "ca_cert_path":ca_cert_path, "insecure":insecure}
             else:
                 return None
         else:

@@ -94,8 +94,8 @@ class OutputController:
             for key, value in data.items():
                 index = 0
                 for v in value:
-                    k = part_key + key + ":" + str(time) + ":" + str(index)
-                    self.redisDB.set(k, v)
+                    k = part_key + key + ":" + str(index)
+                    self.redisDB.set(k, json.dumps({str(time):v}))
                     index += 1
         except Exception as e:
             logger.error("error adding to redis " + str(e))

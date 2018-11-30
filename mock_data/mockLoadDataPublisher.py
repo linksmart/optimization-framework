@@ -31,8 +31,13 @@ class MockLoadDataPublisher(DataPublisher):
                 if self.index < len(data):
                     data = data[self.index]
                     list = data.split(",")
-                    date = list[0]
-                    date = datetime.datetime.strptime(date, "%m/%d  %H:%M:%S").replace(year=2018)
+                    date = list[0].strip()
+                    if "  24:" in date:
+                        date = date.replace("  24:", "  23:")
+                        date = datetime.datetime.strptime(date, "%m/%d  %H:%M:%S").replace(year=2018) + datetime.timedelta(
+                            hours=1)
+                    else:
+                        date = datetime.datetime.strptime(date, "%m/%d  %H:%M:%S").replace(year=2018)
                     date = date.timestamp()
                     list[0] = str(date)
                     data = ",".join(list)

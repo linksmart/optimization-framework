@@ -93,6 +93,6 @@ class Weather:
 we = Weather.get_weather("Bonn, Germany")
 js = json.dumps([wea.__dict__ for wea in we], default=str)
 
-m = MQTTClient("optiframework_mosquitto_1", 1883)
+m = MQTTClient("optiframework_mosquitto_1", 1883, "weatherClient")
 m.publish("data/weather", str(js), True)
 m.MQTTExit()

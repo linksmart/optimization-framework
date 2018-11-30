@@ -78,8 +78,8 @@ class OptController(threading.Thread):
         self.stopRequest.set()
         super(OptController, self).join(timeout)
 
-    def Stop(self, id):
-        self.input.Stop(id)
+    def Stop(self):
+        self.input.Stop()
         if self.isAlive():
             self.join(1)
 
@@ -116,7 +116,6 @@ class OptController(threading.Thread):
     # Start the optimization process and gives back a result
     def run(self):
         logger.info("Starting optimization controller")
-        pyro_mip_server = None
         solver_manager = None
         return_msg = "success"
         try:
@@ -141,7 +140,7 @@ class OptController(threading.Thread):
             logger.info("This is the id: " + self.id)
             while not self.stopRequest.isSet():
                 logger.info("waiting for data")
-                data_dict = self.input.get_data(self.id)  # blocking call
+                data_dict = self.input.get_data()  # blocking call
                 #logger.debug("Data is: " + json.dumps(data_dict, indent=4))
                 if self.stopRequest.isSet():
                     break
@@ -238,13 +237,8 @@ class OptController(threading.Thread):
         finally:
             # Closing the pyomo servers
             logger.debug("Deactivating pyro servers")
-            #solver_manager.release_server()
-            #solver_manager.shutdown_workers()
             solver_manager.deactivate()
             logger.debug("Pyro servers deactivated: " + str(solver_manager))
-            #shutdown_pyro_components(num_retries = 0)
-            #pyro_mip_server.terminate()
-            logger.debug("Exit pyro-mip-server server")
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
             for key, object in self.output.mqtt.items():

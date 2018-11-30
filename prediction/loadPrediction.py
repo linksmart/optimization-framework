@@ -20,8 +20,6 @@ Creates a thread for prediction and a thread for training
 class LoadPrediction:
 
     def __init__(self, config, control_frequency, horizon_in_steps, topic_name, topic_param, dT_in_seconds, id, predictionFlag):
-        self.stopRequest = threading.Event()
-
         self.predictionFlag = predictionFlag
 
         self.topic_name = topic_name
@@ -31,19 +29,24 @@ class LoadPrediction:
         self.num_timesteps = 25
         self.hidden_size = 40
         self.batch_size = 1
-        self.num_epochs = 2  # 10
+        self.num_epochs = 10  # 10
         self.id = id
 
-        self.raw_data_file_container = os.path.join("/usr/src/app", "res", "raw_data_"+str(topic_name)+".csv")
-        self.model_file_container = os.path.join("/usr/src/app", "res", "model_"+str(topic_name)+".h5")
+        dir_data = os.path.join("/usr/src/app", "res", self.id)
+        if not os.path.exists(dir_data):
+            os.makedirs(dir_data)
+
+        self.raw_data_file_container = os.path.join("/usr/src/app", "res", self.id, "raw_data_"+str(topic_name)+".csv")
+        self.model_file_container = os.path.join("/usr/src/app", "res", self.id, "model_"+str(topic_name)+".h5")
         self.model_file_container_temp = os.path.join("/usr/src/app", "res", "model_temp_"+str(topic_name)+".h5")
-        self.model_file_container_train = os.path.join("/usr/src/app", "res", "model_train_"+str(topic_name)+".h5")
+        self.model_file_container_train = os.path.join("/usr/src/app", "res", self.id, "model_train_"+str(topic_name)+".h5")
 
         self.processingData = ProcessingData()
 
         self.load_forecast_pub = None
         self.prediction_thread = None
         self.training_thread = None
+        self.raw_data = None
 
         total_mins = int(float(self.horizon_in_steps * self.dT_in_seconds)/60.0) + 1
         if total_mins < self.num_timesteps:
@@ -85,23 +88,22 @@ class LoadPrediction:
 
     def Stop(self):
         logger.info("start load controller thread exit")
-        logger.info("Stopping load forecast thread")
-        self.stopRequest.set()
         if self.prediction_thread:
             self.prediction_thread.Stop()
         if self.training_thread:
             self.training_thread.Stop()
         if self.load_forecast_pub:
+            logger.info("Stopping load forecast thread")
             self.load_forecast_pub.Stop()
         if self.raw_data:
             self.raw_data.exit()
-        logger.info("load controller thread exit")
+        logger.info("load controller thread exited")
 
 
 class Training(threading.Thread):
     """
     - Load data points from file
-    - Wait till 55 points to train for the first time
+    - Wait till 24 + 30 points to train for the first time
     - After initial training, Train model once in 24 hr
     - Create a new model, compile, and train
     - Save the checkpoints model in model_train.h5
@@ -132,7 +134,7 @@ class Training(threading.Thread):
         self.dT_in_seconds = dT_in_seconds
 
     def run(self):
-        while not self.stopRequest.isSet():
+        while not self.stopRequest.is_set():
             try:
                 train = self.checktime()
                 self.today = datetime.datetime.now()
@@ -153,7 +155,7 @@ class Training(threading.Thread):
                         try:
                             if self.redisDB.get_lock(self.training_lock_key, self.id+"_"+self.topic_name):
                                 from prediction.trainModel import TrainModel
-                                trainModel = TrainModel()
+                                trainModel = TrainModel(self.stop_request_status)
                                 trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
                                                  self.num_timesteps, self.model_file_container_train)
                                 copyfile(self.model_file_container_train, self.model_file_container)
@@ -173,12 +175,14 @@ class Training(threading.Thread):
                 or datetime.datetime.now().year > self.today.year)
 
     def Stop(self):
-        logger.info("start load controller thread exit")
-        logger.info("Stopping load forecast thread")
+        logger.info("start training thread exit")
         self.stopRequest.set()
         if self.isAlive():
-            self.join()
-        logger.info("load controller thread exit")
+            self.join(4)
+        logger.info("training thread exited")
+
+    def stop_request_status(self):
+        return self.stopRequest.is_set()
 
 class Prediction(threading.Thread):
 
@@ -229,7 +233,7 @@ class Prediction(threading.Thread):
         return new_data
 
     def run(self):
-        while not self.stopRequest.isSet():
+        while not self.stopRequest.is_set():
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 logger.debug("len data = " + str(len(data)))
@@ -251,7 +255,7 @@ class Prediction(threading.Thread):
                         try:
                             Xtest, scaling, latest_timestamp = self.processingData.preprocess_data(data, self.num_timesteps, False)
                             from prediction.predictModel import PredictModel
-                            predictModel = PredictModel()
+                            predictModel = PredictModel(self.stop_request_status)
                             test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
@@ -271,9 +275,11 @@ class Prediction(threading.Thread):
                 logger.error(str(self.topic_name) + " prediction thread exception " + str(e))
 
     def Stop(self):
-        logger.info("start load controller thread exit")
-        logger.info("Stopping load forecast thread")
+        logger.info("start prediction thread exit")
         self.stopRequest.set()
         if self.isAlive():
-            self.join()
-        logger.info("load controller thread exit")
+            self.join(4)
+        logger.info("prediction thread exited")
+
+    def stop_request_status(self):
+        return self.stopRequest.is_set()

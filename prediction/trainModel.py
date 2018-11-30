@@ -5,8 +5,8 @@ logger = logging.getLogger(__file__)
 
 class TrainModel:
 
-    def __init__(self):
-        self.stop_request = False
+    def __init__(self, callback_stop_request):
+        self.callback_stop_request = callback_stop_request
 
     def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, model_weights_path):
         """
@@ -51,7 +51,7 @@ class TrainModel:
 
         # Training a stateful LSTM
         for i in range(num_epochs):
-            if self.stop_request:
+            if self.callback_stop_request():
                 break
             logger.info("Epoch " + str(i + 1) + "/" + str(num_epochs))
             logger.info("training size = "+str(len(Xtrain)))
@@ -62,6 +62,3 @@ class TrainModel:
         logger.info("Training completed")
         K.clear_session()
         return model
-
-    def Stop(self):
-        self.stop_request = True

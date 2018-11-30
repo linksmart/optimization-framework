@@ -76,5 +76,6 @@ COPY prediction /usr/src/app/prediction
 COPY swagger_server /usr/src/app/swagger_server
 COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
+COPY utils/default/ConfigFile.properties /usr/src/app/utils/ConfigFile.properties
 
 

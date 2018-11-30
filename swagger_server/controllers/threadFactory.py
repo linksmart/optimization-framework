@@ -155,11 +155,12 @@ class ThreadFactory:
         try:
             # stop as per ID
             for name, obj in self.prediction_threads.items():
+                self.redisDB.remove("train:" + self.id + ":" + name)
                 obj.Stop()
             for name, obj in self.non_prediction_threads.items():
                 obj.Stop()
             logger.info("Stopping optimization controller thread")
-            self.opt.Stop(self.id)
+            self.opt.Stop()
             logger.info("Optimization controller thread stopped")
             return "Optimization controller thread stopped"
         except Exception as e:

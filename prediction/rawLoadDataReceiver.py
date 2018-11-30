@@ -7,6 +7,8 @@ import json
 import logging
 
 import datetime
+import threading
+import time
 
 from IO.dataReceiver import DataReceiver
 from prediction.rawDataReader import RawDataReader
@@ -17,15 +19,17 @@ logger = logging.getLogger(__file__)
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, training_data, save_path):
+    def __init__(self, topic_params, config, buffer, training_data_size, save_path):
         self.file_path = save_path
         super().__init__(False, topic_params, config, [])
         self.buffer_data = []
         self.buffer = buffer
-        self.training_data = training_data
+        self.training_data_size = training_data_size
         self.current_minute = None
         self.sum = 0
         self.count = 0
+        self.minute_data = []
+        self.file_save_thread = threading.Thread(target=self.save_to_file_cron)
 
     def on_msg_received(self, payload):
         try:
@@ -49,27 +53,27 @@ class RawLoadDataReceiver(DataReceiver):
                     self.sum = item[1]
                     self.count = 1
             self.data_update = True
-            self.save_to_file(mod_data)
+            self.minute_data.append(mod_data)
             logger.info("raw data size = " + str(len(mod_data)))
         except Exception as e:
             logger.error(e)
 
-    def save_to_file(self, data):
+    def save_to_file(self):
         try:
             with open(self.file_path, 'a+') as file:
-                for item in data:
+                for item in self.minute_data:
                     line = ','.join(map(str, item[:2]))+"\n"
                     file.writelines(line)
             file.close()
+            self.minute_data = []
         except Exception as e:
             logger.error("failed to save "+ str(e))
-        return True
 
     def get_raw_data(self, train=False, topic_name=None):
         if train:
             data = RawDataReader.read_from_file(self.file_path, topic_name)
-            if len(data) > self.training_data:
-                data = data[-self.training_data:]
+            if len(data) > self.training_data_size:
+                data = data[-self.training_data_size:]
             return RawDataReader.format_data(data)
         else:
             data = self.get_data(0, True)
@@ -77,3 +81,17 @@ class RawLoadDataReceiver(DataReceiver):
                 self.buffer_data.append(item)
             self.buffer_data = self.buffer_data[-self.buffer:]
             return self.buffer_data
+
+    def get_sleep_secs(self, repeat_hour):
+        current_time = datetime.datetime.now()
+        current_hour = current_time.hour
+        hr_diff = repeat_hour - current_hour%repeat_hour
+        next_time = current_time + datetime.timedelta(hours=hr_diff)
+        next_time = next_time.replace(minute=0, second=0, microsecond=0)
+        time_diff = next_time - current_time
+        return time_diff.total_seconds()
+
+    def save_to_file_cron(self):
+        while True and not self.stop_request:
+            self.save_to_file()
+            time.sleep(self.get_sleep_secs(3))

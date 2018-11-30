@@ -51,7 +51,11 @@ class DataPublisher(ABC,threading.Thread):
             self.port = self.topic_params["mqtt.port"]
         self.qos = 1
         self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
-        self.mqtt = MQTTClient(str(self.host), self.port, self.client_id)
+        self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
+                               username=self.config.get("IO", "mqtt.username", fallback=None),
+                               password=self.config.get("IO", "mqtt.password", fallback=None),
+                               ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
+                               set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)))
 
     def init_zmq(self):
         self.host = self.config.get("IO", "zmq.host")
@@ -70,7 +74,7 @@ class DataPublisher(ABC,threading.Thread):
         elif self.channel == "ZMQ":
             self.zmq.stop()
         if self.isAlive():
-            self.join()
+            self.join(4)
         logger.info("data publisher thread exit")
 
     def run(self):

@@ -73,14 +73,21 @@ def output_source_file(id):  # noqa: E501
         for key in output_keys:
             sub_key = key.split(":")
             topic = sub_key[2]
-            time = sub_key[3]
-            index = sub_key[4]
-            value = redisDB.get(key)
+            index = sub_key[3]
+            json_value = redisDB.get(key)
+            json_value = json.loads(json_value)
+            time = None
+            value = 0
+            for t, v in json_value.items():
+                time = t
+                value = v
+                break
             if topic not in result.keys():
                 result[topic] = {}
-            if time not in result[topic]:
-                result[topic][time] = {}
-            result[topic][time][index] = float(value)
+            if time is not None:
+                if time not in result[topic]:
+                    result[topic][time] = {}
+                result[topic][time][index] = float(value)
     return result
 
 

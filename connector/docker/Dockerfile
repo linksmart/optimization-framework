@@ -28,7 +28,7 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy the current directory contents into the container usr/src/app
-COPY requirements.txt /usr/src/app/
+COPY connector/docker/requirements-arm.txt /usr/src/app/
 
 # #new addition
 RUN apt-get autoclean
@@ -54,3 +54,4 @@ COPY utils /usr/src/app/utils
 COPY IO /usr/src/app/IO
 COPY connector /usr/src/app/connector
 COPY connectors.py /usr/src/app/connectors.py
+COPY utils/default/ConfigFile.properties /usr/src/app/utils/ConfigFile.properties

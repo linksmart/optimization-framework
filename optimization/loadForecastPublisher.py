@@ -9,6 +9,8 @@ import logging
 
 import os
 
+from senml import senml
+
 from IO.dataPublisher import DataPublisher
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -48,14 +50,24 @@ class LoadForecastPublisher(DataPublisher):
             return None
 
     def extract_horizon_data(self):
-        data = {}
+        meas = []
         list = self.load_data.items()
         list = sorted(list)
         list = list[-self.horizon_in_steps:]
         for i in range(self.horizon_in_steps):
-            if list[i][1] < 0:
-                data[i] = list[i][1]
-            else:
-                data[i] = -0.000001
-        return json.dumps({self.topic: data})
+            value = list[i][1]
+            if value >= 0:
+                value = -0.000001
+            meas.append(self.get_senml_meas(value, list[i][0]))
+        doc = senml.SenMLDocument(meas)
+        val = doc.to_json()
+        return json.dumps(val)
 
+    def get_senml_meas(self, value, time):
+        if not isinstance(time, float):
+            time = float(time.timestamp())
+        meas = senml.SenMLMeasurement()
+        meas.time = time
+        meas.value = value
+        meas.name = self.topic
+        return meas

@@ -24,6 +24,7 @@ training_threads = {}
 def check_training(config):
     while True:
         keys = redisDB.get_keys_for_pattern("train:*")
+        logger.debug(keys)
         if keys is not None:
             keys_union = set(training_threads.keys()).union(keys)
             for key in keys_union:
@@ -47,6 +48,7 @@ def clear_redis():
     from IO.redisDB import RedisDB
     redisDB = RedisDB()
     redisDB.reset()
+    redisDB.set("time", time.time())
 
 if __name__ == '__main__':
     try:
