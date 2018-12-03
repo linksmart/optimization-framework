@@ -5,6 +5,7 @@ from flask import json
 from flask import jsonify
 from os.path import isfile, join
 
+from IO.redisDB import RedisDB
 from optimization.utils import Utils
 from swagger_server.models.file_input_source import FileInputSource  # noqa: E501
 from swagger_server.models.mqtt_input_source import MQTTInputSource  # noqa: E501
@@ -125,6 +126,42 @@ def delete_data(id, registry_file, source):
     except Exception as e:
         logger.error(e)
         return "error"
+
+
+def delete_all_ids():  # noqa: E501
+    """Deletes all loaded data
+
+     # noqa: E501
+
+
+    :rtype: None
+    """
+    # get current active ids
+    current_ids = current_active_ids()
+    # get all ids for data source
+    try:
+        ids = []
+        dir = os.path.join(os.getcwd(), "utils")
+        if os.path.exists(dir):
+            for file in os.listdir(dir):
+                if os.path.isdir(os.path.join(dir, file)):
+                    ids.append(file)
+        for id in ids:
+            if id not in current_ids:
+                delete_data_source_all(id)
+        """
+        ids = []
+        dir = os.path.join(os.getcwd(), "prediction", "resources")
+        if os.path.exists(dir):
+            for file in os.listdir(dir):
+                if os.path.isdir(os.path.join(dir, file)):
+                    ids.append(file)
+        """
+        msg = "Success"
+    except Exception as e:
+        logger.error(e)
+        msg = "Error removing all data"
+    return msg
 
 def delete_data_source_all(id):  # noqa: E501
     """Deletes all loaded data
@@ -452,3 +489,26 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
         return jsonify({'Data-Source-Id':str(id)})
     else:
         return 'Data is not in json format'
+
+def current_active_ids():
+    redisDB = RedisDB()
+    lock_key = "id_lock"
+    path = "/usr/src/app/utils/ids_status.txt"
+    ids_list = []
+    if os.path.exists(path):
+        try:
+            if redisDB.get_lock(lock_key, "start"):
+                data = []
+                with open(path, "r") as f:
+                    data = f.readlines()
+                if len(data) > 0:
+                    for s in data:
+                        a = s.replace("\n", "")
+                        a = json.loads(a)
+                        id = a["id"]
+                        ids_list.append(id)
+        except Exception as e:
+            logging.error("error reading ids file " + str(e))
+        finally:
+            redisDB.release_lock(lock_key, "start")
+    return ids_list

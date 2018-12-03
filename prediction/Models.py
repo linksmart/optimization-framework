@@ -9,6 +9,8 @@ import os
 
 import sys
 
+import time
+
 """
 os.environ['PYTHONHASHSEED'] = '0'
 np.random.seed(42)
@@ -31,6 +33,7 @@ class Models:
         self.graph = None
         self.model_weights_path = save_path
         self.model_weights_path_temp = save_path_temp
+        self.last_loaded = None
 
     def get_model(self, id_topic):
         """manages which model to load
@@ -39,7 +42,11 @@ class Models:
 	    else load model_temp.h5 from disk (temp pre-trained model)
 	    """
         temp = False
-        if self.model:
+        if os.path.exists(self.model_weights_path):
+            last_updated = os.path.getmtime(self.model_weights_path)
+        else:
+            last_updated = None
+        if self.model and (self.last_loaded is not None and last_updated is not None and last_updated <= self.last_loaded):
             logger.info(str(id_topic)+"model present in memory ")
             return self.model, self.model_temp, temp, self.graph
         model, graph = self.load_saved_model(self.model_weights_path)
@@ -80,6 +87,7 @@ class Models:
                 model = load_model(path)
                 model._make_predict_function()
                 graph = tf.get_default_graph()
+                self.last_loaded = time.time()
                 logger.info("Loaded model from disk")
             return model, graph
         except Exception as e:

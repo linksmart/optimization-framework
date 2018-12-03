@@ -96,3 +96,7 @@ ENV/
 .idea/workspace.xml
 
 fronius/
+optimization/resources/
+prediction/resources/
+utils/
+connector/resources/

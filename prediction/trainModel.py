@@ -8,7 +8,7 @@ class TrainModel:
     def __init__(self, callback_stop_request):
         self.callback_stop_request = callback_stop_request
 
-    def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, model_weights_path):
+    def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, output_size, model_weights_path):
         """
         Creates a new model, compiles it and then trains it
         """
@@ -34,16 +34,18 @@ class TrainModel:
         model = Sequential()
         model.add(LSTM(hidden_size, stateful=True,
                        batch_input_shape=(batch_size, num_timesteps, 1),
-                       return_sequences=False))
-        model.add(Dense(1))
+                       return_sequences=True))
+        model.add(LSTM(hidden_size, stateful=True))
+        model.add(Dense(output_size))
         adam = k.optimizers.Adam(lr=0.01)
         model.compile(loss="mean_squared_error", optimizer=adam,
                       metrics=["mean_squared_error"])
 
+        logger.info(model.summary())
         # define reduceLROnPlateau and early stopping callback
         reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2,
                                       patience=3, min_lr=0.001)
-        earlystop = EarlyStopping(monitor='loss', min_delta=0, patience=4, verbose=1, mode='auto')
+        earlystop = EarlyStopping(monitor='loss', min_delta=0.0001, patience=3, verbose=1, mode='auto')
 
         #Saving the model with checkpoint callback
         checkpoint = ModelCheckpoint(model_weights_path, monitor='loss', verbose=1, save_best_only=True, mode='min')

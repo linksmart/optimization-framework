@@ -26,10 +26,13 @@ class LoadPrediction:
         self.control_frequency = control_frequency  # determines minute or hourly etc
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
-        self.num_timesteps = 25
-        self.hidden_size = 40
+        self.num_timesteps = 60
+        self.hidden_size = 120
         self.batch_size = 1
         self.num_epochs = 10  # 10
+        self.output_size = int(self.horizon_in_steps/4)
+        if self.output_size < 1:
+            self.output_size = 1
         self.id = id
 
         dir_data = os.path.join("/usr/src/app", "res", self.id)
@@ -55,7 +58,7 @@ class LoadPrediction:
         if self.predictionFlag:
             from prediction.rawLoadDataReceiver import RawLoadDataReceiver
             self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins, self.horizon_in_steps * 25,
-                                                self.raw_data_file_container)
+                                                self.raw_data_file_container, self.topic_name)
 
             self.q = Queue(maxsize=0)
 
@@ -75,14 +78,14 @@ class LoadPrediction:
         self.training_thread = Training(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
-                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds)
+                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, self.output_size)
         self.training_thread.start()
 
     def startPrediction(self):
         self.prediction_thread = Prediction(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                             self.hidden_size, self.batch_size, self.num_epochs,
                                             self.raw_data, self.processingData, self.model_file_container_temp,
-                                            self.model_file_container, self.q, self.topic_name, self.id, self.dT_in_seconds)
+                                            self.model_file_container, self.q, self.topic_name, self.id, self.dT_in_seconds, self.output_size)
         self.prediction_thread.start()
 
 
@@ -111,7 +114,7 @@ class Training(threading.Thread):
     """
 
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
-                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds):
+                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -132,6 +135,7 @@ class Training(threading.Thread):
         self.topic_name = topic_name
         self.id = id
         self.dT_in_seconds = dT_in_seconds
+        self.output_size = output_size
 
     def run(self):
         while not self.stopRequest.is_set():
@@ -149,15 +153,15 @@ class Training(threading.Thread):
                     if len(data) > self.min_training_size:
                         self.trained = True
                         logger.info("start training")
-                        Xtrain, Ytrain = self.processingData.preprocess_data(data, self.num_timesteps, True)
-
+                        Xtrain, Ytrain = self.processingData.preprocess_data(data, self.num_timesteps, self.output_size, True)
+                        logger.info("pre proc done")
                         # preprocess data
                         try:
                             if self.redisDB.get_lock(self.training_lock_key, self.id+"_"+self.topic_name):
                                 from prediction.trainModel import TrainModel
                                 trainModel = TrainModel(self.stop_request_status)
                                 trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
-                                                 self.num_timesteps, self.model_file_container_train)
+                                                 self.num_timesteps, self.output_size, self.model_file_container_train)
                                 copyfile(self.model_file_container_train, self.model_file_container)
                                 logger.info("trained successfully")
                         except Exception as e:
@@ -194,7 +198,7 @@ class Prediction(threading.Thread):
     - predict for next 24 points (24 predictions)
     """
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
-                 model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds):
+                 model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds, output_size):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -214,6 +218,7 @@ class Prediction(threading.Thread):
                         self.model_file_container_temp)
         self.topic_name = topic_name
         self.id = id
+        self.output_size = output_size
 
     def mock_data(self):
         vals = [-2658.819940570742,-2213.156421120333,-2293.300383523349,-2511.985862220086,
@@ -253,7 +258,7 @@ class Prediction(threading.Thread):
                         model = model_temp
                     if model is not None:
                         try:
-                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data(data, self.num_timesteps, False)
+                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data(data, self.num_timesteps, self.output_size, False)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
                             test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)

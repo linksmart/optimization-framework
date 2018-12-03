@@ -23,6 +23,7 @@ redisDB = RedisDB()
 
 training_threads = {}
 
+
 def check_training(config):
     while True:
         keys = redisDB.get_keys_for_pattern("train:*")
@@ -35,14 +36,17 @@ def check_training(config):
                     prediction_name = sub_keys[2]
                     value = redisDB.get(key)
                     value = json.loads(value)
-                    logger.info("creating new training thread for topic "+prediction_name)
-                    training_threads[key] = LoadPrediction(config, value["control_frequency"], value["horizon_in_steps"],
-                                                           prediction_name, value["topic_param"], value["dT_in_seconds"], id, False)
+                    logger.info("creating new training thread for topic " + prediction_name)
+                    training_threads[key] = LoadPrediction(config, value["control_frequency"],
+                                                           value["horizon_in_steps"],
+                                                           prediction_name, value["topic_param"],
+                                                           value["dT_in_seconds"], id, False)
                 elif key in training_threads.keys() and key not in keys:
-                    logger.info("stoping training thread for topic "+key)
+                    logger.info("stoping training thread for topic " + key)
                     training_threads[key].Stop()
                     training_threads.pop(key)
         time.sleep(1)
+
 
 def clear_redis():
     logger.info("reset redis")
@@ -51,12 +55,13 @@ def clear_redis():
     redisDB.reset()
     redisDB.set("time", time.time())
 
+
 if __name__ == '__main__':
     config_path = "/usr/src/app/utils/ConfigFile.properties"
     if not os.path.exists(config_path):
         shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
     try:
-        clear_redis()
+        # clear_redis() #  need to relook
         config = configparser.RawConfigParser()
         config.read(config_path)
         check_training(config)

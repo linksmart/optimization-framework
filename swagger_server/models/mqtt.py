@@ -15,7 +15,7 @@ class MQTT(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, host: str=None, topic: str=None, qos: int=None):  # noqa: E501
+    def __init__(self, host: str=None, topic: str=None, qos: int=None, port: int=None, username: str=None, password: str=None, ca_cert_path: str=None, insecure: bool=None):  # noqa: E501
         """MQTT - a model defined in Swagger
 
         :param host: The host of this MQTT.  # noqa: E501
@@ -24,22 +24,47 @@ class MQTT(Model):
         :type topic: str
         :param qos: The qos of this MQTT.  # noqa: E501
         :type qos: int
+        :param port: The port of this MQTT.  # noqa: E501
+        :type port: int
+        :param username: The username of this MQTT.  # noqa: E501
+        :type username: str
+        :param password: The password of this MQTT.  # noqa: E501
+        :type password: str
+        :param ca_cert_path: The ca_cert_path of this MQTT.  # noqa: E501
+        :type ca_cert_path: str
+        :param insecure: The insecure of this MQTT.  # noqa: E501
+        :type insecure: bool
         """
         self.swagger_types = {
             'host': str,
             'topic': str,
-            'qos': int
+            'qos': int,
+            'port': int,
+            'username': str,
+            'password': str,
+            'ca_cert_path': str,
+            'insecure': bool
         }
 
         self.attribute_map = {
             'host': 'host',
             'topic': 'topic',
-            'qos': 'qos'
+            'qos': 'qos',
+            'port': 'port',
+            'username': 'username',
+            'password': 'password',
+            'ca_cert_path': 'ca_cert_path',
+            'insecure': 'insecure'
         }
 
         self._host = host
         self._topic = topic
         self._qos = qos
+        self._port = port
+        self._username = username
+        self._password = password
+        self._ca_cert_path = ca_cert_path
+        self._insecure = insecure
 
     @classmethod
     def from_dict(cls, dikt) -> 'MQTT':
@@ -93,6 +118,8 @@ class MQTT(Model):
         :param topic: The topic of this MQTT.
         :type topic: str
         """
+        if topic is None:
+            raise ValueError("Invalid value for `topic`, must not be `None`")  # noqa: E501
 
         self._topic = topic
 
@@ -120,3 +147,110 @@ class MQTT(Model):
             raise ValueError("Invalid value for `qos`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._qos = qos
+
+    @property
+    def port(self) -> int:
+        """Gets the port of this MQTT.
+
+
+        :return: The port of this MQTT.
+        :rtype: int
+        """
+        return self._port
+
+    @port.setter
+    def port(self, port: int):
+        """Sets the port of this MQTT.
+
+
+        :param port: The port of this MQTT.
+        :type port: int
+        """
+        if port is not None and port < 0:  # noqa: E501
+            raise ValueError("Invalid value for `port`, must be a value greater than or equal to `0`")  # noqa: E501
+
+        self._port = port
+
+    @property
+    def username(self) -> str:
+        """Gets the username of this MQTT.
+
+
+        :return: The username of this MQTT.
+        :rtype: str
+        """
+        return self._username
+
+    @username.setter
+    def username(self, username: str):
+        """Sets the username of this MQTT.
+
+
+        :param username: The username of this MQTT.
+        :type username: str
+        """
+
+        self._username = username
+
+    @property
+    def password(self) -> str:
+        """Gets the password of this MQTT.
+
+
+        :return: The password of this MQTT.
+        :rtype: str
+        """
+        return self._password
+
+    @password.setter
+    def password(self, password: str):
+        """Sets the password of this MQTT.
+
+
+        :param password: The password of this MQTT.
+        :type password: str
+        """
+
+        self._password = password
+
+    @property
+    def ca_cert_path(self) -> str:
+        """Gets the ca_cert_path of this MQTT.
+
+
+        :return: The ca_cert_path of this MQTT.
+        :rtype: str
+        """
+        return self._ca_cert_path
+
+    @ca_cert_path.setter
+    def ca_cert_path(self, ca_cert_path: str):
+        """Sets the ca_cert_path of this MQTT.
+
+
+        :param ca_cert_path: The ca_cert_path of this MQTT.
+        :type ca_cert_path: str
+        """
+
+        self._ca_cert_path = ca_cert_path
+
+    @property
+    def insecure(self) -> bool:
+        """Gets the insecure of this MQTT.
+
+
+        :return: The insecure of this MQTT.
+        :rtype: bool
+        """
+        return self._insecure
+
+    @insecure.setter
+    def insecure(self, insecure: bool):
+        """Sets the insecure of this MQTT.
+
+
+        :param insecure: The insecure of this MQTT.
+        :type insecure: bool
+        """
+
+        self._insecure = insecure

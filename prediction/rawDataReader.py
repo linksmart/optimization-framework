@@ -25,7 +25,7 @@ class RawDataReader:
                 file.close()
                 return data
             else:
-                logger.info("Training data not available "+str(topic_name))
+                logger.info("Saved data not available "+str(topic_name))
                 return []
         except Exception as e:
             logger.error(e)

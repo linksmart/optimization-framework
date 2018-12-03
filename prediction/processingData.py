@@ -68,9 +68,10 @@ class ProcessingData:
                     new_data.append([date.timestamp(), val])
                     first = False
                 current_step -= step
+        new_data.reverse()
         return new_data
 
-    def preprocess_data(self, raw_data, num_timesteps, train):
+    def preprocess_data(self, raw_data, num_timesteps, output_size, train):
         # Loading Data
         latest_timestamp = raw_data[-1:][0][0]
         print(latest_timestamp)
@@ -96,27 +97,34 @@ class ProcessingData:
 
         look_back = num_timesteps
         num_features = 1
-        nb_samples = data.shape[0] - num_timesteps
-        if not train:
-            nb_samples += 1
+        if train:
+            nb_samples = data.shape[0] - num_timesteps - output_size
+        else:
+            nb_samples = data.shape[0] - num_timesteps
         x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
-        y_train_reshaped = np.zeros((nb_samples))
-
+        y_train_reshaped = np.zeros((nb_samples, output_size))
+        logger.info("data dim = "+str(data.shape))
         for i in range(nb_samples):
-            y_position = i + look_back
-            x_train_reshaped[i] = data[i:y_position]
+            y_position_start = i + look_back
+            x_train_reshaped[i] = data[i:y_position_start]
             if train:
-                y_train_reshaped[i] = data[y_position]
+                y_position_end = y_position_start + output_size
+                l = data[y_position_start:y_position_end]
+                y_train_reshaped[i] = [item for sublist in l for item in sublist]
 
         if train:
+            """
             # split into training and test sets
             sp = int(0.7 * len(x_train_reshaped))
             logger.info("sp = " + str(sp))
             Xtrain, Xtest, Ytrain, Ytest = x_train_reshaped[0:sp], x_train_reshaped[sp:], y_train_reshaped[
                                                                                           0:sp], y_train_reshaped[sp:]
             # logger.debug(str(Xtrain.shape) + " " + str(Xtest.shape) + " " + str(Ytrain.shape) + " " + str(Ytest.shape))
+            """
+            sp = 2000
+            Xtrain, Ytrain = x_train_reshaped[-sp:], y_train_reshaped[-sp:]
             # TODO: check the capacity of RPi to operate with more data size
-            return Xtrain[0:10000], Ytrain[0:10000]
+            return Xtrain, Ytrain
         else:
             Xtest = x_train_reshaped[-1:]
             logger.debug(str(Xtest.shape))

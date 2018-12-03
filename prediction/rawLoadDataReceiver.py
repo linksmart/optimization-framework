@@ -19,7 +19,7 @@ logger = logging.getLogger(__file__)
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, training_data_size, save_path):
+    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name):
         self.file_path = save_path
         super().__init__(False, topic_params, config, [])
         self.buffer_data = []
@@ -29,7 +29,10 @@ class RawLoadDataReceiver(DataReceiver):
         self.sum = 0
         self.count = 0
         self.minute_data = []
+        self.topic_name = topic_name
+        self.load_data()
         self.file_save_thread = threading.Thread(target=self.save_to_file_cron)
+        self.file_save_thread.start()
 
     def on_msg_received(self, payload):
         try:
@@ -53,13 +56,14 @@ class RawLoadDataReceiver(DataReceiver):
                     self.sum = item[1]
                     self.count = 1
             self.data_update = True
-            self.minute_data.append(mod_data)
+            self.minute_data.extend(mod_data)
             logger.info("raw data size = " + str(len(mod_data)))
         except Exception as e:
             logger.error(e)
 
     def save_to_file(self):
         try:
+            logger.info("Saving raw data to file "+str(self.file_path))
             with open(self.file_path, 'a+') as file:
                 for item in self.minute_data:
                     line = ','.join(map(str, item[:2]))+"\n"
@@ -95,3 +99,7 @@ class RawLoadDataReceiver(DataReceiver):
         while True and not self.stop_request:
             self.save_to_file()
             time.sleep(self.get_sleep_secs(3))
+
+    def load_data(self):
+        data = RawDataReader.get_raw_data(self.file_path, self.buffer, self.topic_name)
+        self.buffer_data = data.copy()
