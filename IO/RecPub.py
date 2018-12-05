@@ -56,6 +56,7 @@ class Publisher(DataPublisher):
             try:
                 new_data = self.q.get_nowait()
                 self.q.task_done()
+                logger.debug("Queue size: "+str(self.q.qsize()))
                 topic = new_data["topic"]
                 data = new_data["data"]
                 return data, topic
