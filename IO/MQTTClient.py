@@ -66,8 +66,8 @@ class MQTTClient:
         except Exception as e:
             logger.error(e)
 
-    def publish(self, topic, message, waitForAck=False):
-        mid = self.client.publish(topic, message, 2)[1]
+    def publish(self, topic, message, waitForAck=False, qos=2):
+        mid = self.client.publish(topic, message, qos)[1]
         if (waitForAck):
             while mid not in self.receivedMessages:
                 logger.debug("waiting for pub ack for topic "+str(topic))

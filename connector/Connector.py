@@ -17,8 +17,8 @@ logger = logging.getLogger(__file__)
 
 class Connector(RecPub):
 
-    def __init__(self, receiver_params, config, house):
-        super().__init__(receiver_params, None, config, house)
+    def __init__(self, receiver_params, publisher_workers, config, house):
+        super().__init__(receiver_params, publisher_workers, config, house)
         self.pub_prefix = config.get("IO","pub.topic.prefix") + str(house) + "/"
         self.key_level = int(config.get("KEY_META","level"))
         self.key_separator = config.get("KEY_META","key.separator")

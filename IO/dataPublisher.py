@@ -106,8 +106,7 @@ class DataPublisher(ABC,threading.Thread):
             if self.internal:
                 topic = topic + "_" + self.id
             logger.debug("Sending results to mqtt on this topic: " + topic)
-            #logger.debug("MQTT Data: "+str(data))
-            self.mqtt.publish(topic, data, True)
+            self.mqtt.publish(topic, data, True, self.qos)
             logger.debug("Results published")
         except Exception as e:
             logger.error(e)
