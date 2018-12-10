@@ -29,8 +29,9 @@ RUN pip3 install -U redis
 #RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-COPY utils /usr/src/app/utils
-COPY IO /usr/src/app/IO
+COPY IO/dataPublisher.py /usr/src/app/IO/dataPublisher.py
+COPY IO/MQTTClient.py /usr/src/app/IO/MQTTClient.py
+COPY IO/ZMQClient.py /usr/src/app/IO/ZMQClient.py
 COPY mock_data /usr/src/app/mock_data
 COPY mockdata.py /usr/src/app/
 COPY config /usr/src/app/config

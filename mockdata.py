@@ -14,105 +14,81 @@ import sys
 import shutil
 
 from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
-from mock_data.mockLoadDataPublisher import MockLoadDataPublisher
-from mock_data.mockSoCDataPublisher import MockSoCDataPublisher
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 
 class MockData:
-    def __init__(self, config, p_load_forecast, q_load_forecast, soc_value, generic_topic_list):
-        self.p_load_forecast = p_load_forecast
-        self.q_load_forecast = q_load_forecast
-        self.soc_value = soc_value
-        self.gereric_names = generic_topic_list
+    def __init__(self, config):
         self.config = config
+        self.publishers = {}
 
     def startMockDataPublisherThreads(self):
-        if self.config is not None:
-            if self.p_load_forecast:
-                raw_p_load_data_topic = self.config.get("IO", "raw.pload.data.topic")
-                raw_p_load_data_topic = json.loads(raw_p_load_data_topic)
-                self.mock_p_load_data = MockLoadDataPublisher(raw_p_load_data_topic, self.config)
-                self.mock_p_load_data.start()
-            if self.q_load_forecast:
-                raw_q_load_data_topic = self.config.get("IO", "raw.qload.data.topic")
-                raw_q_load_data_topic = json.loads(raw_q_load_data_topic)
-                self.mock_q_load_data = MockLoadDataPublisher(raw_q_load_data_topic, self.config)
-                self.mock_q_load_data.start()
-            if self.soc_value:
-                raw_soc_data_topic = self.config.get("IO", "raw.soc.data.topic")
-                raw_soc_data_topic = json.loads(raw_soc_data_topic)
-                self.mock_soc_data = MockSoCDataPublisher(raw_soc_data_topic, self.config)
-                self.mock_soc_data.start()
-            self.mock_generic_data = {}
-            raw_generic_data_topic = self.config.get("IO", "raw.generic.data.topic", fallback=None)
-            if raw_generic_data_topic is not None:
-                raw_generic_data_topic = json.loads(raw_generic_data_topic)
-                for generic_name_param in self.gereric_names:
-                    length = 1
-                    const_value = None
-                    generic_name = generic_name_param
-                    if "~" in topic:
-                        parts = topic.split("~")
-                        for i, part in enumerate(parts, 0):
-                            if i == 0:
-                                generic_name = part
-                            if "l:" in part:
-                                sub = part.split(":")
-                                length = int(sub[1])
-                            elif "v:" in part:
-                                sub = part.split(":")
-                                const_value = float(sub[1])
-                    generic_topic = raw_generic_data_topic.copy()
-                    generic_topic["topic"] = generic_topic["topic"] + str(generic_name)
-                    self.mock_generic_data[generic_name] = MockGenericDataPublisher(generic_topic, config, generic_name,
-                                                                                    length, const_value)
-                    self.mock_generic_data[generic_name].start()
+        for section in config.sections():
+            try:
+                if not (section.startswith('IO')):
+                    logger.info("topic: " + section)
+                    mock_params = {"section" : section}
+                    horizon_steps = int(config.get(section, "horizon.steps"))
+                    pub_frequency_sec = int(config.get(section, "pub.frequency.sec"))
+                    delta_time_sec = int(config.get(section, "delta.time.sec"))
+                    mqtt_topic = config.get(section, "mqtt.topic")
+                    if horizon_steps is None or pub_frequency_sec is None or \
+                            mqtt_topic is None or delta_time_sec is None:
+                        logger.info("Topic "+str(section)+" does not have required information.")
+                        continue
+                    else:
+                        mock_params["horizon_steps"] = horizon_steps
+                        mock_params["pub_frequency_sec"] = pub_frequency_sec
+                        mock_params["delta_time_sec"] = delta_time_sec
+                        mock_params["mqtt_topic"] = json.loads(mqtt_topic)
+
+                    mock_source = config.get(section, "mock.source", fallback="random")
+                    if mock_source == "file":
+                        mock_file_path = config.get(section, "mock.file.path")
+                        if mock_file_path is None:
+                            logger.error("No mock.file.path specified for topic : "+str(section))
+                            continue
+                        mock_file_path = os.path.join(os.getcwd(), mock_file_path)
+                        logger.info("mock file path = "+str(mock_file_path))
+                        mock_params["mock_file_path"] = mock_file_path
+                        mock_params["mock_source"] = mock_source
+                    elif mock_source == "random":
+                        mock_params["mock_source"] = mock_source
+                        mock_random_min = float(config.get(section, "mock.random.min", fallback="0"))
+                        mock_random_max = float(config.get(section, "mock.random.max", fallback="1"))
+                        mock_data_type = config.get(section, "mock.data.type", fallback="float")
+                        if mock_random_min > mock_random_max:
+                            mock_random_min, mock_random_max = mock_random_max, mock_random_min
+                        mock_params["mock_random_min"] = mock_random_min
+                        mock_params["mock_random_max"] = mock_random_max
+                        mock_params["mock_data_type"] = mock_data_type
+                    mgdp = MockGenericDataPublisher(config, mock_params)
+                    mgdp.start()
+                    self.publishers[section] = mgdp
+            except Exception as e:
+                logger.error(e)
 
     def stopMockDataPublisherThreads(self):
-        if self.p_load_forecast:
-            logger.info("Stopping mock p load data thread")
-            self.mock_p_load_data.Stop()
-        if self.q_load_forecast:
-            logger.info("Stopping mock q load data thread")
-            self.mock_q_load_data.Stop()
-        if self.soc_value:
-            logger.info("Stopping mock soc data thread")
-            self.mock_soc_data.Stop()
-        for generic_name, publisher in self.mock_generic_data.items():
-            logger.info("Stopping mock " + generic_name + " data thread")
-            publisher.Stop()
+        if self.publishers is not None:
+            for pub in self.publishers.values():
+                pub.Stop()
+
 
 
 if __name__ == '__main__':
     logger.info("Starting mock data generation")
-    # Creating an object of the configuration file (standard values)
-    arglist = sys.argv
-    logger.info("Arg list = " + str(arglist))
-    p_load_forecast = False
-    q_load_forecast = False
-    soc_value = False
-    generic_topic_list = []
-    for topic in arglist[1:]:
-        if topic == "P_Load":
-            p_load_forecast = True
-        elif topic == "Q_Load":
-            q_load_forecast = True
-        elif topic == "SoC_Value":
-            soc_value = True
-        else:
-            generic_topic_list.append(topic)
+
     config = None
-    config_path = "/usr/src/app/utils/ConfigFile.properties"
+    config_path = "/usr/src/app/mock_data/resources/mockConfig.properties"
     if not os.path.exists(config_path):
-        shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
+        shutil.copyfile("/usr/src/app/config/mockConfig.properties", config_path)
     try:
         config = configparser.RawConfigParser()
         config.read(config_path)
     except Exception as e:
         logger.error(e)
 
-    mockData = MockData(config, p_load_forecast, q_load_forecast, soc_value, generic_topic_list)
+    mockData = MockData(config)
     mockData.startMockDataPublisherThreads()

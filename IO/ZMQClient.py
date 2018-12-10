@@ -9,8 +9,6 @@ import threading
 import zmq
 import time
 
-from IO.redisDB import RedisDB
-
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
@@ -24,16 +22,7 @@ class ZMQClient:
         self.context = zmq.Context()
         self.pubUrl = 'tcp://{}:{}'.format(self.host, self.pubPort)
         self.subUrl = 'tcp://{}:{}'.format(self.host, self.subPort)
-        #self.init_forwarder()
         logger.info("Initialize ZMQClient")
-
-    def init_forwarder(self):
-        redisDB = RedisDB()
-        result = redisDB.get("forwarder", "False")
-        logger.info("forwarder = "+str(result))
-        if result == "False":
-            forwarderDevice = ForwarderDevice(self.host, self.pubPort, self.subPort)
-            forwarderDevice.start()
 
     def init_publisher(self, id=None):
         try:
@@ -95,7 +84,6 @@ class ForwarderDevice(threading.Thread):
 
     def run(self):
         logger.info("init zmq forwarder")
-        #redisDB = RedisDB()
         try:
             self.context = zmq.Context(2)
             # Socket facing clients
@@ -111,13 +99,11 @@ class ForwarderDevice(threading.Thread):
             self.backend.bind(url)
 
             logger.info("create forwarder device")
-            #redisDB.set("forwarder", "True")
             zmq.device(zmq.FORWARDER, self.frontend, self.backend)
             logger.info("created forwarder device")
         except Exception as e:
             logger.error(e)
             logger.info("bringing down zmq device")
-            #redisDB.set("forwarder", "False")
         finally:
             logger.info("finally forwarder device")
             if self.frontend:
