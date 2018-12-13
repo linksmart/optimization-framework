@@ -44,11 +44,17 @@ class MockGenericDataPublisher(DataPublisher):
         current_time = int(math.floor(time.time()))
         if self.source == "file":
             vals = self.get_file_line()
-            if len(vals) < self.length:
-                logger.error(str(self.generic_name) + " mock file has invalid data. Less values than horizon_step")
-                return None
+            logger.debug("Length: " + str(self.length))
+            if not self.length==1:
+                logger.debug("Length vals: " + str(len(vals)))
+                if len(vals) < self.length:
+                    logger.error(str(self.generic_name) + " mock file has invalid data. Less values than horizon_step")
+                    return None
         else:
             vals = self.get_random_floats()
+            logger.debug("Vals: "+str(vals))
+
+        logger.debug("Length: " + str(self.length))
         for index in range(self.length):
             meas = senml.SenMLMeasurement()
             meas.value = vals[index]
@@ -65,19 +71,50 @@ class MockGenericDataPublisher(DataPublisher):
     def read_file_data(self, file_path):
         with open(file_path, "r") as f:
             file_lines = f.readlines()
+        logger.debug("file_lines: "+str(file_lines))
         return file_lines
 
     def get_file_line(self):
         try:
             if self.file_index >= self.file_length:
                 self.file_index = 0
-            line = self.file_lines[self.file_index]
+            line = self.file_lines[self.file_index:(self.file_index + self.length)]
+            logger.debug("line: "+str(line))
             if self.length > 1:
-                vals = line.strip().split(",")
+                vals=[]
+                for val in line:
+                    vals.extend(val.strip().split("\\n"))
+
+                counter=0
+                for val in vals:
+                    if "," in val:
+                        new_value=float(val.replace(",", "."))
+                        vals[counter]=str(new_value)
+                    counter +=1
+                logger.debug("vals: " + str(vals))
                 vals = [float(val) for val in vals]
+                logger.debug("vals: " + str(vals))
             else:
-                vals = float(line)
-            self.file_index += 1
+                vals=[]
+                logger.debug("len of line "+str(len(line)))
+                for val in line:
+                    vals.extend(val.strip().split("\\n"))
+                logger.debug("first vals: "+str(vals))
+                counter = 0
+                for val in vals:
+                    if "," in val:
+                        logger.debug("value with comma: "+str(val))
+                        new_value = float(val.replace(",", "."))
+                        logger.debug("new_value: "+str(new_value))
+                        vals[counter]= str(new_value)
+                        logger.debug("vals intern: "+str(vals))
+                    counter += 1
+
+                logger.debug("vals: " + str(vals))
+                vals = [float(val) for val in vals]
+                logger.debug("vals: " + str(vals))
+
+            self.file_index = self.length + self.file_index
             return vals
         except Exception as e:
             logger.error("file line read exception "+str(e))
