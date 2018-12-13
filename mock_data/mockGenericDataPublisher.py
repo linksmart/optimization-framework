@@ -80,39 +80,47 @@ class MockGenericDataPublisher(DataPublisher):
                 self.file_index = 0
             line = self.file_lines[self.file_index:(self.file_index + self.length)]
             logger.debug("line: "+str(line))
-            if self.length > 1:
-                vals=[]
-                for val in line:
-                    vals.extend(val.strip().split("\\n"))
+            if self.length > 0:
+                logger.debug("Entered in loop")
+                if not ";" in line:
+                    vals=[]
+                    for val in line:
+                        vals.extend(val.strip().split("\\n"))
 
-                counter=0
-                for val in vals:
-                    if "," in val:
-                        new_value=float(val.replace(",", "."))
-                        vals[counter]=str(new_value)
-                    counter +=1
-                logger.debug("vals: " + str(vals))
-                vals = [float(val) for val in vals]
-                logger.debug("vals: " + str(vals))
-            else:
-                vals=[]
-                logger.debug("len of line "+str(len(line)))
-                for val in line:
-                    vals.extend(val.strip().split("\\n"))
-                logger.debug("first vals: "+str(vals))
-                counter = 0
-                for val in vals:
-                    if "," in val:
-                        logger.debug("value with comma: "+str(val))
-                        new_value = float(val.replace(",", "."))
-                        logger.debug("new_value: "+str(new_value))
-                        vals[counter]= str(new_value)
-                        logger.debug("vals intern: "+str(vals))
-                    counter += 1
+                    counter=0
+                    for val in vals:
+                        if "," in val:
+                            new_value=float(val.replace(",", "."))
+                            vals[counter]=str(new_value)
+                        counter +=1
+                    logger.debug("vals: " + str(vals))
+                    vals = [float(val) for val in vals]
+                    logger.debug("vals: " + str(vals))
+                else:
+                    logger.debug("Entered in ;")
+                    vals = []
+                    for val in line:
+                        vals.extend(val.strip().split(";"))
+                    logger.debug("vals: "+str(vals))
+            #else:
+                #vals=[]
+                #logger.debug("len of line "+str(len(line)))
+                #for val in line:
+                    #vals.extend(val.strip().split("\\n"))
+                #logger.debug("first vals: "+str(vals))
+                #counter = 0
+                #for val in vals:
+                    #if "," in val:
+                        #logger.debug("value with comma: "+str(val))
+                        #new_value = float(val.replace(",", "."))
+                        #logger.debug("new_value: "+str(new_value))
+                        #vals[counter]= str(new_value)
+                        #logger.debug("vals intern: "+str(vals))
+                    #counter += 1
 
-                logger.debug("vals: " + str(vals))
-                vals = [float(val) for val in vals]
-                logger.debug("vals: " + str(vals))
+                #logger.debug("vals: " + str(vals))
+                #vals = [float(val) for val in vals]
+                #logger.debug("vals: " + str(vals))
 
             self.file_index = self.length + self.file_index
             return vals
