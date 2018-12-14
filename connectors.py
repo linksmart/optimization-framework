@@ -35,7 +35,7 @@ if __name__ == '__main__':
                 logger.info("House: " + section)
                 rec_params = config.get(section, "con.topic")
                 rec_params = json.loads(rec_params)
-                connector = Connector(rec_params, 5, config, section)
+                connector = Connector(rec_params, 2, config, section)
                 connector_list.append(connector)
     except Exception as e:
         logger.error(e)

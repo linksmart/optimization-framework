@@ -224,37 +224,42 @@ def file_input_put(id, dataset):  # noqa: E501
     """
 
     if connexion.request.is_json:
-        #dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
-        dataset = connexion.request.get_json()
-        logger.info("This is the dictionary: " + str(dataset))
+        try:
+            dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
 
-        # check if the file exists
-        dir = os.path.join(os.getcwd(), "utils", str(id))
-        if not os.path.exists(dir):
-            return "Id not existing"
-        else:
-            dir_file = os.path.join(dir, "Input.registry.file")
-            if os.path.exists(dir_file):
-                # appends information
-                logger.info("Appending information to the file input registry")
+            dataset = connexion.request.get_json()
+            logger.info("This is the dictionary: " + str(dataset))
 
-                with open(dir_file, 'r+') as readfile:
-                    data = json.load(readfile)
-                    for header in dataset:
-                        data[header] = dataset[header]
-                    readfile.seek(0)
-                    json.dump(data, readfile)
-                    readfile.truncate()
-                logger.info("data source saved into memory")
+            # check if the file exists
+            dir = os.path.join(os.getcwd(), "utils", str(id))
+            if not os.path.exists(dir):
+                return "Id not existing"
             else:
-                # saves the registry into the new folder
+                dir_file = os.path.join(dir, "Input.registry.file")
+                if os.path.exists(dir_file):
+                    # appends information
+                    logger.info("Appending information to the file input registry")
 
-                with open(dir_file, 'w') as outfile:
-                    json.dump(dataset, outfile, ensure_ascii=False)
-                logger.info("data source saved into memory")
+                    with open(dir_file, 'r+') as readfile:
+                        data = json.load(readfile)
+                        for header in dataset:
+                            data[header] = dataset[header]
+                        readfile.seek(0)
+                        json.dump(data, readfile)
+                        readfile.truncate()
+                    logger.info("data source saved into memory")
+                else:
+                    # saves the registry into the new folder
 
-            store_data(dataset, id, "file")
-            return "Data source registered"
+                    with open(dir_file, 'w') as outfile:
+                        json.dump(dataset, outfile, ensure_ascii=False)
+                    logger.info("data source saved into memory")
+
+                store_data(dataset, id, "file")
+                return "Data source registered"
+        except Exception as e:
+            logger.error("Invalid data " + str(e))
+            return "Invalid data " + str(e)
     else:
         return 'Data is not in json format'
 
@@ -269,91 +274,96 @@ def file_input_source(File_Input_Source):  # noqa: E501
     :rtype: None
     """
     if connexion.request.is_json:
-        #File_Input_Source = FileInputSource.from_dict(connexion.request.get_json())  # noqa: E501
-        File_Input_Source = connexion.request.get_json()
-
         try:
-            id = utils.create_and_get_ID()
-            dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id),"file")
-            if not os.path.exists(dir_data):
-                os.makedirs(dir_data)
-            dir_data = os.path.join(os.getcwd(), "utils", str(id))
-            if not os.path.exists(dir_data):
-                os.makedirs(dir_data)
-        except Exception as e:
-            logger.error(e)
+            File_Input_Source = FileInputSource.from_dict(connexion.request.get_json())  # noqa: E501
 
-        # saves the registry into the new folder
-        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.file")
-        with open(path, 'w') as outfile:
-            json.dump(File_Input_Source, outfile, ensure_ascii=False)
-            logger.info("registry/input saved into memory")
+            File_Input_Source = connexion.request.get_json()
 
-        #with open(path, 'r') as file:
-        input_all=File_Input_Source
+            try:
+                id = utils.create_and_get_ID()
+                dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id),"file")
+                if not os.path.exists(dir_data):
+                    os.makedirs(dir_data)
+                dir_data = os.path.join(os.getcwd(), "utils", str(id))
+                if not os.path.exists(dir_data):
+                    os.makedirs(dir_data)
+            except Exception as e:
+                logger.error(e)
 
-        for header in input_all:
-            logger.debug("Headers: "+ str(header))
-            input = input_all[header]
-            if input:
-                logger.debug(header + " present")
-                if header == "generic":
-                    for v in input:
-                        if "file" and "name" in v.keys():
-                            dataset = v["file"]
-                            name = v["name"]
-                            file_name = str(name) + ".txt"
-                            logger.debug("This is the file name for generic: " + str(file_name))
-                            path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
-                            logger.debug("Path where the data is stored" + str(path))
-                            # dataset = dataset.split(",")
-                            with open(path, 'w') as outfile:
-                                outfile.writelines(str(i) + '\n' for i in dataset)
-                            logger.info("input data saved into memory: " + str(file_name))
-                else:
-                    for key in input:
-                        dataset = input[key]
-                        logger.debug("Data in "+str(key)+" is " + str(dataset))
-                        if dataset is not None:
-                            logger.debug("Type of "+str(key)+str(type(key)))
-                            logger.debug("Type of dataset" + str(type(dataset)))
-                            #logger.debug("Size of dataset" + str(len(dataset)))
-                            """if "soc_value" in str(key):
-                                logger.debug("soc_value")
-                            elif "SoC_Value" in str(key):
-                                logger.debug("SoC_Value")
-                            elif "so_c_value" in str(key):
-                                logger.debug("so_c_value")
-                            else:
-                                logger.debug("key: "+str(key))"""
+            # saves the registry into the new folder
+            path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.file")
+            with open(path, 'w') as outfile:
+                json.dump(File_Input_Source, outfile, ensure_ascii=False)
+                logger.info("registry/input saved into memory")
 
-                            if "meta" in key:
-                                file_name = str(header) + "_" + str(key) + ".txt"
+            #with open(path, 'r') as file:
+            input_all=File_Input_Source
+
+            for header in input_all:
+                logger.debug("Headers: "+ str(header))
+                input = input_all[header]
+                if input:
+                    logger.debug(header + " present")
+                    if header == "generic":
+                        for v in input:
+                            if "file" and "name" in v.keys():
+                                dataset = v["file"]
+                                name = v["name"]
+                                file_name = str(name) + ".txt"
+                                logger.debug("This is the file name for generic: " + str(file_name))
                                 path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
                                 logger.debug("Path where the data is stored" + str(path))
                                 # dataset = dataset.split(",")
                                 with open(path, 'w') as outfile:
-                                    outfile.writelines(dataset)
-                            elif "SoC_Value" in key:
-                                file_name = str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
-                                logger.debug("Path where the data is stored" + str(path))
-                                # dataset = dataset.split(",")
-                                with open(path, 'w') as outfile:
-                                    outfile.write(str(dataset))
-                            else:
-                                file_name = str(key) + ".txt"
-                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
-                                logger.debug("Path where the data is stored" + str(path))
-                                # dataset = dataset.split(",")
-                                with open(path, 'w') as outfile:
-                                    #outfile.write('\n'.join(str(dataset)))
                                     outfile.writelines(str(i) + '\n' for i in dataset)
-                            logger.info("input data saved into memory: " + str(file_name))
-                        else:
-                            logger.debug("No data in "+str(key))
+                                logger.info("input data saved into memory: " + str(file_name))
+                    else:
+                        for key in input:
+                            dataset = input[key]
+                            logger.debug("Data in "+str(key)+" is " + str(dataset))
+                            if dataset is not None:
+                                logger.debug("Type of "+str(key)+str(type(key)))
+                                logger.debug("Type of dataset" + str(type(dataset)))
+                                #logger.debug("Size of dataset" + str(len(dataset)))
+                                """if "soc_value" in str(key):
+                                    logger.debug("soc_value")
+                                elif "SoC_Value" in str(key):
+                                    logger.debug("SoC_Value")
+                                elif "so_c_value" in str(key):
+                                    logger.debug("so_c_value")
+                                else:
+                                    logger.debug("key: "+str(key))"""
 
-        return jsonify({'Data-Source-Id':str(id)})
+                                if "meta" in key:
+                                    file_name = str(header) + "_" + str(key) + ".txt"
+                                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
+                                    logger.debug("Path where the data is stored" + str(path))
+                                    # dataset = dataset.split(",")
+                                    with open(path, 'w') as outfile:
+                                        outfile.writelines(dataset)
+                                elif "SoC_Value" in key:
+                                    file_name = str(key) + ".txt"
+                                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
+                                    logger.debug("Path where the data is stored" + str(path))
+                                    # dataset = dataset.split(",")
+                                    with open(path, 'w') as outfile:
+                                        outfile.write(str(dataset))
+                                else:
+                                    file_name = str(key) + ".txt"
+                                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
+                                    logger.debug("Path where the data is stored" + str(path))
+                                    # dataset = dataset.split(",")
+                                    with open(path, 'w') as outfile:
+                                        #outfile.write('\n'.join(str(dataset)))
+                                        outfile.writelines(str(i) + '\n' for i in dataset)
+                                logger.info("input data saved into memory: " + str(file_name))
+                            else:
+                                logger.debug("No data in "+str(key))
+
+            return jsonify({'Data-Source-Id':str(id)})
+        except Exception as e:
+            logger.error("Invalid data " + str(e))
+            return "Invalid data " + str(e)
     else:
         return 'Data is not in json format'
 
@@ -403,38 +413,43 @@ def mqtt_input_put(id, dataset):  # noqa: E501
 
 
     if connexion.request.is_json:
-        #dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
-        dataset = connexion.request.get_json()
-        logger.info("This is the dictionary: " + str(dataset))
+        try:
+            dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
 
-        # check if the file exists
-        dir = os.path.join(os.getcwd(), "utils", str(id))
-        if not os.path.exists(dir):
-            return "Id not existing"
-        else:
-            dir_file = os.path.join(dir, "Input.registry.mqtt")
-            if os.path.exists(dir_file):
-                # appends information
-                logger.info("Appending information to the mqtt input registry")
+            dataset = connexion.request.get_json()
+            logger.info("This is the dictionary: " + str(dataset))
 
-
-                with open(dir_file, 'r+') as readfile:
-                    data = json.load(readfile)
-                    for header in dataset:
-                        data[header] = dataset[header]
-                    readfile.seek(0)
-                    json.dump(data, readfile)
-                    readfile.truncate()
-                logger.info("data source saved into memory")
+            # check if the file exists
+            dir = os.path.join(os.getcwd(), "utils", str(id))
+            if not os.path.exists(dir):
+                return "Id not existing"
             else:
-                # saves the registry into the new folder
-                # saves the registry into the new folder
-                with open(dir_file, 'w') as outfile:
-                    json.dump(dataset, outfile, ensure_ascii=False)
-                logger.info("data source saved into memory")
+                dir_file = os.path.join(dir, "Input.registry.mqtt")
+                if os.path.exists(dir_file):
+                    # appends information
+                    logger.info("Appending information to the mqtt input registry")
 
-            #store_data(dataset, id, "mqtt")
-            return "Data source registered"
+
+                    with open(dir_file, 'r+') as readfile:
+                        data = json.load(readfile)
+                        for header in dataset:
+                            data[header] = dataset[header]
+                        readfile.seek(0)
+                        json.dump(data, readfile)
+                        readfile.truncate()
+                    logger.info("data source saved into memory")
+                else:
+                    # saves the registry into the new folder
+                    # saves the registry into the new folder
+                    with open(dir_file, 'w') as outfile:
+                        json.dump(dataset, outfile, ensure_ascii=False)
+                    logger.info("data source saved into memory")
+
+                #store_data(dataset, id, "mqtt")
+                return "Data source registered"
+        except Exception as e:
+            logger.error("Invalid data " + str(e))
+            return "Invalid data " + str(e)
     else:
         return 'Data is not in json format'
 
@@ -450,43 +465,47 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
     :rtype: None
     """
     if connexion.request.is_json:
-        MQTT_Input_Source = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
-        logger.info("This is the dictionary: " + MQTT_Input_Source.to_str())
-
-
-        # ToDo Error checklist
-        # if file is true then mqtt is false
-        # limitation of qos
-        # topic just base name
-        # check with the model
-        """try:
-            check = error_check_input(Input_Source)
-            if check != 0:
-                message = "Definition Error " + check
-                logger.error(message)
-                return message
-        except Exception as e:
-            logger.error(e)"""
-
-        ####generates an id an makes a directory with the id for the data and for the registry
         try:
-            id = utils.create_and_get_ID()
-            dir = os.path.join(os.getcwd(), "utils", str(id))
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-            dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id), "mqtt")
-            if not os.path.exists(dir_data):
-                os.makedirs(dir_data)
+            MQTT_Input_Source = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
+            logger.info("This is the dictionary: " + MQTT_Input_Source.to_str())
+
+
+            # ToDo Error checklist
+            # if file is true then mqtt is false
+            # limitation of qos
+            # topic just base name
+            # check with the model
+            """try:
+                check = error_check_input(Input_Source)
+                if check != 0:
+                    message = "Definition Error " + check
+                    logger.error(message)
+                    return message
+            except Exception as e:
+                logger.error(e)"""
+
+            ####generates an id an makes a directory with the id for the data and for the registry
+            try:
+                id = utils.create_and_get_ID()
+                dir = os.path.join(os.getcwd(), "utils", str(id))
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+                dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id), "mqtt")
+                if not os.path.exists(dir_data):
+                    os.makedirs(dir_data)
+            except Exception as e:
+                logger.error(e)
+
+            # saves the registry into the new folder
+            path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.mqtt")
+            with open(path, 'w') as outfile:
+                json.dump(MQTT_Input_Source, outfile, ensure_ascii=False)
+            logger.info("registry/input saved into memory")
+
+            return jsonify({'Data-Source-Id':str(id)})
         except Exception as e:
-            logger.error(e)
-
-        # saves the registry into the new folder
-        path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.mqtt")
-        with open(path, 'w') as outfile:
-            json.dump(MQTT_Input_Source, outfile, ensure_ascii=False)
-        logger.info("registry/input saved into memory")
-
-        return jsonify({'Data-Source-Id':str(id)})
+            logger.error("Invalid data "+str(e))
+            return "Invalid data "+str(e)
     else:
         return 'Data is not in json format'
 

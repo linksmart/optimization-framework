@@ -82,6 +82,11 @@ services:
       - ../optimization-framework/utils:/usr/src/app/utils
     #restart: unless-stopped
     #command: ["echo", "que sera sera"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
     command: ["python3", "-u", "ofw.py"]
     #command: ["ls","/usr/bin"]
   mock:
@@ -91,6 +96,11 @@ services:
     volumes:
       - ../optimization-framework/mock_data/resources:/usr/src/app/mock_data/resources
      # ../docker/App/Dockerfile
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
     command: ["python3", "-u", "mockdata.py"]
   ml:
     build:
@@ -100,6 +110,11 @@ services:
       - redis
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/res
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
     command: ["python3", "-u", "mlTraining.py"]
   connector:
     build:
@@ -107,6 +122,11 @@ services:
       dockerfile: connector/docker/Dockerfile-arm
     volumes:
       - ../optimization-framework/connector/resources/:/usr/src/app/connector/resources
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
     command: ["python3", "-u", "connectors.py"]
 
 volumes:

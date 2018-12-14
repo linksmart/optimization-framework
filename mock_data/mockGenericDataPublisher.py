@@ -10,6 +10,8 @@ import random
 import time
 
 import math
+
+import datetime
 from senml import senml
 
 from IO.dataPublisher import DataPublisher
@@ -31,6 +33,7 @@ class MockGenericDataPublisher(DataPublisher):
             self.source = mock_params["mock_source"]
         if self.source == "file":
             file_path = mock_params["mock_file_path"]
+            self.is_timed = False
             self.file_lines = self.read_file_data(file_path)
             self.file_index = 0
             self.file_length = len(self.file_lines)
@@ -45,20 +48,21 @@ class MockGenericDataPublisher(DataPublisher):
         if self.source == "file":
             vals = self.get_file_line()
             logger.debug("Length: " + str(self.length))
-            if not self.length==1:
-                logger.debug("Length vals: " + str(len(vals)))
-                if len(vals) < self.length:
-                    logger.error(str(self.generic_name) + " mock file has invalid data. Less values than horizon_step")
-                    return None
+            if len(vals) < self.length:
+                logger.error(str(self.generic_name) + " mock file has invalid data. Less values than horizon_step")
+                return None
         else:
             vals = self.get_random_floats()
             logger.debug("Vals: "+str(vals))
-
         logger.debug("Length: " + str(self.length))
         for index in range(self.length):
             meas = senml.SenMLMeasurement()
-            meas.value = vals[index]
-            meas.time = int(current_time)
+            if self.is_timed:
+                meas.value = vals[index][1]
+                meas.time = int(vals[index][0])
+            else:
+                meas.value = vals[index]
+                meas.time = int(current_time)
             meas.name = self.generic_name
             meas_list.append(meas)
             current_time += self.delta_time
@@ -71,59 +75,53 @@ class MockGenericDataPublisher(DataPublisher):
     def read_file_data(self, file_path):
         with open(file_path, "r") as f:
             file_lines = f.readlines()
-        logger.debug("file_lines: "+str(file_lines))
-        return file_lines
+        # logger.debug("file_lines: "+str(file_lines))
+        if any(";" in s for s in file_lines):
+            timed_vals = []
+            # format the file according to val;time
+            self.is_timed = True
+            for line in file_lines:
+                line = line.replace("\n", "")
+                vals = line.strip().split(";")
+                val = vals[0]
+                val = float(val.replace(",", "."))
+                time = vals[1]
+                time = float(time.replace(",", "."))
+                timed_vals.append([time, val])
+            timed_vals.sort(key=lambda x: x[0])
+            timed_vals = self.expand_and_resample(timed_vals, self.delta_time)
+            return timed_vals
+        else:
+            vals = []
+            for line in file_lines:
+                line = line.replace("\n","")
+                val = float(line.replace(",", "."))
+                vals.append(val)
+            return vals
 
     def get_file_line(self):
         try:
+            if self.is_timed:
+                # find next closest timestamp
+                current_time = time.time()
+                self.file_index = self.find_closest_timestamp_index(current_time)
             if self.file_index >= self.file_length:
                 self.file_index = 0
-            line = self.file_lines[self.file_index:(self.file_index + self.length)]
-            logger.debug("line: "+str(line))
-            if self.length > 0:
-                logger.debug("Entered in loop")
-                if not ";" in line:
-                    vals=[]
-                    for val in line:
-                        vals.extend(val.strip().split("\\n"))
-
-                    counter=0
-                    for val in vals:
-                        if "," in val:
-                            new_value=float(val.replace(",", "."))
-                            vals[counter]=str(new_value)
-                        counter +=1
-                    logger.debug("vals: " + str(vals))
-                    vals = [float(val) for val in vals]
-                    logger.debug("vals: " + str(vals))
-                else:
-                    logger.debug("Entered in ;")
-                    vals = []
-                    for val in line:
-                        vals.extend(val.strip().split(";"))
-                    logger.debug("vals: "+str(vals))
-            #else:
-                #vals=[]
-                #logger.debug("len of line "+str(len(line)))
-                #for val in line:
-                    #vals.extend(val.strip().split("\\n"))
-                #logger.debug("first vals: "+str(vals))
-                #counter = 0
-                #for val in vals:
-                    #if "," in val:
-                        #logger.debug("value with comma: "+str(val))
-                        #new_value = float(val.replace(",", "."))
-                        #logger.debug("new_value: "+str(new_value))
-                        #vals[counter]= str(new_value)
-                        #logger.debug("vals intern: "+str(vals))
-                    #counter += 1
-
-                #logger.debug("vals: " + str(vals))
-                #vals = [float(val) for val in vals]
-                #logger.debug("vals: " + str(vals))
-
-            self.file_index = self.length + self.file_index
-            return vals
+                line = self.file_lines[self.file_index:(self.file_index + self.length)]
+                if self.file_index + self.length > self.file_length:
+                    line.extend(self.file_lines[:self.file_length-(self.file_index + self.length)])
+                end = self.file_index + self.length
+                line = self.file_lines[self.file_index:end]
+                if end > self.file_length:
+                    end = end - self.file_length
+                    q = int(end / self.file_length)
+                    r = int(end % self.file_length)
+                    for j in range(q):
+                        line.extend(self.file_lines[:])
+                    line.extend(self.file_lines[:r])
+                logger.debug("line: "+str(line))
+                self.file_index = self.length + self.file_index
+                return line
         except Exception as e:
             logger.error("file line read exception "+str(e))
 
@@ -132,3 +130,37 @@ class MockGenericDataPublisher(DataPublisher):
             return [round(random.uniform(self.rand_min, self.rand_max), 6) for _ in range(self.length)]
         else:
             return [random.randrange(self.rand_min, self.rand_max+1) for _ in range(self.length)]
+
+    def find_closest_timestamp_index(self, current_timestamp):
+        index, val = min(enumerate(self.file_lines, 0) ,
+            key=lambda x: abs(current_timestamp - x[0]))
+        return index
+
+    def expand_and_resample(self, raw_data, dT):
+        step = float(dT)
+        j = len(raw_data)
+        new_data = []
+        sec_diff = 0
+        current_step = 0
+        first = True
+        if j > 1:
+            while j > 0:
+                if current_step <= 0:
+                    j -= 1
+                    start_date = datetime.datetime.fromtimestamp(raw_data[j][0])
+                    start_val = float(raw_data[j][1])
+                    end_date = datetime.datetime.fromtimestamp(raw_data[j - 1][0])
+                    end_val = float(raw_data[j - 1][1])
+                    sec_diff = start_date - end_date
+                    sec_diff = sec_diff.total_seconds()
+                    current_step = sec_diff
+                if current_step >= step or first:
+                    ratio = float(current_step / sec_diff)
+                    sec = sec_diff - current_step
+                    date = start_date - datetime.timedelta(seconds=sec)
+                    val = end_val + (start_val - end_val) * ratio
+                    new_data.append([date.timestamp(), val])
+                    first = False
+                current_step -= step
+        new_data.reverse()
+        return new_data

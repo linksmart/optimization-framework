@@ -29,8 +29,8 @@ class LoadPrediction:
         self.num_timesteps = 60
         self.hidden_size = 120
         self.batch_size = 1
-        self.num_epochs = 10  # 10
-        self.output_size = int(self.horizon_in_steps/4)
+        self.num_epochs = 3  # 10
+        self.output_size = int(self.horizon_in_steps)
         if self.output_size < 1:
             self.output_size = 1
         self.id = id
@@ -150,6 +150,8 @@ class Training(threading.Thread):
                     logger.debug("raw data ready " + str(len(data)))
                     data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
                     logger.debug("resampled data ready " + str(len(data)))
+                    data = data[:7200]
+                    logger.debug("truncated data ready " + str(len(data)))
                     if len(data) > self.min_training_size:
                         self.trained = True
                         logger.info("start training")
@@ -244,7 +246,7 @@ class Prediction(threading.Thread):
                 logger.debug("len data = " + str(len(data)))
                 data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
                 logger.debug("len resample data = " + str(len(data)))
-                logger.info(data)
+                #logger.info(data)
                 if len(data) > 0:
                     data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
                     logger.debug("len appended data = " + str(len(data)))
@@ -261,7 +263,8 @@ class Prediction(threading.Thread):
                             Xtest, scaling, latest_timestamp = self.processingData.preprocess_data(data, self.num_timesteps, self.output_size, False)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
-                            test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
+                            #test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
+                            test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
                         except Exception as e:

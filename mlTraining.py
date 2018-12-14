@@ -62,7 +62,6 @@ if __name__ == '__main__':
     if not os.path.exists(config_path):
         shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
     try:
-        """
         # clear_redis() #  need to relook
         config = configparser.RawConfigParser()
         config.read(config_path)
@@ -74,6 +73,6 @@ if __name__ == '__main__':
                           model_file_container_train="/usr/src/app/prediction/resources/partTestModel.h5",
                           topic_name="P_Load", id="000111", dT_in_seconds=60, output_size=1440)
         ot.train()
-
+        """
     except Exception as e:
         logger.error(e)

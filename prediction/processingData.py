@@ -21,27 +21,6 @@ class ProcessingData:
     def __init__(self):
         self.new_df = None
 
-    def resample(self, raw_data, dT):
-        step = float(dT / 60.0)
-        j = float(len(raw_data) - 1)
-        new_data = []
-        while j > 0:
-            if j.is_integer():
-                i = int(j)
-                new_data.append(raw_data[i])
-            else:
-                i = math.ceil(j)
-                ratio = i - j
-                startdate = datetime.datetime.fromtimestamp(raw_data[i][0])
-                sec = int(60.0 * ratio)
-                date = startdate + datetime.timedelta(seconds=sec)
-                start = float(raw_data[i][1])
-                end = float(raw_data[i - 1][1])
-                val = start + (end - start) * ratio
-                new_data.append([date.timestamp(), val])
-            j -= step
-        return new_data
-
     def expand_and_resample(self, raw_data, dT):
         step = float(dT)
         j = len(raw_data)
@@ -71,10 +50,21 @@ class ProcessingData:
         new_data.reverse()
         return new_data
 
+    def resampling_calculations(self, dT, train, input_length, output_length):
+        if train:
+            num_timesteps_required = input_length + output_length
+        else:
+            num_timesteps_required = input_length
+        total_minute_steps_necessary = math.ceil(num_timesteps_required * (dT / 60.0))
+        allowed_interpolation_percentage = 0.20
+        total_minute_steps_sufficient = int(total_minute_steps_necessary * (1.0 - allowed_interpolation_percentage))
+        return total_minute_steps_sufficient, total_minute_steps_necessary
+
+
     def preprocess_data(self, raw_data, num_timesteps, output_size, train):
         # Loading Data
         latest_timestamp = raw_data[-1:][0][0]
-        print(latest_timestamp)
+        logger.debug(latest_timestamp)
         # df = pd.DataFrame(raw_data, columns=col_heads)
         df = pd.DataFrame(raw_data)
         df = df[df.columns[:2]]
@@ -119,9 +109,10 @@ class ProcessingData:
             logger.info("sp = " + str(sp))
             Xtrain, Xtest, Ytrain, Ytest = x_train_reshaped[0:sp], x_train_reshaped[sp:], y_train_reshaped[
                                                                                           0:sp], y_train_reshaped[sp:]
+            return Xtrain, Xtest, Ytrain, Ytest
             # logger.debug(str(Xtrain.shape) + " " + str(Xtest.shape) + " " + str(Ytrain.shape) + " " + str(Ytest.shape))
             """
-            sp = 2000
+            sp = 250
             Xtrain, Ytrain = x_train_reshaped[-sp:], y_train_reshaped[-sp:]
             # TODO: check the capacity of RPi to operate with more data size
             return Xtrain, Ytrain

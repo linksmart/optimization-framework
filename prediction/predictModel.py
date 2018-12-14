@@ -45,6 +45,11 @@ class PredictModel:
         #self.save_to_file(input_data, prediction, raw_data)
         return prediction
 
+    def predict_next_horizon(self, model, Xvals, model_batch_size, graph):
+        with graph.as_default():
+            pred = self.predict(model, Xvals, model_batch_size)
+        return pred
+
     def getDF(self, pred, Xvals):
         Xvals = np.roll(Xvals, -1, axis=1)
         Xvals.put(indices=Xvals.size-1, values=[pred])
