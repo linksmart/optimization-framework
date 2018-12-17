@@ -62,6 +62,7 @@ def setup():
     if not os.path.exists(config_path):
         shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
     clear_redis()
+    copy_models()
     signal.signal(signal.SIGINT, signal_handler)
     # Creating an object of the configuration file (standard values)
     try:
@@ -76,7 +77,13 @@ def setup():
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
 
-
+def copy_models():
+    models_path = "/usr/src/app/optimization/resources/models"
+    if os.path.exists(models_path):
+        for file in os.listdir(models_path):
+            file_path = os.path.join(models_path, file)
+            if os.path.isfile(file_path) and ".py" in file:
+                shutil.copyfile(file_path, os.path.join("/usr/src/app/optimization/models", file))
 
 def clear_redis():
     logger.info("reset redis")

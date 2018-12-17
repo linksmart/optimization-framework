@@ -22,7 +22,7 @@ from pyutilib.pyro import shutdown_pyro_components
 from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
-from optimization.InvalidModelException import InvalidModelException
+from optimization.ModelException import InvalidModelException
 import logging
 from threading import Event
 

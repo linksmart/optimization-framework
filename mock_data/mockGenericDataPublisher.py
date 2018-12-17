@@ -46,7 +46,7 @@ class MockGenericDataPublisher(DataPublisher):
         meas_list = []
         current_time = int(math.floor(time.time()))
         if self.source == "file":
-            vals = self.get_file_line()
+            vals = self.get_file_line(current_time)
             logger.debug("Length: " + str(self.length))
             if len(vals) < self.length:
                 logger.error(str(self.generic_name) + " mock file has invalid data. Less values than horizon_step")
@@ -55,11 +55,16 @@ class MockGenericDataPublisher(DataPublisher):
             vals = self.get_random_floats()
             logger.debug("Vals: "+str(vals))
         logger.debug("Length: " + str(self.length))
+        prev_time = 0
         for index in range(self.length):
             meas = senml.SenMLMeasurement()
             if self.is_timed:
                 meas.value = vals[index][1]
-                meas.time = int(vals[index][0])
+                if prev_time > vals[index][0]:
+                    meas.time = prev_time + self.delta_time
+                else:
+                    meas.time = int(vals[index][0])
+                prev_time = meas.time
             else:
                 meas.value = vals[index]
                 meas.time = int(current_time)
@@ -75,7 +80,7 @@ class MockGenericDataPublisher(DataPublisher):
     def read_file_data(self, file_path):
         with open(file_path, "r") as f:
             file_lines = f.readlines()
-        # logger.debug("file_lines: "+str(file_lines))
+        logger.debug("file_lines: "+str(file_lines))
         if any(";" in s for s in file_lines):
             timed_vals = []
             # format the file according to val;time
@@ -99,31 +104,36 @@ class MockGenericDataPublisher(DataPublisher):
                 vals.append(val)
             return vals
 
-    def get_file_line(self):
+    def get_file_line(self, current_time):
         try:
             if self.is_timed:
                 # find next closest timestamp
-                current_time = time.time()
                 self.file_index = self.find_closest_timestamp_index(current_time)
             if self.file_index >= self.file_length:
                 self.file_index = 0
-                line = self.file_lines[self.file_index:(self.file_index + self.length)]
-                if self.file_index + self.length > self.file_length:
-                    line.extend(self.file_lines[:self.file_length-(self.file_index + self.length)])
-                end = self.file_index + self.length
-                line = self.file_lines[self.file_index:end]
-                if end > self.file_length:
-                    end = end - self.file_length
-                    q = int(end / self.file_length)
-                    r = int(end % self.file_length)
-                    for j in range(q):
-                        line.extend(self.file_lines[:])
-                    line.extend(self.file_lines[:r])
-                logger.debug("line: "+str(line))
-                self.file_index = self.length + self.file_index
-                return line
+            line = self.file_lines[self.file_index:(self.file_index + self.length)]
+            if self.file_index + self.length > self.file_length:
+                line.extend(self.file_lines[:self.file_length-(self.file_index + self.length)])
+            end = self.file_index + self.length
+            line = self.file_lines[self.file_index:end]
+            if end > self.file_length:
+                end = end - self.file_length
+                q = int(end / self.file_length)
+                r = int(end % self.file_length)
+                for j in range(q):
+                    line.extend(self.file_lines[:])
+                line.extend(self.file_lines[:r])
+            logger.debug("line: "+str(line))
+            self.file_index = self.length + self.file_index
+            return line
         except Exception as e:
             logger.error("file line read exception "+str(e))
+
+    def find_closest_timestamp_index(self, current_timestamp):
+        if current_timestamp < self.file_lines[0][0] or current_timestamp > self.file_lines[self.file_length - 1][0]:
+            return self.file_index
+        else:
+            return int(math.floor((current_timestamp - self.file_lines[0][0]) / self.delta_time))
 
     def get_random_floats(self):
         if self.data_type == "float":
@@ -131,21 +141,16 @@ class MockGenericDataPublisher(DataPublisher):
         else:
             return [random.randrange(self.rand_min, self.rand_max+1) for _ in range(self.length)]
 
-    def find_closest_timestamp_index(self, current_timestamp):
-        index, val = min(enumerate(self.file_lines, 0) ,
-            key=lambda x: abs(current_timestamp - x[0]))
-        return index
-
     def expand_and_resample(self, raw_data, dT):
         step = float(dT)
         j = len(raw_data)
         new_data = []
         sec_diff = 0
-        current_step = 0
+        current_step = -1
         first = True
         if j > 1:
             while j > 0:
-                if current_step <= 0:
+                if current_step < 0:
                     j -= 1
                     start_date = datetime.datetime.fromtimestamp(raw_data[j][0])
                     start_val = float(raw_data[j][1])
@@ -154,7 +159,7 @@ class MockGenericDataPublisher(DataPublisher):
                     sec_diff = start_date - end_date
                     sec_diff = sec_diff.total_seconds()
                     current_step = sec_diff
-                if current_step >= step or first:
+                if current_step >= step or first or (j == 1 and current_step == 0):
                     ratio = float(current_step / sec_diff)
                     sec = sec_diff - current_step
                     date = start_date - datetime.timedelta(seconds=sec)

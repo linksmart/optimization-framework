@@ -32,6 +32,11 @@ def getFilePath(dir, file_name):
     data_file = os.path.join("/usr/src/app", dir, file_name)
     return data_file
 
+def check_and_remove_from_resources(model_name):
+    file_path = os.path.join("/usr/src/app/optimization/resources/models", model_name)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
 def delete_models(name):  # noqa: E501
     """Deletes the desired model of the framework
 
@@ -48,6 +53,8 @@ def delete_models(name):  # noqa: E501
         file_path= os.path.join("/usr/src/app/optimization/models", file_name)
         try:
             os.remove(file_path)
+            # remove from resources
+            check_and_remove_from_resources(file_name)
             # Creating an object of the configuration file in order to change the model.name into the SolverSection
             config = configparser.RawConfigParser()
             config.read(getFilePath("utils", "ConfigFile.properties"))
@@ -77,16 +84,17 @@ def delete_models_all():  # noqa: E501
     """
     f = []
     mypath = "/usr/src/app/optimization/models"
-    for (dirpath, dirnames, filenames) in walk(mypath):
-        f.extend(filenames)
+    for (dirpath, dirnames, filename) in walk(mypath):
+        f.extend(filename)
         break
     try:
-        for filenames in f:
-            logger.debug("Filenames: " + str(filenames))
-            if not "ReferenceModel.py" in filenames:
-                file_path = os.path.join("/usr/src/app/optimization/models", filenames)
+        for filename in f:
+            logger.debug("Filename: " + str(filename))
+            if not "ReferenceModel.py" in filename:
+                file_path = os.path.join("/usr/src/app/optimization/models", filename)
                 logger.debug("File_path: "+file_path)
                 os.remove(file_path)
+                check_and_remove_from_resources(filename)
         config = configparser.RawConfigParser()
         config.read(getFilePath("utils", "ConfigFile.properties"))
         model_name = config.get('SolverSection', 'model.name')
@@ -163,6 +171,14 @@ def optimization_model(name, upModel):  # noqa: E501
 
         # Saves the class into the /optimization/models
         with open(data_file, mode='w') as localfile:
+            localfile.write(classText)
+
+        model_persist_dir_path = "/usr/src/app/optimization/resources/models"
+        if not os.path.exists(model_persist_dir_path):
+            os.makedirs(model_persist_dir_path)
+        data_file_persist = os.path.join("/usr/src/app/optimization/resources/models", name) + ".py"
+        # Saves the class into the /optimization/resources/models for persistence
+        with open(data_file_persist, mode='w') as localfile:
             localfile.write(classText)
 
         # Creating an object of the configuration file in order to change the model.name into the SolverSection

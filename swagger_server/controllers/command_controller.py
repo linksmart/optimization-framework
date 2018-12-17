@@ -9,7 +9,7 @@ import logging
 from pyutilib.pyro import shutdown_pyro_components
 
 from IO.redisDB import RedisDB
-from optimization.InvalidModelException import InvalidModelException
+from optimization.ModelException import InvalidModelException, MissingKeysException
 from swagger_server.models.start import Start  # noqa: E501
 
 from swagger_server.controllers.threadFactory import ThreadFactory
@@ -189,7 +189,11 @@ class CommandController:
                 self.redisDB.release_lock(self.lock_key, "start")
             for s in old_ids:
                 val = json.loads(s)
-                self.start(val["id"], None, val)
+                try:
+                    self.start(val["id"], None, val)
+                except (InvalidModelException, MissingKeysException) as e:
+                    logger.error("Error " + str(e))
+                    return str(e)
 
     def number_of_active_ids(self):
         num = 0
@@ -317,7 +321,7 @@ def framework_start(id, startOFW):  # noqa: E501
             try:
                 variable.start(id, startOFW)
                 return "System started succesfully"
-            except InvalidModelException as e:
+            except (InvalidModelException, MissingKeysException) as e:
                 logger.error("Error " + str(e))
                 return str(e)
     else:

@@ -29,7 +29,7 @@ class LoadPrediction:
         self.num_timesteps = 60
         self.hidden_size = 120
         self.batch_size = 1
-        self.num_epochs = 3  # 10
+        self.num_epochs = 5  # 10
         self.output_size = int(self.horizon_in_steps)
         if self.output_size < 1:
             self.output_size = 1
@@ -122,7 +122,7 @@ class Training(threading.Thread):
         self.hidden_size = hidden_size
         self.batch_size = batch_size
         self.num_epochs = num_epochs  # 10
-        self.min_training_size = self.num_timesteps + 30
+        self.min_training_size = self.num_timesteps + self.horizon_in_steps + 5
         self.model_file_container = model_file_container
         self.model_file_container_train = model_file_container_train
         self.today = datetime.datetime.now().day
@@ -148,14 +148,12 @@ class Training(threading.Thread):
                     # atmost last 5 days' data
                     data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
                     logger.debug("raw data ready " + str(len(data)))
-                    data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
-                    logger.debug("resampled data ready " + str(len(data)))
-                    data = data[:7200]
-                    logger.debug("truncated data ready " + str(len(data)))
-                    if len(data) > self.min_training_size:
+                    data = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps)
+                    #logger.debug("resampled data ready " + str(len(data)))
+                    if self.sufficient_data_available(data):
                         self.trained = True
                         logger.info("start training")
-                        Xtrain, Ytrain = self.processingData.preprocess_data(data, self.num_timesteps, self.output_size, True)
+                        Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps, self.output_size)
                         logger.info("pre proc done")
                         # preprocess data
                         try:
@@ -189,6 +187,12 @@ class Training(threading.Thread):
 
     def stop_request_status(self):
         return self.stopRequest.is_set()
+
+    def sufficient_data_available(self, data_blocks):
+        for block in data_blocks:
+            if len(block) >= self.min_training_size:
+                return True
+        return False
 
 class Prediction(threading.Thread):
 
@@ -260,7 +264,7 @@ class Prediction(threading.Thread):
                         model = model_temp
                     if model is not None:
                         try:
-                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data(data, self.num_timesteps, self.output_size, False)
+                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size, False)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
                             #test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)

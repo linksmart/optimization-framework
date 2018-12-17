@@ -9,6 +9,7 @@ from _signal import SIGTERM
 
 from IO.inputConfigParser import InputConfigParser
 from IO.redisDB import RedisDB
+from optimization.ModelException import MissingKeysException
 from optimization.controller import OptController
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
@@ -111,6 +112,11 @@ class ThreadFactory:
             logger.error(e)
 
         input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name)
+
+        missing_keys = input_config_parser.check_keys_for_completeness()
+        if len(missing_keys) > 0:
+            raise MissingKeysException("Data source for following keys not declared: "+str(missing_keys))
+
         self.prediction_threads = {}
         self.prediction_names = input_config_parser.get_prediction_names()
         if self.prediction_names is not None and len(self.prediction_names) > 0:
@@ -169,3 +175,5 @@ class ThreadFactory:
 
     def is_running(self):
         return not self.opt.finish_status
+
+

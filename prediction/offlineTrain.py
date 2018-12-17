@@ -44,8 +44,8 @@ class OfflineTrain:
             logger.debug("resampled data ready " + str(len(data)))
             if len(data) > self.min_training_size:
                 logger.info("start training")
-                Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data(data, self.num_timesteps, self.output_size,
-                                                                     True)
+                Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data_train(data, self.num_timesteps,
+                                                                                         self.output_size)
                 logger.info("pre proc done")
                 # preprocess data
                 try:

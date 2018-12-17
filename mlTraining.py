@@ -50,11 +50,14 @@ def check_training(config):
 
 
 def clear_redis():
-    logger.info("reset redis")
+    logger.info("reset redis training key locks")
+    training_lock_key = "training_lock"
     from IO.redisDB import RedisDB
     redisDB = RedisDB()
-    redisDB.reset()
-    redisDB.set("time", time.time())
+    try:
+        redisDB.remove(training_lock_key)
+    except Exception as e:
+        logger.debug("key does not exist")
 
 
 if __name__ == '__main__':
@@ -62,7 +65,7 @@ if __name__ == '__main__':
     if not os.path.exists(config_path):
         shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
     try:
-        # clear_redis() #  need to relook
+        clear_redis() #  need to relook
         config = configparser.RawConfigParser()
         config.read(config_path)
         check_training(config)

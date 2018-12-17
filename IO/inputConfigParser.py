@@ -17,7 +17,7 @@ class InputConfigParser:
 
     def __init__(self, input_config_file, input_config_mqtt, model_name):
         self.model_name = model_name
-        self.model_variables = ModelParamsInfo.get_model_param(self.model_name)
+        self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
         self.input_config_file = input_config_file
         self.input_config_mqtt = input_config_mqtt
         self.mqtt_params = {}
@@ -174,3 +174,18 @@ class InputConfigParser:
             return self.model_variables[name]["indexing"]
         else:
             return None
+
+    def check_keys_for_completeness(self):
+        all_keys = []
+        all_keys.extend(self.prediction_names)
+        all_keys.extend(self.non_prediction_names)
+        all_keys.extend(self.external_names)
+        all_keys.extend(self.generic_names)
+        all_keys.extend(self.optimization_params.keys())
+        all_keys.append("dT")
+
+        not_available_keys = []
+        for key in self.param_key_list:
+            if key not in all_keys:
+                not_available_keys.append(key)
+        return not_available_keys

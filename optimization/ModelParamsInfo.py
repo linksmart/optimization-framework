@@ -28,6 +28,7 @@ class ModelParamsInfo:
         models = ModelParamsInfo.get_models()
         lines = []
         var_map = {}
+        param_key_list = []
         for model in models:
             if model_name in model:
                 with open(model, "r") as infile:
@@ -43,7 +44,9 @@ class ModelParamsInfo:
                         type_name, indexing = ModelParamsInfo.pos_and_type_of_var(line, pos_of_eq)
                         if type_name is not None:
                             var_map[var_name] = {"type":type_name, "indexing":indexing}
-        return var_map
+                            if type_name == "Param":
+                                param_key_list.append(var_name)
+        return var_map, param_key_list
 
     @staticmethod
     def pos_and_type_of_var(line, pos_of_equal):
