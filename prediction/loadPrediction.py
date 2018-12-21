@@ -51,9 +51,7 @@ class LoadPrediction:
         self.training_thread = None
         self.raw_data = None
 
-        total_mins = int(float(self.horizon_in_steps * self.dT_in_seconds)/60.0) + 1
-        if total_mins < self.num_timesteps:
-            total_mins = self.num_timesteps
+        total_mins = int(float(self.num_timesteps * self.dT_in_seconds)/60.0) + 1
 
         if self.predictionFlag:
             from prediction.rawLoadDataReceiver import RawLoadDataReceiver
@@ -148,7 +146,8 @@ class Training(threading.Thread):
                     # atmost last 5 days' data
                     data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
                     logger.debug("raw data ready " + str(len(data)))
-                    data = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps)
+                    data = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
+                                                                               self.num_timesteps, self.output_size)
                     #logger.debug("resampled data ready " + str(len(data)))
                     if self.sufficient_data_available(data):
                         self.trained = True
@@ -250,7 +249,6 @@ class Prediction(threading.Thread):
                 logger.debug("len data = " + str(len(data)))
                 data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
                 logger.debug("len resample data = " + str(len(data)))
-                #logger.info(data)
                 if len(data) > 0:
                     data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
                     logger.debug("len appended data = " + str(len(data)))
@@ -264,7 +262,7 @@ class Prediction(threading.Thread):
                         model = model_temp
                     if model is not None:
                         try:
-                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size, False)
+                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
                             #test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)

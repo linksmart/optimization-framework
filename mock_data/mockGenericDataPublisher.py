@@ -143,29 +143,32 @@ class MockGenericDataPublisher(DataPublisher):
 
     def expand_and_resample(self, raw_data, dT):
         step = float(dT)
-        j = len(raw_data)
+        j = len(raw_data) - 1
         new_data = []
-        sec_diff = 0
-        current_step = -1
-        first = True
-        if j > 1:
-            while j > 0:
-                if current_step < 0:
+        if j > 0:
+            start_time = raw_data[j][0]
+            start_value = raw_data[j][1]
+            new_data.append([start_time, start_value])
+            prev_time = start_time
+            prev_value = start_value
+            required_diff = step
+            j -= 1
+            while j >= 0:
+                end_time = raw_data[j][0]
+                end_value = raw_data[j][1]
+                diff_sec = prev_time - end_time
+                if diff_sec >= required_diff:
+                    ratio = required_diff / diff_sec
+                    inter_time = prev_time - required_diff
+                    inter_value = prev_value - (prev_value - end_value) * ratio
+                    new_data.append([inter_time, inter_value])
+                    prev_time = inter_time
+                    prev_value = inter_value
+                    required_diff = step
+                else:
+                    required_diff -= diff_sec
+                    prev_time = end_time
+                    prev_value = end_value
                     j -= 1
-                    start_date = datetime.datetime.fromtimestamp(raw_data[j][0])
-                    start_val = float(raw_data[j][1])
-                    end_date = datetime.datetime.fromtimestamp(raw_data[j - 1][0])
-                    end_val = float(raw_data[j - 1][1])
-                    sec_diff = start_date - end_date
-                    sec_diff = sec_diff.total_seconds()
-                    current_step = sec_diff
-                if current_step >= step or first or (j == 1 and current_step == 0):
-                    ratio = float(current_step / sec_diff)
-                    sec = sec_diff - current_step
-                    date = start_date - datetime.timedelta(seconds=sec)
-                    val = end_val + (start_val - end_val) * ratio
-                    new_data.append([date.timestamp(), val])
-                    first = False
-                current_step -= step
         new_data.reverse()
         return new_data
