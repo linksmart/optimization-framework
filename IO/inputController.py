@@ -9,6 +9,9 @@ import logging
 import os
 import re
 
+import datetime
+from math import floor, ceil
+
 from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
 
@@ -37,6 +40,14 @@ class InputController:
         self.parse_input_config()
         self.set_timestep_data()
 
+        sec_in_day = 24*60*60
+        self.steps_in_day = floor(sec_in_day/dT_in_seconds)
+        self.required_buffer_data = 0
+        horizon_sec = horizon_in_steps * dT_in_seconds
+        while horizon_sec > 0:
+            self.required_buffer_data += self.steps_in_day
+            horizon_sec = horizon_sec - sec_in_day
+
         self.internal_receiver = {}
         for name, flag in self.prediction_mqtt_flags.items():
             if flag:
@@ -44,13 +55,13 @@ class InputController:
                 prediction_topic = config.get("IO", "load.forecast.topic")
                 prediction_topic = json.loads(prediction_topic)
                 self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name,
-                                                                   self.id)
+                                                                   self.id, self.required_buffer_data, self.dT_in_seconds)
         for name, flag in self.non_prediction_mqtt_flags.items():
             if flag:
                 non_prediction_topic = config.get("IO", "pv.forecast.topic")
                 non_prediction_topic = json.loads(non_prediction_topic)
                 self.internal_receiver[name] = GenericDataReceiver(True, non_prediction_topic, config, name,
-                                                                   self.id)
+                                                                   self.id, self.required_buffer_data, self.dT_in_seconds)
         # ESS data
         self.external_data_receiver = {}
         for topic, flag in self.external_mqtt_flags.items():
@@ -58,7 +69,8 @@ class InputController:
                 if topic == "SoC_Value":
                     params = self.input_config_parser.get_params("SoC_Value")
                     logger.debug("params for MQTT SoC_Value: " + str(params))
-                    self.external_data_receiver[topic] = SoCValueDataReceiver(False, params, config, self.id)
+                    self.external_data_receiver[topic] = SoCValueDataReceiver(False, params, config, self.id,
+                                                                              self.required_buffer_data, self.dT_in_seconds)
 
         self.generic_data_receiver = {}
         if len(self.generic_data_mqtt_flags) > 0:
@@ -66,7 +78,7 @@ class InputController:
                 if mqtt_flag:
                     topic = self.input_config_parser.get_params(generic_name)
                     self.generic_data_receiver[generic_name] = GenericDataReceiver(False, topic, config, generic_name,
-                                                                                   self.id)
+                                                                                   self.id, self.required_buffer_data, self.dT_in_seconds)
 
     def set_timestep_data(self):
         i = 0
@@ -126,26 +138,40 @@ class InputController:
             self.optimization_data[topic] = data
 
     def get_data(self):
-        self.fetch_mqtt_and_file_data(self.prediction_mqtt_flags, self.internal_receiver, [], [])
-        self.fetch_mqtt_and_file_data(self.non_prediction_mqtt_flags, self.internal_receiver, [], [])
-        self.fetch_mqtt_and_file_data(self.external_mqtt_flags, self.external_data_receiver, [], ["SoC_Value"])
-        self.fetch_mqtt_and_file_data(self.generic_data_mqtt_flags, self.generic_data_receiver, [], [])
+        success = False
+        while not success:
+            current_bucket = self.get_current_bucket()
+            logger.info("Get input data for bucket "+str(current_bucket))
+            success = self.fetch_mqtt_and_file_data(self.prediction_mqtt_flags, self.internal_receiver, [], [], current_bucket)
+            if success:
+                success = self.fetch_mqtt_and_file_data(self.non_prediction_mqtt_flags, self.internal_receiver, [], [], current_bucket)
+            if success:
+                success = self.fetch_mqtt_and_file_data(self.external_mqtt_flags, self.external_data_receiver, [], ["SoC_Value"], current_bucket)
+            if success:
+                success = self.fetch_mqtt_and_file_data(self.generic_data_mqtt_flags, self.generic_data_receiver, [], [], current_bucket)
         return {None: self.optimization_data.copy()}
 
-    def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list):
+    def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket):
         logger.debug("mqtt flags " + str(mqtt_flags))
+        logger.info("current bucket = "+str(current_bucket))
+        data_available_for_bucket = True
         if mqtt_flags is not None:
             for name, mqtt_flag in mqtt_flags.items():
                 if mqtt_flag:
                     logger.debug("mqtt True " + str(name))
                     if name not in mqtt_exception_list:
-                        data = receivers[name].get_data()
+                        data, bucket_available = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
+                        if not bucket_available:
+                            data_available_for_bucket = False
+                            logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
+                            break
                         data = self.set_indexing(data)
                         self.optimization_data.update(data)
                 else:
                     logger.debug("file name: " + str(name))
                     if name not in file_exception_list:
                         self.read_input_data(self.id, name, name + ".txt")
+        return data_available_for_bucket
 
     def Stop(self):
         self.stop_request = True
@@ -173,3 +199,11 @@ class InputController:
                         new_data[name] = {None: v}
         data.update(new_data)
         return data
+
+    def get_current_bucket(self):
+        start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        current_time = datetime.datetime.now()
+        bucket = floor((current_time - start_of_day).total_seconds() / self.dT_in_seconds)
+        if bucket >= self.steps_in_day:
+            bucket = self.steps_in_day - 1
+        return bucket

@@ -26,11 +26,13 @@ class LoadPrediction:
         self.control_frequency = control_frequency  # determines minute or hourly etc
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
-        self.num_timesteps = 60
+        self.num_timesteps = horizon_in_steps + 1
+        if self.num_timesteps > 60:
+            self.num_timesteps = 60
         self.hidden_size = 120
         self.batch_size = 1
         self.num_epochs = 5  # 10
-        self.output_size = int(self.horizon_in_steps)
+        self.output_size = int(self.horizon_in_steps-1)
         if self.output_size < 1:
             self.output_size = 1
         self.id = id
@@ -120,7 +122,7 @@ class Training(threading.Thread):
         self.hidden_size = hidden_size
         self.batch_size = batch_size
         self.num_epochs = num_epochs  # 10
-        self.min_training_size = self.num_timesteps + self.horizon_in_steps + 5
+        self.min_training_size = num_timesteps + output_size + 5
         self.model_file_container = model_file_container
         self.model_file_container_train = model_file_container_train
         self.today = datetime.datetime.now().day
@@ -146,10 +148,10 @@ class Training(threading.Thread):
                     # atmost last 5 days' data
                     data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
                     logger.debug("raw data ready " + str(len(data)))
-                    data = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
+                    data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
                                                                                self.num_timesteps, self.output_size)
                     #logger.debug("resampled data ready " + str(len(data)))
-                    if self.sufficient_data_available(data):
+                    if merged or self.sufficient_data_available(data):
                         self.trained = True
                         logger.info("start training")
                         Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps, self.output_size)
@@ -189,6 +191,7 @@ class Training(threading.Thread):
 
     def sufficient_data_available(self, data_blocks):
         for block in data_blocks:
+            logger.info("length of block = "+str(len(block)))
             if len(block) >= self.min_training_size:
                 return True
         return False
@@ -249,6 +252,7 @@ class Prediction(threading.Thread):
                 logger.debug("len data = " + str(len(data)))
                 data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
                 logger.debug("len resample data = " + str(len(data)))
+                true_data = data
                 if len(data) > 0:
                     data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
                     logger.debug("len appended data = " + str(len(data)))
@@ -265,14 +269,15 @@ class Prediction(threading.Thread):
                             Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
-                            #test_predictions = predictModel.predict_next_day(model, Xtest, self.batch_size, self.horizon_in_steps, graph, data)
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
                         except Exception as e:
                             logger.error(str(e))
                     else:
-                        logger.info("prediction  model is none")
+                        logger.info("prediction model is none, extending the known values")
+                        test_predictions = self.processingData.get_regression_values(true_data, self.num_timesteps, self.output_size + 1, self.dT_in_seconds)
+                        self.q.put(test_predictions)
                     logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
                     st = time.time() - st
                     ss = self.control_frequency - st

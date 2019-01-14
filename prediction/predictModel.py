@@ -48,6 +48,7 @@ class PredictModel:
     def predict_next_horizon(self, model, Xvals, model_batch_size, graph):
         with graph.as_default():
             pred = self.predict(model, Xvals, model_batch_size)
+        pred = np.append(np.array(Xvals[0][-1:]), pred)
         return pred
 
     def getDF(self, pred, Xvals):

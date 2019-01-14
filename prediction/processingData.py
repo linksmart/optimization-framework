@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import logging
 
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import MinMaxScaler
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -53,17 +54,6 @@ class ProcessingData:
         new_data.reverse()
         return new_data
 
-    def resampling_calculations(self, dT, train, input_length, output_length):
-        if train:
-            num_timesteps_required = input_length + output_length
-        else:
-            num_timesteps_required = input_length
-        total_minute_steps_necessary = math.ceil(num_timesteps_required * (dT / 60.0))
-        allowed_interpolation_percentage = 0.20
-        total_minute_steps_sufficient = int(total_minute_steps_necessary * (1.0 - allowed_interpolation_percentage))
-        return total_minute_steps_sufficient, total_minute_steps_necessary
-
-
     def preprocess_data_predict(self, raw_data, num_timesteps, output_size):
         # Loading Data
         latest_timestamp = raw_data[-1:][0][0]
@@ -92,7 +82,7 @@ class ProcessingData:
         num_features = 1
         nb_samples = data.shape[0] - num_timesteps
         x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
-        y_train_reshaped = np.zeros((nb_samples, output_size))
+        # y_train_reshaped = np.zeros((nb_samples, output_size))
         logger.info("data dim = "+str(data.shape))
         for i in range(nb_samples):
             y_position_start = i + look_back
@@ -109,8 +99,8 @@ class ProcessingData:
         startTime = datetime.datetime.fromtimestamp(startTimestamp)
         result = {}
         for pred in data:
-            startTime += datetime.timedelta(seconds=delta)
             result[startTime] = pred
+            startTime += datetime.timedelta(seconds=delta)
         return result
 
     def append_mock_data(self, data, num_timesteps, dT):
@@ -146,27 +136,49 @@ class ProcessingData:
         return continous_series
 
     def expand_and_resample_into_blocks(self, raw_data, dT, horizon_steps, num_timesteps, output_size):
-        blocks = self.break_series_into_countinous_blocks(raw_data, dT, horizon_steps)
-        logger.info("num blocks = "+str(len(blocks)))
-        resampled_blocks = []
-        block_has_min_length = []
-        for block in blocks:
-            resampled_block = self.expand_and_resample(block, dT)
-            if len(resampled_block) > 0:
-                resampled_blocks.append(resampled_block)
-                logger.info("block size = "+str(len(resampled_block)))
-                if len(resampled_block) >= (num_timesteps + output_size):
-                    block_has_min_length.append(True)
-                else:
-                    block_has_min_length.append(False)
-        if not any(block_has_min_length):
-            logger.info("merging block because insufficient data")
-            new_block = []
-            for rsb in resampled_blocks:
-                new_block.extend(rsb)
-            new_blocks = [new_block]
-            resampled_blocks = new_blocks
-        return resampled_blocks
+        if len(raw_data) > 0:
+            blocks = self.break_series_into_countinous_blocks(raw_data, dT, horizon_steps)
+            logger.info("num blocks = "+str(len(blocks)))
+            resampled_blocks = []
+            block_has_min_length = []
+            merged = False
+            min_length = num_timesteps + output_size
+            for block in blocks:
+                resampled_block = self.expand_and_resample(block, dT)
+                if len(resampled_block) > 0:
+                    resampled_blocks.append(resampled_block)
+                    logger.info("block size = "+str(len(resampled_block)))
+                    if len(resampled_block) >= min_length:
+                        block_has_min_length.append(True)
+                    else:
+                        block_has_min_length.append(False)
+            if not any(block_has_min_length):
+                logger.info("merging block because insufficient data")
+                new_block = []
+                end_time = resampled_blocks[-1][-1][0]
+                # TODO : check logic
+                for i in reversed(range(len(resampled_blocks))):
+                    rsb = resampled_blocks[i]
+                    start_time = rsb[0][0]
+                    if end_time - start_time < min_length * dT:
+                        rsb.extend(new_block)
+                        new_block = rsb
+                        merged = True
+                    else:
+                        rsb.extend(new_block)
+                        new_block = rsb
+                        merged = True
+                        break
+                logger.info(new_block)
+                if merged:
+                    new_block = self.expand_and_resample(new_block, dT)
+                    logger.info(new_block)
+                    logger.info("length of merged blocks after expand = "+str(len(new_block)))
+                new_blocks = [new_block]
+                resampled_blocks = new_blocks
+            return resampled_blocks, merged
+        else:
+            return [], False
 
     def preprocess_data_train(self, blocks, num_timesteps, output_size):
         x_list = []
@@ -176,45 +188,46 @@ class ProcessingData:
         count = 0
         for raw_data in blocks:
             # Loading Data
-            raw_data = raw_data[-7200:]
-            latest_timestamp = raw_data[-1:][0][0]
-            logger.debug(latest_timestamp)
-            # df = pd.DataFrame(raw_data, columns=col_heads)
-            df = pd.DataFrame(raw_data)
-            df = df[df.columns[:2]]
-            df.columns = ['Time', 'Electricity']
+            if len(raw_data) >= num_timesteps + output_size + 5:
+                raw_data = raw_data[-7200:]
+                latest_timestamp = raw_data[-1:][0][0]
+                logger.debug(latest_timestamp)
+                # df = pd.DataFrame(raw_data, columns=col_heads)
+                df = pd.DataFrame(raw_data)
+                df = df[df.columns[:2]]
+                df.columns = ['Time', 'Electricity']
 
-            new_df = df
-            new_df.columns = ['DateTime', 'Electricity']
-            # Changing dtype to pandas datetime format
-            new_df['DateTime'] = pd.to_datetime(new_df['DateTime'], unit='s')
-            new_df = new_df.set_index('DateTime')
+                new_df = df
+                new_df.columns = ['DateTime', 'Electricity']
+                # Changing dtype to pandas datetime format
+                new_df['DateTime'] = pd.to_datetime(new_df['DateTime'], unit='s')
+                new_df = new_df.set_index('DateTime')
 
-            # checking for null values and if any, replacing them with last valid observation
-            new_df.isnull().sum()
-            new_df.Electricity.fillna(method='pad', inplace=True)
+                # checking for null values and if any, replacing them with last valid observation
+                new_df.isnull().sum()
+                new_df.Electricity.fillna(method='pad', inplace=True)
 
-            # scale the data to be in the range (0, 1)
-            data = new_df.values.reshape(-1, 1)
-            scaler = MinMaxScaler(feature_range=(0, 1), copy=False)
-            data = scaler.fit_transform(data)
+                # scale the data to be in the range (0, 1)
+                data = new_df.values.reshape(-1, 1)
+                scaler = MinMaxScaler(feature_range=(0, 1), copy=False)
+                data = scaler.fit_transform(data)
 
-            nb_samples = data.shape[0] - num_timesteps - output_size
-            x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
-            y_train_reshaped = np.zeros((nb_samples, output_size))
-            logger.info("data dim = " + str(data.shape))
-            for i in range(nb_samples):
-                y_position_start = i + look_back
-                x_train_reshaped[i] = data[i:y_position_start]
-                y_position_end = y_position_start + output_size
-                l = data[y_position_start:y_position_end]
-                y_train_reshaped[i] = [item for sublist in l for item in sublist]
+                nb_samples = data.shape[0] - num_timesteps - output_size
+                logger.info("nb samples = "+str(nb_samples))
+                x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
+                y_train_reshaped = np.zeros((nb_samples, output_size))
+                logger.info("data dim = " + str(data.shape))
+                for i in range(nb_samples):
+                    y_position_start = i + look_back
+                    x_train_reshaped[i] = data[i:y_position_start]
+                    y_position_end = y_position_start + output_size
+                    l = data[y_position_start:y_position_end]
+                    y_train_reshaped[i] = [item for sublist in l for item in sublist]
 
-            x_list.append(x_train_reshaped)
-            y_list.append(y_train_reshaped)
-            count += len(x_train_reshaped)
-            logger.info("count = "+str(count))
-
+                x_list.append(x_train_reshaped)
+                y_list.append(y_train_reshaped)
+                count += len(x_train_reshaped)
+                logger.info("count = "+str(count))
         Xtrain = np.zeros((count, look_back, num_features))
         Ytrain = np.zeros((count, output_size))
 
@@ -243,3 +256,42 @@ class ProcessingData:
         Xtrain, Ytrain = Xtrain[-sp:], Ytrain[-sp:]
         # TODO: check the capacity of RPi to operate with more data size
         return Xtrain, Ytrain
+
+    def get_regression_values(self, train_data, input_size, output_size, dT):
+        new_data = np.array(train_data[-input_size:])
+
+        x = new_data[:,0]
+        x = x.reshape(-1, 1)
+        last_timestamp = x[-1][0]
+
+        logger.info("last timestamp load = "+str(last_timestamp))
+
+        y = new_data[:, 1]
+        y = y.reshape(-1, 1)
+
+        reg = LinearRegression().fit(x, y)
+
+        prediction_input = []
+        for i in range(output_size):
+            prediction_input.append([last_timestamp])
+            last_timestamp += dT
+
+        prediction_input = np.array(prediction_input)
+        prediction_input = prediction_input.reshape(-1, 1)
+
+        prediction_output = reg.predict(prediction_input)
+
+        prediction_input = prediction_input.reshape(-1)
+        prediction_output = prediction_output.reshape(-1)
+
+        new_data = {}
+
+        for i in range(output_size):
+            new_data[prediction_input[i]] = prediction_output[i]
+
+
+
+        return new_data
+
+
+

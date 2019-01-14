@@ -12,8 +12,8 @@ logger = logging.getLogger(__file__)
 
 class GenericDataReceiver(BaseDataReceiver):
 
-    def __init__(self, internal, topic_params, config, generic_name, id):
-        super().__init__(internal, topic_params, config, generic_name, id)
+    def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT):
+        super().__init__(internal, topic_params, config, generic_name, id, buffer, dT)
         self.generic_name = generic_name
 
     def unit_value_change(self, value, unit):

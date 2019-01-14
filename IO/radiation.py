@@ -67,7 +67,7 @@ class SolarRadiation:
                 break
             date_file = datetime.datetime.strptime(w[0], "%Y%m%d:%H%M%S")
             date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
-            if now <= date - datetime.timedelta(hours=-1) <= (now + datetime.timedelta(hours=48)):
+            if now <= date - datetime.timedelta(hours=-2) <= (now + datetime.timedelta(hours=47)):
                 rad_data.append(RadiationData(date, w[1], w[2], w[3], w[4], w[5], w[6], w[7]))
         return rad_data
 
@@ -146,6 +146,7 @@ class Radiation:
     def get_data(self):
         we = SolarRadiation.get_rad(self.city, self.maxPV, self.googleKey)
         if self.hours:
+            we = sorted(we, key=lambda w: w.date)
             jsh = json.dumps([wea.__dict__ for wea in we], default=str)
             return jsh
         else:
