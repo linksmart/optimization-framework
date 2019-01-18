@@ -21,18 +21,19 @@ class ModelParamsInfo:
                 file_path = os.path.join(mypath, file)
                 if os.path.isfile(file_path) and file[len(file)-3:] == ".py":
                     f.append(file_path)
-        return f
+        return f, mypath
 
     @staticmethod
     def get_model_param(model_name):
-        models = ModelParamsInfo.get_models()
+        models, basepath = ModelParamsInfo.get_models()
         lines = []
         var_map = {}
         param_key_list = []
         for model in models:
-            if model_name in model:
+            if os.path.join(basepath,model_name+".py") == model:
                 with open(model, "r") as infile:
                     lines = infile.readlines()
+                break
         for line in lines:
             line = line.strip()
             if line.startswith("model.") and "==" not in line:

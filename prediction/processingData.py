@@ -133,6 +133,8 @@ class ProcessingData:
                 temp_data = []
             temp_data.append(raw_data[i])
             prev_time = curr_time
+        if len(temp_data) > 0:
+            continous_series.append(temp_data.copy())
         return continous_series
 
     def expand_and_resample_into_blocks(self, raw_data, dT, horizon_steps, num_timesteps, output_size):
@@ -152,7 +154,7 @@ class ProcessingData:
                         block_has_min_length.append(True)
                     else:
                         block_has_min_length.append(False)
-            if not any(block_has_min_length):
+            if len(block_has_min_length) > 0 and not any(block_has_min_length):
                 logger.info("merging block because insufficient data")
                 new_block = []
                 end_time = resampled_blocks[-1][-1][0]
