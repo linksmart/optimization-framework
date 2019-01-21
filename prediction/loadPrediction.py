@@ -63,8 +63,9 @@ class LoadPrediction:
             self.q = Queue(maxsize=0)
 
             from optimization.loadForecastPublisher import LoadForecastPublisher
-            load_forecast_topic = config.get("IO", "load.forecast.topic")
+            load_forecast_topic = config.get("IO", "forecast.topic")
             load_forecast_topic = json.loads(load_forecast_topic)
+            load_forecast_topic["topic"] = load_forecast_topic["topic"] + self.topic_name
             self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q,
                                                            self.control_frequency, self.topic_name, self.id,
                                                            self.horizon_in_steps, self.dT_in_seconds)
@@ -106,7 +107,7 @@ class LoadPrediction:
 class Training(threading.Thread):
     """
     - Load data points from file
-    - Wait till 24 + 30 points to train for the first time
+    - Wait till num_timesteps + output_size + 5 points to train for the first time
     - After initial training, Train model once in 24 hr
     - Create a new model, compile, and train
     - Save the checkpoints model in model_train.h5
@@ -145,18 +146,16 @@ class Training(threading.Thread):
                 if train:
                     # get raw data from file
                     from prediction.rawDataReader import RawDataReader
-                    # atmost last 5 days' data
+                    # at-most last 5 days' data
                     data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
                     logger.debug("raw data ready " + str(len(data)))
                     data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
                                                                                self.num_timesteps, self.output_size)
-                    #logger.debug("resampled data ready " + str(len(data)))
                     if merged or self.sufficient_data_available(data):
                         self.trained = True
                         logger.info("start training")
                         Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps, self.output_size)
                         logger.info("pre proc done")
-                        # preprocess data
                         try:
                             if self.redisDB.get_lock(self.training_lock_key, self.id+"_"+self.topic_name):
                                 from prediction.trainModel import TrainModel
@@ -199,11 +198,11 @@ class Training(threading.Thread):
 class Prediction(threading.Thread):
 
     """
-    - As soon as the number of data points is 25, prediction starts
+    - As soon as the number of data points is num_timesteps, prediction starts
     - If model.h5 present in disk
         then present then use model.h5
         else load model_temp.h5 from disk (temp pre-trained model)
-    - predict for next 24 points (24 predictions)
+    - predict for next horizon points (eg. 24 predictions)
     """
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
                  model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds, output_size):
@@ -228,23 +227,6 @@ class Prediction(threading.Thread):
         self.id = id
         self.output_size = output_size
 
-    def mock_data(self):
-        vals = [-2658.819940570742,-2213.156421120333,-2293.300383523349,-2511.985862220086,
-                -2599.873615357683,-2046.833423637462,-2236.293011239444,-2511.570352025292,
-                -2424.498109073549,-2824.992998080974,-2824.558536866195,-1953.771180819606,
-                -1800.771180819606,-1700.771180819606,-2000.771180819606,-2200.771180819606,
-                -2500.771180819606,-2400.771180819606,-2800.771180819606,-2700.771180819606,
-                -1950.771180819606,-2200.771180819606,-2500.771180819606,-2600.771180819606,
-                -2300.771180819606]
-
-        date = datetime.datetime.now().replace(second=0, microsecond=0)
-        new_data = []
-        for val in reversed(vals):
-            new_data.append([int(date.timestamp()), val])
-            date = date - datetime.timedelta(seconds=self.dT_in_seconds)
-        new_data.reverse()
-        return new_data
-
     def run(self):
         while not self.stopRequest.is_set():
             try:
@@ -256,7 +238,6 @@ class Prediction(threading.Thread):
                 if len(data) > 0:
                     data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
                     logger.debug("len appended data = " + str(len(data)))
-                #data = self.mock_data()
                 if len(data) >= self.num_timesteps:
                     st = time.time()
                     test_predictions = []

@@ -11,6 +11,7 @@ import os
 
 import shutil
 
+from config.configUpdater import ConfigUpdater
 from connector.Connector import Connector
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -19,8 +20,9 @@ logger = logging.getLogger(__file__)
 if __name__ == '__main__':
     config = None
     config_path = "/usr/src/app/connector/resources/connectorConfig.properties"
-    if not os.path.exists(config_path):
-        shutil.copyfile("/usr/src/app/config/connectorConfig.properties", config_path)
+    config_path_default = "/usr/src/app/config/connectorConfig.properties"
+    ConfigUpdater.copy_config(config_path_default, config_path, True)
+
     try:
         config = configparser.ConfigParser()
         config.optionxform = str

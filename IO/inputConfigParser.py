@@ -23,13 +23,10 @@ class InputConfigParser:
         self.mqtt_params = {}
         self.generic_names = []
         self.generic_file_names = []
-        self.defined_prediction_names = ["P_Load", "P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T", "Q_Load"]
+        #self.defined_prediction_names = ["P_Load", "P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T", "Q_Load"]
+        self.defined_prediction_names = []
         self.defined_non_prediction_names = ["P_PV"]
         self.defined_external_names = ["SoC_Value"]
-        self.defined_receivers = []
-        self.defined_receivers.append(self.defined_prediction_names)
-        self.defined_receivers.append(self.defined_non_prediction_names)
-        self.defined_receivers.append(self.defined_external_names)
         self.prediction_names = []
         self.non_prediction_names = []
         self.external_names = []
@@ -75,6 +72,13 @@ class InputConfigParser:
         else:
             return None
 
+    def read_predict_flag(self, value2, name):
+        if isinstance(value2, dict):
+            if "predict" in value2.keys():
+                predict = bool(value2["predict"])
+                if predict:
+                    self.defined_prediction_names.append(name)
+
     def extract_mqtt_params(self):
         for key, value in self.input_config_mqtt.items():
             if key == "generic":
@@ -84,12 +88,14 @@ class InputConfigParser:
                         if "generic_name" in value1.keys():
                             value2 = value1["generic_name"]
                             mqtt = self.get_mqtt(value2)
+                            self.read_predict_flag(value2, name)
                             if mqtt is not None:
                                 self.mqtt_params[name] = mqtt.copy()
                                 self.generic_names.append(name)
             else:
                 for key2, value2 in value.items():
                     mqtt = self.get_mqtt(value2)
+                    self.read_predict_flag(value2, key2)
                     if mqtt is not None:
                         self.mqtt_params[key2] = mqtt.copy()
                         self.add_name_to_list(key2)

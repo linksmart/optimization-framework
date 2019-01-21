@@ -47,20 +47,26 @@ class RawDataReader:
                 pass
         if doc:
             for meas in doc.measurements:
-                n = meas.name
-                v = meas.value
-                t = meas.time
-                cols = [t,v]
-                new_data.append(cols)
+                try:
+                    n = meas.name
+                    v = meas.value
+                    t = meas.time
+                    cols = [t,v]
+                    new_data.append(cols)
+                except Exception as e:
+                    logger.error("Exception in formating meas " + str(e))
             return new_data
         else:
             for row in data:
-                cols = row.replace('\n', '').strip().split(",")
-                dateTime = float(cols[0])
-                cols = cols[1:]
-                cols = list(map(float, cols))
-                cols.insert(0, dateTime)
-                new_data.append(cols)
+                try:
+                    cols = row.replace('\n', '').strip().split(",")
+                    dateTime = float(cols[0])
+                    cols = cols[1:]
+                    cols = list(map(float, cols))
+                    cols.insert(0, dateTime)
+                    new_data.append(cols)
+                except Exception as e:
+                    logger.error("Exception in formating line "+str(row)+ " "+ str(e))
             return new_data
 
     @staticmethod

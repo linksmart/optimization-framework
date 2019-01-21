@@ -16,21 +16,26 @@ class Source(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None, predict: bool=None):  # noqa: E501
         """Source - a model defined in Swagger
 
         :param mqtt: The mqtt of this Source.  # noqa: E501
         :type mqtt: MQTT
+        :param predict: The predict of this Source.  # noqa: E501
+        :type predict: bool
         """
         self.swagger_types = {
-            'mqtt': MQTT
+            'mqtt': MQTT,
+            'predict': bool
         }
 
         self.attribute_map = {
-            'mqtt': 'mqtt'
+            'mqtt': 'mqtt',
+            'predict': 'predict'
         }
 
         self._mqtt = mqtt
+        self._predict = predict
 
     @classmethod
     def from_dict(cls, dikt) -> 'Source':
@@ -63,3 +68,24 @@ class Source(Model):
         """
 
         self._mqtt = mqtt
+
+    @property
+    def predict(self) -> bool:
+        """Gets the predict of this Source.
+
+
+        :return: The predict of this Source.
+        :rtype: bool
+        """
+        return self._predict
+
+    @predict.setter
+    def predict(self, predict: bool):
+        """Sets the predict of this Source.
+
+
+        :param predict: The predict of this Source.
+        :type predict: bool
+        """
+
+        self._predict = predict

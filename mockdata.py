@@ -9,10 +9,7 @@ import logging
 
 import os
 
-import sys
-
-import shutil
-
+from config.configUpdater import ConfigUpdater
 from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -82,8 +79,9 @@ if __name__ == '__main__':
 
     config = None
     config_path = "/usr/src/app/mock_data/resources/mockConfig.properties"
-    if not os.path.exists(config_path):
-        shutil.copyfile("/usr/src/app/config/mockConfig.properties", config_path)
+    config_path_default = "/usr/src/app/config/mockConfig.properties"
+    ConfigUpdater.copy_config(config_path_default, config_path)
+
     try:
         config = configparser.RawConfigParser()
         config.read(config_path)

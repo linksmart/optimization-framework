@@ -143,7 +143,7 @@ class ThreadFactory:
                     if non_prediction_name == "P_PV":
                         self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id,
                                                                                         self.control_frequency, self.horizon_in_steps,
-                                                                                        self.dT_in_seconds)
+                                                                                        self.dT_in_seconds, non_prediction_name)
 
         # Initializing constructor of the optimization controller thread
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,

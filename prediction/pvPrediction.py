@@ -13,7 +13,7 @@ logger = logging.getLogger(__file__)
 
 class PVPrediction:
 
-    def __init__(self, config, input_config_parser, id, control_frequency, horizon_in_steps, dT_in_seconds):
+    def __init__(self, config, input_config_parser, id, control_frequency, horizon_in_steps, dT_in_seconds, name):
         self.config = config
         self.input_config_parser = input_config_parser
         raw_pv_data_topic = input_config_parser.get_params("P_PV")
@@ -31,8 +31,9 @@ class PVPrediction:
         except Exception:
             logger.error("City or country not present in pv meta")
         maxPV = float(opt_values["PV_Inv_Max_Power"][None])
-        pv_forecast_topic = config.get("IO", "pv.forecast.topic")
+        pv_forecast_topic = config.get("IO", "forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
+        pv_forecast_topic["topic"] = pv_forecast_topic["topic"] + name
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, location, maxPV, control_frequency,
                                                    horizon_in_steps, dT_in_seconds)
         self.pv_forecast_pub.start()

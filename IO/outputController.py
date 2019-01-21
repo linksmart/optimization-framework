@@ -71,7 +71,13 @@ class OutputController:
         u = "W"
         for key, value in data.items():
             meas_list = []
+            first = False
+            if len(value) > 1:
+                first = True
             for v in value:
+                if first:
+                    first = False
+                    continue
                 meas = senml.SenMLMeasurement()
                 meas.name = key
                 meas.time = time

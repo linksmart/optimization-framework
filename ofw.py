@@ -3,9 +3,8 @@
 
 """
 import configparser
-import  os, logging
+import os, logging
 import signal, sys
-import subprocess
 import shutil
 
 
@@ -15,6 +14,7 @@ import time
 import swagger_server.wsgi as webserver
 
 from IO.ZMQClient import ForwarderDevice
+from config.configUpdater import ConfigUpdater
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -22,9 +22,6 @@ logger = logging.getLogger(__file__)
 """
 Get the address of the data.dat
 """
-
-
-
 
 def startOfw(options):
     # code to start a daemon
@@ -59,8 +56,9 @@ def signal_handler(sig, frame):
 
 def setup():
     config_path = "/usr/src/app/utils/ConfigFile.properties"
-    if not os.path.exists(config_path):
-        shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
+    config_path_default = "/usr/src/app/config/ConfigFile.properties"
+    ConfigUpdater.copy_config(config_path_default, config_path)
+
     clear_redis()
     copy_models()
     signal.signal(signal.SIGINT, signal_handler)

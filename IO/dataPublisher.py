@@ -104,7 +104,7 @@ class DataPublisher(ABC,threading.Thread):
             if topic is None:
                 topic = self.topic_params["topic"]
             if self.internal:
-                topic = topic + "_" + self.id
+                topic = topic + "/" + self.id
             logger.debug("Sending results to mqtt on this topic: " + topic)
             self.mqtt.publish(topic, data, True, self.qos)
             logger.debug("Results published")
@@ -115,7 +115,7 @@ class DataPublisher(ABC,threading.Thread):
         if topic is None:
             topic = self.topic_params["topic"]
         if self.internal:
-            topic = topic + "_" + self.id
+            topic = topic + "/" + self.id
         logger.debug("Sending results to zmq on this topic: " + topic)
         self.zmq.publish_message(topic, data)
         logger.debug("Results published")

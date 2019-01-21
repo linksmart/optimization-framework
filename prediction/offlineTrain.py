@@ -7,7 +7,7 @@ import logging
 
 from shutil import copyfile
 
-from prediction.processingData import ProcessingData
+from prediction.offlineProcessingData import OfflineProcessingData
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -23,10 +23,10 @@ class OfflineTrain:
         self.hidden_size = hidden_size
         self.batch_size = batch_size
         self.num_epochs = num_epochs  # 10
-        self.min_training_size = self.num_timesteps + 30
+        self.min_training_size = num_timesteps + output_size + 5
         self.model_file_container = model_file_container
         self.model_file_container_train = model_file_container_train
-        self.processingData = ProcessingData()
+        self.processingData = OfflineProcessingData()
         self.raw_data_file = raw_data_file
         self.training_lock_key = "training_lock"
         self.topic_name = topic_name
@@ -40,12 +40,11 @@ class OfflineTrain:
             from prediction.rawDataReader import RawDataReader
             data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
             logger.debug("raw data ready " + str(len(data)))
-            data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
-            logger.debug("resampled data ready " + str(len(data)))
-            if len(data) > self.min_training_size:
+            data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
+                                                                       self.num_timesteps, self.output_size)
+            if merged or self.sufficient_data_available(data):
                 logger.info("start training")
-                Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data_train(data, self.num_timesteps,
-                                                                                         self.output_size)
+                Xtrain, Xtest, Ytrain, Ytest = self.processingData.preprocess_data_train(data, self.num_timesteps, self.output_size)
                 logger.info("pre proc done")
                 # preprocess data
                 try:
@@ -59,6 +58,13 @@ class OfflineTrain:
                     logger.error("error training model " + str(e))
         except Exception as e:
             logger.error("training thread exception " + str(e))
+
+    def sufficient_data_available(self, data_blocks):
+        for block in data_blocks:
+            logger.info("length of block = "+str(len(block)))
+            if len(block) >= self.min_training_size:
+                return True
+        return False
 
     def stop_request_status(self):
         return False

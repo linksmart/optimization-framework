@@ -17,7 +17,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 
-class ProcessingData:
+class OfflineProcessingData:
 
     def __init__(self):
         self.new_df = None
@@ -56,9 +56,7 @@ class ProcessingData:
 
     def preprocess_data_predict(self, raw_data, num_timesteps, output_size):
         # Loading Data
-        # taking the last timestamp since we are going to use only the last data vector
-        latest_timestamp = raw_data[-1:][0][0]
-        logger.debug(latest_timestamp)
+
         # df = pd.DataFrame(raw_data, columns=col_heads)
         df = pd.DataFrame(raw_data)
         df = df[df.columns[:2]]
@@ -89,19 +87,19 @@ class ProcessingData:
             y_position_start = i + look_back
             x_train_reshaped[i] = data[i:y_position_start]
 
-        Xtest = x_train_reshaped[-1:]
+        Xtest = x_train_reshaped
         logger.debug(str(Xtest.shape))
-        return Xtest, scaler, latest_timestamp
+        return Xtest, scaler, 0
 
     def postprocess_data(self, prediction, startTimestamp, delta, scaler):
         data = prediction.reshape(-1, 1)
         data = scaler.inverse_transform(data)
         data = data.reshape(-1)
-        startTime = datetime.datetime.fromtimestamp(startTimestamp)
+        startTime = startTimestamp
         result = {}
         for pred in data:
             result[startTime] = pred
-            startTime += datetime.timedelta(seconds=delta)
+            startTime += delta
         return result
 
     def append_mock_data(self, data, num_timesteps, dT):
@@ -246,19 +244,13 @@ class ProcessingData:
                 Ytrain[j] = item
                 j += 1
 
-        """
         # split into training and test sets
-        sp = int(0.7 * len(x_train_reshaped))
+        ct = 8000
+        Xtrain, Ytrain = Xtrain[0:ct], Ytrain[0:ct]
+        sp = int(0.7 * len(Xtrain))
         logger.info("sp = " + str(sp))
-        Xtrain, Xtest, Ytrain, Ytest = x_train_reshaped[0:sp], x_train_reshaped[sp:], y_train_reshaped[
-                                                                                      0:sp], y_train_reshaped[sp:]
+        Xtrain, Xtest, Ytrain, Ytest = Xtrain[0:sp], Xtrain[sp:], Ytrain[0:sp], Ytrain[sp:]
         return Xtrain, Xtest, Ytrain, Ytest
-        # logger.debug(str(Xtrain.shape) + " " + str(Xtest.shape) + " " + str(Ytrain.shape) + " " + str(Ytest.shape))
-        """
-        sp = 250
-        Xtrain, Ytrain = Xtrain[-sp:], Ytrain[-sp:]
-        # TODO: check the capacity of RPi to operate with more data size
-        return Xtrain, Ytrain
 
     def get_regression_values(self, train_data, input_size, output_size, dT):
         new_data = np.array(train_data[-input_size:])

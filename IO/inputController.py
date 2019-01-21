@@ -52,14 +52,16 @@ class InputController:
         for name, flag in self.prediction_mqtt_flags.items():
             if flag:
                 """ should be prediction topic instead of load"""
-                prediction_topic = config.get("IO", "load.forecast.topic")
+                prediction_topic = config.get("IO", "forecast.topic")
                 prediction_topic = json.loads(prediction_topic)
+                prediction_topic["topic"] = prediction_topic["topic"] + name
                 self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name,
                                                                    self.id, self.required_buffer_data, self.dT_in_seconds)
         for name, flag in self.non_prediction_mqtt_flags.items():
             if flag:
-                non_prediction_topic = config.get("IO", "pv.forecast.topic")
+                non_prediction_topic = config.get("IO", "forecast.topic")
                 non_prediction_topic = json.loads(non_prediction_topic)
+                non_prediction_topic["topic"] = non_prediction_topic["topic"] + name
                 self.internal_receiver[name] = GenericDataReceiver(True, non_prediction_topic, config, name,
                                                                    self.id, self.required_buffer_data, self.dT_in_seconds)
         # ESS data

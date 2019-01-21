@@ -7,15 +7,11 @@ import configparser
 import json
 import logging
 
-import os
-
 import time
 
-import shutil
-
 from IO.redisDB import RedisDB
+from config.configUpdater import ConfigUpdater
 from prediction.loadPrediction import LoadPrediction
-from prediction.offlineTrain import OfflineTrain
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -62,20 +58,13 @@ def clear_redis():
 
 if __name__ == '__main__':
     config_path = "/usr/src/app/utils/ConfigFile.properties"
-    if not os.path.exists(config_path):
-        shutil.copyfile("/usr/src/app/config/ConfigFile.properties", config_path)
+    config_path_default = "/usr/src/app/config/ConfigFile.properties"
+    ConfigUpdater.copy_config(config_path_default, config_path)
+
     try:
         clear_redis() #  need to relook
         config = configparser.RawConfigParser()
         config.read(config_path)
         check_training(config)
-        """
-        ot = OfflineTrain(horizon_in_steps=1440, num_timesteps=60, hidden_size=120, batch_size=1, num_epochs=5,
-                          raw_data_file="/usr/src/app/prediction/resources/raw_data_P_Load.csv",
-                          model_file_container="/usr/src/app/prediction/resources/testModel.h5",
-                          model_file_container_train="/usr/src/app/prediction/resources/partTestModel.h5",
-                          topic_name="P_Load", id="000111", dT_in_seconds=60, output_size=1440)
-        ot.train()
-        """
     except Exception as e:
         logger.error(e)

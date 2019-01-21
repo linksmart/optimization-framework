@@ -99,7 +99,7 @@ class DataReceiver(ABC):
             host_params = {}
             for k, v in self.topic_params.items():
                 if k == "topic":
-                    topic_qos.append((v + "_" + self.id,1))
+                    topic_qos.append((v + "/" + self.id,1))
                 elif k == "mqtt.port":
                     self.port = v
             self.host = self.config.get("IO", "mqtt.host")
@@ -112,7 +112,7 @@ class DataReceiver(ABC):
             topics = []
             for k, v in self.topic_params.items():
                 if k == "topic":
-                    topics.append(v + "_" + self.id)
+                    topics.append(v + "/" + self.id)
             self.port = self.config.get("IO", "zmq.sub.port")
             self.host = self.config.get("IO", "zmq.host")
             return topics, None
