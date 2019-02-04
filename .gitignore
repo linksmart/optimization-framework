@@ -98,6 +98,8 @@ ENV/
 fronius/
 optimization/resources/
 prediction/resources/
-utils/
 connector/resources/
 mock_data/resources/
+utils/*
+
+!utils/.gitkeep
