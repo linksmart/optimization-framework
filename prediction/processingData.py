@@ -90,7 +90,7 @@ class ProcessingData:
             x_train_reshaped[i] = data[i:y_position_start]
 
         Xtest = x_train_reshaped[-1:]
-        logger.debug(str(Xtest.shape))
+        logger.debug("shape : " + str(Xtest.shape))
         return Xtest, scaler, latest_timestamp
 
     def postprocess_data(self, prediction, startTimestamp, delta, scaler):

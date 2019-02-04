@@ -33,7 +33,6 @@ RUN pip3 install -U sklearn
 RUN pip3 install -U tensorflow==1.8.0
 RUN pip3 install -U keras==2.1.6
 RUN pip3 install -U redis
-RUN pip3 install -U Theano
 RUN pip3 install -U senml
 
 WORKDIR /usr/src/app

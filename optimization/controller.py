@@ -242,7 +242,9 @@ class OptController(threading.Thread):
         finally:
             # Closing the pyomo servers
             logger.debug("Deactivating pyro servers")
-            solver_manager.deactivate()
+            # TODO : 'SolverManager_Pyro' object has no attribute 'deactivate'
+            # this error was not present before pyomo update
+            #solver_manager.deactivate()
             logger.debug("Pyro servers deactivated: " + str(solver_manager))
 
             # If Stop signal arrives it tries to disconnect all mqtt clients

@@ -33,8 +33,9 @@ class MQTTClient:
             self.client.connect(self.host, self.port, self.keepalive)
 
         except Exception as e:
-            logger.error("Error connecting client "+str(self.host)+" "+str(self.port)+" "+str(self.keepalive))
-            logger.error(e)
+            msg = "Invalid MQTT host "+str(self.host)+" "+str(self.port)
+            logger.error("Error connecting client "+str(self.host)+" "+str(self.port) + " " + str(e))
+            raise InvalidMQTTHostException(msg)
 
         #self.client.loop_forever()
         self.client.loop_start()
@@ -52,9 +53,6 @@ class MQTTClient:
 
 
     def on_message(self,client, userdata, message):
-        #logger.debug(message.topic + " " + str(message.payload))
-        #if (message.payload.startswith("something")):
-            #logger.info("Input operation")
         self.callback_function(message.payload.decode())
 
 
@@ -117,3 +115,11 @@ class MQTTClient:
             count+=1
         self.topic_ack_wait.pop()
         return False
+
+
+class InvalidMQTTHostException(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)

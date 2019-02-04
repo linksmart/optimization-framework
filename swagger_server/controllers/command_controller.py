@@ -6,8 +6,10 @@ import connexion
 import re
 import logging
 
+from flask import jsonify
 from pyutilib.pyro import shutdown_pyro_components
 
+from IO.MQTTClient import InvalidMQTTHostException
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException, MissingKeysException
 from swagger_server.models.start import Start  # noqa: E501
@@ -93,6 +95,7 @@ class CommandController:
                                self.repetition, self.solver, id))
 
         logger.info("Thread: " + str(self.get(id)))
+        self.redisDB.set("run:" + id, "starting")
         self.get(id).startOptControllerThread()
         logger.debug("Thread started")
         self.set_isRunning(id, True)
@@ -100,15 +103,17 @@ class CommandController:
         self.statusThread[id] = threading.Thread(target=self.run_status, args=(id,))
         logger.debug("Status of the Thread started")
         self.statusThread[id].start()
+        meta_data = {"id": id,
+                    "model": self.model_name,
+                    "control_frequency": self.control_frequency,
+                    "horizon_in_steps": self.horizon_in_steps,
+                    "dT_in_seconds": self.dT_in_seconds,
+                    "repetition": self.repetition,
+                    "solver": self.solver,
+                    "ztarttime": time.time()}
         self.redisDB.set("run:"+id, "running")
-        self.persist_id(id, True, {"id": id,
-                                        "model": self.model_name,
-                                        "control_frequency": self.control_frequency,
-                                        "horizon_in_steps": self.horizon_in_steps,
-                                        "dT_in_seconds": self.dT_in_seconds,
-                                        "repetition": self.repetition,
-                                        "solver": self.solver,
-                                        "ztarttime": time.time()})
+        self.redisDB.set("id_meta:"+id, json.dumps(meta_data))
+        self.persist_id(id, True, meta_data)
         logger.info("running status " + str(self.running))
         logger.debug("Command controller start finished")
 
@@ -122,6 +127,7 @@ class CommandController:
             self.stop_name_servers()
             self.set_isRunning(id, False)
             message = "System stopped succesfully"
+            self.redisDB.set("run:" + id, "stopped")
             logger.debug(message)
         else:
             message = "No threads found"
@@ -132,7 +138,7 @@ class CommandController:
             status = self.get(id).is_running()
             flag = self.redisDB.get("run:" + id)
             if not status or (flag is not None and flag == "stop"):
-                self.redisDB.remove("run:" + id)
+                self.redisDB.set("run:" + id, "stopping")
                 self.stop(id)
                 break
             time.sleep(1)
@@ -191,7 +197,8 @@ class CommandController:
                 val = json.loads(s)
                 try:
                     self.start(val["id"], None, val)
-                except (InvalidModelException, MissingKeysException) as e:
+                except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
+                    # TODO: should we catch these exceptions here?
                     logger.error("Error " + str(e))
                     return str(e)
 
@@ -274,6 +281,37 @@ class CommandController:
             self.redisDB.set("pyro_mip", active_pyro_servers+1)
             self.redisDB.set("pyro_mip_pid:"+str(pyro_mip_server_pid), pyro_mip_server_pid)
 
+    def get_status(self):
+        status = {}
+        keys = self.redisDB.get_keys_for_pattern("run:*")
+        if keys is not None:
+            for key in keys:
+                value = self.redisDB.get(key)
+                id = key[4:]
+                status[id] = {}
+                if value is None or (value is not None and value == "stopped"):
+                    status[id]["status"] = "stopped"
+                elif value == "running":
+                    status[id]["status"] = "running"
+                elif value == "stop" or value == "stopping":
+                    status[id]["status"] = "stopping"
+                elif value == "starting":
+                    status[id]["status"] = "starting"
+        keys = self.redisDB.get_keys_for_pattern("id_meta:*")
+        if keys is not None:
+            for key in keys:
+                value = self.redisDB.get(key)
+                id = key[8:]
+                if id not in status.keys():
+                    status[id] = {}
+                    status[id]["status"] = "stopped"
+                if value is not None:
+                    status[id].update(json.loads(value))
+                    if "ztarttime" in status[id].keys():
+                        status[id]["start_time"] = status[id]["ztarttime"]
+                        status[id].pop("ztarttime")
+        return status
+
 variable = CommandController()
 variable.get_ids()
 
@@ -321,7 +359,7 @@ def framework_start(id, startOFW):  # noqa: E501
             try:
                 variable.start(id, startOFW)
                 return "System started succesfully"
-            except (InvalidModelException, MissingKeysException) as e:
+            except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
                 logger.error("Error " + str(e))
                 return str(e)
     else:
@@ -357,3 +395,35 @@ def framework_stop(id):  # noqa: E501
         logger.error(e)
         message = "Error stoping the system"
     return message
+
+
+def framework_restart(id, startOFW):  # noqa: E501
+    """Command for restarting the framework with different start parameters
+
+     # noqa: E501
+
+    :param id: Id of the registry to be started
+    :type id: str
+    :param startOFW: Restart command for the optimization framework   repetitions: -1 infinite repetitions
+    :type startOFW: dict | bytes
+
+    :rtype: None
+    """
+    if connexion.request.is_json:
+        startOFW = Start.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
+
+def framework_status():  # noqa: E501
+    """Command for getting status of the framework
+
+     # noqa: E501
+
+
+    :rtype: None
+    """
+    status = {"result":"No information"}
+    result = variable.get_status()
+    if len(result) > 0:
+        status["result"] = result
+    response = jsonify(status)
+    return response

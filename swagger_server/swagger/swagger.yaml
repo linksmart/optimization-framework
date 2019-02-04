@@ -546,6 +546,50 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.command_controller"
+  /command/restart/{id}:
+    put:
+      tags:
+      - "command"
+      summary: "Command for restarting the framework with different start parameters"
+      description: ""
+      operationId: "framework_restart"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Id of the registry to be started"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "startOFW"
+        description: "Restart command for the optimization framework \n repetitions:\
+          \ -1 infinite repetitions"
+        required: true
+        schema:
+          $ref: "#/definitions/Start"
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.command_controller"
+  /command/status/:
+    get:
+      tags:
+      - "command"
+      summary: "Command for getting status of the framework"
+      description: ""
+      operationId: "framework_status"
+      consumes:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.command_controller"
 definitions:
   Start:
     type: "object"

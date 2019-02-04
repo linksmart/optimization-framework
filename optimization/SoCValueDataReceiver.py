@@ -5,12 +5,12 @@ Created on Aug 03 16:44 2018
 """
 import logging
 
-from optimization.genericDataReceiver import GenericDataReceiver
+from optimization.baseDataReceiver import BaseDataReceiver
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
-class SoCValueDataReceiver(GenericDataReceiver):
+class SoCValueDataReceiver(BaseDataReceiver):
 
     def __init__(self, internal, topic_params, config, id, buffer, dT):
         self.generic_name = "SoC_Value"
