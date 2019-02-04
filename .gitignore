@@ -103,3 +103,5 @@ mock_data/resources/
 utils/*
 
 !utils/.gitkeep
+
+.vscode
