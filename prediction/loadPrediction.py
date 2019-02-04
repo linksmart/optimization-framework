@@ -26,12 +26,16 @@ class LoadPrediction:
         self.control_frequency = control_frequency  # determines minute or hourly etc
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
+        # removing this and keeping constant input size
+        """
         self.num_timesteps = horizon_in_steps + 1
         if self.num_timesteps > 60:
             self.num_timesteps = 60
-        self.hidden_size = 120
+        """
+        self.num_timesteps = 24
+        self.hidden_size = 100
         self.batch_size = 1
-        self.num_epochs = 5  # 10
+        self.num_epochs = 10  # 10
         self.output_size = int(self.horizon_in_steps-1)
         if self.output_size < 1:
             self.output_size = 1

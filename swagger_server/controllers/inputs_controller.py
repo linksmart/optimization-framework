@@ -1,9 +1,10 @@
+import json
+import logging
+
 import connexion
+import os
 import six
-import logging, os
-from flask import json
 from flask import jsonify
-from os.path import isfile, join
 
 from IO.redisDB import RedisDB
 from optimization.utils import Utils
@@ -127,90 +128,7 @@ def delete_data(id, registry_file, source):
         logger.error(e)
         return "error"
 
-
-def delete_all_ids():  # noqa: E501
-    """Deletes all loaded data
-
-     # noqa: E501
-
-
-    :rtype: None
-    """
-    # get current active ids
-    current_ids = current_active_ids()
-    # get all ids for data source
-    try:
-        ids = []
-        dir = os.path.join(os.getcwd(), "utils")
-        if os.path.exists(dir):
-            for file in os.listdir(dir):
-                if os.path.isdir(os.path.join(dir, file)):
-                    ids.append(file)
-        for id in ids:
-            if id not in current_ids:
-                delete_data_source_all(id)
-        """
-        ids = []
-        dir = os.path.join(os.getcwd(), "prediction", "resources")
-        if os.path.exists(dir):
-            for file in os.listdir(dir):
-                if os.path.isdir(os.path.join(dir, file)):
-                    ids.append(file)
-        """
-        msg = "Success"
-    except Exception as e:
-        logger.error(e)
-        msg = "Error removing all data"
-    return msg
-
-def delete_data_source_all(id):  # noqa: E501
-    """Deletes all loaded data
-
-     # noqa: E501
-
-    :param id: Id of the data source to be deleted
-    :type id: str
-
-    :rtype: None
-    """
-    result_file = delete_data(id, "Input.registry.file", "file")
-    result_mqtt = delete_data(id, "Input.registry.mqtt", "mqtt")
-    if result_file == "error" or result_mqtt == "error":
-        return "error"
-    elif result_file == "success" or result_mqtt == "success":
-        return "success"
-    elif result_file == "Id not existing" and result_mqtt == "Id not existing":
-        return "Id not existing"
-    else:
-        return "error"
-
-def delete_file_registry(id):  # noqa: E501
-    """Deletes the loaded data
-
-     # noqa: E501
-
-    :param id: Name of the registry to be deleted
-    :type id: str
-
-    :rtype: None
-    """
-    result = delete_data(id, "Input.registry.file", "file")
-    return result
-
-def delete_mqtt_registry(id):  # noqa: E501
-    """Deletes the loaded data
-
-     # noqa: E501
-
-    :param id: Name of the registry to be deleted
-    :type id: str
-
-    :rtype: None
-    """
-    result = delete_data(id, "Input.registry.mqtt", "mqtt")
-    return result
-
-def file_input_put(id, dataset):  # noqa: E501
+def dataset_input_put(id, dataset):  # noqa: E501
     """Submits data to the framework
 
      # noqa: E501
@@ -222,10 +140,9 @@ def file_input_put(id, dataset):  # noqa: E501
 
     :rtype: None
     """
-
     if connexion.request.is_json:
         try:
-            dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
+            dataset = FileInputSource.from_dict(connexion.request.get_json())  # noqa: E501
 
             dataset = connexion.request.get_json()
             logger.info("This is the dictionary: " + str(dataset))
@@ -263,7 +180,58 @@ def file_input_put(id, dataset):  # noqa: E501
     else:
         return 'Data is not in json format'
 
-def file_input_source(File_Input_Source):  # noqa: E501
+
+def delete_data_source_all(id):  # noqa: E501
+    """Deletes all loaded data
+
+     # noqa: E501
+
+    :param id: Id of the data source to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    result_file = delete_data(id, "Input.registry.file", "file")
+    result_mqtt = delete_data(id, "Input.registry.mqtt", "mqtt")
+    if result_file == "error" or result_mqtt == "error":
+        return "error"
+    elif result_file == "success" or result_mqtt == "success":
+        return "success"
+    elif result_file == "Id not existing" and result_mqtt == "Id not existing":
+        return "Id not existing"
+    else:
+        return "error"
+
+
+def delete_dataset_registry(id):  # noqa: E501
+    """Deletes the loaded data
+
+     # noqa: E501
+
+    :param id: Name of the registry to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    result = delete_data(id, "Input.registry.file", "file")
+    return result
+
+
+def delete_mqtt_registry(id):  # noqa: E501
+    """Deletes the loaded data
+
+     # noqa: E501
+
+    :param id: Name of the registry to be deleted
+    :type id: str
+
+    :rtype: None
+    """
+    result = delete_data(id, "Input.registry.mqtt", "mqtt")
+    return result
+
+
+def dataset_input_source(File_Input_Source):  # noqa: E501
     """Creates a new data source as input
 
      # noqa: E501
@@ -325,15 +293,6 @@ def file_input_source(File_Input_Source):  # noqa: E501
                                 logger.debug("Type of "+str(key)+str(type(key)))
                                 logger.debug("Type of dataset" + str(type(dataset)))
                                 #logger.debug("Size of dataset" + str(len(dataset)))
-                                """if "soc_value" in str(key):
-                                    logger.debug("soc_value")
-                                elif "SoC_Value" in str(key):
-                                    logger.debug("SoC_Value")
-                                elif "so_c_value" in str(key):
-                                    logger.debug("so_c_value")
-                                else:
-                                    logger.debug("key: "+str(key))"""
-
                                 if "meta" in key:
                                     file_name = str(header) + "_" + str(key) + ".txt"
                                     path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
@@ -367,6 +326,7 @@ def file_input_source(File_Input_Source):  # noqa: E501
     else:
         return 'Data is not in json format'
 
+
 def get_data_source_values(id):  # noqa: E501
     """Receives data from the framework
 
@@ -375,9 +335,9 @@ def get_data_source_values(id):  # noqa: E501
     :param id: ID of the data source
     :type id: str
 
-    :rtype: None
+    :rtype: FileInputSource
     """
-    data = ""
+    response = {}
     dir = os.path.join(os.getcwd(), "utils", str(id))
     try:
         if not os.path.exists(dir):
@@ -386,17 +346,38 @@ def get_data_source_values(id):  # noqa: E501
             file_registry = os.path.join(dir, "Input.registry.file")
             if os.path.exists(file_registry):
                 with open(file_registry, "r") as infile:
-                    file_data = infile.readlines()
-                    data = "File registry = " + "\n".join(file_data)
+                    response = json.load(infile)
+            return FileInputSource.from_dict(response)
+    except Exception as e:
+        logger.error("error reading registry " + str(e))
+    return "error"
+
+
+def get_mqtt_data_source_values(id):  # noqa: E501
+    """Receives data from the framework
+
+     # noqa: E501
+
+    :param id: ID of the data source
+    :type id: str
+
+    :rtype: MQTTInputSource
+    """
+    response = {}
+    dir = os.path.join(os.getcwd(), "utils", str(id))
+    try:
+        if not os.path.exists(dir):
+            return "Id not existing"
+        else:
             mqtt_registry = os.path.join(dir, "Input.registry.mqtt")
             if os.path.exists(mqtt_registry):
                 with open(mqtt_registry, "r") as infile:
-                    mqtt_data = infile.readlines()
-                    data = data + "\n MQTT registry" + "\n".join(mqtt_data)
+                    response = json.load(infile)
+            return MQTTInputSource.from_dict(response)
     except Exception as e:
         logger.error("error reading registry " + str(e))
-        data = "error"
-    return data
+    return "error"
+
 
 def mqtt_input_put(id, dataset):  # noqa: E501
     """Submits data to the framework
@@ -410,8 +391,6 @@ def mqtt_input_put(id, dataset):  # noqa: E501
 
     :rtype: None
     """
-
-
     if connexion.request.is_json:
         try:
             dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
@@ -429,7 +408,6 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                     # appends information
                     logger.info("Appending information to the mqtt input registry")
 
-
                     with open(dir_file, 'r+') as readfile:
                         data = json.load(readfile)
                         for header in dataset:
@@ -445,7 +423,7 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                         json.dump(dataset, outfile, ensure_ascii=False)
                     logger.info("data source saved into memory")
 
-                #store_data(dataset, id, "mqtt")
+                # store_data(dataset, id, "mqtt")
                 return "Data source registered"
         except Exception as e:
             logger.error("Invalid data " + str(e))
@@ -469,20 +447,7 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             MQTT_Input_Source = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
             logger.info("This is the dictionary: " + MQTT_Input_Source.to_str())
 
-
-            # ToDo Error checklist
-            # if file is true then mqtt is false
-            # limitation of qos
-            # topic just base name
-            # check with the model
-            """try:
-                check = error_check_input(Input_Source)
-                if check != 0:
-                    message = "Definition Error " + check
-                    logger.error(message)
-                    return message
-            except Exception as e:
-                logger.error(e)"""
+            MQTT_Input_Source = connexion.request.get_json()
 
             ####generates an id an makes a directory with the id for the data and for the registry
             try:
@@ -502,32 +467,9 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
                 json.dump(MQTT_Input_Source, outfile, ensure_ascii=False)
             logger.info("registry/input saved into memory")
 
-            return jsonify({'Data-Source-Id':str(id)})
+            return jsonify({'Data-Source-Id': str(id)})
         except Exception as e:
-            logger.error("Invalid data "+str(e))
-            return "Invalid data "+str(e)
+            logger.error("Invalid data " + str(e))
+            return "Invalid data " + str(e)
     else:
         return 'Data is not in json format'
-
-def current_active_ids():
-    redisDB = RedisDB()
-    lock_key = "id_lock"
-    path = "/usr/src/app/utils/ids_status.txt"
-    ids_list = []
-    if os.path.exists(path):
-        try:
-            if redisDB.get_lock(lock_key, "start"):
-                data = []
-                with open(path, "r") as f:
-                    data = f.readlines()
-                if len(data) > 0:
-                    for s in data:
-                        a = s.replace("\n", "")
-                        a = json.loads(a)
-                        id = a["id"]
-                        ids_list.append(id)
-        except Exception as e:
-            logging.error("error reading ids file " + str(e))
-        finally:
-            redisDB.release_lock(lock_key, "start")
-    return ids_list

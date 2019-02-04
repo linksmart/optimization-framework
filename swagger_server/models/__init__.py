@@ -29,6 +29,7 @@ from swagger_server.models.model import Model
 from swagger_server.models.model_answer import ModelAnswer
 from swagger_server.models.model_output import ModelOutput
 from swagger_server.models.model_url import ModelUrl
+from swagger_server.models.optimization_output import OptimizationOutput
 from swagger_server.models.output_source import OutputSource
 from swagger_server.models.pv import PV
 from swagger_server.models.pv_file import PVFile
@@ -37,3 +38,5 @@ from swagger_server.models.path_definition import PathDefinition
 from swagger_server.models.source import Source
 from swagger_server.models.source_ess import SourceESS
 from swagger_server.models.start import Start
+from swagger_server.models.status import Status
+from swagger_server.models.status_output import StatusOutput

@@ -2,6 +2,8 @@ import logging
 
 from math import sqrt
 
+from keras.layers import Dropout
+
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
@@ -95,6 +97,7 @@ class TrainModel:
         model.add(LSTM(hidden_size, stateful=True,
                        batch_input_shape=(batch_size, num_timesteps, 1),
                        return_sequences=True))
+        model.add(Dropout(0.3))
         model.add(LSTM(hidden_size, stateful=True))
         model.add(Dense(output_size))
         adam = k.optimizers.Adam(lr=0.01)

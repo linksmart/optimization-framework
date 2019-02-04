@@ -1,23 +1,29 @@
 import json
+import logging
 import signal
 import threading
 
 import connexion
 import re
-import logging
+
+import os
+import subprocess
+import six
+import time
 
 from flask import jsonify
 from pyutilib.pyro import shutdown_pyro_components
 
 from IO.MQTTClient import InvalidMQTTHostException
+
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException, MissingKeysException
-from swagger_server.models.start import Start  # noqa: E501
-
 from swagger_server.controllers.threadFactory import ThreadFactory
+from swagger_server.models import Status
+from swagger_server.models.start import Start  # noqa: E501
+from swagger_server.models.status_output import StatusOutput  # noqa: E501
+from swagger_server import util
 
-import os, time
-import subprocess
 
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -200,6 +206,7 @@ class CommandController:
                 except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
                     # TODO: should we catch these exceptions here?
                     logger.error("Error " + str(e))
+                    self.redisDB.set("run:" + val["id"], "stopped")
                     return str(e)
 
     def number_of_active_ids(self):
@@ -310,6 +317,9 @@ class CommandController:
                     if "ztarttime" in status[id].keys():
                         status[id]["start_time"] = status[id]["ztarttime"]
                         status[id].pop("ztarttime")
+                    if "model" in status[id].keys():
+                        status[id]["model_name"] = status[id]["model"]
+                        status[id].pop("model")
         return status
 
 variable = CommandController()
@@ -329,12 +339,15 @@ def get_models():
     return f_new
 
 
+
 def framework_start(id, startOFW):  # noqa: E501
     """Command for starting the framework
 
-    # noqa: E501
+     # noqa: E501
 
-    :param startOFW: Start command for the optimization framework
+    :param id: Id of the registry to be started
+    :type id: str
+    :param startOFW: Start command for the optimization framework   repetitions: -1 infinite repetitions
     :type startOFW: dict | bytes
 
     :rtype: None
@@ -361,6 +374,7 @@ def framework_start(id, startOFW):  # noqa: E501
                 return "System started succesfully"
             except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
                 logger.error("Error " + str(e))
+                redis_db.set("run:" + id, "stopped")
                 return str(e)
     else:
         logger.error("Wrong Content-Type")
@@ -368,11 +382,29 @@ def framework_start(id, startOFW):  # noqa: E501
     # return 'System started succesfully'
 
 
+def framework_status():  # noqa: E501
+    """Command for getting status of the framework
+
+     # noqa: E501
+
+
+    :rtype: StatusOutput
+    """
+    status_list = []
+    results = variable.get_status()
+    if len(results) > 0:
+        for id, values in results.items():
+            status_list.append(Status.from_dict(values))
+    response = StatusOutput(status_list)
+    return response
+
 def framework_stop(id):  # noqa: E501
     """Command for stoping the framework
 
-    # noqa: E501
+     # noqa: E501
 
+    :param id: Id of the registry to be stopped
+    :type id: str
 
     :rtype: None
     """
@@ -395,35 +427,3 @@ def framework_stop(id):  # noqa: E501
         logger.error(e)
         message = "Error stoping the system"
     return message
-
-
-def framework_restart(id, startOFW):  # noqa: E501
-    """Command for restarting the framework with different start parameters
-
-     # noqa: E501
-
-    :param id: Id of the registry to be started
-    :type id: str
-    :param startOFW: Restart command for the optimization framework   repetitions: -1 infinite repetitions
-    :type startOFW: dict | bytes
-
-    :rtype: None
-    """
-    if connexion.request.is_json:
-        startOFW = Start.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
-
-def framework_status():  # noqa: E501
-    """Command for getting status of the framework
-
-     # noqa: E501
-
-
-    :rtype: None
-    """
-    status = {"result":"No information"}
-    result = variable.get_status()
-    if len(result) > 0:
-        status["result"] = result
-    response = jsonify(status)
-    return response
