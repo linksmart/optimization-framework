@@ -231,6 +231,10 @@ paths:
       responses:
         201:
           description: "Created succesfully"
+          headers:
+            Location:
+              type: "string"
+              description: "Id referencing the created instance."
         400:
           description: "Bad request"
         405:
@@ -628,66 +632,36 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Load_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_Load_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Load_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_Load_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Load:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       meta:
         pf_Load: 0.9
@@ -696,22 +670,12 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Load_R:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
   metaLoad:
     type: "object"
@@ -751,44 +715,24 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_PV_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_PV_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_PV:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       meta:
         PV_Inv_Max_Power: 1300
@@ -799,44 +743,24 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_PV_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_PV_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_PV_R:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
   PV_Output:
     type: "object"
@@ -863,88 +787,48 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_PV_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
   metaPV:
     type: "object"
@@ -975,11 +859,6 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
       meta:
         ESS_Max_Discharge_Power: 2500
         ESS_Max_SoC: 0.9
@@ -1002,11 +881,6 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
   metaESS:
     type: "object"
@@ -1084,88 +958,48 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       P_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Grid_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
       Q_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
   metaGrid:
     type: "object"
@@ -1204,11 +1038,6 @@ definitions:
         qos: 1
         host: "hostname"
         topic: "topic_name"
-        port: 1883
-        username: "myuser"
-        password: "mypass"
-        ca_cert_path: "path to cert"
-        insecure: false
       predict: true
   SourceESS:
     type: "object"
@@ -1220,11 +1049,6 @@ definitions:
         qos: 1
         host: "hostname"
         topic: "topic_name"
-        port: 1883
-        username: "myuser"
-        password: "mypass"
-        ca_cert_path: "path to cert"
-        insecure: false
   MQTT:
     type: "object"
     required:
@@ -1256,11 +1080,6 @@ definitions:
       qos: 1
       host: "hostname"
       topic: "topic_name"
-      port: 1883
-      username: "myuser"
-      password: "mypass"
-      ca_cert_path: "path to cert"
-      insecure: false
   dataset:
     type: "object"
     properties:
@@ -1329,66 +1148,36 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Load_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_Load_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Load_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_Load_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Load:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         meta:
           pf_Load: 0.9
@@ -1397,22 +1186,12 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Load_R:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
       ESS:
         SoC_Value:
@@ -1420,11 +1199,6 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
         meta:
           ESS_Max_Discharge_Power: 2500
           ESS_Max_SoC: 0.9
@@ -1445,44 +1219,24 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_PV_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_PV_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_PV:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         meta:
           PV_Inv_Max_Power: 1300
@@ -1493,44 +1247,24 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_PV_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_PV_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_PV_R:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
       generic: ""
       global_control:
@@ -1539,11 +1273,6 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
   FileInputSource:
     type: "object"
@@ -1627,11 +1356,6 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
       grid:
         P_Grid_R_Output:
@@ -1639,88 +1363,48 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Grid_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
       photovoltaic:
         Q_PV_T_Output:
@@ -1728,88 +1412,48 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_PV_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         Q_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
         P_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-            port: 1883
-            username: "myuser"
-            password: "mypass"
-            ca_cert_path: "path to cert"
-            insecure: false
           predict: true
   Model_answer:
     type: "object"
@@ -1849,11 +1493,6 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-          port: 1883
-          username: "myuser"
-          password: "mypass"
-          ca_cert_path: "path to cert"
-          insecure: false
         predict: true
   Global_Control_File:
     type: "object"
