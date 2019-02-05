@@ -543,7 +543,7 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.optimization_controller"
-  /optimization/status/:
+  /optimization/status:
     get:
       tags:
       - "optimization"
