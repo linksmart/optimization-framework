@@ -103,3 +103,7 @@ mock_data/resources/
 utils/*
 
 !utils/.gitkeep
+
+.vscode
+profess/executables/windows/*.json
+profess/executables/windows/*.py
