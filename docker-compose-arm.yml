@@ -69,19 +69,10 @@ services:
       - "8080:8080"
     depends_on:
       - redis
- #   depends_on:
- #     - glpk
- #     - ipopt
- #     - bonmin
-    #volumes:
-      #- volume-glpsol:/usr/bin
-      #- volume-glpk:/usr/local/lib
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/res
       - ../optimization-framework/optimization/resources:/usr/src/app/optimization/resources
       - ../optimization-framework/utils:/usr/src/app/utils
-    #restart: unless-stopped
-    #command: ["echo", "que sera sera"]
     logging:
       driver: "json-file"
       options:

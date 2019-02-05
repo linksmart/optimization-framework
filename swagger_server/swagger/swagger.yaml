@@ -5,7 +5,7 @@ info:
   title: "Optimization framework service"
   license:
     name: "Apache"
-host: "192.168.99.100:8080"
+host: "localhost:8080"
 basePath: "/v1"
 consumes:
 - "application/json"
@@ -36,56 +36,8 @@ paths:
         500:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.models_controller"
-    delete:
-      tags:
-      - "models"
-      summary: "Deletes all models of the framework"
-      description: ""
-      operationId: "delete_models_all"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "OK"
-        400:
-          description: "Bad request"
-        405:
-          description: "Invalid input"
-        500:
-          description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.models_controller"
   /models/{name}:
-    delete:
-      tags:
-      - "models"
-      summary: "Deletes the desired model of the framework"
-      description: ""
-      operationId: "delete_models"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "name"
-        in: "path"
-        description: "Name of the model to be deleted"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-        400:
-          description: "Bad request"
-        405:
-          description: "Invalid input"
-        500:
-          description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.models_controller"
-  /models/upload/{name}:
-    post:
+    put:
       tags:
       - "models"
       summary: "Mathematical model for the optimization solver"
@@ -112,33 +64,36 @@ paths:
         405:
           description: "Invalid input"
       x-swagger-router-controller: "swagger_server.controllers.models_controller"
-  /models/upload/url:
-    post:
+    delete:
       tags:
       - "models"
-      summary: "Url for the mathematical model for the optimization solver"
+      summary: "Deletes the desired model of the framework"
       description: ""
-      operationId: "optimization_model_url"
+      operationId: "delete_models"
       consumes:
       - "application/json"
+      produces:
+      - "application/json"
       parameters:
-      - in: "body"
-        name: "upModelUrl"
-        description: "Url of the mathematical model that needs to be added to the\
-          \ optimization framework"
+      - name: "name"
+        in: "path"
+        description: "Name of the model to be deleted"
         required: true
-        schema:
-          $ref: "#/definitions/Model_url"
+        type: "string"
       responses:
         200:
           description: "OK"
+        400:
+          description: "Bad request"
         405:
           description: "Invalid input"
+        500:
+          description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.models_controller"
-  /data_source/mqtt:
+  /inputs/mqtt:
     post:
       tags:
-      - "data_source"
+      - "inputs"
       summary: "Creates a new mqtt data source as input"
       description: ""
       operationId: "mqtt_input_source"
@@ -156,17 +111,49 @@ paths:
       responses:
         201:
           description: "Created succesfully"
+          headers:
+            Location:
+              type: "string"
+              description: "Id referencing the created instance."
         400:
           description: "Bad request"
         405:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-  /data_source/mqtt/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
+  /inputs/mqtt/{id}:
+    get:
+      tags:
+      - "inputs"
+      summary: "Receives data from the framework"
+      description: ""
+      operationId: "get_mqtt_data_source_values"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of the data source"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/MQTTInputSource"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
     put:
       tags:
-      - "data_source"
+      - "inputs"
       summary: "Submits data to the framework"
       description: ""
       operationId: "mqtt_input_put"
@@ -195,10 +182,10 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
     delete:
       tags:
-      - "data_source"
+      - "inputs"
       summary: "Deletes the loaded data"
       description: ""
       operationId: "delete_mqtt_registry"
@@ -221,14 +208,14 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-  /data_source/file:
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
+  /inputs/dataset:
     post:
       tags:
-      - "data_source"
+      - "inputs"
       summary: "Creates a new data source as input"
       description: ""
-      operationId: "file_input_source"
+      operationId: "dataset_input_source"
       consumes:
       - "application/json"
       - "text/plain"
@@ -250,11 +237,11 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-  /data_source/file/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
+  /inputs/dataset/{id}:
     get:
       tags:
-      - "data_source"
+      - "inputs"
       summary: "Receives data from the framework"
       description: ""
       operationId: "get_data_source_values"
@@ -270,20 +257,22 @@ paths:
         type: "string"
       responses:
         200:
-          description: "Created succesfully"
+          description: "OK"
+          schema:
+            $ref: "#/definitions/FileInputSource"
         400:
           description: "Bad request"
         405:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
     put:
       tags:
-      - "data_source"
+      - "inputs"
       summary: "Submits data to the framework"
       description: ""
-      operationId: "file_input_put"
+      operationId: "dataset_input_put"
       consumes:
       - "application/json"
       produces:
@@ -309,13 +298,13 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
     delete:
       tags:
-      - "data_source"
+      - "inputs"
       summary: "Deletes the loaded data"
       description: ""
-      operationId: "delete_file_registry"
+      operationId: "delete_dataset_registry"
       consumes:
       - "application/json"
       produces:
@@ -335,12 +324,12 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-  /data_source/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
+  /inputs/{id}:
     delete:
       tags:
-      - "data_source"
-      summary: "Deletes all loaded data"
+      - "inputs"
+      summary: "Deletes loaded data by id"
       description: ""
       operationId: "delete_data_source_all"
       consumes:
@@ -362,34 +351,40 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-  /data_source/all:
-    delete:
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
+  /outputs/mqtt/{id}:
+    get:
       tags:
-      - "data_source"
-      summary: "Deletes all loaded data"
+      - "outputs"
+      summary: "Get mqtt output details"
       description: ""
-      operationId: "delete_all_ids"
+      operationId: "get_output_source_mqtt"
       consumes:
       - "application/json"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "ID of the output data source to be fetched"
+        required: true
+        type: "string"
       responses:
         200:
           description: "OK"
+          schema:
+            $ref: "#/definitions/OutputSource"
         400:
           description: "Bad request"
         405:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.data_source_controller"
-  /control/mqtt/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.outputs_controller"
     put:
       tags:
-      - "control"
-      summary: "Creates a new control setpoint as ouput"
+      - "outputs"
+      summary: "Creates a new outputs setpoint as ouput"
       description: ""
       operationId: "output_source_mqtt"
       consumes:
@@ -417,10 +412,10 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+      x-swagger-router-controller: "swagger_server.controllers.outputs_controller"
     delete:
       tags:
-      - "control"
+      - "outputs"
       summary: "Deletes the registration output of the framework"
       description: ""
       operationId: "delete_mqtt_output"
@@ -443,14 +438,14 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.control_controller"
-  /control/file/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.outputs_controller"
+  /outputs/{id}:
     get:
       tags:
-      - "control"
+      - "outputs"
       summary: "Get ouput of the optimization"
       description: ""
-      operationId: "output_source_file"
+      operationId: "get_output"
       consumes:
       - "application/json"
       produces:
@@ -463,20 +458,22 @@ paths:
         type: "string"
       responses:
         200:
-          description: "Created succesfully"
+          description: "OK"
+          schema:
+            $ref: "#/definitions/OptimizationOutput"
         400:
           description: "Bad request"
         405:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+      x-swagger-router-controller: "swagger_server.controllers.outputs_controller"
     delete:
       tags:
-      - "control"
+      - "outputs"
       summary: "Deletes the output of the framework"
       description: ""
-      operationId: "delete_file_output"
+      operationId: "delete_output"
       consumes:
       - "application/json"
       produces:
@@ -496,11 +493,11 @@ paths:
           description: "Invalid input"
         500:
           description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.control_controller"
-  /command/start/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.outputs_controller"
+  /optimization/start/{id}:
     put:
       tags:
-      - "command"
+      - "optimization"
       summary: "Command for starting the framework"
       description: ""
       operationId: "framework_start"
@@ -524,11 +521,11 @@ paths:
           description: "OK"
         405:
           description: "Invalid input"
-      x-swagger-router-controller: "swagger_server.controllers.command_controller"
-  /command/stop/{id}:
+      x-swagger-router-controller: "swagger_server.controllers.optimization_controller"
+  /optimization/stop/{id}:
     put:
       tags:
-      - "command"
+      - "optimization"
       summary: "Command for stoping the framework"
       description: ""
       operationId: "framework_stop"
@@ -545,39 +542,11 @@ paths:
           description: "OK"
         405:
           description: "Invalid input"
-      x-swagger-router-controller: "swagger_server.controllers.command_controller"
-  /command/restart/{id}:
-    put:
-      tags:
-      - "command"
-      summary: "Command for restarting the framework with different start parameters"
-      description: ""
-      operationId: "framework_restart"
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "Id of the registry to be started"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "startOFW"
-        description: "Restart command for the optimization framework \n repetitions:\
-          \ -1 infinite repetitions"
-        required: true
-        schema:
-          $ref: "#/definitions/Start"
-      responses:
-        200:
-          description: "OK"
-        405:
-          description: "Invalid input"
-      x-swagger-router-controller: "swagger_server.controllers.command_controller"
-  /command/status/:
+      x-swagger-router-controller: "swagger_server.controllers.optimization_controller"
+  /optimization/status/:
     get:
       tags:
-      - "command"
+      - "optimization"
       summary: "Command for getting status of the framework"
       description: ""
       operationId: "framework_status"
@@ -587,9 +556,11 @@ paths:
       responses:
         200:
           description: "OK"
+          schema:
+            $ref: "#/definitions/StatusOutput"
         405:
           description: "Invalid input"
-      x-swagger-router-controller: "swagger_server.controllers.command_controller"
+      x-swagger-router-controller: "swagger_server.controllers.optimization_controller"
 definitions:
   Start:
     type: "object"
@@ -616,12 +587,12 @@ definitions:
         type: "integer"
         format: "int32"
     example:
-      control_frequency: 30
+      control_frequency: 60
       horizon_in_steps: 24
       dT_in_seconds: 3600
       model_name: "model_name"
-      repetition: 0
-      solver: "solver"
+      repetition: 2
+      solver: "ipopt"
   Path_Definition:
     type: "object"
     required:
@@ -654,46 +625,94 @@ definitions:
     example:
       P_Load_R:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Load_T:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_Load_S:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Load_S:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_Load_T:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Load:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       meta:
-        pf_Load: 0.6027456
+        pf_Load: 0.9
       P_Load:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Load_R:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
   metaLoad:
     type: "object"
     properties:
@@ -703,7 +722,7 @@ definitions:
         minimum: 0
         maximum: 1
     example:
-      pf_Load: 0.6027456
+      pf_Load: 0.9
   PV:
     type: "object"
     properties:
@@ -729,46 +748,96 @@ definitions:
     example:
       P_PV:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_PV_S:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_PV_T:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_PV:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       meta:
-        PV_Inv_Max_Power: 1
+        PV_Inv_Max_Power: 1300
+        City: "Bonn"
+        Country: "Germany"
       P_PV_R:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_PV_S:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_PV_T:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_PV_R:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
   PV_Output:
     type: "object"
     properties:
@@ -791,44 +860,92 @@ definitions:
     example:
       Q_PV_T_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_PV_R_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_PV_T_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_PV_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_PV_S_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_PV_R_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_PV_S_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_PV_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
   metaPV:
     type: "object"
     properties:
@@ -840,7 +957,7 @@ definitions:
       Country:
         type: "string"
     example:
-      PV_Inv_Max_Power: 2
+      PV_Inv_Max_Power: 1300
       City: "Bonn"
       Country: "Germany"
   ESS:
@@ -855,17 +972,22 @@ definitions:
     example:
       SoC_Value:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
       meta:
-        ESS_Max_Discharge_Power: 9.301444
-        ESS_Max_SoC: 5.637377
-        ESS_Charging_Eff: 3.6160767
-        ESS_Min_SoC: 5.962134
-        ESS_Max_Charge_Power: 7.0614014
-        ESS_Discharging_Eff: 2.027123
-        ESS_Capacity: 2.302136
+        ESS_Max_Discharge_Power: 2500
+        ESS_Max_SoC: 0.9
+        ESS_Charging_Eff: 0.9
+        ESS_Min_SoC: 0.2
+        ESS_Max_Charge_Power: 2500
+        ESS_Discharging_Eff: 0.85
+        ESS_Capacity: 3560
   ESS_Output:
     type: "object"
     required:
@@ -877,18 +999,28 @@ definitions:
     example:
       P_ESS_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
   metaESS:
     type: "object"
     properties:
       ESS_Min_SoC:
         type: "number"
         format: "float"
+        minimum: 0
+        maximum: 1
       ESS_Max_SoC:
         type: "number"
         format: "float"
+        minimum: 0
+        maximum: 1
       ESS_Capacity:
         type: "number"
         format: "float"
@@ -901,17 +1033,21 @@ definitions:
       ESS_Charging_Eff:
         type: "number"
         format: "float"
+        minimum: 0
+        maximum: 1
       ESS_Discharging_Eff:
         type: "number"
         format: "float"
+        minimum: 0
+        maximum: 1
     example:
-      ESS_Max_Discharge_Power: 9.301444
-      ESS_Max_SoC: 5.637377
-      ESS_Charging_Eff: 3.6160767
-      ESS_Min_SoC: 5.962134
-      ESS_Max_Charge_Power: 7.0614014
-      ESS_Discharging_Eff: 2.027123
-      ESS_Capacity: 2.302136
+      ESS_Max_Discharge_Power: 2500
+      ESS_Max_SoC: 0.9
+      ESS_Charging_Eff: 0.9
+      ESS_Min_SoC: 0.2
+      ESS_Max_Charge_Power: 2500
+      ESS_Discharging_Eff: 0.85
+      ESS_Capacity: 3560
   grid:
     type: "object"
     properties:
@@ -919,10 +1055,10 @@ definitions:
         $ref: "#/definitions/metaGrid"
     example:
       meta:
-        Q_Grid_Max_Export_Power: 7
-        Min_Voltage_Drop: 1.0246457
-        P_Grid_Max_Export_Power: 4
-        Max_Voltage_Drop: 1.2315135
+        Q_Grid_Max_Export_Power: 750
+        Min_Voltage_Drop: 5
+        P_Grid_Max_Export_Power: 1550
+        Max_Voltage_Drop: 10
   grid_Output:
     type: "object"
     properties:
@@ -945,44 +1081,92 @@ definitions:
     example:
       P_Grid_R_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_Grid_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_Grid_T_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       P_Grid_S_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Grid_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Grid_R_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Grid_S_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
       Q_Grid_T_Output:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
   metaGrid:
     type: "object"
     properties:
@@ -995,14 +1179,18 @@ definitions:
       Max_Voltage_Drop:
         type: "number"
         format: "float"
+        minimum: 0
+        maximum: 100
       Min_Voltage_Drop:
         type: "number"
         format: "float"
+        minimum: 0
+        maximum: 100
     example:
-      Q_Grid_Max_Export_Power: 7
-      Min_Voltage_Drop: 1.0246457
-      P_Grid_Max_Export_Power: 4
-      Max_Voltage_Drop: 1.2315135
+      Q_Grid_Max_Export_Power: 750
+      Min_Voltage_Drop: 5
+      P_Grid_Max_Export_Power: 1550
+      Max_Voltage_Drop: 10
   Source:
     type: "object"
     properties:
@@ -1013,9 +1201,14 @@ definitions:
     description: "Selection between MQTT or file mode inputs or outputs"
     example:
       mqtt:
-        qos: 0
-        host: "host"
-        topic: "topic"
+        qos: 1
+        host: "hostname"
+        topic: "topic_name"
+        port: 1883
+        username: "myuser"
+        password: "mypass"
+        ca_cert_path: "path to cert"
+        insecure: false
       predict: true
   SourceESS:
     type: "object"
@@ -1024,9 +1217,14 @@ definitions:
         $ref: "#/definitions/MQTT"
     example:
       mqtt:
-        qos: 0
-        host: "host"
-        topic: "topic"
+        qos: 1
+        host: "hostname"
+        topic: "topic_name"
+        port: 1883
+        username: "myuser"
+        password: "mypass"
+        ca_cert_path: "path to cert"
+        insecure: false
   MQTT:
     type: "object"
     required:
@@ -1055,9 +1253,9 @@ definitions:
       insecure:
         type: "boolean"
     example:
-      qos: 0
-      host: "host"
-      topic: "topic"
+      qos: 1
+      host: "hostname"
+      topic: "topic_name"
       port: 1883
       username: "myuser"
       password: "mypass"
@@ -1128,126 +1326,225 @@ definitions:
       load:
         P_Load_R:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
         Q_Load_T:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
         P_Load_S:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
         Q_Load_S:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
         P_Load_T:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
         Q_Load:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
         meta:
-          pf_Load: 0.6027456
+          pf_Load: 0.9
         P_Load:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
         Q_Load_R:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
           predict: true
       ESS:
         SoC_Value:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
         meta:
-          ESS_Max_Discharge_Power: 9.301444
-          ESS_Max_SoC: 5.637377
-          ESS_Charging_Eff: 3.6160767
-          ESS_Min_SoC: 5.962134
-          ESS_Max_Charge_Power: 7.0614014
-          ESS_Discharging_Eff: 2.027123
-          ESS_Capacity: 2.302136
+          ESS_Max_Discharge_Power: 2500
+          ESS_Max_SoC: 0.9
+          ESS_Charging_Eff: 0.9
+          ESS_Min_SoC: 0.2
+          ESS_Max_Charge_Power: 2500
+          ESS_Discharging_Eff: 0.85
+          ESS_Capacity: 3560
       grid:
         meta:
-          Q_Grid_Max_Export_Power: 7
-          Min_Voltage_Drop: 1.0246457
-          P_Grid_Max_Export_Power: 4
-          Max_Voltage_Drop: 1.2315135
+          Q_Grid_Max_Export_Power: 750
+          Min_Voltage_Drop: 5
+          P_Grid_Max_Export_Power: 1550
+          Max_Voltage_Drop: 10
       photovoltaic:
         P_PV:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_PV_S:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_PV_T:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_PV:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         meta:
-          PV_Inv_Max_Power: 1
+          PV_Inv_Max_Power: 1300
           City: "Bonn"
           Country: "Germany"
         P_PV_R:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_PV_S:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_PV_T:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_PV_R:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
       generic: ""
       global_control:
         ESS_Control:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
   FileInputSource:
     type: "object"
     properties:
@@ -1266,60 +1563,54 @@ definitions:
     example:
       load:
         P_Load_R:
-        - 6.027456183070403
-        - 6.027456183070403
+        - 705.4
+        - 305.6
         Q_Load_T:
-        - 9.301444243932576
-        - 9.301444243932576
+        - 705.4
+        - 305.6
         P_Load_S:
-        - 1.4658129805029452
-        - 1.4658129805029452
+        - 705.4
+        - 305.6
         Q_Load_S:
-        - 7.061401241503109
-        - 7.061401241503109
+        - 705.4
+        - 305.6
         P_Load_T:
-        - 5.962133916683182
-        - 5.962133916683182
+        - 705.4
+        - 305.6
         Q_Load:
-        - 5.637376656633329
-        - 5.637376656633329
-        meta:
-          pf_Load: 0.6027456
+        - 705.4
+        - 305.6
         P_Load:
-        - 0.8008281904610115
-        - 0.8008281904610115
+        - 705.4
+        - 305.6
         Q_Load_R:
-        - 2.3021358869347655
-        - 2.3021358869347655
+        - 705.4
+        - 305.6
       ESS:
-        SoC_Value: 41.45608029883936
+        SoC_Value: 41
         meta:
-          ESS_Max_Discharge_Power: 9.301444
-          ESS_Max_SoC: 5.637377
-          ESS_Charging_Eff: 3.6160767
-          ESS_Min_SoC: 5.962134
-          ESS_Max_Charge_Power: 7.0614014
-          ESS_Discharging_Eff: 2.027123
-          ESS_Capacity: 2.302136
+          ESS_Max_Discharge_Power: 2500
+          ESS_Max_SoC: 90
+          ESS_Charging_Eff: 0.9
+          ESS_Min_SoC: 20
+          ESS_Max_Charge_Power: 2500
+          ESS_Discharging_Eff: 0.85
+          ESS_Capacity: 3560
       grid:
         meta:
-          Q_Grid_Max_Export_Power: 7
-          Min_Voltage_Drop: 1.0246457
-          P_Grid_Max_Export_Power: 4
-          Max_Voltage_Drop: 1.2315135
+          Q_Grid_Max_Export_Power: 750
+          Min_Voltage_Drop: 5
+          P_Grid_Max_Export_Power: 1550
+          Max_Voltage_Drop: 10
       photovoltaic:
         P_PV:
-        - 3.616076749251911
-        - 3.616076749251911
-        meta:
-          PV_Inv_Max_Power: 2
-          City: "Bonn"
-          Country: "Germany"
+        - 705.4
+        - 305.6
       generic: ""
       global_control:
         ESS_Control:
-        - 7.386281948385884
-        - 7.386281948385884
+        - 1300.2
+        - 1200.5
   OutputSource:
     type: "object"
     properties:
@@ -1333,91 +1624,193 @@ definitions:
       ESS:
         P_ESS_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
       grid:
         P_Grid_R_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_Grid_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_Grid_T_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_Grid_S_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_Grid_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_Grid_R_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_Grid_S_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_Grid_T_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
       photovoltaic:
         Q_PV_T_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_PV_R_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_PV_T_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_PV_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_PV_S_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_PV_R_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         Q_PV_S_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
         P_PV_Output:
           mqtt:
-            qos: 0
-            host: "host"
-            topic: "topic"
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+            port: 1883
+            username: "myuser"
+            password: "mypass"
+            ca_cert_path: "path to cert"
+            insecure: false
+          predict: true
   Model_answer:
     type: "object"
     properties:
@@ -1428,9 +1821,9 @@ definitions:
     example:
       models:
       - name: "name"
-        solver: "solver"
+        solver: "ipopt"
       - name: "name"
-        solver: "solver"
+        solver: "ipopt"
   Model_Output:
     type: "object"
     required:
@@ -1442,7 +1835,7 @@ definitions:
         type: "string"
     example:
       name: "name"
-      solver: "solver"
+      solver: "ipopt"
   Global_Control:
     type: "object"
     required:
@@ -1453,9 +1846,15 @@ definitions:
     example:
       ESS_Control:
         mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+          port: 1883
+          username: "myuser"
+          password: "mypass"
+          ca_cert_path: "path to cert"
+          insecure: false
+        predict: true
   Global_Control_File:
     type: "object"
     required:
@@ -1467,8 +1866,8 @@ definitions:
           type: "number"
     example:
       ESS_Control:
-      - 7.386281948385884
-      - 7.386281948385884
+      - 1300.2
+      - 1200.5
   PV_File:
     type: "object"
     required:
@@ -1482,12 +1881,8 @@ definitions:
         $ref: "#/definitions/metaPV"
     example:
       P_PV:
-      - 3.616076749251911
-      - 3.616076749251911
-      meta:
-        PV_Inv_Max_Power: 2
-        City: "Bonn"
-        Country: "Germany"
+      - 705.4
+      - 305.6
   Load_File:
     type: "object"
     properties:
@@ -1527,31 +1922,29 @@ definitions:
         $ref: "#/definitions/metaLoad"
     example:
       P_Load_R:
-      - 6.027456183070403
-      - 6.027456183070403
+      - 705.4
+      - 305.6
       Q_Load_T:
-      - 9.301444243932576
-      - 9.301444243932576
+      - 705.4
+      - 305.6
       P_Load_S:
-      - 1.4658129805029452
-      - 1.4658129805029452
+      - 705.4
+      - 305.6
       Q_Load_S:
-      - 7.061401241503109
-      - 7.061401241503109
+      - 705.4
+      - 305.6
       P_Load_T:
-      - 5.962133916683182
-      - 5.962133916683182
+      - 705.4
+      - 305.6
       Q_Load:
-      - 5.637376656633329
-      - 5.637376656633329
-      meta:
-        pf_Load: 0.6027456
+      - 705.4
+      - 305.6
       P_Load:
-      - 0.8008281904610115
-      - 0.8008281904610115
+      - 705.4
+      - 305.6
       Q_Load_R:
-      - 2.3021358869347655
-      - 2.3021358869347655
+      - 705.4
+      - 305.6
   ESS_File:
     type: "object"
     required:
@@ -1564,32 +1957,19 @@ definitions:
       meta:
         $ref: "#/definitions/metaESS"
     example:
-      SoC_Value: 41.45608029883936
+      SoC_Value: 41
       meta:
-        ESS_Max_Discharge_Power: 9.301444
-        ESS_Max_SoC: 5.637377
-        ESS_Charging_Eff: 3.6160767
-        ESS_Min_SoC: 5.962134
-        ESS_Max_Charge_Power: 7.0614014
-        ESS_Discharging_Eff: 2.027123
-        ESS_Capacity: 2.302136
+        ESS_Max_Discharge_Power: 2500
+        ESS_Max_SoC: 90
+        ESS_Charging_Eff: 0.9
+        ESS_Min_SoC: 20
+        ESS_Max_Charge_Power: 2500
+        ESS_Discharging_Eff: 0.85
+        ESS_Capacity: 3560
   Generic:
     type: "array"
     items:
       $ref: "#/definitions/Generic_mqtt"
-    example:
-    - generic_name:
-        mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
-      name: "name1"
-    - generic_name:
-        mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
-      name: "name2"
   Generic_mqtt:
     type: "object"
     required:
@@ -1600,13 +1980,6 @@ definitions:
         description: "Name defining the parameter into the optimization model"
       generic_name:
         $ref: "#/definitions/Source"
-    example:
-      generic_name:
-        mqtt:
-          qos: 0
-          host: "host"
-          topic: "topic"
-      name: "name"
   Generic_Files:
     type: "array"
     items:
@@ -1624,3 +1997,86 @@ definitions:
         type: "array"
         items:
           type: "number"
+    example:
+      name: "MyCustomName"
+      file:
+      - 1400.4
+      - 1500.3
+  Status:
+    type: "object"
+    properties:
+      repetition:
+        type: "integer"
+        format: "int32"
+      control_frequency:
+        type: "integer"
+        format: "int32"
+      horizon_in_steps:
+        type: "integer"
+        format: "int32"
+      model_name:
+        type: "string"
+      solver:
+        type: "string"
+      dT_in_seconds:
+        type: "integer"
+        format: "int32"
+      status:
+        type: "string"
+      start_time:
+        type: "number"
+        format: "float"
+      id:
+        type: "string"
+    example:
+      control_frequency: 30
+      horizon_in_steps: 24
+      dT_in_seconds: 3600
+      model_name: "model_name"
+      repetition: 0
+      solver: "solver"
+      status: "running"
+      id: "asdfg1234"
+      start_time: 1.5492829927812E9
+  StatusOutput:
+    type: "object"
+    properties:
+      status:
+        type: "array"
+        items:
+          $ref: "#/definitions/Status"
+    example:
+      status:
+      - control_frequency: 30
+        horizon_in_steps: 24
+        dT_in_seconds: 3600
+        model_name: "model_name"
+        repetition: 0
+        solver: "solver"
+        status: "running"
+        id: "asdfg1234"
+        start_time: 1.5492829927812E9
+      - status: "stopped"
+        id: "qwer56758"
+  OptimizationOutput:
+    type: "object"
+    example:
+      P_ESS_Output:
+        1549296638:
+          0: 0.0021808010500441975
+          1: 0.0020899300491295783
+          2: 0.00199905959594257
+          3: 0.0019081896666691433
+          4: 0.0018173202374902097
+      P_Grid_Output:
+        1549296638:
+          0: 0.054819189123018454
+          1: 0.08851006012393307
+          2: 0.08860093057712008
+          3: 0.06815846750639351
+          4: 0.07571600293557243
+    additionalProperties:
+      type: "object"
+      additionalProperties:
+        type: "object"
+        properties: {}

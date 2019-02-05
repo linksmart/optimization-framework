@@ -1,29 +1,20 @@
-import connexion
-import six
-import requests
-import shutil
+import configparser
+import logging
 
+import connexion
+import os
+
+import re
+import six
+
+from swagger_server.models import ModelOutput
 from swagger_server.models.model import Model  # noqa: E501
 from swagger_server.models.model_answer import ModelAnswer  # noqa: E501
-from swagger_server.models.model_output import ModelOutput
-from swagger_server.models.model_url import ModelUrl  # noqa: E501
 from swagger_server import util
-from flask import json
-import os
-import logging
-import configparser
-from os import walk
-import re
-
 
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
-
-def getDataJSON(object, key):
-    data=json.dumps(object)
-    data2=json.loads(data)
-    return data2[key]
 
 def getFilePath(dir, file_name):
     # print(os.path.sep)
@@ -47,10 +38,10 @@ def delete_models(name):  # noqa: E501
 
     :rtype: None
     """
-    file_name=str(name)+".py"
+    file_name = str(name) + ".py"
     if not "ReferenceModel.py" in file_name:
-        logger.debug("This model will be erased: "+str(name))
-        file_path= os.path.join("/usr/src/app/optimization/models", file_name)
+        logger.debug("This model will be erased: " + str(name))
+        file_path = os.path.join("/usr/src/app/optimization/models", file_name)
         try:
             os.remove(file_path)
             # remove from resources
@@ -64,50 +55,14 @@ def delete_models(name):  # noqa: E501
                 with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
                     config.write(configfile)
                 config.read(getFilePath("utils", "ConfigFile.properties"))
-                logger.info("The model name was changed in the configuration file: " + config['SolverSection']['model.name'])
-            answer="OK"
+                logger.info(
+                    "The model name was changed in the configuration file: " + config['SolverSection']['model.name'])
+            answer = "OK"
         except Exception as e:
             logger.error(e)
-            answer= str(e)
+            answer = str(e)
     else:
         answer = "Cannot remove ReferenceModel"
-    return answer
-
-
-def delete_models_all():  # noqa: E501
-    """Deletes all models of the framework
-
-     # noqa: E501
-
-
-    :rtype: None
-    """
-    f = []
-    mypath = "/usr/src/app/optimization/models"
-    for (dirpath, dirnames, filename) in walk(mypath):
-        f.extend(filename)
-        break
-    try:
-        for filename in f:
-            logger.debug("Filename: " + str(filename))
-            if not "ReferenceModel.py" in filename:
-                file_path = os.path.join("/usr/src/app/optimization/models", filename)
-                logger.debug("File_path: "+file_path)
-                os.remove(file_path)
-                check_and_remove_from_resources(filename)
-        config = configparser.RawConfigParser()
-        config.read(getFilePath("utils", "ConfigFile.properties"))
-        model_name = config.get('SolverSection', 'model.name')
-        if model_name is not "ReferenceModel":
-            config.set('SolverSection', 'model.name', "ReferenceModel")
-            with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
-                config.write(configfile)
-            config.read(getFilePath("utils", "ConfigFile.properties"))
-            logger.info("The model name was changed in the configuration file: " + config['SolverSection']['model.name'])
-        answer = "OK"
-    except Exception as e:
-        logger.error(e)
-        answer= str(e)
     return answer
 
 
@@ -116,25 +71,25 @@ def get_models_in():  # noqa: E501
 
      # noqa: E501
 
-    :rtype: None
-    """
 
+    :rtype: ModelAnswer
+    """
     f = []
     mypath = "/usr/src/app/optimization/models"
-    for (dirpath, dirnames, filenames) in walk(mypath):
+    for (dirpath, dirnames, filenames) in os.walk(mypath):
         f.extend(filenames)
-        logger.debug("Filenames: "+str(f))
+        logger.debug("Filenames: " + str(f))
         break
-    f_new=[]
+    f_new = []
     for filenames in f:
         filenames = re.sub('.py', '', str(filenames))
         f_new.append(filenames)
     logger.debug("Filenames: " + str(f_new))
-    answer=[]
+    answer = []
 
     for i in range(len(f_new)):
         answer.append(ModelOutput(f_new[i]))
-    answer=ModelAnswer(answer)
+    answer = ModelAnswer(answer)
 
     logger.debug("Answer: " + str(answer))
     return answer
@@ -145,6 +100,8 @@ def optimization_model(name, upModel):  # noqa: E501
 
      # noqa: E501
 
+    :param name: Name of the loaded model
+    :type name: str
     :param upModel: Mathematical model that needs to be added to the optimization framework
     :type upModel: dict | bytes
 
@@ -152,7 +109,6 @@ def optimization_model(name, upModel):  # noqa: E501
     """
     if connexion.request.is_json:
         upModel = Model.from_dict(connexion.request.get_json())  # noqa: E501
-
     try:
         #writes thw data into a file with the given name
         logger.debug("This is the file name: " + name)
@@ -198,47 +154,3 @@ def optimization_model(name, upModel):  # noqa: E501
     #data = getDataJSON(upModel, "upModel")
     #print(data)
     return answer
-
-
-
-
-def optimization_model_url(upModelUrl):  # noqa: E501
-    """Url for the mathematical model for the optimization solver
-
-     # noqa: E501
-
-    :param upModelUrl: Url of the mathematical model that needs to be added to the optimization framework
-    :type upModelUrl: dict | bytes
-
-    :rtype: None
-    """
-
-    if connexion.request.is_json:
-        logger.info("URL JSON received")
-        #print("direct"+str(upModelUrl))
-        upModelUrl = ModelUrl.from_dict(connexion.request.get_json())  # noqa: E501
-
-        try:
-            url= getDataJSON(upModelUrl,"upModelUrl")
-            r=requests.get(url,auth=('garagon', 'initavi2011'), verify=True,stream=True)
-            r.raise_for_status() # ensure we notice bad responses
-            #print("Headers -->" + str(r.headers))
-            #print("Content length "+ str(r.headers.get('Content-length',0)))
-            #print("File name " + str(r.headers.get('filename', 0)))
-            #print("Este es r.text  ",r.text)
-            #print("Este es r.raise_for_status()  ",r.raise_for_status())
-            if r.status_code == 200:
-                logger.info("File correctly downloaded")
-
-            try:
-                with open("/usr/src/app/optimization/models/model_1.py", mode='wb') as localfile:
-                    localfile.write(r.content)
-                #print(os.path.abspath("model.py"))
-            except Exception as e:
-                logger.error(e)
-
-        except Exception as e:
-            logger.error(e)
-    else:
-        logger.info("Wrong Content-Type")
-    return 'Success'
