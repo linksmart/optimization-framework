@@ -117,6 +117,10 @@ class MetaGrid(Model):
         :param max_voltage_drop: The max_voltage_drop of this MetaGrid.
         :type max_voltage_drop: float
         """
+        if max_voltage_drop is not None and max_voltage_drop > 100:  # noqa: E501
+            raise ValueError("Invalid value for `max_voltage_drop`, must be a value less than or equal to `100`")  # noqa: E501
+        if max_voltage_drop is not None and max_voltage_drop < 0:  # noqa: E501
+            raise ValueError("Invalid value for `max_voltage_drop`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._max_voltage_drop = max_voltage_drop
 
@@ -138,5 +142,9 @@ class MetaGrid(Model):
         :param min_voltage_drop: The min_voltage_drop of this MetaGrid.
         :type min_voltage_drop: float
         """
+        if min_voltage_drop is not None and min_voltage_drop > 100:  # noqa: E501
+            raise ValueError("Invalid value for `min_voltage_drop`, must be a value less than or equal to `100`")  # noqa: E501
+        if min_voltage_drop is not None and min_voltage_drop < 0:  # noqa: E501
+            raise ValueError("Invalid value for `min_voltage_drop`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._min_voltage_drop = min_voltage_drop

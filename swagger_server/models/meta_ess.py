@@ -90,6 +90,10 @@ class MetaESS(Model):
         :param ess_min_so_c: The ess_min_so_c of this MetaESS.
         :type ess_min_so_c: float
         """
+        if ess_min_so_c is not None and ess_min_so_c > 1:  # noqa: E501
+            raise ValueError("Invalid value for `ess_min_so_c`, must be a value less than or equal to `1`")  # noqa: E501
+        if ess_min_so_c is not None and ess_min_so_c < 0:  # noqa: E501
+            raise ValueError("Invalid value for `ess_min_so_c`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._ess_min_so_c = ess_min_so_c
 
@@ -111,6 +115,10 @@ class MetaESS(Model):
         :param ess_max_so_c: The ess_max_so_c of this MetaESS.
         :type ess_max_so_c: float
         """
+        if ess_max_so_c is not None and ess_max_so_c > 1:  # noqa: E501
+            raise ValueError("Invalid value for `ess_max_so_c`, must be a value less than or equal to `1`")  # noqa: E501
+        if ess_max_so_c is not None and ess_max_so_c < 0:  # noqa: E501
+            raise ValueError("Invalid value for `ess_max_so_c`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._ess_max_so_c = ess_max_so_c
 
@@ -195,6 +203,10 @@ class MetaESS(Model):
         :param ess_charging_eff: The ess_charging_eff of this MetaESS.
         :type ess_charging_eff: float
         """
+        if ess_charging_eff is not None and ess_charging_eff > 1:  # noqa: E501
+            raise ValueError("Invalid value for `ess_charging_eff`, must be a value less than or equal to `1`")  # noqa: E501
+        if ess_charging_eff is not None and ess_charging_eff < 0:  # noqa: E501
+            raise ValueError("Invalid value for `ess_charging_eff`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._ess_charging_eff = ess_charging_eff
 
@@ -216,5 +228,9 @@ class MetaESS(Model):
         :param ess_discharging_eff: The ess_discharging_eff of this MetaESS.
         :type ess_discharging_eff: float
         """
+        if ess_discharging_eff is not None and ess_discharging_eff > 1:  # noqa: E501
+            raise ValueError("Invalid value for `ess_discharging_eff`, must be a value less than or equal to `1`")  # noqa: E501
+        if ess_discharging_eff is not None and ess_discharging_eff < 0:  # noqa: E501
+            raise ValueError("Invalid value for `ess_discharging_eff`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._ess_discharging_eff = ess_discharging_eff
