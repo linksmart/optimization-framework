@@ -319,7 +319,9 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
                             else:
                                 logger.debug("No data in "+str(key))
 
-            return jsonify({'Data-Source-Id':str(id)})
+            return "Instance created", 201, {'Location': str(id)}
+            #return str(id)
+            #return jsonify({'Data-Source-Id':str(id)})
         except Exception as e:
             logger.error("Invalid data " + str(e))
             return "Invalid data " + str(e)
@@ -467,7 +469,8 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
                 json.dump(MQTT_Input_Source, outfile, ensure_ascii=False)
             logger.info("registry/input saved into memory")
 
-            return jsonify({'Data-Source-Id': str(id)})
+            return "Instance created", 201, {'Location': str(id)}
+            #return jsonify({'Data-Source-Id': str(id)})
         except Exception as e:
             logger.error("Invalid data " + str(e))
             return "Invalid data " + str(e)
