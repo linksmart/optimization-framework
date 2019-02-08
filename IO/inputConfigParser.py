@@ -81,7 +81,7 @@ class InputConfigParser:
 
     def extract_mqtt_params(self):
         for key, value in self.input_config_mqtt.items():
-            if key == "generic":
+            """if key == "generic":
                 for value1 in value:
                     if "name" in value1.keys():
                         name = value1["name"]
@@ -93,12 +93,13 @@ class InputConfigParser:
                                 self.mqtt_params[name] = mqtt.copy()
                                 self.generic_names.append(name)
             else:
-                for key2, value2 in value.items():
-                    mqtt = self.get_mqtt(value2)
-                    self.read_predict_flag(value2, key2)
-                    if mqtt is not None:
-                        self.mqtt_params[key2] = mqtt.copy()
-                        self.add_name_to_list(key2)
+            """
+            for key2, value2 in value.items():
+                mqtt = self.get_mqtt(value2)
+                self.read_predict_flag(value2, key2)
+                if mqtt is not None:
+                    self.mqtt_params[key2] = mqtt.copy()
+                    self.add_name_to_list(key2)
         logger.info("params = "+str(self.mqtt_params))
 
     def add_name_to_list(self, key):
@@ -121,19 +122,24 @@ class InputConfigParser:
         data = {}
         for input_config in [self.input_config_file, self.input_config_mqtt]:
             for k, v in input_config.items():
+                logger.debug("k: "+str(k))
+                logger.debug("v: " + str(v))
                 if isinstance(v, dict):
                     #logger.debug("k: "+str(k)+" v: "+str(v))
                     for k1, v1 in v.items():
-                        #logger.debug("k1: " + str(k1) + " v1: " + str(v1))
+                        logger.debug("k1: " + str(k1) + " v1: " + str(v1))
+                        logger.debug("Constants meta: "+str(Constants))
                         if k1 == Constants.meta:
+                            logger.debug("Meta constants")
                             for k2, v2 in v1.items():
-                                #logger.debug("k2: " + str(k2) + " v2: " + str(v2))
+                                logger.debug("k2: " + str(k2) + " v2: " + str(v2))
                                 try:
                                     v2 = float(v2)
                                 except ValueError:
                                     pass
                                 if isinstance(v2, float) and v2.is_integer():
                                         v2 = int(v2)
+                                #logger.debug("model_variables: "+str(self.model_variables))
                                 if k2 in self.model_variables.keys():
                                     indexing = self.model_variables[k2]["indexing"]
                                     if indexing == "index":
@@ -143,18 +149,37 @@ class InputConfigParser:
                                 else:
                                     data[k2] = {None: v2}
                         elif k1 == Constants.SoC_Value and isinstance(v1, int):
+                            logger.debug("SoC Value constants")
                             indexing = self.model_variables[Constants.SoC_Value]["indexing"]
                             if indexing == "index":
                                 data[Constants.SoC_Value] = {int(0): float(v1 / 100)}
                             elif indexing == "None":
                                 data[Constants.SoC_Value] = {None: float(v1 / 100)}
                         elif isinstance(v1, list):
+                            logger.debug("List constants")
                             self.add_name_to_list(k1)
-                if k == "generic" and input_config == self.input_config_file:
-                    for val in v:
-                        for k1, v1 in val.items():
-                            if k1 == "name":
-                                self.generic_names.append(v1)
+                        elif k=="generic" and not isinstance(v1,dict):
+                            logger.debug("Generic single value")
+                            try:
+                                v1 = float(v1)
+                            except ValueError:
+                                pass
+                            if isinstance(v1, float) and v1.is_integer():
+                                v1 = int(v1)
+
+                            data[k1]={None:v1}
+                            #self.add_name_to_list(k1)
+
+                logger.debug("Generic names: " + str(self.generic_names))
+                logger.debug("Prediction names: " + str(self.prediction_names))
+                logger.debug("Non_Prediction names: " + str(self.non_prediction_names))
+                logger.debug("External names: " + str(self.external_names))
+                """if k == "generic" and input_config == self.input_config_file:
+                    logger.debug("Generic names")
+                    for key, val in v.items():
+                        self.generic_names.append(key)
+                    logger.debug("Generic names: "+str(self.generic_names))
+                """
         return data
 
     def get_forecast_flag(self, topic):

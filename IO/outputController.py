@@ -13,26 +13,28 @@ logger = logging.getLogger(__file__)
 
 class OutputController:
 
-    def __init__(self, output_config=None):
+    def __init__(self, output_config=None, id=None):
         logger.info("Output Class started")
         self.output_config=output_config
         self.mqtt={}
         self.client_id = "PROFESS"
         self.redisDB = RedisDB()
         self.output_mqtt = {}
+        self.id=id
 
         if output_config is not None:
             self.init_mqtt()
 
     def init_mqtt(self):
         ###Connection to the mqtt broker
+        self.redisDB.set("Error mqtt"+self.id, False)
         try:
             for key, value in self.output_config.items():
                 for key2, value2 in value.items():
                     if (value2["mqtt"]["host"] or value2["mqtt"]["host"].isspace()):
                         host=value2["mqtt"]["host"]
                         topic = value2["mqtt"]["topic"]
-                        qos = 0
+                        qos = value2["mqtt"]["qos"]
                         if "qos" in value2["mqtt"]:
                             qos = value2["mqtt"]["qos"]
                         self.output_mqtt[key2] = {"host":host, "topic":topic, "qos":qos}
@@ -47,6 +49,8 @@ class OutputController:
                             self.mqtt[str(host)] = MQTTClient(str(host), 1883, self.client_id)
                     logger.debug("Self.mqtt: " + str(self.mqtt))
         except Exception as e:
+            logger.debug("Exception while starting mqtt")
+            self.redisDB.set("Error mqtt" + self.id, True)
             logger.error(e)
 
     def publishController(self, id, data):

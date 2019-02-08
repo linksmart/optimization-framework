@@ -12,6 +12,8 @@ import re
 import datetime
 from math import floor, ceil
 
+from IO.redisDB import RedisDB
+
 from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
 
