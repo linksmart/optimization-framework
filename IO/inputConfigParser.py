@@ -122,15 +122,15 @@ class InputConfigParser:
         data = {}
         for input_config in [self.input_config_file, self.input_config_mqtt]:
             for k, v in input_config.items():
-                logger.debug("k: "+str(k))
-                logger.debug("v: " + str(v))
+                #logger.debug("k: "+str(k))
+                #logger.debug("v: " + str(v))
                 if isinstance(v, dict):
                     #logger.debug("k: "+str(k)+" v: "+str(v))
                     for k1, v1 in v.items():
-                        logger.debug("k1: " + str(k1) + " v1: " + str(v1))
-                        logger.debug("Constants meta: "+str(Constants))
+                        #logger.debug("k1: " + str(k1) + " v1: " + str(v1))
+                        #logger.debug("Constants meta: "+str(Constants))
                         if k1 == Constants.meta:
-                            logger.debug("Meta constants")
+                            #logger.debug("Meta constants")
                             for k2, v2 in v1.items():
                                 logger.debug("k2: " + str(k2) + " v2: " + str(v2))
                                 try:
@@ -149,14 +149,14 @@ class InputConfigParser:
                                 else:
                                     data[k2] = {None: v2}
                         elif k1 == Constants.SoC_Value and isinstance(v1, int):
-                            logger.debug("SoC Value constants")
+                            #logger.debug("SoC Value constants")
                             indexing = self.model_variables[Constants.SoC_Value]["indexing"]
                             if indexing == "index":
                                 data[Constants.SoC_Value] = {int(0): float(v1 / 100)}
                             elif indexing == "None":
                                 data[Constants.SoC_Value] = {None: float(v1 / 100)}
                         elif isinstance(v1, list):
-                            logger.debug("List constants")
+                            #logger.debug("List constants")
                             self.add_name_to_list(k1)
                         elif k=="generic" and not isinstance(v1,dict):
                             logger.debug("Generic single value")
