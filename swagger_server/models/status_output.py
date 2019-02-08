@@ -16,14 +16,14 @@ class StatusOutput(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, status: List[Status]=None):  # noqa: E501
+    def __init__(self, status: Dict[str, Status]=None):  # noqa: E501
         """StatusOutput - a model defined in Swagger
 
         :param status: The status of this StatusOutput.  # noqa: E501
-        :type status: List[Status]
+        :type status: Dict[str, Status]
         """
         self.swagger_types = {
-            'status': List[Status]
+            'status': Dict[str, Status]
         }
 
         self.attribute_map = {
@@ -44,22 +44,22 @@ class StatusOutput(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def status(self) -> List[Status]:
+    def status(self) -> Dict[str, Status]:
         """Gets the status of this StatusOutput.
 
 
         :return: The status of this StatusOutput.
-        :rtype: List[Status]
+        :rtype: Dict[str, Status]
         """
         return self._status
 
     @status.setter
-    def status(self, status: List[Status]):
+    def status(self, status: Dict[str, Status]):
         """Sets the status of this StatusOutput.
 
 
         :param status: The status of this StatusOutput.
-        :type status: List[Status]
+        :type status: Dict[str, Status]
         """
 
         self._status = status

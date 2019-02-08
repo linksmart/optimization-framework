@@ -6,7 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
-from swagger_server.models.source import Source  # noqa: F401,E501
+from swagger_server.models.source_output import SourceOutput  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -16,35 +16,35 @@ class GridOutput(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, p_grid_output: Source=None, p_grid_r_output: Source=None, p_grid_s_output: Source=None, p_grid_t_output: Source=None, q_grid_output: Source=None, q_grid_r_output: Source=None, q_grid_s_output: Source=None, q_grid_t_output: Source=None):  # noqa: E501
+    def __init__(self, p_grid_output: SourceOutput=None, p_grid_r_output: SourceOutput=None, p_grid_s_output: SourceOutput=None, p_grid_t_output: SourceOutput=None, q_grid_output: SourceOutput=None, q_grid_r_output: SourceOutput=None, q_grid_s_output: SourceOutput=None, q_grid_t_output: SourceOutput=None):  # noqa: E501
         """GridOutput - a model defined in Swagger
 
         :param p_grid_output: The p_grid_output of this GridOutput.  # noqa: E501
-        :type p_grid_output: Source
+        :type p_grid_output: SourceOutput
         :param p_grid_r_output: The p_grid_r_output of this GridOutput.  # noqa: E501
-        :type p_grid_r_output: Source
+        :type p_grid_r_output: SourceOutput
         :param p_grid_s_output: The p_grid_s_output of this GridOutput.  # noqa: E501
-        :type p_grid_s_output: Source
+        :type p_grid_s_output: SourceOutput
         :param p_grid_t_output: The p_grid_t_output of this GridOutput.  # noqa: E501
-        :type p_grid_t_output: Source
+        :type p_grid_t_output: SourceOutput
         :param q_grid_output: The q_grid_output of this GridOutput.  # noqa: E501
-        :type q_grid_output: Source
+        :type q_grid_output: SourceOutput
         :param q_grid_r_output: The q_grid_r_output of this GridOutput.  # noqa: E501
-        :type q_grid_r_output: Source
+        :type q_grid_r_output: SourceOutput
         :param q_grid_s_output: The q_grid_s_output of this GridOutput.  # noqa: E501
-        :type q_grid_s_output: Source
+        :type q_grid_s_output: SourceOutput
         :param q_grid_t_output: The q_grid_t_output of this GridOutput.  # noqa: E501
-        :type q_grid_t_output: Source
+        :type q_grid_t_output: SourceOutput
         """
         self.swagger_types = {
-            'p_grid_output': Source,
-            'p_grid_r_output': Source,
-            'p_grid_s_output': Source,
-            'p_grid_t_output': Source,
-            'q_grid_output': Source,
-            'q_grid_r_output': Source,
-            'q_grid_s_output': Source,
-            'q_grid_t_output': Source
+            'p_grid_output': SourceOutput,
+            'p_grid_r_output': SourceOutput,
+            'p_grid_s_output': SourceOutput,
+            'p_grid_t_output': SourceOutput,
+            'q_grid_output': SourceOutput,
+            'q_grid_r_output': SourceOutput,
+            'q_grid_s_output': SourceOutput,
+            'q_grid_t_output': SourceOutput
         }
 
         self.attribute_map = {
@@ -79,169 +79,169 @@ class GridOutput(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def p_grid_output(self) -> Source:
+    def p_grid_output(self) -> SourceOutput:
         """Gets the p_grid_output of this GridOutput.
 
 
         :return: The p_grid_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_grid_output
 
     @p_grid_output.setter
-    def p_grid_output(self, p_grid_output: Source):
+    def p_grid_output(self, p_grid_output: SourceOutput):
         """Sets the p_grid_output of this GridOutput.
 
 
         :param p_grid_output: The p_grid_output of this GridOutput.
-        :type p_grid_output: Source
+        :type p_grid_output: SourceOutput
         """
 
         self._p_grid_output = p_grid_output
 
     @property
-    def p_grid_r_output(self) -> Source:
+    def p_grid_r_output(self) -> SourceOutput:
         """Gets the p_grid_r_output of this GridOutput.
 
 
         :return: The p_grid_r_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_grid_r_output
 
     @p_grid_r_output.setter
-    def p_grid_r_output(self, p_grid_r_output: Source):
+    def p_grid_r_output(self, p_grid_r_output: SourceOutput):
         """Sets the p_grid_r_output of this GridOutput.
 
 
         :param p_grid_r_output: The p_grid_r_output of this GridOutput.
-        :type p_grid_r_output: Source
+        :type p_grid_r_output: SourceOutput
         """
 
         self._p_grid_r_output = p_grid_r_output
 
     @property
-    def p_grid_s_output(self) -> Source:
+    def p_grid_s_output(self) -> SourceOutput:
         """Gets the p_grid_s_output of this GridOutput.
 
 
         :return: The p_grid_s_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_grid_s_output
 
     @p_grid_s_output.setter
-    def p_grid_s_output(self, p_grid_s_output: Source):
+    def p_grid_s_output(self, p_grid_s_output: SourceOutput):
         """Sets the p_grid_s_output of this GridOutput.
 
 
         :param p_grid_s_output: The p_grid_s_output of this GridOutput.
-        :type p_grid_s_output: Source
+        :type p_grid_s_output: SourceOutput
         """
 
         self._p_grid_s_output = p_grid_s_output
 
     @property
-    def p_grid_t_output(self) -> Source:
+    def p_grid_t_output(self) -> SourceOutput:
         """Gets the p_grid_t_output of this GridOutput.
 
 
         :return: The p_grid_t_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_grid_t_output
 
     @p_grid_t_output.setter
-    def p_grid_t_output(self, p_grid_t_output: Source):
+    def p_grid_t_output(self, p_grid_t_output: SourceOutput):
         """Sets the p_grid_t_output of this GridOutput.
 
 
         :param p_grid_t_output: The p_grid_t_output of this GridOutput.
-        :type p_grid_t_output: Source
+        :type p_grid_t_output: SourceOutput
         """
 
         self._p_grid_t_output = p_grid_t_output
 
     @property
-    def q_grid_output(self) -> Source:
+    def q_grid_output(self) -> SourceOutput:
         """Gets the q_grid_output of this GridOutput.
 
 
         :return: The q_grid_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_grid_output
 
     @q_grid_output.setter
-    def q_grid_output(self, q_grid_output: Source):
+    def q_grid_output(self, q_grid_output: SourceOutput):
         """Sets the q_grid_output of this GridOutput.
 
 
         :param q_grid_output: The q_grid_output of this GridOutput.
-        :type q_grid_output: Source
+        :type q_grid_output: SourceOutput
         """
 
         self._q_grid_output = q_grid_output
 
     @property
-    def q_grid_r_output(self) -> Source:
+    def q_grid_r_output(self) -> SourceOutput:
         """Gets the q_grid_r_output of this GridOutput.
 
 
         :return: The q_grid_r_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_grid_r_output
 
     @q_grid_r_output.setter
-    def q_grid_r_output(self, q_grid_r_output: Source):
+    def q_grid_r_output(self, q_grid_r_output: SourceOutput):
         """Sets the q_grid_r_output of this GridOutput.
 
 
         :param q_grid_r_output: The q_grid_r_output of this GridOutput.
-        :type q_grid_r_output: Source
+        :type q_grid_r_output: SourceOutput
         """
 
         self._q_grid_r_output = q_grid_r_output
 
     @property
-    def q_grid_s_output(self) -> Source:
+    def q_grid_s_output(self) -> SourceOutput:
         """Gets the q_grid_s_output of this GridOutput.
 
 
         :return: The q_grid_s_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_grid_s_output
 
     @q_grid_s_output.setter
-    def q_grid_s_output(self, q_grid_s_output: Source):
+    def q_grid_s_output(self, q_grid_s_output: SourceOutput):
         """Sets the q_grid_s_output of this GridOutput.
 
 
         :param q_grid_s_output: The q_grid_s_output of this GridOutput.
-        :type q_grid_s_output: Source
+        :type q_grid_s_output: SourceOutput
         """
 
         self._q_grid_s_output = q_grid_s_output
 
     @property
-    def q_grid_t_output(self) -> Source:
+    def q_grid_t_output(self) -> SourceOutput:
         """Gets the q_grid_t_output of this GridOutput.
 
 
         :return: The q_grid_t_output of this GridOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_grid_t_output
 
     @q_grid_t_output.setter
-    def q_grid_t_output(self, q_grid_t_output: Source):
+    def q_grid_t_output(self, q_grid_t_output: SourceOutput):
         """Sets the q_grid_t_output of this GridOutput.
 
 
         :param q_grid_t_output: The q_grid_t_output of this GridOutput.
-        :type q_grid_t_output: Source
+        :type q_grid_t_output: SourceOutput
         """
 
         self._q_grid_t_output = q_grid_t_output

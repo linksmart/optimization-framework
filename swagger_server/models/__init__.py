@@ -13,6 +13,8 @@ from swagger_server.models.generic import Generic
 from swagger_server.models.generic_file import GenericFile
 from swagger_server.models.generic_files import GenericFiles
 from swagger_server.models.generic_mqtt import GenericMqtt
+from swagger_server.models.generic_mqtt_output import GenericMqttOutput
+from swagger_server.models.generic_output import GenericOutput
 from swagger_server.models.global_control import GlobalControl
 from swagger_server.models.global_control_file import GlobalControlFile
 from swagger_server.models.grid import Grid
@@ -37,6 +39,7 @@ from swagger_server.models.pv_output import PVOutput
 from swagger_server.models.path_definition import PathDefinition
 from swagger_server.models.source import Source
 from swagger_server.models.source_ess import SourceESS
+from swagger_server.models.source_output import SourceOutput
 from swagger_server.models.start import Start
 from swagger_server.models.status import Status
 from swagger_server.models.status_output import StatusOutput

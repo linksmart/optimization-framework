@@ -6,7 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
-from swagger_server.models.source import Source  # noqa: F401,E501
+from swagger_server.models.source_output import SourceOutput  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -16,14 +16,14 @@ class ESSOutput(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, p_ess_output: Source=None):  # noqa: E501
+    def __init__(self, p_ess_output: SourceOutput=None):  # noqa: E501
         """ESSOutput - a model defined in Swagger
 
         :param p_ess_output: The p_ess_output of this ESSOutput.  # noqa: E501
-        :type p_ess_output: Source
+        :type p_ess_output: SourceOutput
         """
         self.swagger_types = {
-            'p_ess_output': Source
+            'p_ess_output': SourceOutput
         }
 
         self.attribute_map = {
@@ -44,24 +44,24 @@ class ESSOutput(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def p_ess_output(self) -> Source:
+    def p_ess_output(self) -> SourceOutput:
         """Gets the p_ess_output of this ESSOutput.
 
         Setting power of the ESS  # noqa: E501
 
         :return: The p_ess_output of this ESSOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_ess_output
 
     @p_ess_output.setter
-    def p_ess_output(self, p_ess_output: Source):
+    def p_ess_output(self, p_ess_output: SourceOutput):
         """Sets the p_ess_output of this ESSOutput.
 
         Setting power of the ESS  # noqa: E501
 
         :param p_ess_output: The p_ess_output of this ESSOutput.
-        :type p_ess_output: Source
+        :type p_ess_output: SourceOutput
         """
         if p_ess_output is None:
             raise ValueError("Invalid value for `p_ess_output`, must not be `None`")  # noqa: E501
