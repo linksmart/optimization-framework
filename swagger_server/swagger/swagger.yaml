@@ -766,70 +766,70 @@ definitions:
     type: "object"
     properties:
       P_PV_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       P_PV_R_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       P_PV_S_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       P_PV_T_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_PV_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_PV_R_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_PV_S_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_PV_T_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
     example:
       Q_PV_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       P_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       P_PV_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       Q_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       P_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       Q_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       Q_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       P_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
   metaPV:
     type: "object"
     properties:
@@ -874,14 +874,14 @@ definitions:
     properties:
       P_ESS_Output:
         description: "Setting power of the ESS"
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
     example:
       P_ESS_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
   metaESS:
     type: "object"
     properties:
@@ -937,70 +937,70 @@ definitions:
     type: "object"
     properties:
       P_Grid_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       P_Grid_R_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       P_Grid_S_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       P_Grid_T_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_Grid_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_Grid_R_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_Grid_S_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
       Q_Grid_T_Output:
-        $ref: "#/definitions/Source"
+        $ref: "#/definitions/SourceOutput"
     example:
       P_Grid_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       P_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       P_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       P_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       Q_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       Q_Grid_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       Q_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
       Q_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        unit: "W"
   metaGrid:
     type: "object"
     properties:
@@ -1049,6 +1049,22 @@ definitions:
         qos: 1
         host: "hostname"
         topic: "topic_name"
+  SourceOutput:
+    type: "object"
+    required:
+    - "mqtt"
+    properties:
+      mqtt:
+        $ref: "#/definitions/MQTT"
+      unit:
+        type: "string"
+    description: "Selection between MQTT or file mode inputs or outputs"
+    example:
+      mqtt:
+        qos: 1
+        host: "hostname"
+        topic: "topic_name"
+      unit: "W"
   MQTT:
     type: "object"
     required:
@@ -1142,6 +1158,19 @@ definitions:
       global_control:
         $ref: "#/definitions/Global_Control"
     example:
+      generic:
+        custom_name_1:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          predict: true
+        custom_name_2:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          predict: true
       load:
         P_Load_R:
           mqtt:
@@ -1266,7 +1295,6 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           predict: true
-      generic: ""
       global_control:
         ESS_Control:
           mqtt:
@@ -1290,6 +1318,13 @@ definitions:
       global_control:
         $ref: "#/definitions/Global_Control_File"
     example:
+      generic:
+        custom_name_1:
+        - 1200
+        - 12300
+        custom_name_2:
+        - 1500
+        - 1300
       load:
         P_Load_R:
         - 705.4
@@ -1335,7 +1370,6 @@ definitions:
         P_PV:
         - 705.4
         - 305.6
-      generic: ""
       global_control:
         ESS_Control:
         - 1300.2
@@ -1349,112 +1383,127 @@ definitions:
         $ref: "#/definitions/ESS_Output"
       grid:
         $ref: "#/definitions/grid_Output"
+      generic:
+        $ref: "#/definitions/GenericOutput"
     example:
+      generic:
+        custom_name_1:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          unit: "W"
+        custom_name_2:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          unit: "W"
       ESS:
         P_ESS_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
       grid:
         P_Grid_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         P_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         P_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         P_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         Q_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         Q_Grid_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         Q_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         Q_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
       photovoltaic:
         Q_PV_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         P_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         P_PV_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         Q_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         P_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         Q_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         Q_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
         P_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          unit: "W"
   Model_answer:
     type: "object"
     properties:
@@ -1605,10 +1654,57 @@ definitions:
         ESS_Max_Charge_Power: 2500
         ESS_Discharging_Eff: 0.85
         ESS_Capacity: 3560
+  GenericOutput:
+    type: "object"
+    example:
+      custom_name_1:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        unit: "W"
+      custom_name_2:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        unit: "W"
+    additionalProperties:
+      $ref: "#/definitions/SourceOutput"
+  Generic_mqtt_Output:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      name:
+        type: "string"
+        description: "Name defining the parameter into the optimization model"
+      generic_name:
+        $ref: "#/definitions/SourceESS"
+    example:
+      name: "custom_name"
+      generic_name:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
   Generic:
-    type: "array"
-    items:
-      $ref: "#/definitions/Generic_mqtt"
+    type: "object"
+    example:
+      custom_name_1:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        predict: true
+      custom_name_2:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        predict: true
+    additionalProperties:
+      $ref: "#/definitions/Source"
   Generic_mqtt:
     type: "object"
     required:
@@ -1619,10 +1715,27 @@ definitions:
         description: "Name defining the parameter into the optimization model"
       generic_name:
         $ref: "#/definitions/Source"
+    example:
+      name: "custom_name"
+      generic_name:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        predict: true
   Generic_Files:
-    type: "array"
-    items:
-      $ref: "#/definitions/Generic_File"
+    type: "object"
+    example:
+      custom_name_1:
+      - 1200
+      - 12300
+      custom_name_2:
+      - 1500
+      - 1300
+    additionalProperties:
+      type: "array"
+      items:
+        type: "number"
   Generic_File:
     type: "object"
     required:
@@ -1637,66 +1750,49 @@ definitions:
         items:
           type: "number"
     example:
-      name: "MyCustomName"
+      name: "custom_name"
       file:
       - 1400.4
       - 1500.3
   Status:
     type: "object"
     properties:
-      repetition:
-        type: "integer"
-        format: "int32"
-      control_frequency:
-        type: "integer"
-        format: "int32"
-      horizon_in_steps:
-        type: "integer"
-        format: "int32"
-      model_name:
-        type: "string"
-      solver:
-        type: "string"
-      dT_in_seconds:
-        type: "integer"
-        format: "int32"
+      config:
+        $ref: "#/definitions/Start"
       status:
         type: "string"
       start_time:
         type: "number"
         format: "float"
-      id:
-        type: "string"
     example:
-      control_frequency: 30
-      horizon_in_steps: 24
-      dT_in_seconds: 3600
-      model_name: "model_name"
-      repetition: 0
-      solver: "solver"
-      status: "running"
-      id: "asdfg1234"
-      start_time: 1.5492829927812E9
+      start_time: 0.8008282
+      config:
+        control_frequency: 60
+        horizon_in_steps: 24
+        dT_in_seconds: 3600
+        model_name: "model_name"
+        repetition: 2
+        solver: "ipopt"
+      status: "status"
   StatusOutput:
     type: "object"
     properties:
       status:
-        type: "array"
-        items:
+        type: "object"
+        additionalProperties:
           $ref: "#/definitions/Status"
     example:
       status:
-      - control_frequency: 30
-        horizon_in_steps: 24
-        dT_in_seconds: 3600
-        model_name: "model_name"
-        repetition: 0
-        solver: "solver"
-        status: "running"
-        id: "asdfg1234"
-        start_time: 1.5492829927812E9
-      - status: "stopped"
-        id: "qwer56758"
+        key:
+          start_time: 0.8008282
+          config:
+            control_frequency: 60
+            horizon_in_steps: 24
+            dT_in_seconds: 3600
+            model_name: "model_name"
+            repetition: 2
+            solver: "ipopt"
+          status: "status"
   OptimizationOutput:
     type: "object"
     example:
