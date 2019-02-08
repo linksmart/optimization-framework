@@ -266,12 +266,15 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
 
             #with open(path, 'r') as file:
             input_all=File_Input_Source
+            logger.debug("This is the input "+str(File_Input_Source) )
 
             for header in input_all:
                 logger.debug("Headers: "+ str(header))
                 input = input_all[header]
+
                 if input:
                     logger.debug(header + " present")
+                    """
                     if header == "generic":
                         for v in input:
                             if "file" and "name" in v.keys():
@@ -286,38 +289,40 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
                                     outfile.writelines(str(i) + '\n' for i in dataset)
                                 logger.info("input data saved into memory: " + str(file_name))
                     else:
-                        for key in input:
-                            dataset = input[key]
-                            logger.debug("Data in "+str(key)+" is " + str(dataset))
-                            if dataset is not None:
-                                logger.debug("Type of "+str(key)+str(type(key)))
-                                logger.debug("Type of dataset" + str(type(dataset)))
-                                #logger.debug("Size of dataset" + str(len(dataset)))
-                                if "meta" in key:
-                                    file_name = str(header) + "_" + str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.writelines(dataset)
-                                elif "SoC_Value" in key:
-                                    file_name = str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        outfile.write(str(dataset))
-                                else:
-                                    file_name = str(key) + ".txt"
-                                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
-                                    logger.debug("Path where the data is stored" + str(path))
-                                    # dataset = dataset.split(",")
-                                    with open(path, 'w') as outfile:
-                                        #outfile.write('\n'.join(str(dataset)))
-                                        outfile.writelines(str(i) + '\n' for i in dataset)
-                                logger.info("input data saved into memory: " + str(file_name))
+                    """
+                    for key in input:
+                        dataset = input[key]
+                        logger.debug("Data in "+str(key)+" is " + str(dataset))
+                        if dataset is not None:
+                            logger.debug("Type of "+str(key)+str(type(key)))
+                            logger.debug("Type of dataset" + str(type(dataset)))
+                            #logger.debug("Size of dataset" + str(len(dataset)))
+                            if "meta" in key:
+                                file_name = str(header) + "_" + str(key) + ".txt"
+                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
+                                logger.debug("Path where the data is stored" + str(path))
+                                # dataset = dataset.split(",")
+                                with open(path, 'w') as outfile:
+                                    outfile.writelines(dataset)
+                            elif "SoC_Value" in key:
+                                file_name = str(key) + ".txt"
+                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
+                                logger.debug("Path where the data is stored" + str(path))
+                                # dataset = dataset.split(",")
+                                with open(path, 'w') as outfile:
+                                    outfile.write(str(dataset))
                             else:
-                                logger.debug("No data in "+str(key))
+                                file_name = str(key) + ".txt"
+                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
+                                logger.debug("Path where the data is stored" + str(path))
+                                with open(path, 'w') as outfile:
+                                    if isinstance(dataset,list):
+                                        outfile.writelines(str(i) + '\n' for i in dataset)
+                                    else:
+                                        outfile.writelines(str(dataset) + '\n')
+                            logger.info("input data saved into memory: " + str(file_name))
+                        else:
+                            logger.debug("No data in "+str(key))
 
             return "Instance created", 201, {'Location': str(id)}
             #return str(id)
