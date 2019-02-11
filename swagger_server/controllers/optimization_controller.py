@@ -102,14 +102,15 @@ class CommandController:
 
         logger.info("Thread: " + str(self.get(id)))
         self.redisDB.set("run:" + id, "starting")
-        self.get(id).startOptControllerThread()
-        logger.debug("Thread started")
-        self.set_isRunning(id, True)
-        logger.debug("Flag isRunning set to True")
-        self.statusThread[id] = threading.Thread(target=self.run_status, args=(id,))
-        logger.debug("Status of the Thread started")
-        self.statusThread[id].start()
-        meta_data = {"id": id,
+        msg=self.get(id).startOptControllerThread()
+        logger.debug("Answer from Thread factory"+str(msg))
+        if msg == 0:
+            self.set_isRunning(id, True)
+            logger.debug("Flag isRunning set to True")
+            self.statusThread[id] = threading.Thread(target=self.run_status, args=(id,))
+            logger.debug("Status of the Thread started")
+            self.statusThread[id].start()
+            meta_data = {"id": id,
                     "model": self.model_name,
                     "control_frequency": self.control_frequency,
                     "horizon_in_steps": self.horizon_in_steps,
@@ -117,11 +118,20 @@ class CommandController:
                     "repetition": self.repetition,
                     "solver": self.solver,
                     "ztarttime": time.time()}
-        self.redisDB.set("run:"+id, "running")
-        self.redisDB.set("id_meta:"+id, json.dumps(meta_data))
-        self.persist_id(id, True, meta_data)
-        logger.info("running status " + str(self.running))
-        logger.debug("Command controller start finished")
+            self.redisDB.set("run:"+id, "running")
+            self.redisDB.set("id_meta:"+id, json.dumps(meta_data))
+            self.persist_id(id, True, meta_data)
+            logger.info("running status " + str(self.running))
+            logger.debug("Command controller start finished")
+            return 0
+        else:
+            self.set_isRunning(id, False)
+            logger.debug("Flag isRunning set to False")
+            self.persist_id(id, False, None)
+            self.redisDB.set("run:" + id, "stopped")
+            logger.error("Command controller start could not be finished")
+            #logger.debug("System stopped succesfully")
+            return 1
 
     def stop(self, id):
         logger.debug("Stop signal received")
@@ -312,14 +322,16 @@ class CommandController:
                 if id not in status.keys():
                     status[id] = {}
                     status[id]["status"] = "stopped"
+                status[id]["config"]={}
                 if value is not None:
-                    status[id].update(json.loads(value))
-                    if "ztarttime" in status[id].keys():
-                        status[id]["start_time"] = status[id]["ztarttime"]
-                        status[id].pop("ztarttime")
-                    if "model" in status[id].keys():
-                        status[id]["model_name"] = status[id]["model"]
-                        status[id].pop("model")
+                    status[id]["config"].update(json.loads(value))
+                    #logger.debug("status id config "+str(status))
+                    if "ztarttime" in status[id]["config"].keys():
+                        status[id]["start_time"] = status[id]["config"]["ztarttime"]
+                        status[id]["config"].pop("ztarttime")
+                    if "model" in status[id]["config"].keys():
+                        status[id]["config"]["model_name"] = status[id]["config"]["model"]
+                        status[id]["config"].pop("model")
         return status
 
 variable = CommandController()
@@ -370,8 +382,12 @@ def framework_start(id, startOFW):  # noqa: E501
             return "System already running"
         else:
             try:
-                variable.start(id, startOFW)
-                return "System started succesfully"
+                msg=variable.start(id, startOFW)
+                if msg == 0:
+                    msg_to_send="System started succesfully"
+                else:
+                    msg_to_send = "System could not start"
+                return msg_to_send
             except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
                 logger.error("Error " + str(e))
                 redis_db.set("run:" + id, "stopped")
@@ -390,12 +406,12 @@ def framework_status():  # noqa: E501
 
     :rtype: StatusOutput
     """
-    status_list = []
     results = variable.get_status()
+    answer_dict={}
     if len(results) > 0:
-        for id, values in results.items():
-            status_list.append(Status.from_dict(values))
-    response = StatusOutput(status_list)
+        answer_dict["status"]=results
+    response=StatusOutput.from_dict(answer_dict)
+    #logger.debug("response: " + str(response2))
     return response
 
 def framework_stop(id):  # noqa: E501
@@ -411,15 +427,35 @@ def framework_stop(id):  # noqa: E501
     try:
         redis_db = RedisDB()
         flag = redis_db.get("run:" + id)
+        logger.debug("Flag "+str(flag))
         message = ""
         if flag is not None and flag == "running":
             logger.debug("System running and trying to stop")
             redis_db.set("run:" + id, "stop")
             time.sleep(1)
             flag = redis_db.get("run:" + id)
+            logger.debug("Flag in stop: "+str(flag))
+
             if flag is None:
                 logger.debug("System stopped succesfully")
                 message = "System stopped succesfully"
+            elif "stopping" in flag:
+                message = "System stopped succesfully"
+                counter=0
+                while ("stopping" in flag):
+                    flag = redis_db.get("run:" + id)
+                    counter = counter + 1
+                    if counter >= 15:
+                        message = "system stopped succesfully"
+                        break
+                    else:
+                        time.sleep(1)
+                logger.debug("System stopped succesfully")
+            else:
+                message = "Problems while stopping the system"
+        elif flag is not None and flag == "stopped":
+            logger.debug("System already stopped")
+            message = "System already stopped"
         elif flag is None:
             logger.debug("System already stopped")
             message = "System already stopped"

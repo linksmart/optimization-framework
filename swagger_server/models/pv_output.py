@@ -6,7 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
-from swagger_server.models.source import Source  # noqa: F401,E501
+from swagger_server.models.source_output import SourceOutput  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -16,35 +16,35 @@ class PVOutput(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, p_pv_output: Source=None, p_pv_r_output: Source=None, p_pv_s_output: Source=None, p_pv_t_output: Source=None, q_pv_output: Source=None, q_pv_r_output: Source=None, q_pv_s_output: Source=None, q_pv_t_output: Source=None):  # noqa: E501
+    def __init__(self, p_pv_output: SourceOutput=None, p_pv_r_output: SourceOutput=None, p_pv_s_output: SourceOutput=None, p_pv_t_output: SourceOutput=None, q_pv_output: SourceOutput=None, q_pv_r_output: SourceOutput=None, q_pv_s_output: SourceOutput=None, q_pv_t_output: SourceOutput=None):  # noqa: E501
         """PVOutput - a model defined in Swagger
 
         :param p_pv_output: The p_pv_output of this PVOutput.  # noqa: E501
-        :type p_pv_output: Source
+        :type p_pv_output: SourceOutput
         :param p_pv_r_output: The p_pv_r_output of this PVOutput.  # noqa: E501
-        :type p_pv_r_output: Source
+        :type p_pv_r_output: SourceOutput
         :param p_pv_s_output: The p_pv_s_output of this PVOutput.  # noqa: E501
-        :type p_pv_s_output: Source
+        :type p_pv_s_output: SourceOutput
         :param p_pv_t_output: The p_pv_t_output of this PVOutput.  # noqa: E501
-        :type p_pv_t_output: Source
+        :type p_pv_t_output: SourceOutput
         :param q_pv_output: The q_pv_output of this PVOutput.  # noqa: E501
-        :type q_pv_output: Source
+        :type q_pv_output: SourceOutput
         :param q_pv_r_output: The q_pv_r_output of this PVOutput.  # noqa: E501
-        :type q_pv_r_output: Source
+        :type q_pv_r_output: SourceOutput
         :param q_pv_s_output: The q_pv_s_output of this PVOutput.  # noqa: E501
-        :type q_pv_s_output: Source
+        :type q_pv_s_output: SourceOutput
         :param q_pv_t_output: The q_pv_t_output of this PVOutput.  # noqa: E501
-        :type q_pv_t_output: Source
+        :type q_pv_t_output: SourceOutput
         """
         self.swagger_types = {
-            'p_pv_output': Source,
-            'p_pv_r_output': Source,
-            'p_pv_s_output': Source,
-            'p_pv_t_output': Source,
-            'q_pv_output': Source,
-            'q_pv_r_output': Source,
-            'q_pv_s_output': Source,
-            'q_pv_t_output': Source
+            'p_pv_output': SourceOutput,
+            'p_pv_r_output': SourceOutput,
+            'p_pv_s_output': SourceOutput,
+            'p_pv_t_output': SourceOutput,
+            'q_pv_output': SourceOutput,
+            'q_pv_r_output': SourceOutput,
+            'q_pv_s_output': SourceOutput,
+            'q_pv_t_output': SourceOutput
         }
 
         self.attribute_map = {
@@ -79,169 +79,169 @@ class PVOutput(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def p_pv_output(self) -> Source:
+    def p_pv_output(self) -> SourceOutput:
         """Gets the p_pv_output of this PVOutput.
 
 
         :return: The p_pv_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_pv_output
 
     @p_pv_output.setter
-    def p_pv_output(self, p_pv_output: Source):
+    def p_pv_output(self, p_pv_output: SourceOutput):
         """Sets the p_pv_output of this PVOutput.
 
 
         :param p_pv_output: The p_pv_output of this PVOutput.
-        :type p_pv_output: Source
+        :type p_pv_output: SourceOutput
         """
 
         self._p_pv_output = p_pv_output
 
     @property
-    def p_pv_r_output(self) -> Source:
+    def p_pv_r_output(self) -> SourceOutput:
         """Gets the p_pv_r_output of this PVOutput.
 
 
         :return: The p_pv_r_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_pv_r_output
 
     @p_pv_r_output.setter
-    def p_pv_r_output(self, p_pv_r_output: Source):
+    def p_pv_r_output(self, p_pv_r_output: SourceOutput):
         """Sets the p_pv_r_output of this PVOutput.
 
 
         :param p_pv_r_output: The p_pv_r_output of this PVOutput.
-        :type p_pv_r_output: Source
+        :type p_pv_r_output: SourceOutput
         """
 
         self._p_pv_r_output = p_pv_r_output
 
     @property
-    def p_pv_s_output(self) -> Source:
+    def p_pv_s_output(self) -> SourceOutput:
         """Gets the p_pv_s_output of this PVOutput.
 
 
         :return: The p_pv_s_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_pv_s_output
 
     @p_pv_s_output.setter
-    def p_pv_s_output(self, p_pv_s_output: Source):
+    def p_pv_s_output(self, p_pv_s_output: SourceOutput):
         """Sets the p_pv_s_output of this PVOutput.
 
 
         :param p_pv_s_output: The p_pv_s_output of this PVOutput.
-        :type p_pv_s_output: Source
+        :type p_pv_s_output: SourceOutput
         """
 
         self._p_pv_s_output = p_pv_s_output
 
     @property
-    def p_pv_t_output(self) -> Source:
+    def p_pv_t_output(self) -> SourceOutput:
         """Gets the p_pv_t_output of this PVOutput.
 
 
         :return: The p_pv_t_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._p_pv_t_output
 
     @p_pv_t_output.setter
-    def p_pv_t_output(self, p_pv_t_output: Source):
+    def p_pv_t_output(self, p_pv_t_output: SourceOutput):
         """Sets the p_pv_t_output of this PVOutput.
 
 
         :param p_pv_t_output: The p_pv_t_output of this PVOutput.
-        :type p_pv_t_output: Source
+        :type p_pv_t_output: SourceOutput
         """
 
         self._p_pv_t_output = p_pv_t_output
 
     @property
-    def q_pv_output(self) -> Source:
+    def q_pv_output(self) -> SourceOutput:
         """Gets the q_pv_output of this PVOutput.
 
 
         :return: The q_pv_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_pv_output
 
     @q_pv_output.setter
-    def q_pv_output(self, q_pv_output: Source):
+    def q_pv_output(self, q_pv_output: SourceOutput):
         """Sets the q_pv_output of this PVOutput.
 
 
         :param q_pv_output: The q_pv_output of this PVOutput.
-        :type q_pv_output: Source
+        :type q_pv_output: SourceOutput
         """
 
         self._q_pv_output = q_pv_output
 
     @property
-    def q_pv_r_output(self) -> Source:
+    def q_pv_r_output(self) -> SourceOutput:
         """Gets the q_pv_r_output of this PVOutput.
 
 
         :return: The q_pv_r_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_pv_r_output
 
     @q_pv_r_output.setter
-    def q_pv_r_output(self, q_pv_r_output: Source):
+    def q_pv_r_output(self, q_pv_r_output: SourceOutput):
         """Sets the q_pv_r_output of this PVOutput.
 
 
         :param q_pv_r_output: The q_pv_r_output of this PVOutput.
-        :type q_pv_r_output: Source
+        :type q_pv_r_output: SourceOutput
         """
 
         self._q_pv_r_output = q_pv_r_output
 
     @property
-    def q_pv_s_output(self) -> Source:
+    def q_pv_s_output(self) -> SourceOutput:
         """Gets the q_pv_s_output of this PVOutput.
 
 
         :return: The q_pv_s_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_pv_s_output
 
     @q_pv_s_output.setter
-    def q_pv_s_output(self, q_pv_s_output: Source):
+    def q_pv_s_output(self, q_pv_s_output: SourceOutput):
         """Sets the q_pv_s_output of this PVOutput.
 
 
         :param q_pv_s_output: The q_pv_s_output of this PVOutput.
-        :type q_pv_s_output: Source
+        :type q_pv_s_output: SourceOutput
         """
 
         self._q_pv_s_output = q_pv_s_output
 
     @property
-    def q_pv_t_output(self) -> Source:
+    def q_pv_t_output(self) -> SourceOutput:
         """Gets the q_pv_t_output of this PVOutput.
 
 
         :return: The q_pv_t_output of this PVOutput.
-        :rtype: Source
+        :rtype: SourceOutput
         """
         return self._q_pv_t_output
 
     @q_pv_t_output.setter
-    def q_pv_t_output(self, q_pv_t_output: Source):
+    def q_pv_t_output(self, q_pv_t_output: SourceOutput):
         """Sets the q_pv_t_output of this PVOutput.
 
 
         :param q_pv_t_output: The q_pv_t_output of this PVOutput.
-        :type q_pv_t_output: Source
+        :type q_pv_t_output: SourceOutput
         """
 
         self._q_pv_t_output = q_pv_t_output

@@ -7,6 +7,7 @@ from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
 from swagger_server.models.ess_output import ESSOutput  # noqa: F401,E501
+from swagger_server.models.generic_output import GenericOutput  # noqa: F401,E501
 from swagger_server.models.grid_output import GridOutput  # noqa: F401,E501
 from swagger_server.models.pv_output import PVOutput  # noqa: F401,E501
 from swagger_server import util
@@ -18,7 +19,7 @@ class OutputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, photovoltaic: PVOutput=None, ess: ESSOutput=None, grid: GridOutput=None):  # noqa: E501
+    def __init__(self, photovoltaic: PVOutput=None, ess: ESSOutput=None, grid: GridOutput=None, generic: GenericOutput=None):  # noqa: E501
         """OutputSource - a model defined in Swagger
 
         :param photovoltaic: The photovoltaic of this OutputSource.  # noqa: E501
@@ -27,22 +28,27 @@ class OutputSource(Model):
         :type ess: ESSOutput
         :param grid: The grid of this OutputSource.  # noqa: E501
         :type grid: GridOutput
+        :param generic: The generic of this OutputSource.  # noqa: E501
+        :type generic: GenericOutput
         """
         self.swagger_types = {
             'photovoltaic': PVOutput,
             'ess': ESSOutput,
-            'grid': GridOutput
+            'grid': GridOutput,
+            'generic': GenericOutput
         }
 
         self.attribute_map = {
             'photovoltaic': 'photovoltaic',
             'ess': 'ESS',
-            'grid': 'grid'
+            'grid': 'grid',
+            'generic': 'generic'
         }
 
         self._photovoltaic = photovoltaic
         self._ess = ess
         self._grid = grid
+        self._generic = generic
 
     @classmethod
     def from_dict(cls, dikt) -> 'OutputSource':
@@ -117,3 +123,24 @@ class OutputSource(Model):
         """
 
         self._grid = grid
+
+    @property
+    def generic(self) -> GenericOutput:
+        """Gets the generic of this OutputSource.
+
+
+        :return: The generic of this OutputSource.
+        :rtype: GenericOutput
+        """
+        return self._generic
+
+    @generic.setter
+    def generic(self, generic: GenericOutput):
+        """Sets the generic of this OutputSource.
+
+
+        :param generic: The generic of this OutputSource.
+        :type generic: GenericOutput
+        """
+
+        self._generic = generic

@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 
 from os.path import commonprefix
 from random import randrange
+from IO.redisDB import RedisDB
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
@@ -32,6 +33,7 @@ class DataReceiver(ABC):
         self.data_update = False
         self.config = config
         self.channel = "MQTT"
+        self.redisDB = RedisDB()
         self.topics = None
         self.port = None
         self.host_params = {}
@@ -42,7 +44,10 @@ class DataReceiver(ABC):
         self.setup()
 
         if self.channel == "MQTT":
-            self.init_mqtt(self.topics)
+            if not self.redisDB.get("Error mqtt"):
+                self.init_mqtt(self.topics)
+            else:
+                logger.error("Error while starting mqtt")
         elif self.channel == "ZMQ":
             self.init_zmq(self.topics)
 
@@ -119,19 +124,24 @@ class DataReceiver(ABC):
 
     def init_mqtt(self, topic_qos):
         logger.info("Initializing mqtt subscription client")
-        if not self.port:
-            self.port = 1883
-            #read from config
-        self.client_id = "client_receive" + str(randrange(100000)) + str(time.time()).replace(".","")
-        self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
+        self.redisDB.set("Error mqtt"+self.id, False)
+        try:
+            if not self.port:
+                self.port = 1883
+                #read from config
+            self.client_id = "client_receive" + str(randrange(100000)) + str(time.time()).replace(".","")
+            self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
                                username=self.host_params["username"], password=self.host_params["password"],
                                ca_cert_path=self.host_params["ca_cert_path"], set_insecure=self.host_params["insecure_flag"])
-        self.mqtt.subscribe(topic_qos, self.on_msg_received)
-        while not self.mqtt.subscribe_ack_wait():
             self.mqtt.subscribe(topic_qos, self.on_msg_received)
-            logger.error("Topic subscribe missing ack")
+            while not self.mqtt.subscribe_ack_wait():
+                self.mqtt.subscribe(topic_qos, self.on_msg_received)
+                logger.error("Topic subscribe missing ack")
 
-        logger.info("successfully subscribed")
+            logger.info("successfully subscribed")
+        except Exception as e:
+            self.redisDB.set("Error mqtt"+self.id, True)
+            logger.error(e)
 
     def init_zmq(self, topics):
         logger.info("Initializing zmq subscription client")

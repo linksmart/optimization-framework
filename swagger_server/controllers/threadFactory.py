@@ -6,6 +6,7 @@ import subprocess
 
 import time
 from _signal import SIGTERM
+from IO.MQTTClient import InvalidMQTTHostException
 
 from IO.inputConfigParser import InputConfigParser
 from IO.redisDB import RedisDB
@@ -13,6 +14,7 @@ from optimization.ModelException import MissingKeysException
 from optimization.controller import OptController
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
+from optimization.ModelException import InvalidModelException
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -46,6 +48,9 @@ class ThreadFactory:
         logger.info("Optimization calculated with the following dT_in_seconds: " + str(self.dT_in_seconds))
         logger.info("Optimization calculated with the following model: " + self.model_name)
         logger.info("Optimization calculated with the following solver: " + self.solver)
+
+        self.redisDB.set("Error mqtt" + self.id, False)
+        logger.debug("Error mqtt "+str(self.redisDB.get("Error mqtt" + self.id)))
 
         # Creating an object of the configuration file (standard values)
         try:
@@ -134,6 +139,7 @@ class ThreadFactory:
                                                                               topic_param, self.dT_in_seconds, self.id,
                                                                               True)
                     # self.prediction_threads[prediction_name].start()
+
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_non_prediction_names()
         if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:
@@ -141,21 +147,36 @@ class ThreadFactory:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
                     if non_prediction_name == "P_PV":
+                        self.redisDB.set("P_PV_Forecast:" + self.id +" "+ non_prediction_name, "running")
                         self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id,
                                                                                         self.control_frequency, self.horizon_in_steps,
                                                                                         self.dT_in_seconds, non_prediction_name)
 
         # Initializing constructor of the optimization controller thread
+
         self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,
                                  self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
                                  self.dT_in_seconds)
 
-        ####starts the optimization controller thread
         try:
-            self.opt.start()
+        ####starts the optimization controller thread
+            logger.debug("Error mqtt 8 " + str(self.redisDB.get("Error mqtt" + self.id)))
+            if "False" in self.redisDB.get("Error mqtt" + self.id):
+                self.opt.start()
+                logger.debug("Optimization object started")
+                return 0
+            else:
+                logger.debug("P_PV_Forecast: "+str(self.redisDB.get("P_PV_Forecast:" + self.id +" "+ non_prediction_name)))
+                if self.redisDB.get("P_PV_Forecast:" + self.id +" "+ non_prediction_name) == "running":
+                    self.stopOptControllerThread()
+                    self.redisDB.set("P_PV_Forecast:" + self.id + " " + non_prediction_name,"stopped")
+                    self.redisDB.set("run:" + self.id,"stopped")
+                logger.error("Optimization object could not be started")
+                return 1
         except Exception as e:
+            return 1
             logger.error(e)
-        logger.debug("Optimization object started")
+
 
     def stopOptControllerThread(self):
         try:

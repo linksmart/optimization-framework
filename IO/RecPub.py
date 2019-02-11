@@ -72,18 +72,22 @@ class Publisher():
         return mqtt_clients
 
     def init_mqtt(self):
-        if "pub.mqtt.host" in dict(self.config.items("IO")):
-            host = self.config.get("IO", "pub.mqtt.host")
-        else:
-            host = self.config.get("IO", "mqtt.host")
-        port = self.config.get("IO", "mqtt.port")
-        client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
-        mqtt = MQTTClient(str(host), port, client_id,
+        try:
+            if "pub.mqtt.host" in dict(self.config.items("IO")):
+                host = self.config.get("IO", "pub.mqtt.host")
+            else:
+                host = self.config.get("IO", "mqtt.host")
+            port = self.config.get("IO", "mqtt.port")
+            client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
+            mqtt = MQTTClient(str(host), port, client_id,
                                username=self.config.get("IO", "mqtt.username", fallback=None),
                                password=self.config.get("IO", "mqtt.password", fallback=None),
                                ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
                                set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)))
-        return mqtt
+            return mqtt
+        except Exception as e:
+            #self.redisDB.set("Error mqtt" + self.id, True)
+            logger.error(e)
 
     def consumer(self):
         i = 0

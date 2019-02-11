@@ -42,20 +42,24 @@ class DataPublisher(ABC,threading.Thread):
         logger.info("Initializing data publisher thread for topic " + str(self.topic_params))
 
     def init_mqtt(self):
-        if "pub.mqtt.host" in dict(self.config.items("IO")):
-            self.host = self.config.get("IO", "pub.mqtt.host")
-        else:
-            self.host = self.config.get("IO", "mqtt.host")
-        self.port = self.config.get("IO", "mqtt.port")
-        if "mqtt.port" in self.topic_params.keys():
-            self.port = self.topic_params["mqtt.port"]
-        self.qos = 1
-        self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
-        self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
+        try:
+            if "pub.mqtt.host" in dict(self.config.items("IO")):
+                self.host = self.config.get("IO", "pub.mqtt.host")
+            else:
+                self.host = self.config.get("IO", "mqtt.host")
+            self.port = self.config.get("IO", "mqtt.port")
+            if "mqtt.port" in self.topic_params.keys():
+                self.port = self.topic_params["mqtt.port"]
+            self.qos = 1
+            self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
+            self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
                                username=self.config.get("IO", "mqtt.username", fallback=None),
                                password=self.config.get("IO", "mqtt.password", fallback=None),
                                ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
                                set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)))
+        except Exception as e:
+            self.redisDB.set("Error mqtt" + self.id, True)
+            logger.error(e)
 
     def init_zmq(self):
         self.host = self.config.get("IO", "zmq.host")

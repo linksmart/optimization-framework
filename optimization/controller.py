@@ -17,6 +17,7 @@ from pyomo.opt import SolverStatus, TerminationCondition
 import subprocess
 import time
 
+from IO.MQTTClient import InvalidMQTTHostException
 from pyutilib.pyro import shutdown_pyro_components
 
 from IO.inputController import InputController
@@ -64,8 +65,10 @@ class OptController(threading.Thread):
             logger.error(e)
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
-        self.output = OutputController(self.output_config)
-        self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
+        if "False" in self.redisDB.get("Error mqtt"+self.id):
+            self.output = OutputController(self.output_config, self.id)
+        if "False" in self.redisDB.get("Error mqtt" + self.id):
+            self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
                                      self.horizon_in_steps, self.dT_in_seconds)
 
     # Importint a class dynamically

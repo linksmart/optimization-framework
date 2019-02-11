@@ -14,6 +14,7 @@ class MQTTClient:
         self.topic_ack_wait = []
         self.callback_function = None
         self.client_id = client_id
+        self.id=id
         self.client = mqtt.Client(client_id)
         if username is not None and password is not None:
             logger.debug("u "+username+" p "+password)
