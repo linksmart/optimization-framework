@@ -14,7 +14,7 @@ RUN apt-get autoclean
 RUN apt-get clean
 
 RUN apt-get update -y && apt-get install -y \
-	gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev
+    gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev
 
 RUN pip3 install --upgrade pip
 
@@ -56,5 +56,6 @@ COPY swagger_server /usr/src/app/swagger_server
 COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
 COPY config /usr/src/app/config
+COPY stochastic_optimizer /usr/src/app/stochastic_optimizer
 
 

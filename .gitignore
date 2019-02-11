@@ -105,5 +105,5 @@ utils/*
 !utils/.gitkeep
 
 .vscode
-profess/executables/windows/*.json
-profess/executables/windows/*.py
+profess/executables/windows/**/*
+!profess/executables/windows/ofw.exe
