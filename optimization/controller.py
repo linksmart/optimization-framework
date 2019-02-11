@@ -66,7 +66,7 @@ class OptController(threading.Thread):
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
         if "False" in self.redisDB.get("Error mqtt"+self.id):
-            self.output = OutputController(self.output_config, self.id)
+            self.output = OutputController(self.id, self.output_config)
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
                                      self.horizon_in_steps, self.dT_in_seconds)
@@ -83,6 +83,7 @@ class OptController(threading.Thread):
 
     def Stop(self):
         self.input.Stop()
+        self.output.Stop()
         if self.isAlive():
             self.join(1)
 
