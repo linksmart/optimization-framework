@@ -71,22 +71,33 @@ def output_source_mqtt(id, Output_Source):  # noqa: E501
     :rtype: None
     """
     if connexion.request.is_json:
-        Output_Source = OutputSource.from_dict(connexion.request.get_json())  # noqa: E501
-        dataset = connexion.request.get_json()
-        logger.info("This is the dictionary: " + Output_Source.to_str())
         try:
-            dir = os.path.join(os.getcwd(), "utils", str(id))
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-        except Exception as e:
-            logger.error(e)
+            Output_Source = OutputSource.from_dict(connexion.request.get_json())  # noqa: E501
+            logger.info("This is the dictionary: " + Output_Source.to_str())
 
-        # saves the registry into the new folder
-        path = os.path.join(os.getcwd(), "utils", str(id), "Output.registry.mqtt")
-        with open(path, 'w') as outfile:
-            json.dump(dataset, outfile, ensure_ascii=False)
-        logger.info("control output saved into memory")
-    return 'success'
+            Output_Source = connexion.request.get_json()
+
+            try:
+                dir = os.path.join(os.getcwd(), "utils", str(id))
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+            except Exception as e:
+                logger.error(e)
+
+            # saves the registry into the new folder
+            path = os.path.join(os.getcwd(), "utils", str(id), "Output.registry.mqtt")
+            with open(path, 'w') as outfile:
+                json.dump(Output_Source, outfile, ensure_ascii=False)
+            logger.info("control output saved into memory")
+
+            return "OK"
+            #return jsonify({'Data-Source-Id': str(id)})
+        except Exception as e:
+            logger.error("Invalid data " + str(e))
+            return "Invalid data " + str(e)
+
+    else:
+        return 'Data is not in json format'
 
 
 def get_output(id):  # noqa: E501

@@ -294,8 +294,8 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
                         dataset = input[key]
                         logger.debug("Data in "+str(key)+" is " + str(dataset))
                         if dataset is not None:
-                            logger.debug("Type of "+str(key)+str(type(key)))
-                            logger.debug("Type of dataset" + str(type(dataset)))
+                            #logger.debug("Type of "+str(key)+str(type(key)))
+                            #logger.debug("Type of dataset" + str(type(dataset)))
                             #logger.debug("Size of dataset" + str(len(dataset)))
                             if "meta" in key:
                                 file_name = str(header) + "_" + str(key) + ".txt"
