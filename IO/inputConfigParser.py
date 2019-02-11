@@ -132,7 +132,7 @@ class InputConfigParser:
                         if k1 == Constants.meta:
                             #logger.debug("Meta constants")
                             for k2, v2 in v1.items():
-                                logger.debug("k2: " + str(k2) + " v2: " + str(v2))
+                                #logger.debug("k2: " + str(k2) + " v2: " + str(v2))
                                 try:
                                     v2 = float(v2)
                                 except ValueError:
@@ -170,10 +170,10 @@ class InputConfigParser:
                             data[k1]={None:v1}
                             #self.add_name_to_list(k1)
 
-                logger.debug("Generic names: " + str(self.generic_names))
-                logger.debug("Prediction names: " + str(self.prediction_names))
-                logger.debug("Non_Prediction names: " + str(self.non_prediction_names))
-                logger.debug("External names: " + str(self.external_names))
+                #logger.debug("Generic names: " + str(self.generic_names))
+                #logger.debug("Prediction names: " + str(self.prediction_names))
+                #logger.debug("Non_Prediction names: " + str(self.non_prediction_names))
+                #logger.debug("External names: " + str(self.external_names))
                 """if k == "generic" and input_config == self.input_config_file:
                     logger.debug("Generic names")
                     for key, val in v.items():
