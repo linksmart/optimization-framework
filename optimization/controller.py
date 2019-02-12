@@ -256,6 +256,6 @@ class OptController(threading.Thread):
                 object.MQTTExit()
                 logger.debug("Client " + key + " is being disconnected")
 
-            logger.error(return_msg)
+            logger.info(return_msg)
             self.finish_status = True
             return return_msg
