@@ -27,7 +27,7 @@ class OutputController:
         self.output_mqtt = {}
         self.id=id
 
-        logger.debug("output_coinfig: "+str(self.output_config)+" "+str(type(self.output_config)))
+        logger.debug("output_config: "+str(self.output_config)+" "+str(type(self.output_config)))
         if self.output_config is not None:
             self.extract_mqtt_params()
             self.init_mqtt()
@@ -155,12 +155,12 @@ class OutputController:
     def publishController(self, id, data):
         #logger.debug("data "+str(data))
         current_time = int(time.time())
-        senml_data = self.senml_message_format(data, current_time)
+        senml_data = self.senml_message_format(data, current_time, self.mqtt_params)
         try:
             for key, value in senml_data.items():
                 v = json.dumps(value)
-                logger.debug("key: "+str(key))
-                logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
+                #logger.debug("key: "+str(key))
+                #logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
                 if key in self.mqtt_params.keys():
                     value2 = self.mqtt_params[key]
                     topic = value2["topic"]
@@ -182,10 +182,17 @@ class OutputController:
         except Exception as e:
             logger.error(e)
 
-    def senml_message_format(self, data, time):
+    def senml_message_format(self, data, time, params):
         new_data = {}
-        u = "W"
+
+        #logger.debug("data for senml "+str(data))
+        u=None
         for key, value in data.items():
+            if key in params.keys():
+                if params[key]["unit"] is not None:
+                    u=params[key]["unit"]
+                else:
+                    u="W"
             meas_list = []
             first = False
             if len(value) > 1:
