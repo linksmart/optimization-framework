@@ -37,7 +37,7 @@ class RecPub:
 class Receiver(DataReceiver):
 
     def __init__(self, internal, topic_params, config, q, data_formater, section):
-        super().__init__(internal, topic_params, config, section=section)
+        super().__init__(internal, topic_params, config, id="none", section=section)
         self.q = q
         self.data_formater = data_formater
 

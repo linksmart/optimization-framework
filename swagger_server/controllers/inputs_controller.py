@@ -28,6 +28,7 @@ def store_data(dataset, id,source):
         logger.debug("Headers: " + str(header))
         input = dataset[header]
         logger.debug(header + " present")
+        """
         if header == "generic":
             for item in input:
                 for key in item:
@@ -55,44 +56,45 @@ def store_data(dataset, id,source):
                             logger.info("input data saved into memory: " + str(file_name))
                     else:
                         logger.debug("No data in " + str(key))
-        else:
-            for key in input:
-                data = input[key]
-                logger.debug("Data in " + str(key) + " is " + str(data))
-                if data is not None:
-                    logger.debug("Data is not None")
-                    if "meta" in key:
-                        file_name = str(header) + "_" + str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization/resources", str(id),source, file_name)
-                        logger.debug("Path where the data is stored" + str(path))
-                        # dataset = dataset.split(",")
-                        if os.path.isfile(path):
-                            os.remove(path)
+        """
+        #else:
+        for key in input:
+            data = input[key]
+            logger.debug("Data in " + str(key) + " is " + str(data))
+            if data is not None:
+                logger.debug("Data is not None")
+                if "meta" in key:
+                    file_name = str(header) + "_" + str(key) + ".txt"
+                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),source, file_name)
+                    logger.debug("Path where the data is stored" + str(path))
+                    # dataset = dataset.split(",")
+                    if os.path.isfile(path):
+                        os.remove(path)
 
-                        with open(path, 'w') as outfile:
-                            outfile.writelines(data)
-                    elif "SoC_Value" in key:
-                        file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
-                        logger.debug("Path where the data is stored" + str(path))
-                        # dataset = dataset.split(",")
-                        if os.path.isfile(path):
-                            os.remove(path)
-                        with open(path, 'w') as outfile:
-                            outfile.write(str(data))
-                    else:
-                        file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
-                        logger.debug("Path where the data is stored" + str(path))
-                        # dataset = dataset.split(",")
-                        if os.path.isfile(path):
-                            os.remove(path)
-                        logger.debug("This is the path to open: "+str(path))
-                        with open(path, 'w') as outfile:
-                            # outfile.write('\n'.join(str(dataset)))
-                            outfile.writelines(str(i) + '\n' for i in data)
+                    with open(path, 'w') as outfile:
+                        outfile.writelines(data)
+                elif "SoC_Value" in key:
+                    file_name = str(key) + ".txt"
+                    path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
+                    logger.debug("Path where the data is stored" + str(path))
+                    # dataset = dataset.split(",")
+                    if os.path.isfile(path):
+                        os.remove(path)
+                    with open(path, 'w') as outfile:
+                        outfile.write(str(data))
                 else:
-                    logger.debug("No data in " + str(key))
+                    file_name = str(key) + ".txt"
+                    path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
+                    logger.debug("Path where the data is stored" + str(path))
+                    # dataset = dataset.split(",")
+                    if os.path.isfile(path):
+                        os.remove(path)
+                    logger.debug("This is the path to open: "+str(path))
+                    with open(path, 'w') as outfile:
+                        # outfile.write('\n'.join(str(dataset)))
+                        outfile.writelines(str(i) + '\n' for i in data)
+            else:
+                logger.debug("No data in " + str(key))
     return 1
 
 def delete_data(id, registry_file, source):

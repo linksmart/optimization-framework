@@ -44,7 +44,7 @@ class DataReceiver(ABC):
         self.setup()
 
         if self.channel == "MQTT":
-            if not self.redisDB.get("Error mqtt"):
+            if self.redisDB.get("Error mqtt"+self.id) is not "False":
                 self.init_mqtt(self.topics)
             else:
                 logger.error("Error while starting mqtt")
@@ -78,7 +78,7 @@ class DataReceiver(ABC):
             host_params["ca_cert_path"] = self.config.get(self.section, "mqtt.ca.cert.path", fallback=None)
         if "mqtt.insecure.flag" in dict(self.config.items(self.section)):
             host_params["insecure_flag"] = bool(self.config.get(self.section, "mqtt.insecure.flag", fallback=False))
-        qos = 0
+        qos = 1
         if self.topic_params:
             topic = self.topic_params["topic"]
             if "host" in self.topic_params.keys():
@@ -124,7 +124,8 @@ class DataReceiver(ABC):
 
     def init_mqtt(self, topic_qos):
         logger.info("Initializing mqtt subscription client")
-        self.redisDB.set("Error mqtt"+self.id, False)
+        #if we set it to false here again then it may overwrite previous true value
+        #self.redisDB.set("Error mqtt"+self.id, False)
         try:
             if not self.port:
                 self.port = 1883

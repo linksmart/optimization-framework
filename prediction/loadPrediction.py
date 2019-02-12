@@ -62,7 +62,7 @@ class LoadPrediction:
         if self.predictionFlag:
             from prediction.rawLoadDataReceiver import RawLoadDataReceiver
             self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins, self.horizon_in_steps * 25,
-                                                self.raw_data_file_container, self.topic_name)
+                                                self.raw_data_file_container, self.topic_name, self.id)
 
             self.q = Queue(maxsize=0)
 

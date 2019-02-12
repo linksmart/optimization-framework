@@ -69,14 +69,12 @@ class OutputController:
             if host is not None and topic is not None:
                 if port is not None:
                     return {"host": host, "topic": topic, "qos": qos, "mqtt.port": port, "username":username,
-                        "password":password, "ca_cert_path":ca_cert_path, "insecure":insecure, "unit":unit}
+                            "password":password, "ca_cert_path":ca_cert_path, "insecure":insecure, "unit":unit}
                 else:
                     return {"host": host, "topic": topic, "qos": qos, "mqtt.port": "1883", "username": username,
                             "password": password, "ca_cert_path": ca_cert_path, "insecure": insecure, "unit": unit}
-
             else:
                 return None
-            logger.debug("Finish with get mqtt")
         else:
             return None
 
@@ -166,7 +164,7 @@ class OutputController:
                     topic = value2["topic"]
                     host = value2["host"]
                     qos = value2["qos"]
-                    self.mqtt[key].sendResults(topic, v)
+                    self.mqtt[key].sendResults(topic, v, qos)
         except Exception as e:
             logger.error(e)
         self.save(id, data, current_time)

@@ -19,13 +19,14 @@ logger = logging.getLogger(__file__)
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name):
+    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id):
         self.file_path = save_path
-        super().__init__(False, topic_params, config, [])
+        super().__init__(False, topic_params, config, [], id)
         self.buffer_data = []
         self.buffer = buffer
         self.training_data_size = training_data_size
         self.current_minute = None
+        self.id = id
         self.sum = 0
         self.count = 0
         self.minute_data = []

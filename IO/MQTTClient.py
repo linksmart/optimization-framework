@@ -57,10 +57,10 @@ class MQTTClient:
         self.callback_function(message.payload.decode())
 
 
-    def sendResults(self, topic, data):
+    def sendResults(self, topic, data, qos):
         try:
             logger.debug("Sending results to this topic: "+topic)
-            self.publish(topic, data)
+            self.publish(topic, data, qos=qos)
             logger.debug("Results published")
         except Exception as e:
             logger.error(e)

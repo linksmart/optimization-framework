@@ -174,8 +174,8 @@ class ThreadFactory:
                 logger.error("Optimization object could not be started")
                 return 1
         except Exception as e:
-            return 1
             logger.error(e)
+            return 1
 
 
     def stopOptControllerThread(self):
