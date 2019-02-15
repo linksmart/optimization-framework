@@ -12,7 +12,6 @@ from abc import ABC, abstractmethod
 
 from os.path import commonprefix
 from random import randrange
-from IO.redisDB import RedisDB
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
@@ -33,7 +32,6 @@ class DataReceiver(ABC):
         self.data_update = False
         self.config = config
         self.channel = "MQTT"
-        self.redisDB = RedisDB()
         self.topics = None
         self.port = None
         self.host_params = {}
@@ -42,12 +40,8 @@ class DataReceiver(ABC):
         if self.section is None:
             self.section = "IO"
         self.setup()
-
         if self.channel == "MQTT":
-            if self.redisDB.get("Error mqtt"+self.id) is not "False":
                 self.init_mqtt(self.topics)
-            else:
-                logger.error("Error while starting mqtt")
         elif self.channel == "ZMQ":
             self.init_zmq(self.topics)
 
@@ -141,8 +135,9 @@ class DataReceiver(ABC):
 
             logger.info("successfully subscribed")
         except Exception as e:
-            self.redisDB.set("Error mqtt"+self.id, True)
             logger.error(e)
+            # error for mqtt will be caught by parent
+            raise e
 
     def init_zmq(self, topics):
         logger.info("Initializing zmq subscription client")

@@ -82,8 +82,14 @@ class OptController(threading.Thread):
         super(OptController, self).join(timeout)
 
     def Stop(self):
-        self.input.Stop()
-        self.output.Stop()
+        try:
+            self.input.Stop()
+        except Exception as e:
+            logger.error("error stopping input " +  str(e))
+        try:
+            self.output.Stop()
+        except Exception as e:
+            logger.error("error stopping output " +  str(e))
         if self.isAlive():
             self.join(1)
 
@@ -212,7 +218,7 @@ class OptController(threading.Thread):
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
 
-                        self.output.publishController(self.id, my_dict)
+                        self.output.publish_data(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:

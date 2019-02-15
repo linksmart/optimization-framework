@@ -42,6 +42,6 @@ class PVPrediction:
 
     def Stop(self):
         logger.debug("Stopping pv forecast thread")
-        self.pv_forecast_pub.Stop()
-        #self.redisDB.set("P_PV_Forecast:" + self.id + " " + non_prediction_name, "running")
+        if self.pv_forecast_pub is not None:
+            self.pv_forecast_pub.Stop()
         logger.debug("pv prediction thread exit")

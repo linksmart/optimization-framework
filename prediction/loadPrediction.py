@@ -155,7 +155,7 @@ class Training(threading.Thread):
                     logger.debug("raw data ready " + str(len(data)))
                     data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
                                                                                self.num_timesteps, self.output_size)
-                    if merged or self.sufficient_data_available(data):
+                    if self.sufficient_data_available(data):
                         self.trained = True
                         logger.info("start training")
                         Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps, self.output_size)
@@ -173,7 +173,9 @@ class Training(threading.Thread):
                             logger.error("error training model " + str(e))
                         finally:
                             self.redisDB.release_lock(self.training_lock_key, self.id+"_"+self.topic_name)
-                time.sleep(1)
+                    else:
+                        time.sleep(600)
+                time.sleep(60)
             except Exception as e:
                 logger.error("training thread exception "+str(e))
 

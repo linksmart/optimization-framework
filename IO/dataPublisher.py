@@ -13,7 +13,6 @@ from random import randrange
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
-from IO.redisDB import RedisDB
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -33,7 +32,6 @@ class DataPublisher(ABC,threading.Thread):
             self.topic_params = {}
         else:
             self.topic_params = topic_params
-        self.redisDB = RedisDB()
         self.stopRequest = threading.Event()
         if self.channel == "MQTT":
             self.init_mqtt()
@@ -64,8 +62,9 @@ class DataPublisher(ABC,threading.Thread):
                                ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
                                set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)))
         except Exception as e:
-            self.redisDB.set("Error mqtt" + self.id, True)
             logger.error(e)
+            # error for mqtt will be caught at parent
+            raise e
 
     def init_zmq(self):
         self.host = self.config.get("IO", "zmq.host")

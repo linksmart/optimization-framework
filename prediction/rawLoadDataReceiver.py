@@ -11,6 +11,7 @@ import threading
 import time
 
 from IO.dataReceiver import DataReceiver
+from IO.redisDB import RedisDB
 from prediction.rawDataReader import RawDataReader
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -21,7 +22,12 @@ class RawLoadDataReceiver(DataReceiver):
 
     def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id):
         self.file_path = save_path
-        super().__init__(False, topic_params, config, [], id)
+        redisDB = RedisDB()
+        try:
+            super().__init__(False, topic_params, config, [], id)
+        except Exception as e:
+            redisDB.set("Error mqtt" + self.id, True)
+            logger.error(e)
         self.buffer_data = []
         self.buffer = buffer
         self.training_data_size = training_data_size
@@ -72,7 +78,7 @@ class RawLoadDataReceiver(DataReceiver):
             file.close()
             self.minute_data = []
         except Exception as e:
-            logger.error("failed to save "+ str(e))
+            logger.error("failed to save_to_redis "+ str(e))
 
     def get_raw_data(self, train=False, topic_name=None):
         if train:

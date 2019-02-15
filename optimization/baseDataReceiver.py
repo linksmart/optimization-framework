@@ -13,6 +13,7 @@ from math import floor
 from senml import senml
 
 from IO.dataReceiver import DataReceiver
+from IO.redisDB import RedisDB
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -21,7 +22,12 @@ logger = logging.getLogger(__file__)
 class BaseDataReceiver(DataReceiver, ABC):
 
     def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT):
-        super().__init__(internal, topic_params, config, id=id)
+        redisDB = RedisDB()
+        try:
+            super().__init__(internal, topic_params, config, id=id)
+        except Exception as e:
+            redisDB.set("Error mqtt" + self.id, True)
+            logger.error(e)
         self.generic_name = generic_name
         self.buffer = buffer
         self.dT = dT
