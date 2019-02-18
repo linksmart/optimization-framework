@@ -91,6 +91,29 @@ paths:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.models_controller"
   /inputs/mqtt:
+    get:
+      tags:
+      - "inputs"
+      summary: "Receives all mqtt data from the framework"
+      description: ""
+      operationId: "get_all_mqtt_data_source_values"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/MQTTOutputAll"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
     post:
       tags:
       - "inputs"
@@ -115,6 +138,30 @@ paths:
             Location:
               type: "string"
               description: "Id referencing the created instance."
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
+  /inputs/mqtt/ids:
+    get:
+      tags:
+      - "inputs"
+      summary: "Receives data from the framework"
+      description: ""
+      operationId: "get_all_mqtt_data_source_ids"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/OutputIdsList"
         400:
           description: "Bad request"
         405:
@@ -210,6 +257,29 @@ paths:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
   /inputs/dataset:
+    get:
+      tags:
+      - "inputs"
+      summary: "Receives data from the framework"
+      description: ""
+      operationId: "get_all_data_source_values"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/FileOutputAll"
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
     post:
       tags:
       - "inputs"
@@ -235,6 +305,30 @@ paths:
             Location:
               type: "string"
               description: "Id referencing the created instance."
+        400:
+          description: "Bad request"
+        405:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
+  /inputs/dataset/ids:
+    get:
+      tags:
+      - "inputs"
+      summary: "Receives data from the framework"
+      description: ""
+      operationId: "get_all_data_source_ids"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/OutputIdsList"
         400:
           description: "Bad request"
         405:
@@ -1797,21 +1891,344 @@ definitions:
     type: "object"
     example:
       P_ESS_Output:
-        1549296638:
-          0: 0.0021808010500441975
-          1: 0.0020899300491295783
-          2: 0.00199905959594257
-          3: 0.0019081896666691433
-          4: 0.0018173202374902097
+        1549296638: 0.0021808010500441975
+        1549296648: 0.0020899300491295783
+        1549296658: 0.00199905959594257
+        1549296668: 0.0019081896666691433
+        1549296678: 0.0018173202374902097
       P_Grid_Output:
-        1549296638:
-          0: 0.054819189123018454
-          1: 0.08851006012393307
-          2: 0.08860093057712008
-          3: 0.06815846750639351
-          4: 0.07571600293557243
+        1549296638: 0.054819189123018454
+        1549296648: 0.08851006012393307
+        1549296658: 0.08860093057712008
+        1549296668: 0.06815846750639351
+        1549296678: 0.07571600293557243
     additionalProperties:
       type: "object"
       additionalProperties:
-        type: "object"
-        properties: {}
+        type: "number"
+        format: "float"
+  MQTTOutputAll:
+    type: "object"
+    example:
+      12asd546fd:
+        generic:
+          custom_name_1:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          custom_name_2:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+        load:
+          P_Load_R:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_Load_T:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          P_Load_S:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_Load_S:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          P_Load_T:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_Load:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          meta:
+            pf_Load: 0.9
+          P_Load:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_Load_R:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+        ESS:
+          SoC_Value:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+          meta:
+            ESS_Max_Discharge_Power: 2500
+            ESS_Max_SoC: 0.9
+            ESS_Charging_Eff: 0.9
+            ESS_Min_SoC: 0.2
+            ESS_Max_Charge_Power: 2500
+            ESS_Discharging_Eff: 0.85
+            ESS_Capacity: 3560
+        grid:
+          meta:
+            Q_Grid_Max_Export_Power: 750
+            Min_Voltage_Drop: 5
+            P_Grid_Max_Export_Power: 1550
+            Max_Voltage_Drop: 10
+        photovoltaic:
+          P_PV:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_PV_S:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_PV_T:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_PV:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          meta:
+            PV_Inv_Max_Power: 1300
+            City: "Bonn"
+            Country: "Germany"
+          P_PV_R:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          P_PV_S:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          P_PV_T:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          Q_PV_R:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+        global_control:
+          ESS_Control:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+      78qwer415s:
+        generic:
+          custom_name_1:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          custom_name_2:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+        load:
+          Q_Load:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          meta:
+            pf_Load: 0.9
+          P_Load:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+        ESS:
+          SoC_Value:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+          meta:
+            ESS_Max_Discharge_Power: 2500
+            ESS_Max_SoC: 0.9
+            ESS_Charging_Eff: 0.9
+            ESS_Min_SoC: 0.2
+            ESS_Max_Charge_Power: 2500
+            ESS_Discharging_Eff: 0.85
+            ESS_Capacity: 3560
+        grid:
+          meta:
+            Q_Grid_Max_Export_Power: 750
+            Min_Voltage_Drop: 5
+            P_Grid_Max_Export_Power: 1550
+            Max_Voltage_Drop: 10
+        photovoltaic:
+          P_PV:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: false
+          Q_PV:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: true
+          meta:
+            PV_Inv_Max_Power: 1300
+            City: "Bonn"
+            Country: "Germany"
+        global_control:
+          ESS_Control:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            predict: false
+    additionalProperties:
+      $ref: "#/definitions/MQTTInputSource"
+  FileOutputAll:
+    type: "object"
+    example:
+      12asd123d:
+        generic:
+          custom_name_1:
+          - 1200
+          - 12300
+          custom_name_2:
+          - 1500
+          - 1300
+        load:
+          P_Load_R:
+          - 705.4
+          - 305.6
+          Q_Load_T:
+          - 705.4
+          - 305.6
+          P_Load_S:
+          - 705.4
+          - 305.6
+          Q_Load_S:
+          - 705.4
+          - 305.6
+          P_Load_T:
+          - 705.4
+          - 305.6
+          Q_Load:
+          - 705.4
+          - 305.6
+          P_Load:
+          - 705.4
+          - 305.6
+          Q_Load_R:
+          - 705.4
+          - 305.6
+        ESS:
+          SoC_Value: 41
+          meta:
+            ESS_Max_Discharge_Power: 2500
+            ESS_Max_SoC: 90
+            ESS_Charging_Eff: 0.9
+            ESS_Min_SoC: 20
+            ESS_Max_Charge_Power: 2500
+            ESS_Discharging_Eff: 0.85
+            ESS_Capacity: 3560
+        grid:
+          meta:
+            Q_Grid_Max_Export_Power: 750
+            Min_Voltage_Drop: 5
+            P_Grid_Max_Export_Power: 1550
+            Max_Voltage_Drop: 10
+        photovoltaic:
+          P_PV:
+          - 705.4
+          - 305.6
+        global_control:
+          ESS_Control:
+          - 1300.2
+          - 1200.5
+      45dsf785s:
+        load:
+          Q_Load:
+          - 705.4
+          - 305.6
+          P_Load:
+          - 705.4
+          - 305.6
+        ESS:
+          SoC_Value: 41
+          meta:
+            ESS_Max_Discharge_Power: 2500
+            ESS_Max_SoC: 90
+            ESS_Charging_Eff: 0.9
+            ESS_Min_SoC: 20
+            ESS_Max_Charge_Power: 2500
+            ESS_Discharging_Eff: 0.85
+            ESS_Capacity: 3560
+        grid:
+          meta:
+            Q_Grid_Max_Export_Power: 750
+            Min_Voltage_Drop: 5
+            P_Grid_Max_Export_Power: 1550
+            Max_Voltage_Drop: 10
+        photovoltaic:
+          P_PV:
+          - 705.4
+          - 305.6
+        global_control:
+          ESS_Control:
+          - 1300.2
+          - 1200.5
+    additionalProperties:
+      $ref: "#/definitions/FileInputSource"
+  OutputIdsList:
+    type: "array"
+    items:
+      type: "string"
+    example:
+    - "a123asd456"
+    - "b456fgh789"
+    - "c852edc963"

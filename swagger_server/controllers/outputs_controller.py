@@ -114,24 +114,28 @@ def get_output(id):  # noqa: E501
     redisDB = RedisDB()
     output_keys = redisDB.get_keys_for_pattern("o:" + id + ":*")
     if output_keys is not None:
-        for key in output_keys:
-            sub_key = key.split(":")
-            topic = sub_key[2]
-            index = sub_key[3]
-            json_value = redisDB.get(key)
-            json_value = json.loads(json_value)
-            time = None
-            value = 0
-            for t, v in json_value.items():
-                time = t
-                value = v
-                break
-            if topic not in result.keys():
-                result[topic] = {}
-            if time is not None:
-                if time not in result[topic]:
-                    result[topic][time] = {}
-                result[topic][time][index] = float(value)
+        meta = redisDB.get("id_meta:"+id)
+        if meta is not None:
+            meta = json.loads(meta)
+            dT = meta["dT_in_seconds"]
+            for key in output_keys:
+                sub_key = key.split(":")
+                topic = sub_key[2]
+                index = sub_key[3]
+                json_value = redisDB.get(key)
+                json_value = json.loads(json_value)
+                time = None
+                value = 0
+                for t, v in json_value.items():
+                    time = t
+                    value = v
+                    break
+                if topic not in result.keys():
+                    result[topic] = {}
+                if time is not None:
+                    t = float(time) + int(index) * dT
+                    result[topic][t] = float(value)
+            logger.debug(result)
     return OptimizationOutput.from_dict(result)
 
 
