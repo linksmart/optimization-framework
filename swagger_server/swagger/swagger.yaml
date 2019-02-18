@@ -37,6 +37,28 @@ paths:
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.models_controller"
   /models/{name}:
+    get:
+      tags:
+      - "models"
+      summary: "Mathematical model for the optimization solver"
+      description: ""
+      operationId: "get_optimization_model"
+      produces:
+      - "text/plain"
+      parameters:
+      - name: "name"
+        in: "path"
+        description: "Name of the loaded model"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Model"
+        405:
+          description: "Invalid input"
+      x-swagger-router-controller: "swagger_server.controllers.models_controller"
     put:
       tags:
       - "models"

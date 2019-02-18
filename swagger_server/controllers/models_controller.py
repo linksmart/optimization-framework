@@ -17,9 +17,6 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 def getFilePath(dir, file_name):
-    # print(os.path.sep)
-    # print(os.environ.get("HOME"))
-    project_dir = os.path.dirname(os.path.realpath(__file__))
     data_file = os.path.join("/usr/src/app", dir, file_name)
     return data_file
 
@@ -150,7 +147,46 @@ def optimization_model(name, upModel):  # noqa: E501
     except Exception as e:
         logger.error(e)
         answer = e
-    #upModel=Model.from_dict(connexion.request)
-    #data = getDataJSON(upModel, "upModel")
-    #print(data)
     return answer
+
+def get_optimization_model(name):  # noqa: E501
+    """Mathematical model for the optimization solver
+
+     # noqa: E501
+
+    :param name: Name of the loaded model
+    :type name: str
+
+    :rtype: Model
+    """
+
+
+def get_optimization_model(name):  # noqa: E501
+    """Mathematical model for the optimization solver
+
+     # noqa: E501
+
+    :param name: Name of the loaded model
+    :type name: str
+
+    :rtype: Model
+    """
+    response = []
+    data_file = os.path.join("/usr/src/app/optimization/models", name) + ".py"
+    flag = False
+    if os.path.exists(data_file):
+        with open(data_file, mode='r') as localfile:
+            model = localfile.readlines()
+        for line in model:
+            if "class " == line[0:6] and ":" == line.strip()[-1]:
+                logger.info(line)
+                flag = True
+            elif flag:
+                line = line.replace("\n", "")
+                line = line.replace("\t", "")
+                # line = line[4:]
+                response.append(line)
+        response = "\n".join(response)
+        return Model.from_dict(response)
+    else:
+        return None
