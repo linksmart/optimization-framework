@@ -15,6 +15,7 @@ from senml import senml
 
 from IO.dataPublisher import DataPublisher
 from IO.radiation import Radiation
+from IO.redisDB import RedisDB
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -31,8 +32,13 @@ class PVForecastPublisher(DataPublisher):
         self.dT_in_seconds = dT_in_seconds
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation, self.q))
         self.pv_thread.start()
-        super().__init__(True, internal_topic_params, config, control_frequency, id)
         self.topic = "P_PV"
+        try:
+            super().__init__(True, internal_topic_params, config, control_frequency, id)
+        except Exception as e:
+            redisDB = RedisDB()
+            redisDB.set("Error mqtt" + self.id, True)
+            logger.error(e)
 
     def get_pv_data_from_source(self, radiation, q):
         """PV Data fetch thread. Runs at 23:30 every day"""

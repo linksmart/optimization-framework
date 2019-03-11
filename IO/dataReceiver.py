@@ -12,7 +12,6 @@ from abc import ABC, abstractmethod
 
 from os.path import commonprefix
 from random import randrange
-from IO.redisDB import RedisDB
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
@@ -33,7 +32,6 @@ class DataReceiver(ABC):
         self.data_update = False
         self.config = config
         self.channel = "MQTT"
-        self.redisDB = RedisDB()
         self.topics = None
         self.port = None
         self.host_params = {}
@@ -42,12 +40,8 @@ class DataReceiver(ABC):
         if self.section is None:
             self.section = "IO"
         self.setup()
-
         if self.channel == "MQTT":
-            if not self.redisDB.get("Error mqtt"):
                 self.init_mqtt(self.topics)
-            else:
-                logger.error("Error while starting mqtt")
         elif self.channel == "ZMQ":
             self.init_zmq(self.topics)
 
@@ -78,7 +72,7 @@ class DataReceiver(ABC):
             host_params["ca_cert_path"] = self.config.get(self.section, "mqtt.ca.cert.path", fallback=None)
         if "mqtt.insecure.flag" in dict(self.config.items(self.section)):
             host_params["insecure_flag"] = bool(self.config.get(self.section, "mqtt.insecure.flag", fallback=False))
-        qos = 0
+        qos = 1
         if self.topic_params:
             topic = self.topic_params["topic"]
             if "host" in self.topic_params.keys():
@@ -124,7 +118,8 @@ class DataReceiver(ABC):
 
     def init_mqtt(self, topic_qos):
         logger.info("Initializing mqtt subscription client")
-        self.redisDB.set("Error mqtt"+self.id, False)
+        #if we set it to false here again then it may overwrite previous true value
+        #self.redisDB.set("Error mqtt"+self.id, False)
         try:
             if not self.port:
                 self.port = 1883
@@ -140,8 +135,9 @@ class DataReceiver(ABC):
 
             logger.info("successfully subscribed")
         except Exception as e:
-            self.redisDB.set("Error mqtt"+self.id, True)
             logger.error(e)
+            # error for mqtt will be caught by parent
+            raise e
 
     def init_zmq(self, topics):
         logger.info("Initializing zmq subscription client")

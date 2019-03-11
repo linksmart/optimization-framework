@@ -66,7 +66,7 @@ class OptController(threading.Thread):
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
         if "False" in self.redisDB.get("Error mqtt"+self.id):
-            self.output = OutputController(self.output_config, self.id)
+            self.output = OutputController(self.id, self.output_config)
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
                                      self.horizon_in_steps, self.dT_in_seconds)
@@ -82,7 +82,14 @@ class OptController(threading.Thread):
         super(OptController, self).join(timeout)
 
     def Stop(self):
-        self.input.Stop()
+        try:
+            self.input.Stop()
+        except Exception as e:
+            logger.error("error stopping input " +  str(e))
+        try:
+            self.output.Stop()
+        except Exception as e:
+            logger.error("error stopping output " +  str(e))
         if self.isAlive():
             self.join(1)
 
@@ -211,7 +218,7 @@ class OptController(threading.Thread):
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
 
-                        self.output.publishController(self.id, my_dict)
+                        self.output.publish_data(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:
@@ -255,6 +262,6 @@ class OptController(threading.Thread):
                 object.MQTTExit()
                 logger.debug("Client " + key + " is being disconnected")
 
-            logger.error(return_msg)
+            logger.info(return_msg)
             self.finish_status = True
             return return_msg

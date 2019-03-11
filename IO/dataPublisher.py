@@ -42,6 +42,7 @@ class DataPublisher(ABC,threading.Thread):
         logger.info("Initializing data publisher thread for topic " + str(self.topic_params))
 
     def init_mqtt(self):
+        self.mqtt = None
         try:
             if "pub.mqtt.host" in dict(self.config.items("IO")):
                 self.host = self.config.get("IO", "pub.mqtt.host")
@@ -50,7 +51,10 @@ class DataPublisher(ABC,threading.Thread):
             self.port = self.config.get("IO", "mqtt.port")
             if "mqtt.port" in self.topic_params.keys():
                 self.port = self.topic_params["mqtt.port"]
-            self.qos = 1
+            if "qos" in self.topic_params.keys():
+                self.qos = int(self.topic_params["qos"])
+            else:
+                self.qos = 1
             self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
             self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
                                username=self.config.get("IO", "mqtt.username", fallback=None),
@@ -58,8 +62,9 @@ class DataPublisher(ABC,threading.Thread):
                                ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
                                set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)))
         except Exception as e:
-            self.redisDB.set("Error mqtt" + self.id, True)
             logger.error(e)
+            # error for mqtt will be caught at parent
+            raise e
 
     def init_zmq(self):
         self.host = self.config.get("IO", "zmq.host")
@@ -73,7 +78,7 @@ class DataPublisher(ABC,threading.Thread):
     def Stop(self):
         logger.info("start data publisher thread exit")
         self.stopRequest.set()
-        if self.channel == "MQTT":
+        if self.channel == "MQTT" and self.mqtt is not None:
             self.mqtt.MQTTExit()
         elif self.channel == "ZMQ":
             self.zmq.stop()

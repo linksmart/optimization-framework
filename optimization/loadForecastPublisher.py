@@ -12,6 +12,7 @@ import os
 from senml import senml
 
 from IO.dataPublisher import DataPublisher
+from IO.redisDB import RedisDB
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -27,7 +28,12 @@ class LoadForecastPublisher(DataPublisher):
         self.topic = topic
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
-        super().__init__(True, internal_topic_params, config, publish_frequency, id)
+        try:
+            super().__init__(True, internal_topic_params, config, publish_frequency, id)
+        except Exception as e:
+            redisDB = RedisDB()
+            redisDB.set("Error mqtt" + self.id, True)
+            logger.error(e)
 
     def get_data(self):
         try:

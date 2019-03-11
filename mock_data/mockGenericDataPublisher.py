@@ -174,5 +174,7 @@ class MockGenericDataPublisher(DataPublisher):
                     prev_time = end_time
                     prev_value = end_value
                     j -= 1
+        else:
+            new_data = raw_data
         new_data.reverse()
         return new_data

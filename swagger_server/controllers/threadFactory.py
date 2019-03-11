@@ -3,6 +3,7 @@ import logging
 import configparser
 import json
 import subprocess
+import threading
 
 import time
 from _signal import SIGTERM
@@ -147,7 +148,6 @@ class ThreadFactory:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
                     if non_prediction_name == "P_PV":
-                        self.redisDB.set("P_PV_Forecast:" + self.id +" "+ non_prediction_name, "running")
                         self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id,
                                                                                         self.control_frequency, self.horizon_in_steps,
                                                                                         self.dT_in_seconds, non_prediction_name)
@@ -166,16 +166,14 @@ class ThreadFactory:
                 logger.debug("Optimization object started")
                 return 0
             else:
-                logger.debug("P_PV_Forecast: "+str(self.redisDB.get("P_PV_Forecast:" + self.id +" "+ non_prediction_name)))
-                if self.redisDB.get("P_PV_Forecast:" + self.id +" "+ non_prediction_name) == "running":
-                    self.stopOptControllerThread()
-                    self.redisDB.set("P_PV_Forecast:" + self.id + " " + non_prediction_name,"stopped")
-                    self.redisDB.set("run:" + self.id,"stopped")
+                self.redisDB.set("run:" + self.id, "stopping")
+                self.stopOptControllerThread()
+                self.redisDB.set("run:" + self.id,"stopped")
                 logger.error("Optimization object could not be started")
                 return 1
         except Exception as e:
-            return 1
             logger.error(e)
+            return 1
 
 
     def stopOptControllerThread(self):
@@ -197,4 +195,7 @@ class ThreadFactory:
     def is_running(self):
         return not self.opt.finish_status
 
-
+    def update_training_params(self, key, parameters):
+        while True:
+            self.redisDB.set(key, parameters)
+            time.sleep("60")

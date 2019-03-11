@@ -8,8 +8,11 @@ from flask import jsonify
 
 from IO.redisDB import RedisDB
 from optimization.utils import Utils
+from swagger_server.models.file_output_all import FileOutputAll  # noqa: E501
 from swagger_server.models.file_input_source import FileInputSource  # noqa: E501
 from swagger_server.models.mqtt_input_source import MQTTInputSource  # noqa: E501
+from swagger_server.models.mqtt_output_all import MQTTOutputAll  # noqa: E501
+from swagger_server.models.output_ids_list import OutputIdsList  # noqa: E501
 from swagger_server import util
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -28,71 +31,43 @@ def store_data(dataset, id,source):
         logger.debug("Headers: " + str(header))
         input = dataset[header]
         logger.debug(header + " present")
-        if header == "generic":
-            for item in input:
-                for key in item:
-                    data = item[key]
-                    logger.debug("Data in " + str(key) + " is " + str(data))
-                    if data is not None:
-                        logger.debug("Data is not None")
-                        logger.debug("generic")
-                        if "generic_name" or "file " in key:
-                            name = item["name"]
-                            file_name = str(name) + ".txt"
-                            logger.debug("This is the file name for generic: " + str(file_name))
-                            path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
-                            logger.debug("Path where the data is stored" + str(path))
-                            # dataset = dataset.split(",")
-                            if os.path.isfile(path):
-                                logger.debug("Path exists")
-                                os.remove(path)
-                                logger.debug("File erased")
+        for key in input:
+            data = input[key]
+            logger.debug("Data in " + str(key) + " is " + str(data))
+            if data is not None:
+                logger.debug("Data is not None")
+                if "meta" in key:
+                    file_name = str(header) + "_" + str(key) + ".txt"
+                    path = os.path.join(os.getcwd(), "optimization/resources", str(id),source, file_name)
+                    logger.debug("Path where the data is stored" + str(path))
+                    # dataset = dataset.split(",")
+                    if os.path.isfile(path):
+                        os.remove(path)
 
-                            path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
-                            logger.debug("Path where the data is stored" + str(path))
-                            with open(path, 'w') as outfile:
-                                outfile.writelines(str(i) + '\n' for i in data)
-                            logger.info("input data saved into memory: " + str(file_name))
-                    else:
-                        logger.debug("No data in " + str(key))
-        else:
-            for key in input:
-                data = input[key]
-                logger.debug("Data in " + str(key) + " is " + str(data))
-                if data is not None:
-                    logger.debug("Data is not None")
-                    if "meta" in key:
-                        file_name = str(header) + "_" + str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization/resources", str(id),source, file_name)
-                        logger.debug("Path where the data is stored" + str(path))
-                        # dataset = dataset.split(",")
-                        if os.path.isfile(path):
-                            os.remove(path)
-
-                        with open(path, 'w') as outfile:
-                            outfile.writelines(data)
-                    elif "SoC_Value" in key:
-                        file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
-                        logger.debug("Path where the data is stored" + str(path))
-                        # dataset = dataset.split(",")
-                        if os.path.isfile(path):
-                            os.remove(path)
-                        with open(path, 'w') as outfile:
-                            outfile.write(str(data))
-                    else:
-                        file_name = str(key) + ".txt"
-                        path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
-                        logger.debug("Path where the data is stored" + str(path))
-                        # dataset = dataset.split(",")
-                        if os.path.isfile(path):
-                            os.remove(path)
-                        logger.debug("This is the path to open: "+str(path))
-                        with open(path, 'w') as outfile:
-                            # outfile.write('\n'.join(str(dataset)))
-                            outfile.writelines(str(i) + '\n' for i in data)
+                    with open(path, 'w') as outfile:
+                        outfile.writelines(data)
+                elif "SoC_Value" in key:
+                    file_name = str(key) + ".txt"
+                    path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
+                    logger.debug("Path where the data is stored" + str(path))
+                    # dataset = dataset.split(",")
+                    if os.path.isfile(path):
+                        os.remove(path)
+                    with open(path, 'w') as outfile:
+                        outfile.write(str(data))
                 else:
-                    logger.debug("No data in " + str(key))
+                    file_name = str(key) + ".txt"
+                    path = os.path.join(os.getcwd(), "optimization/resources", str(id), source, file_name)
+                    logger.debug("Path where the data is stored" + str(path))
+                    # dataset = dataset.split(",")
+                    if os.path.isfile(path):
+                        os.remove(path)
+                    logger.debug("This is the path to open: "+str(path))
+                    with open(path, 'w') as outfile:
+                        # outfile.write('\n'.join(str(dataset)))
+                        outfile.writelines(str(i) + '\n' for i in data)
+            else:
+                logger.debug("No data in " + str(key))
     return 1
 
 def delete_data(id, registry_file, source):
@@ -274,29 +249,10 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
 
                 if input:
                     logger.debug(header + " present")
-                    """
-                    if header == "generic":
-                        for v in input:
-                            if "file" and "name" in v.keys():
-                                dataset = v["file"]
-                                name = v["name"]
-                                file_name = str(name) + ".txt"
-                                logger.debug("This is the file name for generic: " + str(file_name))
-                                path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
-                                logger.debug("Path where the data is stored" + str(path))
-                                # dataset = dataset.split(",")
-                                with open(path, 'w') as outfile:
-                                    outfile.writelines(str(i) + '\n' for i in dataset)
-                                logger.info("input data saved into memory: " + str(file_name))
-                    else:
-                    """
                     for key in input:
                         dataset = input[key]
                         logger.debug("Data in "+str(key)+" is " + str(dataset))
                         if dataset is not None:
-                            logger.debug("Type of "+str(key)+str(type(key)))
-                            logger.debug("Type of dataset" + str(type(dataset)))
-                            #logger.debug("Size of dataset" + str(len(dataset)))
                             if "meta" in key:
                                 file_name = str(header) + "_" + str(key) + ".txt"
                                 path = os.path.join(os.getcwd(), "optimization/resources", str(id),"file", file_name)
@@ -325,8 +281,6 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
                             logger.debug("No data in "+str(key))
 
             return "Instance created", 201, {'Location': str(id)}
-            #return str(id)
-            #return jsonify({'Data-Source-Id':str(id)})
         except Exception as e:
             logger.error("Invalid data " + str(e))
             return "Invalid data " + str(e)
@@ -383,7 +337,7 @@ def get_mqtt_data_source_values(id):  # noqa: E501
             return MQTTInputSource.from_dict(response)
     except Exception as e:
         logger.error("error reading registry " + str(e))
-    return "error"
+    return None
 
 
 def mqtt_input_put(id, dataset):  # noqa: E501
@@ -401,10 +355,8 @@ def mqtt_input_put(id, dataset):  # noqa: E501
     if connexion.request.is_json:
         try:
             dataset = MQTTInputSource.from_dict(connexion.request.get_json())  # noqa: E501
-
             dataset = connexion.request.get_json()
             logger.info("This is the dictionary: " + str(dataset))
-
             # check if the file exists
             dir = os.path.join(os.getcwd(), "utils", str(id))
             if not os.path.exists(dir):
@@ -424,7 +376,6 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                         readfile.truncate()
                     logger.info("data source saved into memory")
                 else:
-                    # saves the registry into the new folder
                     # saves the registry into the new folder
                     with open(dir_file, 'w') as outfile:
                         json.dump(dataset, outfile, ensure_ascii=False)
@@ -481,3 +432,82 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             return "Invalid data " + str(e)
     else:
         return 'Data is not in json format'
+
+def get_all_data_source_values():  # noqa: E501
+    """Receives data from the framework
+
+     # noqa: E501
+
+
+    :rtype: FileOutputAll
+    """
+    response = {}
+    output_id_list = get_all_data_source_ids()
+    if output_id_list is not None:
+        for id in output_id_list:
+            result = get_data_source_values(id)
+            if result is not None:
+                response[id] = result
+    return FileOutputAll.from_dict(response)
+
+
+def get_all_mqtt_data_source_values():  # noqa: E501
+    """Receives all mqtt data from the framework
+
+     # noqa: E501
+
+
+    :rtype: MQTTOutputAll
+    """
+    response = {}
+    output_id_list = get_all_mqtt_data_source_ids()
+    if output_id_list is not None:
+        for id in output_id_list:
+            result = get_mqtt_data_source_values(id)
+            if result is not None:
+                response[id] = result
+    return MQTTOutputAll.from_dict(response)
+
+def get_all_mqtt_data_source_ids():  # noqa: E501
+    """Receives data from the framework
+
+     # noqa: E501
+
+
+    :rtype: OutputIdsList
+    """
+    response = []
+    dir = os.path.join(os.getcwd(), "utils")
+    try:
+        if os.path.exists(dir):
+            paths = os.listdir(dir)
+            for path in paths:
+                if os.path.isdir(os.path.join(dir,path)):
+                    if os.path.exists(os.path.join(dir, path, "Input.registry.mqtt")):
+                        response.append(path)
+        return OutputIdsList.from_dict(response)
+    except Exception as e:
+        logger.error("error reading registry " + str(e))
+    return None
+
+def get_all_data_source_ids():  # noqa: E501
+    """Receives data from the framework
+
+     # noqa: E501
+
+
+    :rtype: OutputIdsList
+    """
+    response = []
+    dir = os.path.join(os.getcwd(), "utils")
+    try:
+        if os.path.exists(dir):
+            paths = os.listdir(dir)
+            for path in paths:
+                if os.path.isdir(os.path.join(dir, path)):
+                    if os.path.exists(os.path.join(dir, path, "Input.registry.file")):
+                        response.append(path)
+        return OutputIdsList.from_dict(response)
+    except Exception as e:
+        logger.error("error reading registry " + str(e))
+    return None

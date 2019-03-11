@@ -5,75 +5,121 @@ import time
 
 from senml import senml
 
+from IO.ConfigParserUtils import ConfigParserUtils
 from IO.MQTTClient import MQTTClient
 from IO.redisDB import RedisDB
+from IO.constants import Constants
+import os
+from random import randrange
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+
 class OutputController:
 
-    def __init__(self, output_config=None, id=None):
+    def __init__(self, id=None, output_config=None):
         logger.info("Output Class started")
-        self.output_config=output_config
-        self.mqtt={}
+        self.output_config = output_config
+        self.mqtt = {}
         self.client_id = "PROFESS"
         self.redisDB = RedisDB()
+        self.mqtt_names = []
+        self.mqtt_params = {}
         self.output_mqtt = {}
-        self.id=id
-
-        if output_config is not None:
+        self.id = id
+        self.config_parser_utils = ConfigParserUtils()
+        logger.debug("output_config: " + str(self.output_config) + " " + str(type(self.output_config)))
+        if self.output_config is not None:
+            self.extract_mqtt_params()
             self.init_mqtt()
+
+    def extract_mqtt_params(self):
+        logger.debug("Output config = " + str(self.output_config))
+        for key, value in self.output_config.items():
+            logger.debug("key " + str(key) + " value " + str(value))
+            for key2, value2 in value.items():
+                logger.debug("key2 " + str(key2) + " value2 " + str(value2))
+                mqtt = self.config_parser_utils.get_mqtt(value2)
+                unit = self.read_unit_value(value2)
+                if mqtt is not None:
+                    self.mqtt_params[key2] = mqtt.copy()
+                    self.mqtt_params[key2]["unit"] = unit
+                    self.mqtt_names.append(key)
+        logger.debug("params = " + str(self.mqtt_params))
+        logger.debug("mqtt names = " + str(self.mqtt_names))
+
+    def read_unit_value(self, value2):
+        unit = None
+        if isinstance(value2, dict):
+            if "unit" in value2.keys():
+                unit = value2["unit"]
+        return unit
 
     def init_mqtt(self):
         ###Connection to the mqtt broker
-        self.redisDB.set("Error mqtt"+self.id, False)
+        logger.debug("Starting init mqtt")
+        self.redisDB.set("Error mqtt" + self.id, False)
         try:
-            for key, value in self.output_config.items():
-                for key2, value2 in value.items():
-                    if (value2["mqtt"]["host"] or value2["mqtt"]["host"].isspace()):
-                        host=value2["mqtt"]["host"]
-                        topic = value2["mqtt"]["topic"]
-                        qos = value2["mqtt"]["qos"]
-                        if "qos" in value2["mqtt"]:
-                            qos = value2["mqtt"]["qos"]
-                        self.output_mqtt[key2] = {"host":host, "topic":topic, "qos":qos}
-                        if bool(self.mqtt):
-                            if host in self.mqtt:
-                                logger.debug("Already connected to the host "+host)
-                            else:
-                                logger.debug("Creating mqtt client with the host: " + str(host))
-                                self.mqtt[str(host)] = MQTTClient(str(host), 1883, self.client_id)
-                        else:
-                            logger.debug("Creating mqtt client with the host: " + str(host))
-                            self.mqtt[str(host)] = MQTTClient(str(host), 1883, self.client_id)
-                    logger.debug("Self.mqtt: " + str(self.mqtt))
+            for key, value in self.mqtt_params.items():
+                logger.debug("key " + str(key) + " value " + str(value))
+
+                # self.output_mqtt[key2] = {"host":host, "topic":topic, "qos":qos}
+                self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".", "")
+                logger.debug("client " + str(self.client_id))
+                logger.debug("host " + str(value["host"]))
+                logger.debug("port " + str(value["mqtt.port"]))
+                self.mqtt[key] = MQTTClient(str(value["host"]), value["mqtt.port"], self.client_id,
+                                            username=value["username"],
+                                            password=value["password"],
+                                            ca_cert_path=value["ca_cert_path"],
+                                            set_insecure=value["insecure"])
+            logger.info("successfully subscribed")
         except Exception as e:
             logger.debug("Exception while starting mqtt")
             self.redisDB.set("Error mqtt" + self.id, True)
             logger.error(e)
 
-    def publishController(self, id, data):
-        current_time = int(time.time())
-        senml_data = self.senml_message_format(data, current_time)
+    def publish_data(self, id, data):
+        # logger.debug("data "+str(data))
         try:
+            current_time = int(time.time())
+            senml_data = self.senml_message_format(data, current_time, self.mqtt_params)
             for key, value in senml_data.items():
                 v = json.dumps(value)
-                if key in self.output_mqtt.keys():
-                    value2 = self.output_mqtt[key]
+                # logger.debug("key: "+str(key))
+                # logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
+                if key in self.mqtt_params.keys():
+                    value2 = self.mqtt_params[key]
                     topic = value2["topic"]
                     host = value2["host"]
                     qos = value2["qos"]
-                    self.mqtt[str(host)].sendResults(topic, v)
+                    self.mqtt[key].sendResults(topic, v, qos)
+        except Exception as e:
+            logger.error("error in publish data ", e)
+        self.save_to_redis(id, data, current_time)
+
+    def Stop(self):
+        self.stop_request = True
+
+        try:
+            for key, value in self.mqtt_params.items():
+                logger.debug("key " + str(key) + " value " + str(value))
+                self.mqtt[key].MQTTExit()
+            logger.info("OutputController safe exit")
         except Exception as e:
             logger.error(e)
-        self.save(id, data, current_time)
 
-
-    def senml_message_format(self, data, time):
+    def senml_message_format(self, data, time, params):
         new_data = {}
-        u = "W"
+        # logger.debug("data for senml "+str(data))
+        u = None
         for key, value in data.items():
+            if key in params.keys():
+                if params[key]["unit"] is not None:
+                    u = params[key]["unit"]
+                else:
+                    u = "W"
             meas_list = []
             first = False
             if len(value) > 1:
@@ -92,20 +138,17 @@ class OutputController:
             if len(meas_list) > 0:
                 doc = senml.SenMLDocument(meas_list)
                 new_data[key] = doc.to_json()
-        #logger.debug("Topic MQTT Senml message: "+str(new_data))
+        # logger.debug("Topic MQTT Senml message: "+str(new_data))
         return new_data
 
-    def makeFile(self):
-        return 0
-
-    def save(self, id, data, time):
+    def save_to_redis(self, id, data, time):
         try:
             part_key = "o:" + id + ":"
             for key, value in data.items():
                 index = 0
                 for v in value:
                     k = part_key + key + ":" + str(index)
-                    self.redisDB.set(k, json.dumps({str(time):v}))
+                    self.redisDB.set(k, json.dumps({str(time): v}))
                     index += 1
         except Exception as e:
             logger.error("error adding to redis " + str(e))

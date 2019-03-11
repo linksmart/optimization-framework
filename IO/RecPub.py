@@ -15,6 +15,7 @@ import time
 from IO.MQTTClient import MQTTClient
 from IO.dataPublisher import DataPublisher
 from IO.dataReceiver import DataReceiver
+from IO.redisDB import RedisDB
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -31,13 +32,13 @@ class RecPub:
 
     def __init__(self, receiver_params, publisher_workers, config, section):
         self.q = Queue(maxsize=0)
-        self.pub = Publisher(config, self.q, publisher_workers)
-        self.rec = Receiver(False, receiver_params, config, self.q, self.data_formater, section)
+        self.pub = Publisher(config, self.q, publisher_workers, id="none")
+        self.rec = Receiver(False, receiver_params, config, self.q, self.data_formater, section, id="none")
 
 class Receiver(DataReceiver):
 
-    def __init__(self, internal, topic_params, config, q, data_formater, section):
-        super().__init__(internal, topic_params, config, section=section)
+    def __init__(self, internal, topic_params, config, q, data_formater, section, id):
+        super().__init__(internal, topic_params, config, id=id, section=section)
         self.q = q
         self.data_formater = data_formater
 
@@ -53,10 +54,11 @@ class Receiver(DataReceiver):
 
 class Publisher():
 
-    def __init__(self, config, q, workers):
+    def __init__(self, config, q, workers, id):
         self.stopRequest = threading.Event()
         self.config = config
         self.q = q
+        self.id = id
         self.num_of_workers = workers
         self.mqtt_clients = self.init_mqtt_clients(workers)
         self.executor = ThreadPoolExecutor(max_workers=workers)
@@ -86,8 +88,8 @@ class Publisher():
                                set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)))
             return mqtt
         except Exception as e:
-            #self.redisDB.set("Error mqtt" + self.id, True)
             logger.error(e)
+            raise e
 
     def consumer(self):
         i = 0

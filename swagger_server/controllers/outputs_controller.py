@@ -71,22 +71,33 @@ def output_source_mqtt(id, Output_Source):  # noqa: E501
     :rtype: None
     """
     if connexion.request.is_json:
-        Output_Source = OutputSource.from_dict(connexion.request.get_json())  # noqa: E501
-        dataset = connexion.request.get_json()
-        logger.info("This is the dictionary: " + Output_Source.to_str())
         try:
-            dir = os.path.join(os.getcwd(), "utils", str(id))
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-        except Exception as e:
-            logger.error(e)
+            Output_Source = OutputSource.from_dict(connexion.request.get_json())  # noqa: E501
+            logger.info("This is the dictionary: " + Output_Source.to_str())
 
-        # saves the registry into the new folder
-        path = os.path.join(os.getcwd(), "utils", str(id), "Output.registry.mqtt")
-        with open(path, 'w') as outfile:
-            json.dump(dataset, outfile, ensure_ascii=False)
-        logger.info("control output saved into memory")
-    return 'success'
+            Output_Source = connexion.request.get_json()
+
+            try:
+                dir = os.path.join(os.getcwd(), "utils", str(id))
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+            except Exception as e:
+                logger.error(e)
+
+            # saves the registry into the new folder
+            path = os.path.join(os.getcwd(), "utils", str(id), "Output.registry.mqtt")
+            with open(path, 'w') as outfile:
+                json.dump(Output_Source, outfile, ensure_ascii=False)
+            logger.info("control output saved into memory")
+
+            return "OK"
+            #return jsonify({'Data-Source-Id': str(id)})
+        except Exception as e:
+            logger.error("Invalid data " + str(e))
+            return "Invalid data " + str(e)
+
+    else:
+        return 'Data is not in json format'
 
 
 def get_output(id):  # noqa: E501
@@ -103,24 +114,28 @@ def get_output(id):  # noqa: E501
     redisDB = RedisDB()
     output_keys = redisDB.get_keys_for_pattern("o:" + id + ":*")
     if output_keys is not None:
-        for key in output_keys:
-            sub_key = key.split(":")
-            topic = sub_key[2]
-            index = sub_key[3]
-            json_value = redisDB.get(key)
-            json_value = json.loads(json_value)
-            time = None
-            value = 0
-            for t, v in json_value.items():
-                time = t
-                value = v
-                break
-            if topic not in result.keys():
-                result[topic] = {}
-            if time is not None:
-                if time not in result[topic]:
-                    result[topic][time] = {}
-                result[topic][time][index] = float(value)
+        meta = redisDB.get("id_meta:"+id)
+        if meta is not None:
+            meta = json.loads(meta)
+            dT = meta["dT_in_seconds"]
+            for key in output_keys:
+                sub_key = key.split(":")
+                topic = sub_key[2]
+                index = sub_key[3]
+                json_value = redisDB.get(key)
+                json_value = json.loads(json_value)
+                time = None
+                value = 0
+                for t, v in json_value.items():
+                    time = t
+                    value = v
+                    break
+                if topic not in result.keys():
+                    result[topic] = {}
+                if time is not None:
+                    t = float(time) + int(index) * dT
+                    result[topic][t] = float(value)
+            logger.debug(result)
     return OptimizationOutput.from_dict(result)
 
 
