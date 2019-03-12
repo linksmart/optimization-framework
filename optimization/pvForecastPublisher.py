@@ -23,9 +23,9 @@ logger = logging.getLogger(__file__)
 
 class PVForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, id, location, maxPV, control_frequency, horizon_in_steps, dT_in_seconds):
+    def __init__(self, internal_topic_params, config, id, lat, lon, maxPV, control_frequency, horizon_in_steps, dT_in_seconds):
         self.pv_data = {}
-        radiation = Radiation(location, maxPV, dT_in_seconds, config)
+        radiation = Radiation(lat, lon, maxPV, dT_in_seconds)
         self.q = Queue(maxsize=0)
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -52,6 +52,7 @@ class PVForecastPublisher(DataPublisher):
                 time.sleep(delay)
             except Exception as e:
                 logger.error(e)
+                time.sleep(10)
 
     def get_delay_time(self, hour, min):
         date = datetime.datetime.now()

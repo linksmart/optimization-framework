@@ -41,7 +41,7 @@ RUN pip3 install -U sklearn
 RUN pip3 install -U tensorflow==1.8.0
 RUN pip3 install -U keras==2.1.6
 RUN pip3 install -U senml
-RUN pip3 install -U redis
+RUN pip3 install -U redis==2.10.6
 
 RUN pip3 install --upgrade pyomo
 #RUN pip3 install -U pyomo.extras

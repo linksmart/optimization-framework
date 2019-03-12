@@ -9,7 +9,6 @@ import requests
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
-
 # Date  = Date & time (UTC)
 # EPV   = PV power output if requested (W)
 # Bi    = In-plane beam irradiance (W/m2)
@@ -47,29 +46,29 @@ class SolarRadiation:
     Radiation Service that collects data and grep the next 48h
     """
     @staticmethod
-    def get_rad(city, maxPV, googleKey):
+    def get_rad(lat, lon, maxPV):
         rad_data = []
-        coord = SolarRadiation.get_coordinate(city, googleKey)
-        logger.info("coord "+str(coord))
-        rad = requests.get("http://re.jrc.ec.europa.eu/pvgis5/seriescalc.php?lat=" +
-                           "{:.3f}".format(coord["lat"]) + "&lon=" + "{:.3f}".format(coord['lng']) + "&raddatabase=" +
-                           "PVGIS-CMSAF&usehorizon=1&startyear=2016&endyear=2016&mountingplace=free&" +
-                           "optimalinclination=0&optimalangles=1&hourlyoptimalangles=1&PVcalculation=1&" +
-                           "pvtechchoice=crystSi&peakpower=" + str(maxPV) + "&loss=14&components=1")
-        red_arr = str(rad.content).split("\\n")
-        for x in range(11):
-            del red_arr[0]
-        now_file = datetime.datetime.now()
-        now = datetime.datetime(2000, now_file.month, now_file.day, now_file.hour, now_file.minute)
-        for x in range(0, red_arr.__len__()):
-            w = red_arr[x][:-2].split(",")
-            if w.__len__() != 9:
-                break
-            date_file = datetime.datetime.strptime(w[0], "%Y%m%d:%H%M%S")
-            date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
-            if now <= date - datetime.timedelta(hours=-2) <= (now + datetime.timedelta(hours=47)):
-                rad_data.append(RadiationData(date, w[1], w[2], w[3], w[4], w[5], w[6], w[7]))
-        return rad_data
+        logger.info("coord "+str(lat)+ ", "+ str(lon))
+        if lat is not None and lon is not None:
+            rad = requests.get("http://re.jrc.ec.europa.eu/pvgis5/seriescalc.php?lat=" +
+                               "{:.3f}".format(float(lat)) + "&lon=" + "{:.3f}".format(float(lon)) + "&raddatabase=" +
+                               "PVGIS-CMSAF&usehorizon=1&startyear=2016&endyear=2016&mountingplace=free&" +
+                               "optimalinclination=0&optimalangles=1&hourlyoptimalangles=1&PVcalculation=1&" +
+                               "pvtechchoice=crystSi&peakpower=" + str(maxPV) + "&loss=14&components=1")
+            red_arr = str(rad.content).split("\\n")
+            for x in range(11):
+                del red_arr[0]
+            now_file = datetime.datetime.now()
+            now = datetime.datetime(2000, now_file.month, now_file.day, now_file.hour, now_file.minute)
+            for x in range(0, red_arr.__len__()):
+                w = red_arr[x][:-2].split(",")
+                if w.__len__() != 9:
+                    break
+                date_file = datetime.datetime.strptime(w[0], "%Y%m%d:%H%M%S")
+                date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
+                if now <= date - datetime.timedelta(hours=-2) <= (now + datetime.timedelta(hours=47)):
+                    rad_data.append(RadiationData(date, w[1], w[2], w[3], w[4], w[5], w[6], w[7]))
+            return rad_data
 
     @staticmethod
     def expand_data(rad):
@@ -113,27 +112,12 @@ class SolarRadiation:
             j += step
         return new_rad
 
-    @staticmethod
-    def get_coordinate(city, googleKey):
-        """
-        Get geocoordinate from City name
-        :param city:
-        :return: Union[Type[JSONDecoder], Any]
-        """
-        try:
-            request = requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + city + "&key=" +
-                                   googleKey)
-            text = request.json()
-            return text["results"][0]["geometry"]["location"]
-        except KeyError:
-            return ""
-
-
 class Radiation:
 
-    def __init__(self, city, maxPV, dT_in_seconds, config):
+    def __init__(self, lat, lon, maxPV, dT_in_seconds):
         self.data = {}
-        self.city = city
+        self.lat = lat
+        self.lon = lon
         self.maxPV = maxPV
         self.maxPV /= 1000  # pv in kW
         self.dT_in_seconds = dT_in_seconds
@@ -141,10 +125,9 @@ class Radiation:
         if self.dT_in_seconds == 3600:
             self.hours = True
         self.step = float(self.dT_in_seconds/3600.0)
-        self.googleKey = config.get("SolverSection", "googleapikey")
 
     def get_data(self):
-        we = SolarRadiation.get_rad(self.city, self.maxPV, self.googleKey)
+        we = SolarRadiation.get_rad(self.lat, self.lon, self.maxPV)
         if self.hours:
             we = sorted(we, key=lambda w: w.date)
             jsh = json.dumps([wea.__dict__ for wea in we], default=str)

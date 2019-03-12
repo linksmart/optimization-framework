@@ -159,18 +159,6 @@ def get_optimization_model(name):  # noqa: E501
 
     :rtype: Model
     """
-
-
-def get_optimization_model(name):  # noqa: E501
-    """Mathematical model for the optimization solver
-
-     # noqa: E501
-
-    :param name: Name of the loaded model
-    :type name: str
-
-    :rtype: Model
-    """
     response = []
     data_file = os.path.join("/usr/src/app/optimization/models", name) + ".py"
     flag = False

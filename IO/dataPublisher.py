@@ -32,12 +32,14 @@ class DataPublisher(ABC,threading.Thread):
             self.topic_params = {}
         else:
             self.topic_params = topic_params
+        self.publish_frequency = publish_frequency
+
         self.stopRequest = threading.Event()
+
         if self.channel == "MQTT":
             self.init_mqtt()
         elif self.channel == "ZMQ":
             self.init_zmq()
-        self.publish_frequency = publish_frequency
 
         logger.info("Initializing data publisher thread for topic " + str(self.topic_params))
 
