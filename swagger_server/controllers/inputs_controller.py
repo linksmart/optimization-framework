@@ -64,8 +64,13 @@ def store_data(dataset, id,source):
                         os.remove(path)
                     logger.debug("This is the path to open: "+str(path))
                     with open(path, 'w') as outfile:
+                        if isinstance(data, list):
+                            outfile.writelines(str(i) + '\n' for i in data)
+                        else:
+                            outfile.writelines(str(data) + '\n')
+                    #with open(path, 'w') as outfile:
                         # outfile.write('\n'.join(str(dataset)))
-                        outfile.writelines(str(i) + '\n' for i in data)
+                        #outfile.writelines(str(i) + '\n' for i in data)
             else:
                 logger.debug("No data in " + str(key))
     return 1
@@ -370,9 +375,20 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                     with open(dir_file, 'r+') as readfile:
                         data = json.load(readfile)
                         for header in dataset:
-                            data[header] = dataset[header]
+                            logger.debug("Header 1: " + str(header))
+                            if not header == "generic":
+                                logger.debug("Not generic")
+                                data[header] = dataset[header]
+                            elif header == "generic":
+                                logger.debug("Header 1: " + str(header))
+                                for key in dataset["generic"]:
+                                    logger.debug("Key: " + str(key))
+                                    data["generic"][key] = dataset["generic"][key]
+
                         readfile.seek(0)
+                        logger.debug("Data " + str(data))
                         json.dump(data, readfile)
+                        logger.debug("readfile " + str(readfile))
                         readfile.truncate()
                     logger.info("data source saved into memory")
                 else:
