@@ -46,6 +46,9 @@ RUN pip3 install -U redis==2.10.6
 RUN pip3 install --upgrade pyomo
 #RUN pip3 install -U pyomo.extras
 
+# Remote debugger
+RUN pip3 install -U ptvsd
+
 WORKDIR /usr/src/app
 
 COPY ofw.py /usr/src/app/

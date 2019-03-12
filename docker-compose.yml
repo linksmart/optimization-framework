@@ -1,4 +1,4 @@
-version: '3.2'
+version: "3.2"
 services:
   #glpk:
   #  build:
@@ -12,37 +12,37 @@ services:
   #    - volume-glpsol:/usr/local/bin
   #    #- volume-glpsol:/user/local/glpk-4.57
   #    - volume-glpk:/usr/local/lib
-      #- /var/run/docker.sock:/docker.sock
-    #pid: host
-    #environment:
-    #    - run_mode=batch,daemon
-    #    - host_routes=true
-    #    - route_add_delay=1
-     # - /usr/src/app:/usr/src/app/glpk
-      #- type: bind
-      #  source: /usr/src/app/glpk
-      #  target: /usr/bin/glpsol
-    #restart: unless-stopped
+  #- /var/run/docker.sock:/docker.sock
+  #pid: host
+  #environment:
+  #    - run_mode=batch,daemon
+  #    - host_routes=true
+  #    - route_add_delay=1
+  # - /usr/src/app:/usr/src/app/glpk
+  #- type: bind
+  #  source: /usr/src/app/glpk
+  #  target: /usr/bin/glpsol
+  #restart: unless-stopped
 
   #ipopt:
-    #build:
-      #context: ""
-      #dockerfile: docker/Ipopt/Dockerfile
-    #image: garagon/ipopt:V0.2
- # bonmin:
- #   build:
- #     context: ""
- #     dockerfile: docker/Bonmin/Dockerfile
- #   image: garagon/bonmin:V0.1
+  #build:
+  #context: ""
+  #dockerfile: docker/Ipopt/Dockerfile
+  #image: garagon/ipopt:V0.2
+  # bonmin:
+  #   build:
+  #     context: ""
+  #     dockerfile: docker/Bonmin/Dockerfile
+  #   image: garagon/bonmin:V0.1
   mosquitto:
     image: eclipse-mosquitto
     ports:
       - 1883:1883
     container_name: "mosquito_S4G"
   #zeromq:
-   # image: zeromq/zeromq
-    #ports:
-     # - 5555:5555
+  # image: zeromq/zeromq
+  #ports:
+  # - 5555:5555
   #pyro:
   #  image: farshidtz/pyro4-ns
   #  command: ["--host=pyro-ns"]
@@ -56,9 +56,10 @@ services:
     build:
       context: ""
       dockerfile: Dockerfile
-     # ../docker/App/Dockerfile
+      # ../docker/App/Dockerfile
     image: myapp-ofw-ipopt
     ports:
+      - "5050:5050"
       - "8080:8080"
     depends_on:
       - redis
@@ -66,13 +67,13 @@ services:
       - ../optimization-framework/prediction/resources:/usr/src/app/res
       - ../optimization-framework/optimization/resources:/usr/src/app/optimization/resources
       - ../optimization-framework/utils:/usr/src/app/utils
- #   depends_on:
- #     - glpk
- #     - ipopt
- #     - bonmin
+    #   depends_on:
+    #     - glpk
+    #     - ipopt
+    #     - bonmin
     #volumes:
-      #- volume-glpsol:/usr/bin
-      #- volume-glpk:/usr/local/lib
+    #- volume-glpsol:/usr/bin
+    #- volume-glpk:/usr/local/lib
     #restart: unless-stopped
     #command: ["echo", "que sera sera"]
     logging:
@@ -88,7 +89,7 @@ services:
       dockerfile: mock_data/docker/Dockerfile-mock
     volumes:
       - ../optimization-framework/mock_data/resources:/usr/src/app/mock_data/resources
-     # ../docker/App/Dockerfile
+      # ../docker/App/Dockerfile
     logging:
       driver: "json-file"
       options:
@@ -121,8 +122,7 @@ services:
         max-size: "10m"
         max-file: "10"
     command: ["python3", "-u", "connectors.py"]
+# volumes:
+#   volume-glpsol:
+#   volume-glpk:
 
-
-volumes:
-  volume-glpsol:
-  volume-glpk:
