@@ -376,20 +376,20 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                     with open(dir_file, 'r+') as readfile:
                         data = json.load(readfile)
                         for header in dataset:
-                            logger.debug("Header 1: " + str(header))
+                            #logger.debug("Header 1: " + str(header))
                             if not header == "generic":
-                                logger.debug("Not generic")
+                                #logger.debug("Not generic")
                                 data[header] = dataset[header]
                             elif header == "generic":
-                                logger.debug("Header 1: " + str(header))
+                                #logger.debug("Header 1: " + str(header))
                                 for key in dataset["generic"]:
-                                    logger.debug("Key: " + str(key))
+                                    #logger.debug("Key: " + str(key))
                                     data["generic"][key] = dataset["generic"][key]
 
                         readfile.seek(0)
                         logger.debug("Data " + str(data))
                         json.dump(data, readfile)
-                        logger.debug("readfile " + str(readfile))
+                        #logger.debug("readfile " + str(readfile))
                         readfile.truncate()
                     logger.info("data source saved into memory")
                 else:
