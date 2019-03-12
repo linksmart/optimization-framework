@@ -224,6 +224,7 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
     if connexion.request.is_json:
         try:
             File_Input_Source = FileInputSource.from_dict(connexion.request.get_json())  # noqa: E501
+            logger.info("This is the dictionary: " + File_Input_Source.to_str())
 
             File_Input_Source = connexion.request.get_json()
 
