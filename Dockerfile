@@ -49,6 +49,9 @@ RUN pip3 install --upgrade pyomo
 # Remote debugger
 RUN pip3 install -U ptvsd
 
+# Stochastic optimizer
+RUN pip3 install -U xlrd
+
 WORKDIR /usr/src/app
 
 COPY ofw.py /usr/src/app/

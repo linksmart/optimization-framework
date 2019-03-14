@@ -27,7 +27,7 @@ from optimization.ModelException import InvalidModelException
 import logging
 from threading import Event
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
+logging.basicConfig( format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 
@@ -69,7 +69,7 @@ class OptController(threading.Thread):
             self.output = OutputController(self.id, self.output_config)
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
-                                     self.horizon_in_steps, self.dT_in_seconds)
+                                         self.horizon_in_steps, self.dT_in_seconds)
 
     # Importint a class dynamically
     def path_import2(self, absolute_path):
@@ -85,11 +85,11 @@ class OptController(threading.Thread):
         try:
             self.input.Stop()
         except Exception as e:
-            logger.error("error stopping input " +  str(e))
+            logger.error("error stopping input " + str(e))
         try:
             self.output.Stop()
         except Exception as e:
-            logger.error("error stopping output " +  str(e))
+            logger.error("error stopping output " + str(e))
         if self.isAlive():
             self.join(1)
 
@@ -129,16 +129,16 @@ class OptController(threading.Thread):
         solver_manager = None
         return_msg = "success"
         try:
-            ###maps action handles to instances
+            # maps action handles to instances
             action_handle_map = {}
 
-            #####create a solver
+            # create a solver
             optsolver = SolverFactory(self.solver_name)
             logger.debug("Solver factory: " + str(optsolver))
             # optsolver.options["max_iter"]=5000
             logger.info("solver instantiated with " + self.solver_name)
 
-            ###create a solver manager
+            # create a solver manager
             solver_manager = SolverManagerFactory('pyro')
 
             if solver_manager is None:
@@ -151,7 +151,7 @@ class OptController(threading.Thread):
             while not self.stopRequest.isSet():
                 logger.info("waiting for data")
                 data_dict = self.input.get_data()  # blocking call
-                #logger.debug("Data is: " + json.dumps(data_dict, indent=4))
+                logger.debug("Data is: " + json.dumps(data_dict, indent=4))
                 if self.stopRequest.isSet():
                     break
 
@@ -170,7 +170,7 @@ class OptController(threading.Thread):
                         # logger.info(instance.pprint())
                         action_handle = solver_manager.queue(instance, opt=optsolver)
                         logger.debug("Solver queue created " + str(action_handle))
-                        logger.debug("solver queue actions = "+ str(solver_manager.num_queued()))
+                        logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         action_handle_map[action_handle] = str(self.id)
                         logger.debug("Action handle map: " + str(action_handle_map))
                         start_time = time.time()
@@ -183,7 +183,7 @@ class OptController(threading.Thread):
                         time.sleep(5)
                     run_count += 1
 
-                ###retrieve the solutions
+                # retrieve the solutions
                 for i in range(1):
                     this_action_handle = solver_manager.wait_any()
                     self.results = solver_manager.get_results(this_action_handle)
@@ -254,7 +254,7 @@ class OptController(threading.Thread):
             logger.debug("Deactivating pyro servers")
             # TODO : 'SolverManager_Pyro' object has no attribute 'deactivate'
             # this error was not present before pyomo update
-            #solver_manager.deactivate()
+            # solver_manager.deactivate()
             logger.debug("Pyro servers deactivated: " + str(solver_manager))
 
             # If Stop signal arrives it tries to disconnect all mqtt clients

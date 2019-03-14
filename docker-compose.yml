@@ -83,6 +83,7 @@ services:
         max-file: "10"
     command: ["python3", "-u", "ofw.py"]
     #command: ["ls","/usr/bin"]
+  # "stochastic_optimizer/VirtualCapacity_maxPV_independent.py",
   mock:
     build:
       context: ""

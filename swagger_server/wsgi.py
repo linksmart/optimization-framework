@@ -12,9 +12,11 @@ from swagger_server.__main__ import create_app as web
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+
 def number_of_workers():
     return (psutil.cpu_count(logical=False) * 2) + 1
-    #return multiprocessing.cpu_count()
+    # return multiprocessing.cpu_count()
+
 
 class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
@@ -31,6 +33,7 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
     def load(self):
         return self.application
+
 
 def main():
     options = {
