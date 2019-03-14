@@ -911,48 +911,56 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       P_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       P_PV_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       Q_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       P_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       Q_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       Q_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       P_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
   metaPV:
     type: "object"
     properties:
@@ -1005,6 +1013,7 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
   metaESS:
     type: "object"
     properties:
@@ -1082,48 +1091,56 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       P_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       P_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       P_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       Q_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       Q_Grid_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       Q_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       Q_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
   metaGrid:
     type: "object"
     properties:
@@ -1181,6 +1198,9 @@ definitions:
         $ref: "#/definitions/MQTT"
       unit:
         type: "string"
+      control:
+        type: "boolean"
+        default: true
     description: "Selection between MQTT or file mode inputs or outputs"
     example:
       mqtt:
@@ -1188,6 +1208,7 @@ definitions:
         host: "hostname"
         topic: "topic_name"
       unit: "W"
+      control: true
   MQTT:
     type: "object"
     required:
@@ -1500,28 +1521,15 @@ definitions:
   OutputSource:
     type: "object"
     properties:
+      generic:
+        $ref: "#/definitions/GenericOutput"
       photovoltaic:
         $ref: "#/definitions/PV_Output"
       ESS:
         $ref: "#/definitions/ESS_Output"
       grid:
         $ref: "#/definitions/grid_Output"
-      generic:
-        $ref: "#/definitions/GenericOutput"
     example:
-      generic:
-        custom_name_1:
-          mqtt:
-            qos: 1
-            host: "hostname"
-            topic: "topic_name"
-          unit: "W"
-        custom_name_2:
-          mqtt:
-            qos: 1
-            host: "hostname"
-            topic: "topic_name"
-          unit: "W"
       ESS:
         P_ESS_Output:
           mqtt:
@@ -1529,6 +1537,7 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
       grid:
         P_Grid_R_Output:
           mqtt:
@@ -1536,48 +1545,56 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         P_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         P_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         P_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         Q_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         Q_Grid_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         Q_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         Q_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
       photovoltaic:
         Q_PV_T_Output:
           mqtt:
@@ -1585,48 +1602,71 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         P_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         P_PV_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         Q_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         P_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         Q_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         Q_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
         P_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
+          control: true
+      generic:
+        custom_name_1:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          unit: "W"
+          control: true
+        custom_name_2:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          unit: "W"
+          control: false
   Model_answer:
     type: "object"
     properties:
@@ -1786,12 +1826,14 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: true
       custom_name_2:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
+        control: false
     additionalProperties:
       $ref: "#/definitions/SourceOutput"
   Generic:
