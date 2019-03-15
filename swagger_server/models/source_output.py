@@ -16,31 +16,31 @@ class SourceOutput(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None, unit: str=None, control: bool=True):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None, unit: str=None, horizon_values: bool=True):  # noqa: E501
         """SourceOutput - a model defined in Swagger
 
         :param mqtt: The mqtt of this SourceOutput.  # noqa: E501
         :type mqtt: MQTT
         :param unit: The unit of this SourceOutput.  # noqa: E501
         :type unit: str
-        :param control: The control of this SourceOutput.  # noqa: E501
-        :type control: bool
+        :param horizon_values: The horizon_values of this SourceOutput.  # noqa: E501
+        :type horizon_values: bool
         """
         self.swagger_types = {
             'mqtt': MQTT,
             'unit': str,
-            'control': bool
+            'horizon_values': bool
         }
 
         self.attribute_map = {
             'mqtt': 'mqtt',
             'unit': 'unit',
-            'control': 'control'
+            'horizon_values': 'horizon_values'
         }
 
         self._mqtt = mqtt
         self._unit = unit
-        self._control = control
+        self._horizon_values = horizon_values
 
     @classmethod
     def from_dict(cls, dikt) -> 'SourceOutput':
@@ -98,22 +98,22 @@ class SourceOutput(Model):
         self._unit = unit
 
     @property
-    def control(self) -> bool:
-        """Gets the control of this SourceOutput.
+    def horizon_values(self) -> bool:
+        """Gets the horizon_values of this SourceOutput.
 
 
-        :return: The control of this SourceOutput.
+        :return: The horizon_values of this SourceOutput.
         :rtype: bool
         """
-        return self._control
+        return self._horizon_values
 
-    @control.setter
-    def control(self, control: bool):
-        """Sets the control of this SourceOutput.
+    @horizon_values.setter
+    def horizon_values(self, horizon_values: bool):
+        """Sets the horizon_values of this SourceOutput.
 
 
-        :param control: The control of this SourceOutput.
-        :type control: bool
+        :param horizon_values: The horizon_values of this SourceOutput.
+        :type horizon_values: bool
         """
 
-        self._control = control
+        self._horizon_values = horizon_values

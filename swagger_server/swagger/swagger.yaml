@@ -911,56 +911,56 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       P_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       P_PV_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       Q_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       P_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       Q_PV_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       Q_PV_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       P_PV_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
   metaPV:
     type: "object"
     properties:
@@ -1013,7 +1013,7 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
   metaESS:
     type: "object"
     properties:
@@ -1091,56 +1091,56 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       P_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       P_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       P_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       Q_Grid_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       Q_Grid_R_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       Q_Grid_S_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       Q_Grid_T_Output:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
   metaGrid:
     type: "object"
     properties:
@@ -1198,7 +1198,7 @@ definitions:
         $ref: "#/definitions/MQTT"
       unit:
         type: "string"
-      control:
+      horizon_values:
         type: "boolean"
         default: true
     description: "Selection between MQTT or file mode inputs or outputs"
@@ -1208,7 +1208,7 @@ definitions:
         host: "hostname"
         topic: "topic_name"
       unit: "W"
-      control: true
+      horizon_values: false
   MQTT:
     type: "object"
     required:
@@ -1537,7 +1537,7 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
       grid:
         P_Grid_R_Output:
           mqtt:
@@ -1545,56 +1545,56 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         P_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         P_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         P_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         Q_Grid_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         Q_Grid_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         Q_Grid_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         Q_Grid_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
       photovoltaic:
         Q_PV_T_Output:
           mqtt:
@@ -1602,56 +1602,56 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         P_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         P_PV_T_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         Q_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         P_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         Q_PV_R_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         Q_PV_S_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         P_PV_Output:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
       generic:
         custom_name_1:
           mqtt:
@@ -1659,14 +1659,14 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: true
+          horizon_values: false
         custom_name_2:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
           unit: "W"
-          control: false
+          horizon_values: false
   Model_answer:
     type: "object"
     properties:
@@ -1826,14 +1826,14 @@ definitions:
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: true
+        horizon_values: false
       custom_name_2:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
         unit: "W"
-        control: false
+        horizon_values: false
     additionalProperties:
       $ref: "#/definitions/SourceOutput"
   Generic:

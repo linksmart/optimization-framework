@@ -218,7 +218,7 @@ class OptController(threading.Thread):
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
 
-                        self.output.publish_data(self.id, my_dict)
+                        self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
                     except Exception as e:
                         logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:

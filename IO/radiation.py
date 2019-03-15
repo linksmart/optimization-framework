@@ -6,6 +6,8 @@ from math import floor, ceil
 
 import requests
 
+from IO.locationData import LocationData
+
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
@@ -114,10 +116,13 @@ class SolarRadiation:
 
 class Radiation:
 
-    def __init__(self, lat, lon, maxPV, dT_in_seconds):
+    def __init__(self, config, maxPV, dT_in_seconds, location):
         self.data = {}
-        self.lat = lat
-        self.lon = lon
+        self.location = location
+        self.location_data = LocationData(config)
+        self.location_found = False
+        self.lat = 50.7374
+        self.lon = 7.0982
         self.maxPV = maxPV
         self.maxPV /= 1000  # pv in kW
         self.dT_in_seconds = dT_in_seconds
@@ -127,6 +132,7 @@ class Radiation:
         self.step = float(self.dT_in_seconds/3600.0)
 
     def get_data(self):
+        self.update_location_info()
         we = SolarRadiation.get_rad(self.lat, self.lon, self.maxPV)
         if self.hours:
             we = sorted(we, key=lambda w: w.date)
@@ -137,3 +143,13 @@ class Radiation:
             we = sorted(we, key=lambda w: w.date)
             jsm = json.dumps([wea.__dict__ for wea in we], default=str)
             return jsm
+
+    def update_location_info(self):
+        if not self.location_found:
+            lat, lon = self.location_data.get_city_coordinate(self.location["city"], self.location["country"])
+            if lat is not None and lon is not None:
+                self.lat = lat
+                self.lon = lon
+                self.location_found = True
+            else:
+                logger.error("Error getting location info, setting to bonn, germany")

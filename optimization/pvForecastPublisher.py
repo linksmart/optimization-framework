@@ -23,9 +23,9 @@ logger = logging.getLogger(__file__)
 
 class PVForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, id, lat, lon, maxPV, control_frequency, horizon_in_steps, dT_in_seconds):
+    def __init__(self, internal_topic_params, config, id, maxPV, control_frequency, horizon_in_steps, dT_in_seconds, location):
         self.pv_data = {}
-        radiation = Radiation(lat, lon, maxPV, dT_in_seconds)
+        radiation = Radiation(config, maxPV, dT_in_seconds, location)
         self.q = Queue(maxsize=0)
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
