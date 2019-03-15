@@ -27,7 +27,7 @@ from optimization.ModelException import InvalidModelException
 import logging
 from threading import Event
 
-logging.basicConfig( format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 
@@ -151,7 +151,42 @@ class OptController(threading.Thread):
             while not self.stopRequest.isSet():
                 logger.info("waiting for data")
                 data_dict = self.input.get_data()  # blocking call
-                logger.debug("Data is: " + json.dumps(data_dict, indent=4))
+
+                ess_soc_states = [x for x in range(0, 110, 10)]
+                ess_decision_domain = [x for x in range(-10, 20, 10)]
+                vac_soc_states = [x * 0.1 for x in range(0, 1025, 25)]  # np.linspace(0,100.0,2.5,endpoint=True)
+                vac_decision_domain = [x * 0.1 for x in range(0, 225, 25)]  # np.linspace(0.0,20.0,2.5,endpoint=True)
+
+                data_dict[None]["StateRange_ESS"] = {
+                    None: len(ess_soc_states)
+                }
+                data_dict[None]["DomainRange_ESS"] = {
+                    None: len(ess_decision_domain)
+                }
+                data_dict[None]["StateRange_EV"] = {
+                    None: len(vac_soc_states)
+                }
+                data_dict[None]["DomainRange_EV"] = {
+                    None: len(vac_decision_domain)
+                }
+
+                data_dict[None]["ess_soc_states"] = {
+                    None: ess_soc_states
+                }
+                data_dict[None]["ess_decision_domain"] = {
+                    None: ess_decision_domain
+                }
+                data_dict[None]["vac_soc_states"] = {
+                    None: vac_soc_states
+                }
+                data_dict[None]["vac_decision_domain"] = {
+                    None: vac_decision_domain
+                }
+
+                logger.info("#"*80)
+                logger.debug("Data dict value : " + json.dumps(data_dict[None], indent=4))
+                logger.info("#"*80)
+                # logger.debug("Data is: " + json.dumps(data_dict, indent=4))
                 if self.stopRequest.isSet():
                     break
 
@@ -160,6 +195,7 @@ class OptController(threading.Thread):
                     logger.debug("Creating an optimization instance")
                     instance = self.my_class.model.create_instance(data_dict)
                 except Exception as e:
+                    logger.error("Error creating instance")
                     logger.error(e)
                 # instance = self.my_class.model.create_instance(self.data_path)
                 logger.info("Instance created with pyomo")
@@ -205,19 +241,19 @@ class OptController(threading.Thread):
                     try:
                         my_dict = {}
                         for v in instance.component_objects(Var, active=True):
-                            # logger.debug("Variable in the optimization: "+ str(v))
+                            logger.debug("Variable in the optimization: " + str(v))
                             varobject = getattr(instance, str(v))
                             var_list = []
                             try:
                                 # Try and add to the dictionary by key ref
                                 for index in varobject:
                                     var_list.append(varobject[index].value)
+                                logger.debug("Identified variables " + str(var_list))
                                 my_dict[str(v)] = var_list
                             except Exception as e:
                                 logger.error(e)
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
-
                         self.output.publish_data(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
@@ -238,6 +274,7 @@ class OptController(threading.Thread):
                     if self.stopRequest.isSet():
                         break
         except Exception as e:
+            logger.error("Error running instance")
             logger.error(e)
             e = str(e)
             solver_error = "The SolverFactory was unable to create the solver"

@@ -38,8 +38,10 @@ class Model:
 	model.T = Set()  # Index Set for time steps of optimization horizon
 	model.T_SoC = Set()  # SoC of the ESSs at the end of optimization horizon are also taken into account
 
-	model.FeasibleSoCRange_ESS = Set()
-	model.FeasibleSoCRange_EV = Set()
+	model.StateRange_ESS = Set()
+	model.DomainRange_ESS = Set()
+	model.StateRange_EV = Set()
+	model.DomainRange_EV = Set()
 	model.Behavior_Model = Set(dimen=2)
 	model.Value = Set()
 
@@ -59,16 +61,16 @@ class Model:
 
 	model.Unit_Consumption_Assumption = Param(within=PositiveReals)
 	model.Unit_Drop_Penalty = Param(within=PositiveReals, bounds=(0, 1))
-	model.vac_decision_domain = Param(model.FeasibleSoCRange_EV, within=Reals)
-	model.vac_soc_states = Param(model.FeasibleSoCRange_EV, within=PositiveReals)
+	model.vac_decision_domain = Param(model.DomainRange_EV, within=Reals)
+	model.vac_soc_states = Param(model.StateRange_EV, within=PositiveReals)
 	model.VAC_Capacity = Param(within=PositiveReals)
 
 	# Photovoltaics
 	model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
 
 	# Energy Storage System
-	model.ess_decision_domain = Param(model.FeasibleSoCRange_ESS, within=Reals)
-	model.ess_soc_states = Param(model.FeasibleSoCRange_ESS, within=PositiveReals)
+	model.ess_decision_domain = Param(model.DomainRange_ESS, within=Reals)
+	model.ess_soc_states = Param(model.StateRange_ESS, within=PositiveReals)
 
 	model.ESS_Max_Charge_Power = Param(within=PositiveReals)
 	model.ESS_Max_Discharge_Power = Param(within=PositiveReals)
