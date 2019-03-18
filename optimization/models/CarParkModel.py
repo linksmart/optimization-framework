@@ -6,15 +6,13 @@ class Model:
 
     model = AbstractModel()
 
-    model.Timestep = Param(within=PositiveIntegers)
-
     # Feasible charge powers to ESS under the given conditions
     model.Feasible_ESS_Decisions = Set()
 
     # Feasible charge powers to VAC under the given conditions
     model.Feasible_VAC_Decisions = Set()
 
-    model.Value_Index = Set(dimen=3)
+    model.Value_Index = Set(dimen=2)
 
     model.Value = Param(model.Value_Index, mutable=True)
 
@@ -86,8 +84,7 @@ class Model:
 
                 penalty_for_negative_soc = -final_vac_soc/100 * model.Unit_Drop_Penalty * model.VAC_Capacity if final_vac_soc < 0 else 0
                 # Value of having fin_ess_soc,fin_ev_soc and home position in next time interval
-                future_value_of_p_cars_at_Park = model.Value[(
-                    model.Timestep+1, essSoC, fin_vac_soc)]+penalty_for_negative_soc
+                future_value_of_p_cars_at_Park = model.Value[(essSoC, fin_vac_soc)]+penalty_for_negative_soc
                 # Probablity of p cars at home==Probability of d cars driving
                 probability_of_p_cars_at_Park = model.Behavior_Model[p]
 

@@ -9,7 +9,9 @@ import importlib.util
 import json
 import threading
 
+from itertools import product
 import os
+import pandas as pd
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
@@ -26,6 +28,8 @@ from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
 import logging
 from threading import Event
+from optimization.functions import import_statistics
+from optimization.carpark import CarPark, Charger, Car
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -152,43 +156,121 @@ class OptController(threading.Thread):
                 logger.info("waiting for data")
                 data_dict = self.input.get_data()  # blocking call
 
-                ess_soc_states = [x for x in range(0, 110, 10)]
-                ess_decision_domain = [x for x in range(-10, 20, 10)]
-                vac_soc_states = [x * 0.1 for x in range(0, 1025, 25)]  # np.linspace(0,100.0,2.5,endpoint=True)
-                vac_decision_domain = [x * 0.1 for x in range(0, 225, 25)]  # np.linspace(0.0,20.0,2.5,endpoint=True)
-
-                data_dict[None]["StateRange_ESS"] = {
-                    None: len(ess_soc_states)
-                }
-                data_dict[None]["DomainRange_ESS"] = {
-                    None: len(ess_decision_domain)
-                }
-                data_dict[None]["StateRange_EV"] = {
-                    None: len(vac_soc_states)
-                }
-                data_dict[None]["DomainRange_EV"] = {
-                    None: len(vac_decision_domain)
-                }
-
-                data_dict[None]["ess_soc_states"] = {
-                    None: ess_soc_states
-                }
-                data_dict[None]["ess_decision_domain"] = {
-                    None: ess_decision_domain
-                }
-                data_dict[None]["vac_soc_states"] = {
-                    None: vac_soc_states
-                }
-                data_dict[None]["vac_decision_domain"] = {
-                    None: vac_decision_domain
-                }
+                if self.stopRequest.isSet():
+                    break
 
                 logger.info("#"*80)
                 logger.debug("Data dict value : " + json.dumps(data_dict[None], indent=4))
                 logger.info("#"*80)
-                # logger.debug("Data is: " + json.dumps(data_dict, indent=4))
-                if self.stopRequest.isSet():
-                    break
+
+                ######################################
+                # STOCHASTIC OPTIMIZATION
+
+                # Inputs
+                charger1 = Charger(6)
+                charger2 = Charger(6)
+                charger3 = Charger(6)
+                charger4 = Charger(6)
+                charger5 = Charger(6)
+                charger6 = Charger(6)
+                charger7 = Charger(6)
+                chargers = [charger1, charger2, charger3, charger4, charger5, charger6, charger7]
+                car1 = Car(30)
+                car2 = Car(30)
+                car3 = Car(30)
+                car4 = Car(30)
+                car5 = Car(30)
+                car6 = Car(30)
+                car7 = Car(30)
+                car1.setSoC(0.5)
+                car2.setSoC(0.5)
+                car3.setSoC(0.5)
+                car4.setSoC(0.5)
+                car5.setSoC(0.5)
+                car6.setSoC(0.5)
+                car7.setSoC(0.5)
+                charger1.plug(car1)
+                charger2.plug(car2)
+                charger3.plug(car3)
+                cars = [car1, car2, car3, car4, car5, car6, car7]
+                mycarpark = CarPark(chargers, cars)
+
+                Forecast_inp = '/usr/src/app/stochastic_optimizer/Forecasts_60M.xlsx'
+                Behavior_inp = '/usr/src/app/stochastic_optimizer/PMFs_60M.csv'
+                xl = pd.ExcelFile(Forecast_inp)
+                forecasts = xl.parse("0")
+                behavMod = import_statistics(Behavior_inp, "00:00", 7)
+
+                forecast_pv = dict(enumerate(forecasts['PV'].values.tolist()))
+                forecast_price = dict(enumerate(forecasts['Price'].values.tolist()))
+
+                ess_soc_states = range(0, 110, 10)
+                ess_decision_domain = range(-10, 20, 10)
+                vac_soc_states = [x * 0.1 for x in range(0, 1025, 25)]  # np.linspace(0,100.0,2.5,endpoint=True)
+                vac_decision_domain = [x * 0.1 for x in range(0, 225, 25)]  # np.linspace(0.0,20.0,2.5,endpoint=True)
+
+                ini_ess_soc = 0
+                ini_vac_soc = 0.0
+
+                feasible_Pess=[]            #Feasible charge powers to ESS under the given conditions
+                for p_ESS in ess_decision_domain:  #When decided charging with p_ESS
+                    if min(ess_soc_states)<=p_ESS+ini_ess_soc<=max(ess_soc_states): #if the final ess_SoC is within the specified domain 
+                        feasible_Pess.append(p_ESS)  
+
+                feasible_Pvac=[]            #Feasible charge powers to VAC under the given conditions
+                for p_VAC in vac_decision_domain:         #When decided charging with p_VAC   
+                    if p_VAC+ini_vac_soc<=max(vac_soc_states): #if the final vac_SoC is within the specified domain
+                        feasible_Pvac.append(p_VAC)
+
+                T = 24
+
+                #Initialize empty lookup tables
+                keylistforValue    =[(t,s_ess,s_vac) for t,s_ess,s_vac in product(list(range(0,T+1)),ess_soc_states,vac_soc_states)]
+                keylistforDecisions=[(t,s_ess,s_vac) for t,s_ess,s_vac in product(list(range(0,T)),ess_soc_states,vac_soc_states)]
+                
+                Value   =dict.fromkeys(keylistforValue)
+                Decision=dict.fromkeys(keylistforDecisions)
+            
+                for t,s_ess,s_vac in product(range(0,T),ess_soc_states,vac_soc_states):
+                    Decision[t,s_ess,s_vac]={'PV':None,'Grid':None,'ESS':None,'VAC':None}
+                    Value[t,s_ess,s_vac]=None
+
+                for s_ess,s_vac in product(ess_soc_states,vac_soc_states):
+                    Value[T,s_ess,s_vac]=1.0
+
+                timestep = 23
+                    
+                ##### Enter Data into data_dict
+
+                data_dict[None]["Feasible_ESS_Decisions"] = { None: feasible_Pess }
+                data_dict[None]["Feasible_VAC_Decisions"] = { None: feasible_Pvac }
+
+                value_index = [ (s_ess,s_vac) for s_ess,s_vac in product(ess_soc_states,vac_soc_states)]
+                data_dict[None]["Value_Index"] = { None: value_index }
+
+                value = { str(v):None for v in value_index }
+                data_dict[None]["Value"] = value
+
+                data_dict[None]["P_PV_Forecast"] = { None: forecast_pv[timestep] }
+
+                data_dict[None]["Initial_ESS_SoC"] = { None: ini_ess_soc }
+                data_dict[None]["Initial_VAC_SoC"] = { None: ini_vac_soc }
+
+                data_dict[None]["Number_of_Parked_Cars"] = { None: mycarpark.carNb }
+                data_dict[None]["VAC_Capacity"] = { None: mycarpark.vac_capacity }
+
+
+                bm_idx = [ str(key) for key in behavMod.keys()]
+                bm = { str(key): behavMod[key] for key in behavMod.keys() }
+
+                data_dict[None]["Behavior_Model_Index"] = { None: bm_idx }
+                data_dict[None]["Behavior_Model"] = bm
+
+                ######################################
+
+                logger.info("#"*80)
+                logger.debug("Data dict value : " + json.dumps(data_dict[None], indent=4))
+                logger.info("#"*80)
 
                 # Creating an optimization instance with the referenced model
                 try:
@@ -254,6 +336,7 @@ class OptController(threading.Thread):
                                 logger.error(e)
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
+                        time.sleep(60)
                         self.output.publish_data(self.id, my_dict)
                     except Exception as e:
                         logger.error(e)
