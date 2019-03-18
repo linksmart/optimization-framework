@@ -107,3 +107,5 @@ utils/*
 .vscode
 profess/executables/windows/**/*
 !profess/executables/windows/ofw.exe
+**/*/*.xlsx*
+*.ipynb
