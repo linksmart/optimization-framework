@@ -8,6 +8,7 @@ Created on Fri Mar 16 15:05:36 2018
 import importlib.util
 import json
 import threading
+import pprint
 
 from itertools import product
 import os
@@ -159,10 +160,6 @@ class OptController(threading.Thread):
                 if self.stopRequest.isSet():
                     break
 
-                logger.info("#"*80)
-                logger.debug("Data dict value : " + json.dumps(data_dict[None], indent=4))
-                logger.info("#"*80)
-
                 ######################################
                 # STOCHASTIC OPTIMIZATION
 
@@ -248,7 +245,7 @@ class OptController(threading.Thread):
                 value_index = [ (s_ess,s_vac) for s_ess,s_vac in product(ess_soc_states,vac_soc_states)]
                 data_dict[None]["Value_Index"] = { None: value_index }
 
-                value = { str(v):None for v in value_index }
+                value = { v:1.0 for v in value_index }
                 data_dict[None]["Value"] = value
 
                 data_dict[None]["P_PV_Forecast"] = { None: forecast_pv[timestep] }
@@ -260,17 +257,26 @@ class OptController(threading.Thread):
                 data_dict[None]["VAC_Capacity"] = { None: mycarpark.vac_capacity }
 
 
-                bm_idx = [ str(key) for key in behavMod.keys()]
-                bm = { str(key): behavMod[key] for key in behavMod.keys() }
+                bm_idx = [ key[1] for key in behavMod.keys() if key[0] == 0]
+                bm = { key[1]: value for key, value in behavMod.items() if key[0] == 0 }
 
                 data_dict[None]["Behavior_Model_Index"] = { None: bm_idx }
                 data_dict[None]["Behavior_Model"] = bm
 
+                ess_capacity = 0.675*3600
+                data_dict[None]["ESS_Capacity"] = { None: ess_capacity }
+
+                data_dict[None]["dT"] = { None: 3600 }
+
                 ######################################
 
-                logger.info("#"*80)
-                logger.debug("Data dict value : " + json.dumps(data_dict[None], indent=4))
-                logger.info("#"*80)
+                
+                # logger.info("#"*80)
+                # logger.debug("Data dict value : " + pprint.pprint(data_dict, indent=4, width=80))
+                # logger.info("#"*80)
+
+                logger.info("HIT line 273")
+                # time.sleep(60)
 
                 # Creating an optimization instance with the referenced model
                 try:

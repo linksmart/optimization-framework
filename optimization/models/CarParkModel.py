@@ -15,20 +15,25 @@ class Model:
     model.Value_Index = Set(dimen=2)
 
     model.Value = Param(model.Value_Index, mutable=True)
+    model.Value.pprint()
 
     model.P_PV_Forecast = Param(within=NonNegativeReals)
 
-    model.Initial_ESS_SoC = Param(within=PositiveReals)
-    model.Initial_VAC_SoC = Param(within=PositiveReals)
+    model.Initial_ESS_SoC = Param(within=Reals, default=0)
+    model.Initial_VAC_SoC = Param(within=Reals, default=0.0)
 
     model.Number_of_Parked_Cars = Param(within=PositiveIntegers)
 
     model.Unit_Consumption_Assumption = Param(within=PositiveReals)
-    model.Unit_Drop_Penalty = Param(within=PositiveReals, bounds=(0, 1))
+    model.Unit_Drop_Penalty = Param(within=PositiveReals)
+    model.ESS_Capacity = Param(within=PositiveReals)
     model.VAC_Capacity = Param(within=PositiveReals)
 
     model.Behavior_Model_Index = Set()
     model.Behavior_Model = Param(model.Behavior_Model_Index)
+    model.Behavior_Model.pprint()
+
+    model.dT = Param(within=PositiveIntegers)
 
     #######################################      Outputs       #######################################################
 
@@ -50,11 +55,11 @@ class Model:
     model.const_integer = Constraint(rule=combinatorics)
 
     def ess_chargepower(model):
-        return model.P_ESS == sum(model.Decision[ess, vac]*ess for ess, vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))/100*self.ESS_Capacity/self.dT
+        return model.P_ESS == sum(model.Decision[ess, vac]*ess for ess, vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))/100*model.ESS_Capacity/model.dT
     model.const_esschargepw = Constraint(rule=ess_chargepower)
 
     def vac_chargepower(model):
-        return model.P_VAC == sum(model.Decision[ess, vac]*vac for ess, vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))/100*self.VAC_Capacity/self.dT
+        return model.P_VAC == sum(model.Decision[ess, vac]*vac for ess, vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))/100*model.VAC_Capacity/model.dT
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
     def home_demandmeeting(model):
