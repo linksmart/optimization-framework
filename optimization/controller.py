@@ -206,20 +206,7 @@ class OptController(threading.Thread):
                 vac_soc_states = [x * 0.1 for x in range(0, 1025, 25)]  # np.linspace(0,100.0,2.5,endpoint=True)
                 vac_decision_domain = [x * 0.1 for x in range(0, 225, 25)]  # np.linspace(0.0,20.0,2.5,endpoint=True)
 
-                ini_ess_soc = 0
-                ini_vac_soc = 0.0
-
-                feasible_Pess=[]            #Feasible charge powers to ESS under the given conditions
-                for p_ESS in ess_decision_domain:  #When decided charging with p_ESS
-                    if min(ess_soc_states)<=p_ESS+ini_ess_soc<=max(ess_soc_states): #if the final ess_SoC is within the specified domain 
-                        feasible_Pess.append(p_ESS)  
-
-                feasible_Pvac=[]            #Feasible charge powers to VAC under the given conditions
-                for p_VAC in vac_decision_domain:         #When decided charging with p_VAC   
-                    if p_VAC+ini_vac_soc<=max(vac_soc_states): #if the final vac_SoC is within the specified domain
-                        feasible_Pvac.append(p_VAC)
-
-                T = 24
+                T = self.horizon_in_steps
 
                 #Initialize empty lookup tables
                 keylistforValue    =[(t,s_ess,s_vac) for t,s_ess,s_vac in product(list(range(0,T+1)),ess_soc_states,vac_soc_states)]
@@ -235,122 +222,211 @@ class OptController(threading.Thread):
                 for s_ess,s_vac in product(ess_soc_states,vac_soc_states):
                     Value[T,s_ess,s_vac]=1.0
 
-                timestep = 23
-                    
+
                 ##### Enter Data into data_dict
 
-                data_dict[None]["Feasible_ESS_Decisions"] = { None: feasible_Pess }
-                data_dict[None]["Feasible_VAC_Decisions"] = { None: feasible_Pvac }
-
-                value_index = [ (s_ess,s_vac) for s_ess,s_vac in product(ess_soc_states,vac_soc_states)]
-                data_dict[None]["Value_Index"] = { None: value_index }
-
-                value = { v:1.0 for v in value_index }
-                data_dict[None]["Value"] = value
-
-                data_dict[None]["P_PV_Forecast"] = { None: forecast_pv[timestep] }
-
-                data_dict[None]["Initial_ESS_SoC"] = { None: ini_ess_soc }
-                data_dict[None]["Initial_VAC_SoC"] = { None: ini_vac_soc }
 
                 data_dict[None]["Number_of_Parked_Cars"] = { None: mycarpark.carNb }
                 data_dict[None]["VAC_Capacity"] = { None: mycarpark.vac_capacity }
 
-
-                bm_idx = [ key[1] for key in behavMod.keys() if key[0] == 0]
-                bm = { key[1]: value for key, value in behavMod.items() if key[0] == 0 }
-
-                data_dict[None]["Behavior_Model_Index"] = { None: bm_idx }
-                data_dict[None]["Behavior_Model"] = bm
-
                 ess_capacity = 0.675*3600
                 data_dict[None]["ESS_Capacity"] = { None: ess_capacity }
+                    
+                    
+                for timestep in reversed(range(0, self.horizon_in_steps)):
+                    logger.info(f"Timestep :#{timestep}")
+                    for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
-                data_dict[None]["dT"] = { None: 3600 }
+                        feasible_Pess=[]            #Feasible charge powers to ESS under the given conditions
+                        for p_ESS in ess_decision_domain:  #When decided charging with p_ESS
+                            if min(ess_soc_states)<=p_ESS+ini_ess_soc<=max(ess_soc_states): #if the final ess_SoC is within the specified domain 
+                                feasible_Pess.append(p_ESS)  
 
-                ######################################
+                        feasible_Pvac=[]            #Feasible charge powers to VAC under the given conditions
+                        for p_VAC in vac_decision_domain:         #When decided charging with p_VAC   
+                            if p_VAC+ini_vac_soc<=max(vac_soc_states): #if the final vac_SoC is within the specified domain
+                                feasible_Pvac.append(p_VAC)
 
-                
-                # logger.info("#"*80)
-                # logger.debug("Data dict value : " + pprint.pprint(data_dict, indent=4, width=80))
-                # logger.info("#"*80)
+                        data_dict[None]["Feasible_ESS_Decisions"] = { None: feasible_Pess }
+                        data_dict[None]["Feasible_VAC_Decisions"] = { None: feasible_Pvac }
 
-                logger.info("HIT line 273")
-                # time.sleep(60)
+                        data_dict[None]["Initial_ESS_SoC"] = { None: ini_ess_soc }
+                        data_dict[None]["Initial_VAC_SoC"] = { None: ini_vac_soc }
 
-                # Creating an optimization instance with the referenced model
-                try:
-                    logger.debug("Creating an optimization instance")
-                    instance = self.my_class.model.create_instance(data_dict)
-                except Exception as e:
-                    logger.error("Error creating instance")
-                    logger.error(e)
-                # instance = self.my_class.model.create_instance(self.data_path)
-                logger.info("Instance created with pyomo")
+                        bm_idx = [ key[1] for key in behavMod.keys() if key[0] == timestep]
+                        bm = { key[1]: value for key, value in behavMod.items() if key[0] == timestep }
 
-                run_count = 0
-                while True:
-                    try:
-                        # logger.info(instance.pprint())
-                        action_handle = solver_manager.queue(instance, opt=optsolver)
-                        logger.debug("Solver queue created " + str(action_handle))
-                        logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                        action_handle_map[action_handle] = str(self.id)
-                        logger.debug("Action handle map: " + str(action_handle_map))
-                        start_time = time.time()
-                        logger.debug("Optimization starting time: " + str(start_time))
-                        break
-                    except Exception as e:
-                        logger.error("exception "+str(e))
-                        if run_count == 5:
-                            raise e
-                        time.sleep(5)
-                    run_count += 1
+                        data_dict[None]["Behavior_Model_Index"] = { None: bm_idx }
+                        data_dict[None]["Behavior_Model"] = bm
 
-                # retrieve the solutions
-                for i in range(1):
-                    this_action_handle = solver_manager.wait_any()
-                    self.results = solver_manager.get_results(this_action_handle)
-                    logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                    if this_action_handle in action_handle_map.keys():
-                        self.solved_name = action_handle_map.pop(this_action_handle)
-                    else:
-                        self.solved_name = None
 
-                start_time = time.time() - start_time
-                logger.info("Time to run optimizer = " + str(start_time) + " sec.")
-                if (self.results.solver.status == SolverStatus.ok) and (
-                        self.results.solver.termination_condition == TerminationCondition.optimal):
-                    # this is feasible and optimal
-                    logger.info("Solver status and termination condition ok")
-                    logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-                    logger.debug(self.results)
-                    instance.solutions.load_from(self.results)
-                    try:
-                        my_dict = {}
-                        for v in instance.component_objects(Var, active=True):
-                            logger.debug("Variable in the optimization: " + str(v))
-                            varobject = getattr(instance, str(v))
-                            var_list = []
+                        value_index = [ (s_ess,s_vac) for t,s_ess,s_vac in Value.keys() if t == timestep+1]
+                        data_dict[None]["Value_Index"] = { None: value_index }
+
+                        value = { v:Value[timestep+1, v[0], v[1] ] for v in value_index }
+                        data_dict[None]["Value"] = value
+
+
+                        data_dict[None]["P_PV_Forecast"] = { None: forecast_pv[timestep] }
+
+                        # * Create Optimization instance
+
+                        # Creating an optimization instance with the referenced model
+                        try:
+                            logger.debug("Creating an optimization instance")
+                            instance = self.my_class.model.create_instance(data_dict)
+                        except Exception as e:
+                            logger.error("Error creating instance")
+                            logger.error(e)
+                        # instance = self.my_class.model.create_instance(self.data_path)
+                        logger.info("Instance created with pyomo")
+
+                        # * Queue the optimization instance
+
+                        try:
+                            # logger.info(instance.pprint())
+                            action_handle = solver_manager.queue(instance, opt=optsolver)
+                            logger.debug("Solver queue created " + str(action_handle))
+                            logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                            action_handle_map[action_handle] = str(self.id)
+                            logger.debug("Action handle map: " + str(action_handle_map))
+                            start_time = time.time()
+                            logger.debug("Optimization starting time: " + str(start_time))
+                        except Exception as e:
+                            logger.error("exception "+str(e))
+
+                        # * Run the solver
+
+                        # retrieve the solutions
+                        for i in range(1):
+                            this_action_handle = solver_manager.wait_any()
+                            self.results = solver_manager.get_results(this_action_handle)
+                            logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                            if this_action_handle in action_handle_map.keys():
+                                self.solved_name = action_handle_map.pop(this_action_handle)
+                            else:
+                                self.solved_name = None
+
+                        # * Check whether it is solved
+
+                        start_time = time.time() - start_time
+                        logger.info("Time to run optimizer = " + str(start_time) + " sec.")
+                        if (self.results.solver.status == SolverStatus.ok) and (
+                                self.results.solver.termination_condition == TerminationCondition.optimal):
+                            # this is feasible and optimal
+                            logger.info("Solver status and termination condition ok")
+                            logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
+                            logger.debug(self.results)
+                            instance.solutions.load_from(self.results)
+
+                            # * if solved get the values in dict
+
                             try:
-                                # Try and add to the dictionary by key ref
-                                for index in varobject:
-                                    var_list.append(varobject[index].value)
-                                logger.debug("Identified variables " + str(var_list))
-                                my_dict[str(v)] = var_list
+                                my_dict = {}
+                                for v in instance.component_objects(Var, active=True):
+                                    logger.debug("Variable in the optimization: " + str(v))
+                                    varobject = getattr(instance, str(v))
+                                    var_list = []
+                                    try:
+                                        # Try and add to the dictionary by key ref
+                                        for index in varobject:
+                                            var_list.append(varobject[index].value)
+                                        logger.debug("Identified variables " + str(var_list))
+                                        my_dict[str(v)] = var_list
+                                    except Exception as e:
+                                        logger.error(e)
+                                
+
+                                Decision[timestep, ini_ess_soc, ini_vac_soc]['Grid'] = my_dict["P_GRID"][0]
+                                Decision[timestep, ini_ess_soc, ini_vac_soc]['PV'] = my_dict["P_PV"][0]
+                                Decision[timestep, ini_ess_soc, ini_vac_soc]['ESS'] = my_dict["P_ESS"][0]
+                                Decision[timestep, ini_ess_soc, ini_vac_soc]['VAC'] = my_dict["P_VAC"][0]
+
+                                Value[timestep, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
+
+                                logger.info("Done".center(80,"#"))
+                                logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
+                                logger.info("#"*80)
+
+                                # self.output.publish_data(self.id, my_dict)
                             except Exception as e:
                                 logger.error(e)
-                                # Append new index to currently existing items
-                                # my_dict = {**my_dict, **{v: list}}
-                        time.sleep(60)
-                        self.output.publish_data(self.id, my_dict)
-                    except Exception as e:
-                        logger.error(e)
-                elif self.results.solver.termination_condition == TerminationCondition.infeasible:
-                    # do something about it? or exit?
-                    logger.info("Termination condition is infeasible")
-                else:
-                    logger.info("Nothing fits")
+                        elif self.results.solver.termination_condition == TerminationCondition.infeasible:
+                            # do something about it? or exit?
+                            logger.info("Termination condition is infeasible")
+                        else:
+                            logger.info("Nothing fits")
+
+
+                initial_ess_soc_value = 50
+                initial_vac_soc_value = 50
+
+                p_pv=Decision[0,initial_ess_soc_value,initial_vac_soc_value]['PV']
+                p_grid=Decision[0,initial_ess_soc_value,initial_vac_soc_value]['Grid']
+                p_ess=Decision[0,initial_ess_soc_value,initial_vac_soc_value]['ESS']
+                p_vac=-Decision[0,initial_ess_soc_value,initial_vac_soc_value]['VAC']
+                p_ev={}
+                
+                print("Dynamic programming calculations")
+                print("PV generation:",p_pv)
+                print("Import:",p_grid)
+                print("ESS discharge:",p_ess)
+                print("VAC charging",p_vac)
+                
+                
+                #############################################################################
+                #This section distributes virtual capacity charging power into the cars plugged chargers in the station
+                
+                #detect which cars are connected to the chargers in the commercial charging station
+                #calculate the maximum feasible charging power input under given SoC
+
+                dT = data_dict[None]["dT"][None]
+                ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
+                ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
+                
+
+                connections=mycarpark.maxChargePowerCalculator(dT)  
+                
+                #Calculation of the feasible charging power at the commercial station
+                feasible_ev_charging_power=min(sum(connections.values()),p_vac)
+                
+                for charger,maxChargePower in connections.items():    
+                    power_output_of_charger=maxChargePower/feasible_ev_charging_power
+                    p_ev[charger]=power_output_of_charger
+                #############################################################################
+                
+                #############################################################################
+                #This section decides what to do with the non utilized virtual capacity charging power
+                
+                #Power leftover: Non implemented part of virtual capacity charging power
+                leftover_vac_charging_power=p_vac-feasible_ev_charging_power
+                
+                #Leftover is attempted to be removed with less import
+                less_import=min(p_grid,leftover_vac_charging_power)
+                p_grid=p_grid-less_import
+            
+                #Some part could be still left
+                still_leftover=leftover_vac_charging_power-less_import
+                    
+                #Still leftover is attempted to be charged to the ESS
+                
+                ess_charger_limit=ESS_Max_Charge
+                ess_capacity_limit=(100-initial_ess_soc_value)/100*ESS_Capacity/dT
+                max_ess_charging_power=min(ess_charger_limit,ess_capacity_limit,still_leftover)               
+                p_ess=p_ess-max_ess_charging_power
+                
+                #Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
+                final_leftover=still_leftover-max_ess_charging_power
+                p_pv=p_pv-final_leftover
+                
+                print("Implemented actions")
+                print("PV generation:",p_pv)
+                print("Import:",p_grid)
+                print("ESS discharge:",p_ess)
+                print("Real EV charging",feasible_ev_charging_power)
+                    
+
+                time.sleep(60)
 
                 count += 1
                 if self.repetition > 0 and count >= self.repetition:
