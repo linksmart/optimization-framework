@@ -32,6 +32,8 @@ from threading import Event
 from optimization.functions import import_statistics
 from optimization.carpark import CarPark, Charger, Car
 
+from optimization.instance import Instance
+
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
@@ -239,6 +241,7 @@ class OptController(threading.Thread):
                     logger.info(f"Timestep :#{timestep}")
 
                     instance_id = 0
+                    instance_info = []
 
                     for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
@@ -278,7 +281,7 @@ class OptController(threading.Thread):
 
                         # Creating an optimization instance with the referenced model
                         try:
-                            logger.debug("Creating an optimization instance")
+                            # logger.debug("Creating an optimization instance")
                             instance = self.my_class.model.create_instance(data_dict)
                         except Exception as e:
                             logger.error("Error creating instance")
@@ -292,53 +295,71 @@ class OptController(threading.Thread):
                             # logger.info(instance.pprint())
                             action_handle = solver_manager.queue(instance, opt=optsolver)
                             # logger.debug("Solver queue created " + str(action_handle))
-                            logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                            action_handle_map[action_handle] = "Instance:"+str(instance_id)
+                            # logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                            action_handle_map[action_handle] = str(instance_id)
                             # logger.debug("Action handle map: " + str(action_handle_map))
                             # start_time = time.time()
                             # logger.debug("Optimization starting time: " + str(start_time))
                         except Exception as e:
                             logger.error("exception "+str(e))
 
+                        
+                        inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc)
+                        # print(str(instance_id), ini_ess_soc, ini_vac_soc)
+
+                        instance_info.append(inst)
+
                         instance_id += 1
 
-                    time.sleep(10)
 
 
+                    print(f"Created {instance_id} instances...")
                     # * Run the solver
 
-                    results = []
+                    
                     # retrieve the solutions
                     for i in range(instance_id):
                         this_action_handle = solver_manager.wait_any()
                         result = solver_manager.get_results(this_action_handle)
                         # logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         if this_action_handle in action_handle_map.keys():
-                            self.solved_name = action_handle_map.pop(this_action_handle)
+                            solved_name = action_handle_map.pop(this_action_handle)
                         else:
-                            self.solved_name = None
-                        print("Result of instance : " + str(i))
-                        # print(result)
-                        results.append(result)
+                            solved_name = None
+
+                        # print("Result of instance : " + solved_name)
+
+                        inst = instance_info[int(solved_name)]
+
+                        # print(solved_name, inst.instance_id, inst.ini_ess_soc, inst.ini_vac_soc)
+
+                        instance_info[int(solved_name)].addResult(result)
 
                     # * Check whether it is solved
+                    print(f"Obtained results for {instance_id} instances...")
 
-                    time.sleep(10)
+                    for inst in instance_info:
+                        result = inst.result
+                        ini_ess_soc = inst.ini_ess_soc
+                        ini_vac_soc = inst.ini_vac_soc
 
-                    for result in results:
                         # start_time = time.time() - start_time
                         # logger.info("Time to run optimizer = " https://pyomo.readthedocs.io+ str(start_time) + " sec.")
                         if (result.solver.status == SolverStatus.ok) and (
                                 result.solver.termination_condition == TerminationCondition.optimal):
                             # this is feasible and optimal
                             logger.info("Solver status and termination condition ok")
-                            logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
+                            # logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
                             # logger.debug(result)
                             instance.solutions.load_from(result)
 
                             # * if solved get the values in dict
 
                             try:
+                                logger.info("Done".center(80,"#"))
+                                logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
+                                logger.info("#"*80)
+
                                 my_dict = {}
                                 for v in instance.component_objects(Var, active=True):
                                     logger.debug("Variable in the optimization: " + str(v))
@@ -361,11 +382,7 @@ class OptController(threading.Thread):
 
                                 Value[timestep, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
 
-                                logger.info("Done".center(80,"#"))
-                                logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
                                 logger.info("#"*80)
-
-                                time.sleep(2)
 
                                 # self.output.publish_data(self.id, my_dict)
                             except Exception as e:
@@ -375,6 +392,17 @@ class OptController(threading.Thread):
                             logger.info("Termination condition is infeasible")
                         else:
                             logger.info("Nothing fits")
+
+                stochastic_end_time = time.time()
+
+                print("Time Information".center(80,"#"))
+                print("")
+                print(f"Start time: {stochastic_start_time}")
+                print(f"End time: {stochastic_end_time}")
+                execution_time = stochastic_end_time-stochastic_start_time
+                print(f"Programming execution time: {execution_time}")
+                print("")
+                print("#"*80)                            
 
 
                 initial_ess_soc_value = 50
