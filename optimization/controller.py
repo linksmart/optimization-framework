@@ -237,6 +237,9 @@ class OptController(threading.Thread):
                     
                 for timestep in reversed(range(0, self.horizon_in_steps)):
                     logger.info(f"Timestep :#{timestep}")
+
+                    instance_id = 0
+
                     for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
                         feasible_Pess=[]            #Feasible charge powers to ESS under the given conditions
@@ -281,45 +284,57 @@ class OptController(threading.Thread):
                             logger.error("Error creating instance")
                             logger.error(e)
                         # instance = self.my_class.model.create_instance(self.data_path)
-                        logger.info("Instance created with pyomo")
+                        # logger.info("Instance created with pyomo")
 
                         # * Queue the optimization instance
 
                         try:
                             # logger.info(instance.pprint())
                             action_handle = solver_manager.queue(instance, opt=optsolver)
-                            logger.debug("Solver queue created " + str(action_handle))
+                            # logger.debug("Solver queue created " + str(action_handle))
                             logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                            action_handle_map[action_handle] = str(self.id)
-                            logger.debug("Action handle map: " + str(action_handle_map))
-                            start_time = time.time()
-                            logger.debug("Optimization starting time: " + str(start_time))
+                            action_handle_map[action_handle] = "Instance:"+str(instance_id)
+                            # logger.debug("Action handle map: " + str(action_handle_map))
+                            # start_time = time.time()
+                            # logger.debug("Optimization starting time: " + str(start_time))
                         except Exception as e:
                             logger.error("exception "+str(e))
 
-                        # * Run the solver
+                        instance_id += 1
 
-                        # retrieve the solutions
-                        for i in range(1):
-                            this_action_handle = solver_manager.wait_any()
-                            self.results = solver_manager.get_results(this_action_handle)
-                            logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                            if this_action_handle in action_handle_map.keys():
-                                self.solved_name = action_handle_map.pop(this_action_handle)
-                            else:
-                                self.solved_name = None
+                    time.sleep(10)
 
-                        # * Check whether it is solved
 
-                        start_time = time.time() - start_time
-                        logger.info("Time to run optimizer = " + str(start_time) + " sec.")
-                        if (self.results.solver.status == SolverStatus.ok) and (
-                                self.results.solver.termination_condition == TerminationCondition.optimal):
+                    # * Run the solver
+
+                    results = []
+                    # retrieve the solutions
+                    for i in range(instance_id):
+                        this_action_handle = solver_manager.wait_any()
+                        result = solver_manager.get_results(this_action_handle)
+                        # logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                        if this_action_handle in action_handle_map.keys():
+                            self.solved_name = action_handle_map.pop(this_action_handle)
+                        else:
+                            self.solved_name = None
+                        print("Result of instance : " + str(i))
+                        # print(result)
+                        results.append(result)
+
+                    # * Check whether it is solved
+
+                    time.sleep(10)
+
+                    for result in results:
+                        # start_time = time.time() - start_time
+                        # logger.info("Time to run optimizer = " https://pyomo.readthedocs.io+ str(start_time) + " sec.")
+                        if (result.solver.status == SolverStatus.ok) and (
+                                result.solver.termination_condition == TerminationCondition.optimal):
                             # this is feasible and optimal
                             logger.info("Solver status and termination condition ok")
                             logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-                            logger.debug(self.results)
-                            instance.solutions.load_from(self.results)
+                            # logger.debug(result)
+                            instance.solutions.load_from(result)
 
                             # * if solved get the values in dict
 
@@ -350,10 +365,12 @@ class OptController(threading.Thread):
                                 logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
                                 logger.info("#"*80)
 
+                                time.sleep(2)
+
                                 # self.output.publish_data(self.id, my_dict)
                             except Exception as e:
                                 logger.error(e)
-                        elif self.results.solver.termination_condition == TerminationCondition.infeasible:
+                        elif result.solver.termination_condition == TerminationCondition.infeasible:
                             # do something about it? or exit?
                             logger.info("Termination condition is infeasible")
                         else:
