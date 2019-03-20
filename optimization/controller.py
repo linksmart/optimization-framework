@@ -231,6 +231,8 @@ class OptController(threading.Thread):
 
                 ess_capacity = 0.675*3600
                 data_dict[None]["ESS_Capacity"] = { None: ess_capacity }
+
+                stochastic_start_time = time.time()
                     
                     
                 for timestep in reversed(range(0, self.horizon_in_steps)):
@@ -339,8 +341,8 @@ class OptController(threading.Thread):
 
                                 Decision[timestep, ini_ess_soc, ini_vac_soc]['Grid'] = my_dict["P_GRID"][0]
                                 Decision[timestep, ini_ess_soc, ini_vac_soc]['PV'] = my_dict["P_PV"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['ESS'] = my_dict["P_ESS"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['VAC'] = my_dict["P_VAC"][0]
+                                Decision[timestep, ini_ess_soc, ini_vac_soc]['ESS'] = -my_dict["P_ESS"][0]
+                                Decision[timestep, ini_ess_soc, ini_vac_soc]['VAC'] = -my_dict["P_VAC"][0]
 
                                 Value[timestep, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
 
@@ -424,7 +426,17 @@ class OptController(threading.Thread):
                 print("Import:",p_grid)
                 print("ESS discharge:",p_ess)
                 print("Real EV charging",feasible_ev_charging_power)
-                    
+
+                stochastic_end_time = time.time()
+
+                print("Time Information".center(80,"#"))
+                print("")
+                print(f"Start time: {stochastic_start_time}")
+                print(f"End time: {stochastic_end_time}")
+                execution_time = stochastic_end_time-stochastic_start_time
+                print(f"Programming execution time: {execution_time}")
+                print("")
+                print("#"*80)
 
                 time.sleep(60)
 
