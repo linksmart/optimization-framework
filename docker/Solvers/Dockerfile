@@ -5,7 +5,7 @@
 ###################################################################################################
 # Set the base image to Ubuntu
 
-FROM python:3.6.4-jessie
+FROM ubuntu:18.04
 
 # Switch to root for install
 USER root
