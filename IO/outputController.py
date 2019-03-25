@@ -41,20 +41,24 @@ class OutputController:
             for key2, value2 in value.items():
                 logger.debug("key2 " + str(key2) + " value2 " + str(value2))
                 mqtt = self.config_parser_utils.get_mqtt(value2)
-                unit = self.read_unit_value(value2)
+                unit, horizon_values = self.read_extra_values(value2)
                 if mqtt is not None:
                     self.mqtt_params[key2] = mqtt.copy()
                     self.mqtt_params[key2]["unit"] = unit
+                    self.mqtt_params[key2]["horizon_values"] = horizon_values
                     self.mqtt_names.append(key)
         logger.debug("params = " + str(self.mqtt_params))
         logger.debug("mqtt names = " + str(self.mqtt_names))
 
-    def read_unit_value(self, value2):
+    def read_extra_values(self, value2):
         unit = None
+        horizon_values = False
         if isinstance(value2, dict):
             if "unit" in value2.keys():
                 unit = value2["unit"]
-        return unit
+            if "horizon_values" in value2.keys():
+                horizon_values = value2["horizon_values"]
+        return unit, horizon_values
 
     def init_mqtt(self):
         ###Connection to the mqtt broker
@@ -80,11 +84,11 @@ class OutputController:
             self.redisDB.set("Error mqtt" + self.id, True)
             logger.error(e)
 
-    def publish_data(self, id, data):
+    def publish_data(self, id, data, dT):
         # logger.debug("data "+str(data))
+        current_time = int(time.time())
         try:
-            current_time = int(time.time())
-            senml_data = self.senml_message_format(data, current_time, self.mqtt_params)
+            senml_data = self.senml_message_format(data, current_time, self.mqtt_params, dT)
             for key, value in senml_data.items():
                 v = json.dumps(value)
                 # logger.debug("key: "+str(key))
@@ -110,16 +114,19 @@ class OutputController:
         except Exception as e:
             logger.error(e)
 
-    def senml_message_format(self, data, time, params):
+    def senml_message_format(self, data, current_time, params, dT):
         new_data = {}
         # logger.debug("data for senml "+str(data))
         u = None
         for key, value in data.items():
+            flag = False
+            time = current_time
             if key in params.keys():
                 if params[key]["unit"] is not None:
                     u = params[key]["unit"]
                 else:
                     u = "W"
+                flag = params[key]["horizon_values"]
             meas_list = []
             first = False
             if len(value) > 1:
@@ -127,14 +134,18 @@ class OutputController:
             for v in value:
                 if first:
                     first = False
-                    continue
+                    if not flag:
+                        time += dT
+                        continue
                 meas = senml.SenMLMeasurement()
                 meas.name = key
                 meas.time = time
                 meas.value = v
                 meas.unit = u
                 meas_list.append(meas)
-                break  # only want the first value
+                time += dT
+                if not flag:
+                    break  # only want the first value
             if len(meas_list) > 0:
                 doc = senml.SenMLDocument(meas_list)
                 new_data[key] = doc.to_json()

@@ -34,21 +34,15 @@ class PVPrediction:
         except Exception:
             logger.error("City or country not present in pv meta")
 
-        location_data = LocationData(config)
-        lat, lon = location_data.get_city_coordinate(city, country)
-
-        if lat is None or lon is None:
-            lat = 50.7374
-            lon = 7.0982
-            logger.error("Error getting location info, setting to bonn, germany")
+        location = {"city":city,"country":country}
 
         maxPV = float(opt_values["PV_Inv_Max_Power"][None])
         pv_forecast_topic = config.get("IO", "forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
         pv_forecast_topic["topic"] = pv_forecast_topic["topic"] + name
 
-        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, lat, lon, maxPV, control_frequency,
-                                                   horizon_in_steps, dT_in_seconds)
+        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, maxPV, control_frequency,
+                                                   horizon_in_steps, dT_in_seconds, location)
         self.pv_forecast_pub.start()
 
     def Stop(self):

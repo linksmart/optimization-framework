@@ -91,6 +91,21 @@ class LocationData:
             if len(text) > 0:
                 coord = text[0]
                 return float(coord["lat"]), float(coord['lon'])
+            else:
+                return self.get_coordinate_osm_q(city, country)
+        except Exception:
+            pass
+        return None, None
+
+    def get_coordinate_osm_q(self, city, country):
+        try:
+            location = city + "," + country
+            request = requests.get("https://nominatim.openstreetmap.org/search?q=" + location + "&format=json")
+            text = request.json()
+            logger.info(text)
+            if len(text) > 0:
+                coord = text[0]
+                return float(coord["lat"]), float(coord['lon'])
         except Exception:
             pass
         return None, None
