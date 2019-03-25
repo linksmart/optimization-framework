@@ -37,7 +37,7 @@ RUN pip3 install -U senml
 RUN pip3 install -U redis==2.10.6
 RUN pip3 install -U pyomo
 # RUN pip3 install -U pyomo.extras
-RUN pip3 install -U ptvsd
+RUN pip3 install -U pydevd
 RUN pip3 install -U xlrd
 
 WORKDIR /usr/src/app
@@ -51,3 +51,4 @@ COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
 COPY config /usr/src/app/config
 COPY stochastic_optimizer /usr/src/app/stochastic_optimizer
+COPY profev /usr/src/app/profev

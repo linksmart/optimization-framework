@@ -1,5 +1,5 @@
-import ptvsd
 import subprocess
+
 """
  Created by Gustavo Aragón on 14.03.2018
 
@@ -11,8 +11,7 @@ import signal
 import sys
 import shutil
 
-
-#import swagger_server.__main__ as webserver
+# import swagger_server.__main__ as webserver
 import time
 
 import swagger_server.wsgi as webserver
@@ -103,6 +102,5 @@ def clear_redis():
 
 
 if __name__ == "__main__":
-
     # execute only if run as a script
     main()

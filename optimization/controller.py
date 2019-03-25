@@ -7,30 +7,25 @@ Created on Fri Mar 16 15:05:36 2018
 
 import importlib.util
 import json
-import threading
-import pprint
-
-from itertools import product
+import logging
 import os
+import threading
+import time
+from itertools import product
+
 import pandas as pd
 from pyomo.environ import *
-from pyomo.opt import SolverFactory
+from pyomo.opt import SolverFactory, SolverStatus, TerminationCondition
 from pyomo.opt.parallel import SolverManagerFactory
-from pyomo.opt import SolverStatus, TerminationCondition
-import subprocess
-import time
-
-from IO.MQTTClient import InvalidMQTTHostException
-from pyutilib.pyro import shutdown_pyro_components
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
-import logging
-from threading import Event
 from optimization.functions import import_statistics
-from optimization.carpark import CarPark, Charger, Car
+from profev.Car import Car
+from profev.ChargingStation import ChargingStation
+from profev.CarPark import CarPark
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -70,7 +65,7 @@ class OptController(threading.Thread):
             logger.error(e)
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
-        if "False" in self.redisDB.get("Error mqtt"+self.id):
+        if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.output = OutputController(self.id, self.output_config)
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
@@ -164,14 +159,6 @@ class OptController(threading.Thread):
                 # STOCHASTIC OPTIMIZATION
 
                 # Inputs
-                charger1 = Charger(6)
-                charger2 = Charger(6)
-                charger3 = Charger(6)
-                charger4 = Charger(6)
-                charger5 = Charger(6)
-                charger6 = Charger(6)
-                charger7 = Charger(6)
-                chargers = [charger1, charger2, charger3, charger4, charger5, charger6, charger7]
                 car1 = Car(30)
                 car2 = Car(30)
                 car3 = Car(30)
@@ -179,16 +166,16 @@ class OptController(threading.Thread):
                 car5 = Car(30)
                 car6 = Car(30)
                 car7 = Car(30)
-                car1.setSoC(0.5)
-                car2.setSoC(0.5)
-                car3.setSoC(0.5)
-                car4.setSoC(0.5)
-                car5.setSoC(0.5)
-                car6.setSoC(0.5)
-                car7.setSoC(0.5)
-                charger1.plug(car1)
-                charger2.plug(car2)
-                charger3.plug(car3)
+
+                charger1 = ChargingStation(6, car1, 0.5)
+                charger2 = ChargingStation(6, car1, 0.5)
+                charger3 = ChargingStation(6, car1, 0.5)
+                charger4 = ChargingStation(6)
+                charger5 = ChargingStation(6)
+                charger6 = ChargingStation(6)
+                charger7 = ChargingStation(6)
+                chargers = [charger1, charger2, charger3, charger4, charger5, charger6, charger7]
+
                 cars = [car1, car2, car3, car4, car5, car6, car7]
                 mycarpark = CarPark(chargers, cars)
 
@@ -208,68 +195,67 @@ class OptController(threading.Thread):
 
                 T = self.horizon_in_steps
 
-                #Initialize empty lookup tables
-                keylistforValue    =[(t,s_ess,s_vac) for t,s_ess,s_vac in product(list(range(0,T+1)),ess_soc_states,vac_soc_states)]
-                keylistforDecisions=[(t,s_ess,s_vac) for t,s_ess,s_vac in product(list(range(0,T)),ess_soc_states,vac_soc_states)]
-                
-                Value   =dict.fromkeys(keylistforValue)
-                Decision=dict.fromkeys(keylistforDecisions)
-            
-                for t,s_ess,s_vac in product(range(0,T),ess_soc_states,vac_soc_states):
-                    Decision[t,s_ess,s_vac]={'PV':None,'Grid':None,'ESS':None,'VAC':None}
-                    Value[t,s_ess,s_vac]=None
+                # Initialize empty lookup tables
+                keylistforValue = [(t, s_ess, s_vac) for t, s_ess, s_vac in
+                                   product(list(range(0, T + 1)), ess_soc_states, vac_soc_states)]
+                keylistforDecisions = [(t, s_ess, s_vac) for t, s_ess, s_vac in
+                                       product(list(range(0, T)), ess_soc_states, vac_soc_states)]
 
-                for s_ess,s_vac in product(ess_soc_states,vac_soc_states):
-                    Value[T,s_ess,s_vac]=1.0
+                Value = dict.fromkeys(keylistforValue)
+                Decision = dict.fromkeys(keylistforDecisions)
 
+                for t, s_ess, s_vac in product(range(0, T), ess_soc_states, vac_soc_states):
+                    Decision[t, s_ess, s_vac] = {'PV': None, 'Grid': None, 'ESS': None, 'VAC': None}
+                    Value[t, s_ess, s_vac] = None
+
+                for s_ess, s_vac in product(ess_soc_states, vac_soc_states):
+                    Value[T, s_ess, s_vac] = 1.0
 
                 ##### Enter Data into data_dict
 
+                data_dict[None]["Number_of_Parked_Cars"] = {None: mycarpark.number_of_cars}
+                data_dict[None]["VAC_Capacity"] = {None: mycarpark.vac_capacity}
 
-                data_dict[None]["Number_of_Parked_Cars"] = { None: mycarpark.carNb }
-                data_dict[None]["VAC_Capacity"] = { None: mycarpark.vac_capacity }
-
-                ess_capacity = 0.675*3600
-                data_dict[None]["ESS_Capacity"] = { None: ess_capacity }
+                ess_capacity = 0.675 * 3600
+                data_dict[None]["ESS_Capacity"] = {None: ess_capacity}
 
                 stochastic_start_time = time.time()
-                    
-                    
+
                 for timestep in reversed(range(0, self.horizon_in_steps)):
                     logger.info(f"Timestep :#{timestep}")
                     for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
-                        feasible_Pess=[]            #Feasible charge powers to ESS under the given conditions
-                        for p_ESS in ess_decision_domain:  #When decided charging with p_ESS
-                            if min(ess_soc_states)<=p_ESS+ini_ess_soc<=max(ess_soc_states): #if the final ess_SoC is within the specified domain 
-                                feasible_Pess.append(p_ESS)  
+                        feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
+                        for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
+                            if min(ess_soc_states) <= p_ESS + ini_ess_soc <= max(
+                                    ess_soc_states):  # if the final ess_SoC is within the specified domain
+                                feasible_Pess.append(p_ESS)
 
-                        feasible_Pvac=[]            #Feasible charge powers to VAC under the given conditions
-                        for p_VAC in vac_decision_domain:         #When decided charging with p_VAC   
-                            if p_VAC+ini_vac_soc<=max(vac_soc_states): #if the final vac_SoC is within the specified domain
+                        feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
+                        for p_VAC in vac_decision_domain:  # When decided charging with p_VAC
+                            if p_VAC + ini_vac_soc <= max(
+                                    vac_soc_states):  # if the final vac_SoC is within the specified domain
                                 feasible_Pvac.append(p_VAC)
 
-                        data_dict[None]["Feasible_ESS_Decisions"] = { None: feasible_Pess }
-                        data_dict[None]["Feasible_VAC_Decisions"] = { None: feasible_Pvac }
+                        data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
+                        data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
 
-                        data_dict[None]["Initial_ESS_SoC"] = { None: ini_ess_soc }
-                        data_dict[None]["Initial_VAC_SoC"] = { None: ini_vac_soc }
+                        data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
+                        data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
 
-                        bm_idx = [ key[1] for key in behavMod.keys() if key[0] == timestep]
-                        bm = { key[1]: value for key, value in behavMod.items() if key[0] == timestep }
+                        bm_idx = [key[1] for key in behavMod.keys() if key[0] == timestep]
+                        bm = {key[1]: value for key, value in behavMod.items() if key[0] == timestep}
 
-                        data_dict[None]["Behavior_Model_Index"] = { None: bm_idx }
+                        data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
                         data_dict[None]["Behavior_Model"] = bm
 
+                        value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if t == timestep + 1]
+                        data_dict[None]["Value_Index"] = {None: value_index}
 
-                        value_index = [ (s_ess,s_vac) for t,s_ess,s_vac in Value.keys() if t == timestep+1]
-                        data_dict[None]["Value_Index"] = { None: value_index }
-
-                        value = { v:Value[timestep+1, v[0], v[1] ] for v in value_index }
+                        value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
                         data_dict[None]["Value"] = value
 
-
-                        data_dict[None]["P_PV_Forecast"] = { None: forecast_pv[timestep] }
+                        data_dict[None]["P_PV_Forecast"] = {None: forecast_pv[timestep]}
 
                         # * Create Optimization instance
 
@@ -295,7 +281,7 @@ class OptController(threading.Thread):
                             start_time = time.time()
                             logger.debug("Optimization starting time: " + str(start_time))
                         except Exception as e:
-                            logger.error("exception "+str(e))
+                            logger.error("exception " + str(e))
 
                         # * Run the solver
 
@@ -337,7 +323,6 @@ class OptController(threading.Thread):
                                         my_dict[str(v)] = var_list
                                     except Exception as e:
                                         logger.error(e)
-                                
 
                                 Decision[timestep, ini_ess_soc, ini_vac_soc]['Grid'] = my_dict["P_GRID"][0]
                                 Decision[timestep, ini_ess_soc, ini_vac_soc]['PV'] = my_dict["P_PV"][0]
@@ -346,9 +331,9 @@ class OptController(threading.Thread):
 
                                 Value[timestep, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
 
-                                logger.info("Done".center(80,"#"))
+                                logger.info("Done".center(80, "#"))
                                 logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
-                                logger.info("#"*80)
+                                logger.info("#" * 80)
 
                                 # self.output.publish_data(self.id, my_dict)
                             except Exception as e:
@@ -359,84 +344,81 @@ class OptController(threading.Thread):
                         else:
                             logger.info("Nothing fits")
 
-
                 initial_ess_soc_value = 50
                 initial_vac_soc_value = 50
 
-                p_pv=Decision[0,initial_ess_soc_value,initial_vac_soc_value]['PV']
-                p_grid=Decision[0,initial_ess_soc_value,initial_vac_soc_value]['Grid']
-                p_ess=Decision[0,initial_ess_soc_value,initial_vac_soc_value]['ESS']
-                p_vac=-Decision[0,initial_ess_soc_value,initial_vac_soc_value]['VAC']
-                p_ev={}
-                
+                p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
+                p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
+                p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['ESS']
+                p_vac = -Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
+                p_ev = {}
+
                 print("Dynamic programming calculations")
-                print("PV generation:",p_pv)
-                print("Import:",p_grid)
-                print("ESS discharge:",p_ess)
-                print("VAC charging",p_vac)
-                
-                
+                print("PV generation:", p_pv)
+                print("Import:", p_grid)
+                print("ESS discharge:", p_ess)
+                print("VAC charging", p_vac)
+
                 #############################################################################
-                #This section distributes virtual capacity charging power into the cars plugged chargers in the station
-                
-                #detect which cars are connected to the chargers in the commercial charging station
-                #calculate the maximum feasible charging power input under given SoC
+                # This section distributes virtual capacity charging power into the cars plugged chargers in the station
+
+                # detect which cars are connected to the chargers in the commercial charging station
+                # calculate the maximum feasible charging power input under given SoC
 
                 dT = data_dict[None]["dT"][None]
                 ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
                 ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
-                
 
-                connections=mycarpark.maxChargePowerCalculator(dT)  
-                
-                #Calculation of the feasible charging power at the commercial station
-                feasible_ev_charging_power=min(sum(connections.values()),p_vac)
-                
-                for charger,maxChargePower in connections.items():    
-                    power_output_of_charger=maxChargePower/feasible_ev_charging_power
-                    p_ev[charger]=power_output_of_charger
+                connections = mycarpark.max_charge_power_calculator(dT)
+
+                # Calculation of the feasible charging power at the commercial station
+                feasible_ev_charging_power = min(sum(connections.values()), p_vac)
+
+                for charger, maxChargePower in connections.items():
+                    power_output_of_charger = maxChargePower / feasible_ev_charging_power
+                    p_ev[charger] = power_output_of_charger
                 #############################################################################
-                
+
                 #############################################################################
-                #This section decides what to do with the non utilized virtual capacity charging power
-                
-                #Power leftover: Non implemented part of virtual capacity charging power
-                leftover_vac_charging_power=p_vac-feasible_ev_charging_power
-                
-                #Leftover is attempted to be removed with less import
-                less_import=min(p_grid,leftover_vac_charging_power)
-                p_grid=p_grid-less_import
-            
-                #Some part could be still left
-                still_leftover=leftover_vac_charging_power-less_import
-                    
-                #Still leftover is attempted to be charged to the ESS
-                
-                ess_charger_limit=ESS_Max_Charge
-                ess_capacity_limit=(100-initial_ess_soc_value)/100*ESS_Capacity/dT
-                max_ess_charging_power=min(ess_charger_limit,ess_capacity_limit,still_leftover)               
-                p_ess=p_ess-max_ess_charging_power
-                
-                #Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
-                final_leftover=still_leftover-max_ess_charging_power
-                p_pv=p_pv-final_leftover
-                
+                # This section decides what to do with the non utilized virtual capacity charging power
+
+                # Power leftover: Non implemented part of virtual capacity charging power
+                leftover_vac_charging_power = p_vac - feasible_ev_charging_power
+
+                # Leftover is attempted to be removed with less import
+                less_import = min(p_grid, leftover_vac_charging_power)
+                p_grid = p_grid - less_import
+
+                # Some part could be still left
+                still_leftover = leftover_vac_charging_power - less_import
+
+                # Still leftover is attempted to be charged to the ESS
+
+                ess_charger_limit = ESS_Max_Charge
+                ess_capacity_limit = (100 - initial_ess_soc_value) / 100 * ESS_Capacity / dT
+                max_ess_charging_power = min(ess_charger_limit, ess_capacity_limit, still_leftover)
+                p_ess = p_ess - max_ess_charging_power
+
+                # Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
+                final_leftover = still_leftover - max_ess_charging_power
+                p_pv = p_pv - final_leftover
+
                 print("Implemented actions")
-                print("PV generation:",p_pv)
-                print("Import:",p_grid)
-                print("ESS discharge:",p_ess)
-                print("Real EV charging",feasible_ev_charging_power)
+                print("PV generation:", p_pv)
+                print("Import:", p_grid)
+                print("ESS discharge:", p_ess)
+                print("Real EV charging", feasible_ev_charging_power)
 
                 stochastic_end_time = time.time()
 
-                print("Time Information".center(80,"#"))
+                print("Time Information".center(80, "#"))
                 print("")
                 print(f"Start time: {stochastic_start_time}")
                 print(f"End time: {stochastic_end_time}")
-                execution_time = stochastic_end_time-stochastic_start_time
+                execution_time = stochastic_end_time - stochastic_start_time
                 print(f"Programming execution time: {execution_time}")
                 print("")
-                print("#"*80)
+                print("#" * 80)
 
                 time.sleep(60)
 
