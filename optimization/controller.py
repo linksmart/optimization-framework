@@ -151,7 +151,7 @@ class OptController(threading.Thread):
             while not self.stopRequest.isSet():
                 logger.info("waiting for data")
                 data_dict = self.input.get_data()  # blocking call
-                #logger.debug("Data is: " + json.dumps(data_dict, indent=4))
+                logger.debug("Data is: " + json.dumps(data_dict, indent=4))
                 if self.stopRequest.isSet():
                     break
 
