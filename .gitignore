@@ -108,4 +108,4 @@ utils/*
 profess/executables/windows/**/*
 !profess/executables/windows/ofw.exe
 **/*/*.xlsx*
-*.ipynb
+!/jupyter_notebooks/*.ipynb
