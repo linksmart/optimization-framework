@@ -13,7 +13,6 @@ import threading
 import time
 from itertools import product
 
-import pandas as pd
 from pyomo.environ import *
 from pyomo.opt import SolverFactory, SolverStatus, TerminationCondition
 from pyomo.opt.parallel import SolverManagerFactory
@@ -23,12 +22,9 @@ from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
 from optimization.functions import import_statistics
-from profev.Car import Car
-from profev.ChargingStation import ChargingStation
-from profev.CarPark import CarPark
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 
 
 class OptController(threading.Thread):
@@ -158,14 +154,11 @@ class OptController(threading.Thread):
                 ######################################
                 # STOCHASTIC OPTIMIZATION
 
-                Forecast_inp = '/usr/src/app/stochastic_optimizer/Forecasts_60M.xlsx'
-                Behavior_inp = '/usr/src/app/stochastic_optimizer/PMFs_60M.csv'
-                xl = pd.ExcelFile(Forecast_inp)
-                forecasts = xl.parse("0")
-                behavMod = import_statistics(Behavior_inp, "00:00", 7)
+                forecast_pv = data_dict[None]["P_PV_Forecast"]
 
-                forecast_pv = dict(enumerate(forecasts['PV'].values.tolist()))
-                forecast_price = dict(enumerate(forecasts['Price'].values.tolist()))
+                Behavior_inp = '/usr/src/app/stochastic_optimizer/PMFs_60M.csv'
+
+                behavMod = import_statistics(Behavior_inp, "00:00", 7)
 
                 ess_soc_states = range(0, 110, 10)
                 ess_decision_domain = range(-10, 20, 10)
@@ -226,7 +219,9 @@ class OptController(threading.Thread):
                         value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
                         data_dict[None]["Value"] = value
 
-                        data_dict[None]["P_PV_Forecast"] = {None: forecast_pv[timestep]}
+                        pv_forecast_for_current_timestep = forecast_pv[timestep]
+
+                        data_dict[None]["P_PV_Forecast"] = {None: pv_forecast_for_current_timestep}
 
                         # * Create Optimization instance
 
