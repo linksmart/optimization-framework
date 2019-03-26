@@ -158,27 +158,6 @@ class OptController(threading.Thread):
                 ######################################
                 # STOCHASTIC OPTIMIZATION
 
-                # Inputs
-                car1 = Car(30)
-                car2 = Car(30)
-                car3 = Car(30)
-                car4 = Car(30)
-                car5 = Car(30)
-                car6 = Car(30)
-                car7 = Car(30)
-
-                charger1 = ChargingStation(6, car1, 0.5)
-                charger2 = ChargingStation(6, car1, 0.5)
-                charger3 = ChargingStation(6, car1, 0.5)
-                charger4 = ChargingStation(6)
-                charger5 = ChargingStation(6)
-                charger6 = ChargingStation(6)
-                charger7 = ChargingStation(6)
-                chargers = [charger1, charger2, charger3, charger4, charger5, charger6, charger7]
-
-                cars = [car1, car2, car3, car4, car5, car6, car7]
-                mycarpark = CarPark(chargers, cars)
-
                 Forecast_inp = '/usr/src/app/stochastic_optimizer/Forecasts_60M.xlsx'
                 Behavior_inp = '/usr/src/app/stochastic_optimizer/PMFs_60M.csv'
                 xl = pd.ExcelFile(Forecast_inp)
@@ -210,14 +189,6 @@ class OptController(threading.Thread):
 
                 for s_ess, s_vac in product(ess_soc_states, vac_soc_states):
                     Value[T, s_ess, s_vac] = 1.0
-
-                ##### Enter Data into data_dict
-
-                data_dict[None]["Number_of_Parked_Cars"] = {None: mycarpark.number_of_cars}
-                data_dict[None]["VAC_Capacity"] = {None: mycarpark.vac_capacity}
-
-                ess_capacity = 0.675 * 3600
-                data_dict[None]["ESS_Capacity"] = {None: ess_capacity}
 
                 stochastic_start_time = time.time()
 
@@ -369,7 +340,7 @@ class OptController(threading.Thread):
                 ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
                 ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
 
-                connections = mycarpark.max_charge_power_calculator(dT)
+                connections = self.input_config_parser.car_park.max_charge_power_calculator(dT)
 
                 # Calculation of the feasible charging power at the commercial station
                 feasible_ev_charging_power = min(sum(connections.values()), p_vac)

@@ -1,12 +1,12 @@
 class CarPark:
 
-    def __init__(self, charger_list, car_list):
+    def __init__(self, chargers_list, cars_list):
 
         self.cars = {}
-        self.chargers = {charger_index: charger for charger_index, charger in enumerate(charger_list)}
+        self.chargers = {charger_index: charger for charger_index, charger in enumerate(chargers_list)}
         self.vac_capacity = 0
 
-        for car_index, car in enumerate(car_list):
+        for car_index, car in enumerate(cars_list):
             self.cars[car_index] = car
             self.vac_capacity += car.batteryCapacity
 

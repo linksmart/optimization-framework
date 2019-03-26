@@ -10,9 +10,32 @@ import os
 from IO.ConfigParserUtils import ConfigParserUtils
 from IO.constants import Constants
 from optimization.ModelParamsInfo import ModelParamsInfo
+from profev.Car import Car
+from profev.ChargingStation import ChargingStation
+from profev.CarPark import CarPark
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
+
+
+def generate_charger_classes(chargers):
+    chargers_list = []
+    for charger_name, charger_detail in chargers.items():
+        max_charging_power_kw = charger_detail.get("Max_Charging_Power_kW", None)
+        hosted_car = charger_detail.get("Hosted_Car", None)
+        soc = charger_detail.get("SoC", None)
+        assert max_charging_power_kw, f"Incorrect input: Max_Charging_Power_kW missing for charger: {charger_name}"
+        chargers_list.append(ChargingStation(max_charging_power_kw, hosted_car, soc))
+    return chargers_list
+
+
+def generate_car_classes(cars):
+    cars_list = []
+    for car_name, car_detail in cars.items():
+        battery_capacity = car_detail.get("Battery_Capacity_kWh", None)
+        assert battery_capacity, f"Incorrect input: Battery_Capacity_kWh missing for car: {car_name}"
+        cars_list.append(Car(car_name, battery_capacity))
+    return cars_list
 
 
 class InputConfigParser:
@@ -34,6 +57,7 @@ class InputConfigParser:
         self.external_names = []
         self.config_parser_utils = ConfigParserUtils()
         self.extract_mqtt_params()
+        self.car_park = None
         self.optimization_params = self.extract_optimization_values()
         logger.debug("optimization_params: " + str(self.optimization_params))
         logger.info("generic names = " + str(self.generic_names))
@@ -104,6 +128,36 @@ class InputConfigParser:
                             if isinstance(v1, float) and v1.is_integer():
                                 v1 = int(v1)
                             data[k1] = {None: v1}
+                        elif k == "PROFEV":
+                            if isinstance(v1, dict):
+                                if k1 == Constants.CarPark:
+                                    chargers = v1.get("Charging_Station", None)
+                                    cars = v1.get("Cars", None)
+                                    assert chargers, "Incorrect input: Charging_Station missing in CarPark"
+                                    assert cars, "Incorrect input: Cars missing in CarPark"
+                                    chargers = dict(chargers)
+                                    cars = dict(cars)
+                                    chargers_list = generate_charger_classes(chargers)
+                                    cars_list = generate_car_classes(cars)
+                                    self.car_park = CarPark(chargers_list, cars_list)
+
+                                    data["Number_of_Parked_Cars"] = {None: self.car_park.number_of_cars}
+                                    data["VAC_Capacity"] = {None: self.car_park.vac_capacity}
+
+                                if k1 == Constants.Uncertainty:
+                                    data["Value"] = "null"
+                                    data["Initial_ESS_SoC"] = "null"
+                                    data["Initial_VAC_SoC"] = "null"
+                                    data["Behavior_Model"] = "null"
+                                    pass
+                            else:
+                                try:
+                                    v1 = float(v1)
+                                except:
+                                    pass
+                                if isinstance(v1, float) and v1.is_integer():
+                                    v1 = int(v1)
+                                data[k1] = {None: v1}
         return data
 
     def get_forecast_flag(self, topic):
