@@ -89,6 +89,19 @@ class InputConfigParser:
         else:
             self.generic_names.append(key)
 
+    def generate_car_park(self, details):
+        chargers = details.get("Charging_Station", None)
+        cars = details.get("Cars", None)
+        assert chargers, "Incorrect input: Charging_Station missing in CarPark"
+        assert cars, "Incorrect input: Cars missing in CarPark"
+        chargers = dict(chargers)
+        cars = dict(cars)
+        chargers_list = generate_charger_classes(chargers)
+        cars_list = generate_car_classes(cars)
+        self.car_park = CarPark(chargers_list, cars_list)
+
+        return self.car_park.number_of_cars, self.car_park.vac_capacity
+
     def extract_optimization_values(self):
         data = {}
         for input_config in [self.input_config_file, self.input_config_mqtt]:
@@ -131,18 +144,10 @@ class InputConfigParser:
                         elif k == "PROFEV":
                             if isinstance(v1, dict):
                                 if k1 == Constants.CarPark:
-                                    chargers = v1.get("Charging_Station", None)
-                                    cars = v1.get("Cars", None)
-                                    assert chargers, "Incorrect input: Charging_Station missing in CarPark"
-                                    assert cars, "Incorrect input: Cars missing in CarPark"
-                                    chargers = dict(chargers)
-                                    cars = dict(cars)
-                                    chargers_list = generate_charger_classes(chargers)
-                                    cars_list = generate_car_classes(cars)
-                                    self.car_park = CarPark(chargers_list, cars_list)
+                                    number_of_cars, vac_capacity = self.generate_car_park(v1)
 
-                                    data["Number_of_Parked_Cars"] = {None: self.car_park.number_of_cars}
-                                    data["VAC_Capacity"] = {None: self.car_park.vac_capacity}
+                                    data["Number_of_Parked_Cars"] = {None: number_of_cars}
+                                    data["VAC_Capacity"] = {None: vac_capacity}
 
                                 if k1 == Constants.Uncertainty:
                                     data["Value"] = "null"
@@ -153,11 +158,12 @@ class InputConfigParser:
                             else:
                                 try:
                                     v1 = float(v1)
-                                except:
+                                except ValueError:
                                     pass
                                 if isinstance(v1, float) and v1.is_integer():
                                     v1 = int(v1)
                                 data[k1] = {None: v1}
+        #         pprint.pprint(data, indent=4)
         return data
 
     def get_forecast_flag(self, topic):
