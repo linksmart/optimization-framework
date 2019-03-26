@@ -3,9 +3,8 @@ Created on Aug 03 14:22 2018
 
 @author: nishit
 """
+from functools import partial
 import logging
-
-import os
 
 from IO.ConfigParserUtils import ConfigParserUtils
 from IO.constants import Constants
@@ -13,6 +12,7 @@ from optimization.ModelParamsInfo import ModelParamsInfo
 from profev.Car import Car
 from profev.ChargingStation import ChargingStation
 from profev.CarPark import CarPark
+from profev.MonteCarloSimulator import simulate
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -58,6 +58,7 @@ class InputConfigParser:
         self.config_parser_utils = ConfigParserUtils()
         self.extract_mqtt_params()
         self.car_park = None
+        self.simulator = None
         self.optimization_params = self.extract_optimization_values()
         logger.debug("optimization_params: " + str(self.optimization_params))
         logger.info("generic names = " + str(self.generic_names))
@@ -101,6 +102,24 @@ class InputConfigParser:
         self.car_park = CarPark(chargers_list, cars_list)
 
         return self.car_park.number_of_cars, self.car_park.vac_capacity
+
+    def generate_behaviour_model(self, plugged_time, unplugged_time, simulation_repetition):
+        plugged_time_mean = plugged_time.get("mean", None)
+        plugged_time_std = plugged_time.get("std", None)
+
+        assert plugged_time_mean, "mean value missing in Plugged_Time"
+        assert plugged_time_std, "std value missing in Plugged_Time"
+
+        unplugged_time_mean = plugged_time.get("mean", None)
+        unplugged_time_std = plugged_time.get("std", None)
+
+        assert unplugged_time_mean, "mean value missing in Unlugged_Time"
+        assert unplugged_time_std, "std value missing in Unlugged_Time"
+
+        self.simulator = partial(simulate,
+                                 repetition=simulation_repetition,
+                                 unplugged_mean=unplugged_time_mean, unplugged_std=unplugged_time_std,
+                                 plugged_mean=plugged_time_mean, plugged_std=plugged_time_std)
 
     def extract_optimization_values(self):
         data = {}
@@ -150,11 +169,22 @@ class InputConfigParser:
                                     data["VAC_Capacity"] = {None: vac_capacity}
 
                                 if k1 == Constants.Uncertainty:
+                                    plugged_time = v1.get("Plugged_Time", None)
+                                    unplugged_time = v1.get("Unplugged_Time", None)
+                                    simulation_repetition = v1.get("simulation_repetition", None)
+
+                                    assert plugged_time, "Plugged_Time is missing in Uncertainty"
+                                    assert unplugged_time, "Unplugged_Time is missing in Uncertainty"
+                                    assert simulation_repetition, "simulation_repetition is missing in Uncertainty"
+
+                                    self.generate_behaviour_model(plugged_time, unplugged_time, simulation_repetition)
+
+                                    # TODO: Generate ESS, VAC - states and domains
+
                                     data["Value"] = "null"
                                     data["Initial_ESS_SoC"] = "null"
                                     data["Initial_VAC_SoC"] = "null"
                                     data["Behavior_Model"] = "null"
-                                    pass
                             else:
                                 try:
                                     v1 = float(v1)

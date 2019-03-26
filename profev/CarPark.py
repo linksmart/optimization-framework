@@ -7,8 +7,8 @@ class CarPark:
         self.vac_capacity = 0
 
         for car_index, car in enumerate(cars_list):
-            self.cars[car_index] = car
-            self.vac_capacity += car.batteryCapacity
+            self.cars[car.car_name] = car
+            self.vac_capacity += car.battery_capacity
 
         self.number_of_cars = len(self.cars)
 
@@ -22,10 +22,10 @@ class CarPark:
         connections = {}
         for key, charger in self.chargers.items():
             if charger.hosted_car:
-                car = charger.hosted_car
-                battery_depth_of_discharge = (1 - charger.soc) * car.batteryCapacity  # max_charging_power_kw-sec
+                car = self.cars[charger.hosted_car]
+                battery_depth_of_discharge = (1 - charger.soc) * car.battery_capacity  # max_charging_power_kw-sec
 
-                charger_limit = charger.kW
+                charger_limit = charger.max_charging_power_kw
                 car_limit = battery_depth_of_discharge / charging_period
 
                 connections[key] = min(charger_limit, car_limit)

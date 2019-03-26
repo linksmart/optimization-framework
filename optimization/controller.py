@@ -21,7 +21,6 @@ from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
-from optimization.functions import import_statistics
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
@@ -155,10 +154,11 @@ class OptController(threading.Thread):
                 # STOCHASTIC OPTIMIZATION
 
                 forecast_pv = data_dict[None]["P_PV_Forecast"]
+                max_number_of_cars = self.input_config_parser.car_park.number_of_cars
 
-                Behavior_inp = '/usr/src/app/stochastic_optimizer/PMFs_60M.csv'
-
-                behavMod = import_statistics(Behavior_inp, "00:00", 7)
+                behaviour_model = self.input_config_parser.simulator(time_resolution=self.dT_in_seconds,
+                                                                     horizon=self.horizon_in_steps,
+                                                                     max_number_of_cars=max_number_of_cars)
 
                 ess_soc_states = range(0, 110, 10)
                 ess_decision_domain = range(-10, 20, 10)
@@ -189,6 +189,8 @@ class OptController(threading.Thread):
                     logger.info(f"Timestep :#{timestep}")
                     for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
+                        # TODO: Remove below until updated
+
                         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                         for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                             if min(ess_soc_states) <= p_ESS + ini_ess_soc <= max(
@@ -207,20 +209,20 @@ class OptController(threading.Thread):
                         data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
                         data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
 
-                        bm_idx = [key[1] for key in behavMod.keys() if key[0] == timestep]
-                        bm = {key[1]: value for key, value in behavMod.items() if key[0] == timestep}
-
-                        data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
-                        data_dict[None]["Behavior_Model"] = bm
-
                         value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if t == timestep + 1]
                         data_dict[None]["Value_Index"] = {None: value_index}
 
                         value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
                         data_dict[None]["Value"] = value
 
-                        pv_forecast_for_current_timestep = forecast_pv[timestep]
+                        # * Updated
+                        bm_idx = behaviour_model[timestep].keys()
+                        bm = behaviour_model[timestep]
 
+                        data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
+                        data_dict[None]["Behavior_Model"] = bm
+
+                        pv_forecast_for_current_timestep = forecast_pv[timestep]
                         data_dict[None]["P_PV_Forecast"] = {None: pv_forecast_for_current_timestep}
 
                         # * Create Optimization instance
