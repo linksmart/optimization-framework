@@ -156,12 +156,14 @@ class OptController(threading.Thread):
                 ######################################
                 # STOCHASTIC OPTIMIZATION
 
+                start_time_offset = int(data_dict[None]["Start_Time"][None])
+
                 forecast_pv = data_dict[None]["P_PV_Forecast"]
                 car_park = self.input_config_parser.car_park
                 max_number_of_cars = car_park.number_of_cars
 
                 behaviour_model = self.input_config_parser.simulator(time_resolution=self.dT_in_seconds,
-                                                                     horizon=self.horizon_in_steps,
+                                                                     horizon=self.horizon_in_steps + start_time_offset,
                                                                      max_number_of_cars=max_number_of_cars)
 
                 ess_soc_states = self.input_config_parser.ess_soc_states
@@ -215,7 +217,7 @@ class OptController(threading.Thread):
 
                 stochastic_start_time = time.time()
 
-                for timestep in reversed(range(0, self.horizon_in_steps)):
+                for timestep in reversed(range(start_time_offset, start_time_offset + self.horizon_in_steps)):
                     logger.info(f"Timestep :#{timestep}")
                     for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
@@ -239,15 +241,16 @@ class OptController(threading.Thread):
                         data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
                         data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
 
-                        value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if t == timestep + 1]
+                        value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
+                                       t == timestep + 1 - start_time_offset]
                         data_dict[None]["Value_Index"] = {None: value_index}
 
-                        value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
+                        value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
                         data_dict[None]["Value"] = value
 
                         # * Updated
-                        bm_idx = behaviour_model[timestep].keys()
-                        bm = behaviour_model[timestep]
+                        bm_idx = behaviour_model[timestep - start_time_offset].keys()
+                        bm = behaviour_model[timestep - start_time_offset]
 
                         data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
                         data_dict[None]["Behavior_Model"] = bm
@@ -322,12 +325,16 @@ class OptController(threading.Thread):
                                     except Exception as e:
                                         logger.error(e)
 
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['Grid'] = my_dict["P_GRID"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['PV'] = my_dict["P_PV"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['ESS'] = -my_dict["P_ESS"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['VAC'] = -my_dict["P_VAC"][0]
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['Grid'] = \
+                                    my_dict["P_GRID"][0]
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['PV'] = \
+                                    my_dict["P_PV"][0]
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] = - \
+                                    my_dict["P_ESS"][0]
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] = - \
+                                    my_dict["P_VAC"][0]
 
-                                Value[timestep, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
+                                Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
 
                                 logger.info("Done".center(80, "#"))
                                 logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
