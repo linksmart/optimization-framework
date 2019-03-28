@@ -176,6 +176,11 @@ class OptController(threading.Thread):
                 vac_domain_min = vac_soc_states[0]
                 vac_domain_max = domain_range + vac_steps
 
+                ess_domain_min = ess_steps * round(ess_domain_min / ess_steps)
+                ess_domain_max = ess_steps * round(ess_domain_max / ess_steps)
+                vac_domain_min = vac_steps * round(vac_domain_min / vac_steps)
+                vac_domain_max = vac_steps * round(vac_domain_max / vac_steps)
+
                 ess_decision_domain = np.arange(ess_domain_min, ess_domain_max, ess_steps).tolist()
                 vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
 
