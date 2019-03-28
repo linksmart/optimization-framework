@@ -109,3 +109,4 @@ profess/executables/windows/**/*
 !profess/executables/windows/ofw.exe
 **/*/*.xlsx*
 !/jupyter_notebooks/*.ipynb
+**/*/*.csv*

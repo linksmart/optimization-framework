@@ -6,6 +6,8 @@ Created on Aug 03 14:22 2018
 from functools import partial
 import logging
 
+import numpy as np
+
 from IO.ConfigParserUtils import ConfigParserUtils
 from IO.constants import Constants
 from optimization.ModelParamsInfo import ModelParamsInfo
@@ -121,6 +123,20 @@ class InputConfigParser:
                                  unplugged_mean=unplugged_time_mean, unplugged_std=unplugged_time_std,
                                  plugged_mean=plugged_time_mean, plugged_std=plugged_time_std)
 
+    def generate_states(self, states, state_name):
+        min_value = states.get("Min", None)
+        max_value = states.get("Max", None)
+        steps = states.get("Steps", None)
+
+        assert min_value != None, f"Min value missing in {state_name}"
+        assert max_value, f"Max value missing in {state_name}"
+        assert steps, f"Steps value missing in {state_name}"
+
+        min_value = int(min_value)
+        max_value = int(max_value)
+
+        return min_value, max_value, steps, np.arange(min_value, max_value + steps, steps).tolist()
+
     def extract_optimization_values(self):
         data = {}
         for input_config in [self.input_config_file, self.input_config_mqtt]:
@@ -179,7 +195,19 @@ class InputConfigParser:
 
                                     self.generate_behaviour_model(plugged_time, unplugged_time, simulation_repetition)
 
-                                    # TODO: Generate ESS, VAC - states and domains
+                                    ess_states = v1.get("ESS_States", None)
+                                    vac_states = v1.get("VAC_States", None)
+
+                                    assert ess_states, "ESS_States is missing in Uncertainty"
+                                    assert vac_states, "VAC_States is missing in Uncertainty"
+
+                                    _, _, ess_steps, ess_soc_states = self.generate_states(ess_states, "ESS_States")
+                                    _, _, vac_steps, vac_soc_states = self.generate_states(vac_states, "VAC_States")
+
+                                    self.ess_steps = ess_steps
+                                    self.vac_steps = vac_steps
+                                    self.ess_soc_states = ess_soc_states
+                                    self.vac_soc_states = vac_soc_states
 
                                     data["Value"] = "null"
                                     data["Initial_ESS_SoC"] = "null"

@@ -3,8 +3,13 @@ class CarPark:
     def __init__(self, chargers_list, cars_list):
 
         self.cars = {}
-        self.chargers = {charger_index: charger for charger_index, charger in enumerate(chargers_list)}
+        self.chargers = {}
         self.vac_capacity = 0
+        self.total_charging_stations_power = 0
+
+        for charger_index, charger in enumerate(chargers_list):
+            self.chargers[charger_index] = charger
+            self.total_charging_stations_power += charger.max_charging_power_kw
 
         for car_index, car in enumerate(cars_list):
             self.cars[car.car_name] = car
@@ -21,8 +26,9 @@ class CarPark:
 
         connections = {}
         for key, charger in self.chargers.items():
-            if charger.hosted_car:
-                car = self.cars[charger.hosted_car]
+            hosted_car = charger.hosted_car
+            if hosted_car:
+                car = self.cars[hosted_car]
                 battery_depth_of_discharge = (1 - charger.soc) * car.battery_capacity  # max_charging_power_kw-sec
 
                 charger_limit = charger.max_charging_power_kw

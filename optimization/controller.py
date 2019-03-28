@@ -13,6 +13,7 @@ import threading
 import time
 from itertools import product
 
+import numpy as np
 from pyomo.environ import *
 from pyomo.opt import SolverFactory, SolverStatus, TerminationCondition
 from pyomo.opt.parallel import SolverManagerFactory
@@ -154,16 +155,29 @@ class OptController(threading.Thread):
                 # STOCHASTIC OPTIMIZATION
 
                 forecast_pv = data_dict[None]["P_PV_Forecast"]
-                max_number_of_cars = self.input_config_parser.car_park.number_of_cars
+                car_park = self.input_config_parser.car_park
+                max_number_of_cars = car_park.number_of_cars
 
                 behaviour_model = self.input_config_parser.simulator(time_resolution=self.dT_in_seconds,
                                                                      horizon=self.horizon_in_steps,
                                                                      max_number_of_cars=max_number_of_cars)
 
-                ess_soc_states = range(0, 110, 10)
-                ess_decision_domain = range(-10, 20, 10)
-                vac_soc_states = [x * 0.1 for x in range(0, 1025, 25)]  # np.linspace(0,100.0,2.5,endpoint=True)
-                vac_decision_domain = [x * 0.1 for x in range(0, 225, 25)]  # np.linspace(0.0,20.0,2.5,endpoint=True)
+                ess_soc_states = self.input_config_parser.ess_soc_states
+                vac_soc_states = self.input_config_parser.vac_soc_states
+
+                domain_range = (car_park.total_charging_stations_power * self.dT_in_seconds) / (
+                    car_park.vac_capacity) * 100
+
+                ess_steps = self.input_config_parser.ess_steps
+                ess_domain_min = ess_soc_states[0] - domain_range / 2
+                ess_domain_max = (domain_range / 2) + ess_steps
+
+                vac_steps = self.input_config_parser.vac_steps
+                vac_domain_min = vac_soc_states[0]
+                vac_domain_max = domain_range + vac_steps
+
+                ess_decision_domain = np.arange(ess_domain_min, ess_domain_max, ess_steps).tolist()
+                vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
 
                 T = self.horizon_in_steps
 
