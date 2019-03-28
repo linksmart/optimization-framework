@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import logging
-#import multiprocessing
+# import multiprocessing
 import psutil
 import gunicorn.app.base
 
@@ -37,11 +37,11 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 def main():
     options = {
-        'bind': '%s:%s' % ('0.0.0.0', '8080'),
+        'bind': '%s:%s' % ('0.0.0.0', '8000'),
         'workers': 8,
     }
     StandaloneApplication(web(), options).run()
-    logger.debug("Number of cores: "+str(number_of_workers()))
+    logger.debug("Number of cores: " + str(number_of_workers()))
 
 
 if __name__ == '__main__':
