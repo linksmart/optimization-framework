@@ -79,33 +79,7 @@ RUN rm -rf /usr/src/app/share/Ipopt-3.12.9.tgz
 #RUN apk add clean
 ENV PATH "$PATH:/usr/src/app/share/CoinIpopt/build/bin"
 
-#######################GLPK##########################################
-WORKDIR /usr/src/app/share
-RUN wget http://ftp.gnu.org/gnu/glpk/glpk-4.57.tar.gz \
-	&& tar -zxvf glpk-4.57.tar.gz
-## Verify package contents
-# RUN wget http://ftp.gnu.org/gnu/glpk/glpk-4.57.tar.gz.sig \
-#	&& gpg --verify glpk-4.57.tar.gz.sig
-#	#&& gpg --keyserver keys.gnupg.net --recv-keys 5981E818
 
-WORKDIR /usr/src/app/share/glpk-4.57
-RUN ./configure \
-	&& make
-####RUN echo "make check####################################################################################"
-RUN make check
-####RUN echo "install####################################################################################"
-RUN make install
-###RUN echo "distclean####################################################################################"
-RUN make distclean
-####RUN echo "ldconfig####################################################################################"
-RUN ldconfig
-####RUN echo "####################################################################################"
-# Cleanup
-RUN rm -rf /usr/src/app/share/glpk-4.57.tar.gz \
-    && apt-get clean
-
-
-ENV PATH "$PATH:/usr/src/app/share/CoinIpopt/build/lib"
 
 #######################Bonmin##########################################
 WORKDIR /usr/src/app/share
@@ -152,5 +126,53 @@ RUN ldconfig
 RUN rm -rf /usr/src/app/share/Bonmin-1.8.6.tgz
 #RUN apk add clean
 ENV PATH "$PATH:/usr/src/app/share/CoinBonmin/build/bin"
+
+RUN apt-get clean
+
+
+#######################GLPK##########################################
+WORKDIR /usr/src/app/share
+RUN wget http://ftp.gnu.org/gnu/glpk/glpk-4.65.tar.gz \
+	&& tar -zxvf glpk-4.65.tar.gz
+## Verify package contents
+# RUN wget http://ftp.gnu.org/gnu/glpk/glpk-4.57.tar.gz.sig \
+#	&& gpg --verify glpk-4.57.tar.gz.sig
+#	#&& gpg --keyserver keys.gnupg.net --recv-keys 5981E818
+
+WORKDIR /usr/src/app/share/glpk-4.65
+RUN ./configure \
+	&& make
+####RUN echo "make check####################################################################################"
+RUN make check
+####RUN echo "install####################################################################################"
+RUN make install
+###RUN echo "distclean####################################################################################"
+RUN make distclean
+####RUN echo "ldconfig####################################################################################"
+RUN ldconfig
+####RUN echo "####################################################################################"
+# Cleanup
+RUN rm -rf /usr/src/app/share/glpk-4.65.tar.gz \
+    && apt-get clean
+
+
+ENV PATH "$PATH:/usr/bin/local"
+
+
+###############################gurobi############################################
+
+
+# Set the working directory to usr/src/app/share
+RUN mkdir -p /usr/src/app/share
+WORKDIR /usr/src/app/share
+
+# Install ipopt from http
+COPY gurobi811 /usr/src/app/share
+
+#RUN apk add clean
+
+ENV GUROBI_HOME "/share/gurobi811/linux64"
+ENV PATH "$PATH:/usr/src/app/share/gurobi811/linux64/bin"
+ENV LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 
 RUN apt-get clean
