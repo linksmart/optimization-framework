@@ -51,3 +51,4 @@ COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
 COPY config /usr/src/app/config
 COPY profev /usr/src/app/profev
+COPY logs /usr/src/app/logs

@@ -11,6 +11,8 @@ import logging
 import os
 import threading
 import time
+import uuid
+import datetime
 from itertools import product
 
 import numpy as np
@@ -407,7 +409,23 @@ class OptController(threading.Thread):
                 print("")
                 print("#" * 80)
 
-                time.sleep(60)
+                results = {
+                    "id": self.id,
+                    "p_pv": p_pv,
+                    "p_grid": p_grid,
+                    "p_ess": p_ess,
+                    "feasible_ev_charging_power": feasible_ev_charging_power,
+                    "p_ev": p_ev,
+                    "execution_time": execution_time
+                }
+
+                time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H:%M:%S")
+                filename = f"log-{uuid.uuid1()}-{time_info}.json"
+
+                log_filepath = os.path.join("/usr/src/app/logs", filename)
+
+                with open(log_filepath, "w") as log_file:
+                    json.dump(results, log_file, indent=4)
 
                 count += 1
                 if self.repetition > 0 and count >= self.repetition:
