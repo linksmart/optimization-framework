@@ -204,6 +204,15 @@ class OptController(threading.Thread):
                 for s_ess, s_vac in product(ess_soc_states, vac_soc_states):
                     Value[T, s_ess, s_vac] = 1.0
 
+                time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H:%M:%S")
+                filename = f"log-{uuid.uuid1()}-{time_info}.json"
+
+                input_log_filepath = os.path.join("/usr/src/app/logs", f"input-{filename}")
+                output_log_filepath = os.path.join("/usr/src/app/logs", f"output-{filename}")
+
+                with open(input_log_filepath, "w") as log_file:
+                    json.dump(data_dict, log_file, indent=4)
+
                 stochastic_start_time = time.time()
 
                 for timestep in reversed(range(0, self.horizon_in_steps)):
@@ -419,12 +428,7 @@ class OptController(threading.Thread):
                     "execution_time": execution_time
                 }
 
-                time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H:%M:%S")
-                filename = f"log-{uuid.uuid1()}-{time_info}.json"
-
-                log_filepath = os.path.join("/usr/src/app/logs", filename)
-
-                with open(log_filepath, "w") as log_file:
+                with open(output_log_filepath, "w") as log_file:
                     json.dump(results, log_file, indent=4)
 
                 count += 1

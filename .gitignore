@@ -110,3 +110,4 @@ profess/executables/windows/**/*
 **/*/*.xlsx*
 !/jupyter_notebooks/*.ipynb
 **/*/*.csv*
+/logs
