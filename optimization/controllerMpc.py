@@ -31,12 +31,12 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__file__)
 
 
-class OptController(threading.Thread):
+class OptControllerMPC(threading.Thread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
         # threading.Thread.__init__(self)
-        super(OptController, self).__init__()
+        super(OptControllerMPC, self).__init__()
         logger.info("Initializing optimization controller")
         # Loading variables
         self.id = id
@@ -80,7 +80,7 @@ class OptController(threading.Thread):
 
     def join(self, timeout=None):
         self.stopRequest.set()
-        super(OptController, self).join(timeout)
+        super(OptControllerMPC, self).join(timeout)
 
     def Stop(self):
         try:
@@ -219,7 +219,11 @@ class OptController(threading.Thread):
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
 
-                        self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
+                        if "stop_system" not in my_dict.keys() or ("stop_system" in my_dict.keys() and my_dict["stop_system"][0] == 0.0):
+                            logger.debug("model.stop_system false")
+                            self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
+                        else:
+                            logger.debug("model.stop_system true")
                     except Exception as e:
                         logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:
