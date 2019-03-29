@@ -15,7 +15,7 @@ class Start(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, repetition: int=None, control_frequency: int=None, horizon_in_steps: int=None, model_name: str=None, solver: str=None, d_t_in_seconds: int=None):  # noqa: E501
+    def __init__(self, repetition: int=None, control_frequency: int=None, horizon_in_steps: int=None, model_name: str=None, solver: str=None, d_t_in_seconds: int=None, optimization_type: str=None):  # noqa: E501
         """Start - a model defined in Swagger
 
         :param repetition: The repetition of this Start.  # noqa: E501
@@ -30,6 +30,8 @@ class Start(Model):
         :type solver: str
         :param d_t_in_seconds: The d_t_in_seconds of this Start.  # noqa: E501
         :type d_t_in_seconds: int
+        :param optimization_type: The optimization_type of this Start.  # noqa: E501
+        :type optimization_type: str
         """
         self.swagger_types = {
             'repetition': int,
@@ -37,7 +39,8 @@ class Start(Model):
             'horizon_in_steps': int,
             'model_name': str,
             'solver': str,
-            'd_t_in_seconds': int
+            'd_t_in_seconds': int,
+            'optimization_type': str
         }
 
         self.attribute_map = {
@@ -46,7 +49,8 @@ class Start(Model):
             'horizon_in_steps': 'horizon_in_steps',
             'model_name': 'model_name',
             'solver': 'solver',
-            'd_t_in_seconds': 'dT_in_seconds'
+            'd_t_in_seconds': 'dT_in_seconds',
+            'optimization_type': 'optimization_type'
         }
 
         self._repetition = repetition
@@ -55,6 +59,7 @@ class Start(Model):
         self._model_name = model_name
         self._solver = solver
         self._d_t_in_seconds = d_t_in_seconds
+        self._optimization_type = optimization_type
 
     @classmethod
     def from_dict(cls, dikt) -> 'Start':
@@ -200,3 +205,26 @@ class Start(Model):
             raise ValueError("Invalid value for `d_t_in_seconds`, must not be `None`")  # noqa: E501
 
         self._d_t_in_seconds = d_t_in_seconds
+
+    @property
+    def optimization_type(self) -> str:
+        """Gets the optimization_type of this Start.
+
+
+        :return: The optimization_type of this Start.
+        :rtype: str
+        """
+        return self._optimization_type
+
+    @optimization_type.setter
+    def optimization_type(self, optimization_type: str):
+        """Sets the optimization_type of this Start.
+
+
+        :param optimization_type: The optimization_type of this Start.
+        :type optimization_type: str
+        """
+        if optimization_type is None:
+            raise ValueError("Invalid value for `optimization_type`, must not be `None`")  # noqa: E501
+
+        self._optimization_type = optimization_type

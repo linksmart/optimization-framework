@@ -77,11 +77,11 @@ class PVForecastPublisher(DataPublisher):
     def extract_horizon_data(self):
         meas = []
         if len(self.pv_data) > 0:
-            current_timestamp = datetime.datetime.now()
+            current_timestamp = datetime.datetime.now().timestamp()
             closest_index = self.find_closest_prev_timestamp(self.pv_data, current_timestamp)
             for i in range(self.horizon_in_steps):
                 row = self.pv_data[closest_index]
-                meas.append(self.get_senml_meas(float(row["pv_output"]), datetime.datetime.strptime(row["date"], "%Y-%m-%d %H:%M:%S")))
+                meas.append(self.get_senml_meas(float(row[1]), row[0]))
                 closest_index += 1
                 if closest_index >= len(self.pv_data):
                     closest_index = 0
@@ -101,7 +101,7 @@ class PVForecastPublisher(DataPublisher):
     def find_closest_prev_timestamp(self, data, date):
         closest = 0
         for i, item in enumerate(data, 0):
-            if datetime.datetime.strptime(item["date"], "%Y-%m-%d %H:%M:%S") <= date:
+            if item[0] <= date:
                 closest = i
             else:
                 break

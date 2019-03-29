@@ -24,7 +24,6 @@ RUN pip3 install -U pyomo==5.6.1
 RUN pip3 install -U pyomo.extras==2.0
 RUN pip3 install -U gunicorn==19.9.0
 RUN pip3 install -U sh==1.12.14
-#RUN pip3 install -U Pyro4
 RUN pip3 install -U connexion==2.2.0
 RUN pip3 install -U paho-mqtt==1.4.0
 RUN pip3 install -U pyzmq==18.0.1
@@ -37,7 +36,7 @@ RUN pip3 install -U psutil==5.6.1
 RUN pip3 install -U tensorflow==1.8.0
 RUN pip3 install -U keras==2.1.6
 RUN pip3 install -U senml==0.1.0
-RUN pip3 install -U redis==3.2.1
+RUN pip3 install -U redis==2.10.6
 
 #RUN pip3 install --upgrade pyomo
 
@@ -47,6 +46,7 @@ RUN pip3 install -U scipy
 RUN pip3 install -U pandas==0.22.0
 RUN pip3 install -U sklearn
 
+RUN pip3 install -U Pyro4
 
 WORKDIR /usr/src/app
 

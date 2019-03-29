@@ -48,7 +48,7 @@ class SolarRadiation:
     Radiation Service that collects data and grep the next 48h
     """
     @staticmethod
-    def get_rad(lat, lon, maxPV):
+    def get_rad(lat, lon, maxPV, dT):
         rad_data = []
         logger.info("coord "+str(lat)+ ", "+ str(lon))
         if lat is not None and lon is not None:
@@ -70,49 +70,56 @@ class SolarRadiation:
                 date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
                 if now <= date - datetime.timedelta(hours=-2) <= (now + datetime.timedelta(hours=47)):
                     rad_data.append(RadiationData(date, w[1], w[2], w[3], w[4], w[5], w[6], w[7]))
-            return rad_data
+            we = sorted(rad_data, key=lambda w: w.date)
+            data = SolarRadiation.extract_data(we)
+            data = SolarRadiation.expand_and_resample(data, dT)
+            return data
 
     @staticmethod
-    def expand_data(rad):
+    def extract_data(rad):
+        data = []
         for i in range(0, len(rad) - 1):
-            startdate = rad[i].date
-            for j in range(1, 60):
-                date = startdate + datetime.timedelta(minutes=j)
-                wd = RadiationData()
-                wd.date = date
-                for col in ["pv_output", "beam_irradiance", "diffuse_irradiance", "reflected_irradiance",
-                            "sun_elevation", "air_temp", "wind_speed"]:
-                    start = float(getattr(rad[i], col))
-                    end = float(getattr(rad[i + 1], col))
-                    step = (end - start) / 60
-                    setattr(wd, col, start + step * j)
-                rad.append(wd)
+            date = rad[i].date
+            timestamp = date.timestamp()
+            pv_output = float(rad[i].pv_output)
+            data.append([timestamp, pv_output])
+        return data
 
     @staticmethod
-    def expand_data_hr_to_sec(rad, step):
-        j = 0.0
-        new_rad = []
-        while j < len(rad) - 1:
-            if j.is_integer():
-                i = int(j)
-                new_rad.append(rad[i])
-            else:
-                i = floor(j)
-                ratio = j - i
-                startdate = rad[i].date
-                sec = int(3600.0 * ratio)
-                date = startdate + datetime.timedelta(seconds=sec)
-                wd = RadiationData()
-                wd.date = date
-                for col in ["pv_output", "beam_irradiance", "diffuse_irradiance", "reflected_irradiance",
-                            "sun_elevation", "air_temp", "wind_speed"]:
-                    start = float(getattr(rad[i], col))
-                    end = float(getattr(rad[i+1], col))
-                    val = start + (end - start) * ratio
-                    setattr(wd, col, val)
-                new_rad.append(wd)
-            j += step
-        return new_rad
+    def expand_and_resample(raw_data, dT):
+        step = float(dT)
+        j = len(raw_data) - 1
+        new_data = []
+        if j > 0:
+            start_time = raw_data[j][0]
+            start_value = raw_data[j][1]
+            new_data.append([start_time, start_value])
+            prev_time = start_time
+            prev_value = start_value
+            required_diff = step
+            j -= 1
+            while j >= 0:
+                end_time = raw_data[j][0]
+                end_value = raw_data[j][1]
+                diff_sec = prev_time - end_time
+                if diff_sec >= required_diff:
+                    ratio = required_diff / diff_sec
+                    inter_time = prev_time - required_diff
+                    inter_value = prev_value - (prev_value - end_value) * ratio
+                    new_data.append([inter_time, inter_value])
+                    prev_time = inter_time
+                    prev_value = inter_value
+                    required_diff = step
+                else:
+                    required_diff -= diff_sec
+                    prev_time = end_time
+                    prev_value = end_value
+                    j -= 1
+        else:
+            new_data = raw_data
+        new_data.reverse()
+        return new_data
+
 
 class Radiation:
 
@@ -126,23 +133,12 @@ class Radiation:
         self.maxPV = maxPV
         self.maxPV /= 1000  # pv in kW
         self.dT_in_seconds = dT_in_seconds
-        self.hours = False
-        if self.dT_in_seconds == 3600:
-            self.hours = True
-        self.step = float(self.dT_in_seconds/3600.0)
 
     def get_data(self):
         self.update_location_info()
-        we = SolarRadiation.get_rad(self.lat, self.lon, self.maxPV)
-        if self.hours:
-            we = sorted(we, key=lambda w: w.date)
-            jsh = json.dumps([wea.__dict__ for wea in we], default=str)
-            return jsh
-        else:
-            we = SolarRadiation.expand_data_hr_to_sec(we, self.step)
-            we = sorted(we, key=lambda w: w.date)
-            jsm = json.dumps([wea.__dict__ for wea in we], default=str)
-            return jsm
+        data = SolarRadiation.get_rad(self.lat, self.lon, self.maxPV, self.dT_in_seconds)
+        jsm = json.dumps(data, default=str)
+        return jsm
 
     def update_location_info(self):
         if not self.location_found:

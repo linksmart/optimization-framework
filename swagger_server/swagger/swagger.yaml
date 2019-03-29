@@ -695,6 +695,7 @@ definitions:
     - "control_frequency"
     - "dT_in_seconds"
     - "horizon_in_steps"
+    - "optimization_type"
     - "repetition"
     properties:
       repetition:
@@ -713,6 +714,8 @@ definitions:
       dT_in_seconds:
         type: "integer"
         format: "int32"
+      optimization_type:
+        type: "string"
     example:
       control_frequency: 60
       horizon_in_steps: 24
@@ -720,6 +723,7 @@ definitions:
       model_name: "model_name"
       repetition: 2
       solver: "ipopt"
+      optimization_type: "discrete"
   Path_Definition:
     type: "object"
     required:
@@ -1885,6 +1889,7 @@ definitions:
         model_name: "model_name"
         repetition: 2
         solver: "ipopt"
+        optimization_type: "discrete"
       status: "status"
   StatusOutput:
     type: "object"
@@ -1904,6 +1909,7 @@ definitions:
             model_name: "model_name"
             repetition: 2
             solver: "ipopt"
+            optimization_type: "discrete"
           status: "status"
   OptimizationOutput:
     type: "object"

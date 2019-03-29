@@ -13,6 +13,7 @@ import shutil
 
 from config.configUpdater import ConfigUpdater
 from connector.Connector import Connector
+from connector.apiConnectorFactory import ApiConnectorFactory
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -35,9 +36,15 @@ if __name__ == '__main__':
         for section in config.sections():
             if (section.startswith('HOUSE')):
                 logger.info("House: " + section)
-                rec_params = config.get(section, "con.topic")
-                rec_params = json.loads(rec_params)
-                connector = Connector(rec_params, 2, config, section)
-                connector_list.append(connector)
+                rec_url = config.get(section, "con.url", fallback=None)
+                if rec_url:
+                    connector = ApiConnectorFactory.get_api_connector(section, rec_url, config, section)
+                    connector_list.append(connector)
+                else:
+                    rec_params = config.get(section, "con.topic", fallback=None)
+                    if rec_params:
+                        rec_params = json.loads(rec_params)
+                        connector = Connector(rec_params, 2, config, section)
+                        connector_list.append(connector)
     except Exception as e:
         logger.error(e)

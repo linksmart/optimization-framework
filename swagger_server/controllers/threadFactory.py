@@ -13,6 +13,7 @@ from IO.inputConfigParser import InputConfigParser
 from IO.redisDB import RedisDB
 from optimization.ModelException import MissingKeysException
 from optimization.controller import OptController
+from optimization.controllerMpc import OptControllerMPC
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 from optimization.ModelException import InvalidModelException
@@ -23,7 +24,7 @@ logger = logging.getLogger(__file__)
 
 class ThreadFactory:
 
-    def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id):
+    def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id, optimization_type):
         self.model_name = model_name
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -31,6 +32,7 @@ class ThreadFactory:
         self.repetition = repetition
         self.solver = solver
         self.id = id
+        self.optimization_type = optimization_type
         self.redisDB = RedisDB()
         self.pyro_mip_server = None
 
@@ -49,6 +51,7 @@ class ThreadFactory:
         logger.info("Optimization calculated with the following dT_in_seconds: " + str(self.dT_in_seconds))
         logger.info("Optimization calculated with the following model: " + self.model_name)
         logger.info("Optimization calculated with the following solver: " + self.solver)
+        logger.info("Optimization calculated with the following optimization_type: " + self.optimization_type)
 
         self.redisDB.set("Error mqtt" + self.id, False)
         logger.debug("Error mqtt "+str(self.redisDB.get("Error mqtt" + self.id)))
@@ -153,10 +156,19 @@ class ThreadFactory:
                                                                                         self.dT_in_seconds, non_prediction_name)
 
         # Initializing constructor of the optimization controller thread
-
-        self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,
+        if self.optimization_type == "MPC":
+            self.opt = OptControllerMPC(self.id, self.solver_name, self.model_path, self.control_frequency,
                                  self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
-                                 self.dT_in_seconds)
+                                 self.dT_in_seconds, self.optimization_type)
+        elif self.optimization_type == "discrete":
+            self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,
+                                 self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
+                                 self.dT_in_seconds, self.optimization_type)
+        elif self.optimization_type == "stochastic":
+            # need to put correct controller
+            self.opt = OptController(self.id, self.solver_name, self.model_path, self.control_frequency,
+                                     self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
+                                     self.dT_in_seconds, self.optimization_type)
 
         try:
         ####starts the optimization controller thread
