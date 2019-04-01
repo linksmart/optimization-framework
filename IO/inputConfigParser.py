@@ -3,16 +3,41 @@ Created on Aug 03 14:22 2018
 
 @author: nishit
 """
+from functools import partial
 import logging
 
-import os
+import numpy as np
 
 from IO.ConfigParserUtils import ConfigParserUtils
 from IO.constants import Constants
 from optimization.ModelParamsInfo import ModelParamsInfo
+from profev.Car import Car
+from profev.ChargingStation import ChargingStation
+from profev.CarPark import CarPark
+from profev.MonteCarloSimulator import simulate
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
+
+
+def generate_charger_classes(chargers):
+    chargers_list = []
+    for charger_name, charger_detail in chargers.items():
+        max_charging_power_kw = charger_detail.get("Max_Charging_Power_kW", None)
+        hosted_car = charger_detail.get("Hosted_Car", None)
+        soc = charger_detail.get("SoC", None)
+        assert max_charging_power_kw, f"Incorrect input: Max_Charging_Power_kW missing for charger: {charger_name}"
+        chargers_list.append(ChargingStation(max_charging_power_kw, hosted_car, soc))
+    return chargers_list
+
+
+def generate_car_classes(cars):
+    cars_list = []
+    for car_name, car_detail in cars.items():
+        battery_capacity = car_detail.get("Battery_Capacity_kWh", None)
+        assert battery_capacity, f"Incorrect input: Battery_Capacity_kWh missing for car: {car_name}"
+        cars_list.append(Car(car_name, battery_capacity))
+    return cars_list
 
 
 class InputConfigParser:
@@ -34,6 +59,8 @@ class InputConfigParser:
         self.external_names = []
         self.config_parser_utils = ConfigParserUtils()
         self.extract_mqtt_params()
+        self.car_park = None
+        self.simulator = None
         self.optimization_params = self.extract_optimization_values()
         logger.debug("optimization_params: " + str(self.optimization_params))
         logger.info("generic names = " + str(self.generic_names))
@@ -64,6 +91,51 @@ class InputConfigParser:
             self.external_names.append(key)
         else:
             self.generic_names.append(key)
+
+    def generate_car_park(self, details):
+        chargers = details.get("Charging_Station", None)
+        cars = details.get("Cars", None)
+        assert chargers, "Incorrect input: Charging_Station missing in CarPark"
+        assert cars, "Incorrect input: Cars missing in CarPark"
+        chargers = dict(chargers)
+        cars = dict(cars)
+        chargers_list = generate_charger_classes(chargers)
+        cars_list = generate_car_classes(cars)
+        self.car_park = CarPark(chargers_list, cars_list)
+
+        return self.car_park.number_of_cars, self.car_park.vac_capacity
+
+    def generate_behaviour_model(self, plugged_time, unplugged_time, simulation_repetition):
+        plugged_time_mean = plugged_time.get("mean", None)
+        plugged_time_std = plugged_time.get("std", None)
+
+        assert plugged_time_mean, "mean value missing in Plugged_Time"
+        assert plugged_time_std, "std value missing in Plugged_Time"
+
+        unplugged_time_mean = plugged_time.get("mean", None)
+        unplugged_time_std = plugged_time.get("std", None)
+
+        assert unplugged_time_mean, "mean value missing in Unlugged_Time"
+        assert unplugged_time_std, "std value missing in Unlugged_Time"
+
+        self.simulator = partial(simulate,
+                                 repetition=simulation_repetition,
+                                 unplugged_mean=unplugged_time_mean, unplugged_std=unplugged_time_std,
+                                 plugged_mean=plugged_time_mean, plugged_std=plugged_time_std)
+
+    def generate_states(self, states, state_name):
+        min_value = states.get("Min", None)
+        max_value = states.get("Max", None)
+        steps = states.get("Steps", None)
+
+        assert min_value != None, f"Min value missing in {state_name}"
+        assert max_value, f"Max value missing in {state_name}"
+        assert steps, f"Steps value missing in {state_name}"
+
+        min_value = int(min_value)
+        max_value = int(max_value)
+
+        return min_value, max_value, steps, np.arange(min_value, max_value + steps, steps).tolist()
 
     def extract_optimization_values(self):
         data = {}
@@ -104,6 +176,52 @@ class InputConfigParser:
                             if isinstance(v1, float) and v1.is_integer():
                                 v1 = int(v1)
                             data[k1] = {None: v1}
+                        elif k == "PROFEV":
+                            if isinstance(v1, dict):
+                                if k1 == Constants.CarPark:
+                                    number_of_cars, vac_capacity = self.generate_car_park(v1)
+
+                                    data["Number_of_Parked_Cars"] = {None: number_of_cars}
+                                    data["VAC_Capacity"] = {None: vac_capacity}
+
+                                if k1 == Constants.Uncertainty:
+                                    plugged_time = v1.get("Plugged_Time", None)
+                                    unplugged_time = v1.get("Unplugged_Time", None)
+                                    simulation_repetition = v1.get("simulation_repetition", None)
+
+                                    assert plugged_time, "Plugged_Time is missing in Uncertainty"
+                                    assert unplugged_time, "Unplugged_Time is missing in Uncertainty"
+                                    assert simulation_repetition, "simulation_repetition is missing in Uncertainty"
+
+                                    self.generate_behaviour_model(plugged_time, unplugged_time, simulation_repetition)
+
+                                    ess_states = v1.get("ESS_States", None)
+                                    vac_states = v1.get("VAC_States", None)
+
+                                    assert ess_states, "ESS_States is missing in Uncertainty"
+                                    assert vac_states, "VAC_States is missing in Uncertainty"
+
+                                    _, _, ess_steps, ess_soc_states = self.generate_states(ess_states, "ESS_States")
+                                    _, _, vac_steps, vac_soc_states = self.generate_states(vac_states, "VAC_States")
+
+                                    self.ess_steps = ess_steps
+                                    self.vac_steps = vac_steps
+                                    self.ess_soc_states = ess_soc_states
+                                    self.vac_soc_states = vac_soc_states
+
+                                    data["Value"] = "null"
+                                    data["Initial_ESS_SoC"] = "null"
+                                    data["Initial_VAC_SoC"] = "null"
+                                    data["Behavior_Model"] = "null"
+                            else:
+                                try:
+                                    v1 = float(v1)
+                                except ValueError:
+                                    pass
+                                if isinstance(v1, float) and v1.is_integer():
+                                    v1 = int(v1)
+                                data[k1] = {None: v1}
+        #         pprint.pprint(data, indent=4)
         return data
 
     def get_forecast_flag(self, topic):

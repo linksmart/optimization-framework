@@ -56,3 +56,4 @@ COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
 COPY config /usr/src/app/config
 RUN echo "/usr/src/app/share/gurobi811/linux64/lib/" >> /etc/ld.so.conf
+COPY profev /usr/src/app/profev

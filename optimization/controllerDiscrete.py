@@ -31,12 +31,12 @@ from utils.messageLogger import MessageLogger
 import pyutilib.subprocess.GlobalData
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
-class OptController(threading.Thread):
+class OptControllerDiscrete(threading.Thread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
         # threading.Thread.__init__(self)
-        super(OptController, self).__init__()
+        super(OptControllerDiscrete, self).__init__()
         self.logger = MessageLogger.get_logger(__file__, id)
         self.logger.info("Initializing optimization controller " + id)
         # Loading variables
@@ -81,7 +81,7 @@ class OptController(threading.Thread):
 
     def join(self, timeout=None):
         self.stopRequest.set()
-        super(OptController, self).join(timeout)
+        super(OptControllerDiscrete, self).join(timeout)
 
     def Stop(self):
         try:

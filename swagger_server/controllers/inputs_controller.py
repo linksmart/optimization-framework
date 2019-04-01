@@ -159,7 +159,7 @@ def dataset_input_put(id, dataset):  # noqa: E501
                 return "Data source registered"
         except Exception as e:
             logger.error("Invalid data " + str(e))
-            return str(e).replace("\"","")
+            return str(e).replace("\"", "")
     else:
         return 'Data is not in json format'
 
@@ -296,7 +296,7 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
             return "Instance created", 201, {'Location': str(id)}
         except Exception as e:
             logger.error("Invalid data " + str(e))
-            return str(e).replace("\"","")
+            return str(e).replace("\"", "")
     else:
         return 'Data is not in json format'
 
@@ -410,7 +410,7 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                 return "Data source registered"
         except Exception as e:
             logger.error("Invalid data " + str(e))
-            return str(e).replace("\"","")
+            return str(e).replace("\"", "")
     else:
         return 'Data is not in json format'
 
@@ -455,7 +455,7 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             # return jsonify({'Data-Source-Id': str(id)})
         except Exception as e:
             logger.error("Invalid data " + str(e))
-            return str(e).replace("\"","")
+            return str(e).replace("\"", "")
     else:
         return 'Data is not in json format'
 
@@ -545,7 +545,7 @@ def get_all_data_source_ids():  # noqa: E501
 def input_header_validation(data):
     invalid_headers = []
     for header in data:
-        if header not in ["generic", "load", "photovoltaic", "ESS", "grid", "global_control"]:
+        if header not in ["generic", "load", "photovoltaic", "ESS", "grid", "global_control", "PROFEV"]:
             invalid_headers.append(header)
     if len(invalid_headers) > 0:
         raise InvalidHeaderException("Following headers are invalid: " + str(invalid_headers))

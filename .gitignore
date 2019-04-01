@@ -105,5 +105,9 @@ utils/resources/
 !utils/.gitkeep
 
 .vscode
-profess/executables/windows/*.json
-profess/executables/windows/*.py
+profess/executables/windows/**/*
+!profess/executables/windows/ofw.exe
+**/*/*.xlsx*
+!/jupyter_notebooks/*.ipynb
+**/*/*.csv*
+/logs
