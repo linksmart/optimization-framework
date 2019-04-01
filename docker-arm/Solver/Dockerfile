@@ -167,8 +167,11 @@ RUN mkdir -p /usr/src/app/share
 WORKDIR /usr/src/app/share
 
 # Install ipopt from http
-COPY gurobi811 /usr/src/app/share
+COPY gurobi811 /usr/src/app/share/gurobi811
+WORKDIR /usr/src/app/share/gurobi811/linux64
 
+RUN python3 setup.py build
+RUN python3 setup.py install
 #RUN apk add clean
 
 ENV GUROBI_HOME "/share/gurobi811/linux64"
