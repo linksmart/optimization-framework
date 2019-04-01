@@ -59,7 +59,7 @@ class ThreadFactory:
         # Creating an object of the configuration file (standard values)
         try:
             config = configparser.RawConfigParser()
-            config.read(self.getFilePath("utils", "ConfigFile.properties"))
+            config.read(self.getFilePath("optimization/resources", "ConfigFile.properties"))
         except Exception as e:
             logger.error(e)
 
@@ -81,7 +81,7 @@ class ThreadFactory:
         output_config = None
         try:
             # Reads the registry/output and stores it into an object
-            path = os.path.join(os.getcwd(), "utils", str(self.id), "Output.registry.mqtt")
+            path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Output.registry.mqtt")
             if not os.path.exists(path):
                 logger.debug("Output.registry.mqtt not set, only file output available")
             else:
@@ -92,7 +92,7 @@ class ThreadFactory:
 
         try:
             # Reads the registry/input and stores it into an object
-            path = os.path.join(os.getcwd(), "utils", str(self.id), "Input.registry.file")
+            path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Input.registry.file")
             if not os.path.exists(path):
                 input_config_file = {}
                 logger.debug("Not Input.registry.file present")
@@ -107,7 +107,7 @@ class ThreadFactory:
 
         try:
             # Reads the registry/input and stores it into an object
-            path = os.path.join(os.getcwd(), "utils", str(self.id), "Input.registry.mqtt")
+            path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Input.registry.mqtt")
             if not os.path.exists(path):
                 input_config_mqtt = {}
                 logger.debug("Not Input.registry.mqtt present")

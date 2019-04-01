@@ -1,4 +1,5 @@
 from pyomo.core import *
+import pyomo.environ
 class Model:
 	model = AbstractModel()
 	

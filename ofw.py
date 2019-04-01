@@ -55,7 +55,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def setup():
-    config_path = "/usr/src/app/utils/ConfigFile.properties"
+    config_path = "/usr/src/app/optimization/resources/ConfigFile.properties"
     config_path_default = "/usr/src/app/config/ConfigFile.properties"
     ConfigUpdater.copy_config(config_path_default, config_path)
 

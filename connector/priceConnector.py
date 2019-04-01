@@ -36,6 +36,8 @@ class PriceConnector(ApiConnector):
             self.extract_time_series(data, time_series)
         if len(data) < 48:
             logger.error("Less than 48 hrs of price data")
+            logger.debug("raw price data = "+str(raw_data))
+        logger.debug("raw price data = " + str(raw_data))
         return data
 
     def extract_time_series(self, data, time_frame):

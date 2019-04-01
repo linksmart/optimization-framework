@@ -79,7 +79,7 @@ def store_data(dataset, id, source):
 
 def delete_data(id, registry_file, source):
     try:
-        dir = os.path.join(os.getcwd(), "utils", str(id))
+        dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
         if not os.path.exists(dir):
             return "Id not existing"
         else:
@@ -131,7 +131,7 @@ def dataset_input_put(id, dataset):  # noqa: E501
             logger.info("This is the dictionary: " + str(dataset))
             input_header_validation(dataset)
             # check if the file exists
-            dir = os.path.join(os.getcwd(), "utils", str(id))
+            dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
             if not os.path.exists(dir):
                 return "Id not existing"
             else:
@@ -237,14 +237,14 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
                 dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id), "file")
                 if not os.path.exists(dir_data):
                     os.makedirs(dir_data)
-                dir_data = os.path.join(os.getcwd(), "utils", str(id))
+                dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id))
                 if not os.path.exists(dir_data):
                     os.makedirs(dir_data)
             except Exception as e:
                 logger.error(e)
 
             # saves the registry into the new folder
-            path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.file")
+            path = os.path.join(os.getcwd(), "optimization/resources", str(id), "Input.registry.file")
             with open(path, 'w') as outfile:
                 json.dump(File_Input_Source, outfile, ensure_ascii=False)
                 logger.info("registry/input saved into memory")
@@ -312,7 +312,7 @@ def get_data_source_values(id):  # noqa: E501
     :rtype: FileInputSource
     """
     response = {}
-    dir = os.path.join(os.getcwd(), "utils", str(id))
+    dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
     try:
         if not os.path.exists(dir):
             return "Id not existing"
@@ -338,7 +338,7 @@ def get_mqtt_data_source_values(id):  # noqa: E501
     :rtype: MQTTInputSource
     """
     response = {}
-    dir = os.path.join(os.getcwd(), "utils", str(id))
+    dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
     try:
         if not os.path.exists(dir):
             return "Id not existing"
@@ -372,7 +372,7 @@ def mqtt_input_put(id, dataset):  # noqa: E501
             logger.info("This is the dictionary: " + str(dataset))
             input_header_validation(dataset)
             # check if the file exists
-            dir = os.path.join(os.getcwd(), "utils", str(id))
+            dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
             if not os.path.exists(dir):
                 return "Id not existing"
             else:
@@ -436,7 +436,7 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             ####generates an id an makes a directory with the id for the data and for the registry
             try:
                 id = utils.create_and_get_ID()
-                dir = os.path.join(os.getcwd(), "utils", str(id))
+                dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
                 if not os.path.exists(dir):
                     os.makedirs(dir)
                 dir_data = os.path.join(os.getcwd(), "optimization/resources", str(id), "mqtt")
@@ -446,7 +446,7 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
                 logger.error(e)
 
             # saves the registry into the new folder
-            path = os.path.join(os.getcwd(), "utils", str(id), "Input.registry.mqtt")
+            path = os.path.join(os.getcwd(), "optimization/resources", str(id), "Input.registry.mqtt")
             with open(path, 'w') as outfile:
                 json.dump(MQTT_Input_Source, outfile, ensure_ascii=False)
             logger.info("registry/input saved into memory")
@@ -505,7 +505,7 @@ def get_all_mqtt_data_source_ids():  # noqa: E501
     :rtype: OutputIdsList
     """
     response = []
-    dir = os.path.join(os.getcwd(), "utils")
+    dir = os.path.join(os.getcwd(), "optimization/resources")
     try:
         if os.path.exists(dir):
             paths = os.listdir(dir)
@@ -528,7 +528,7 @@ def get_all_data_source_ids():  # noqa: E501
     :rtype: OutputIdsList
     """
     response = []
-    dir = os.path.join(os.getcwd(), "utils")
+    dir = os.path.join(os.getcwd(), "optimization/resources")
     try:
         if os.path.exists(dir):
             paths = os.listdir(dir)

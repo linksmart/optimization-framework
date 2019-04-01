@@ -162,7 +162,7 @@ class CommandController:
             time.sleep(1)
 
     def persist_id(self, id, start, meta_data):
-        path = "/usr/src/app/utils/ids_status.txt"
+        path = "/usr/src/app/optimization/resources/ids_status.txt"
         try:
             if self.redisDB.get_lock(self.lock_key, id):
                 if start:
@@ -189,7 +189,7 @@ class CommandController:
             self.redisDB.release_lock(self.lock_key, id)
 
     def get_ids(self):
-        path = "/usr/src/app/utils/ids_status.txt"
+        path = "/usr/src/app/optimization/resources/ids_status.txt"
         if os.path.exists(path):
             old_ids = []
             try:
@@ -223,7 +223,7 @@ class CommandController:
 
     def number_of_active_ids(self):
         num = 0
-        path = "/usr/src/app/utils/ids_status.txt"
+        path = "/usr/src/app/optimization/resources/ids_status.txt"
         if os.path.exists(path):
             try:
                 if self.redisDB.get_lock(self.lock_key, "start"):
@@ -378,7 +378,7 @@ def framework_start(id, startOFW):  # noqa: E501
             return "Use one of the following solvers :" + str(available_solvers)
         if startOFW.optimization_type not in available_optimizers:
             return "Use one of the following optimizer types : " + str(available_optimizers)
-        dir = os.path.join(os.getcwd(), "utils", str(id))
+        dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
         if not os.path.exists(dir):
             return "Id not existing"
         redis_db = RedisDB()

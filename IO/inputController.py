@@ -23,6 +23,16 @@ logger = logging.getLogger(__file__)
 
 class InputController:
 
+    def setup_logger(self, id):
+        logger = logging.getLogger(__file__)
+        syslog = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(id)s %(name)s: %(message)s')
+        syslog.setFormatter(formatter)
+        logger.setLevel(logging.DEBUG)
+        logger.addHandler(syslog)
+        extra = {"id": id}
+        self.logger = logging.LoggerAdapter(logger, extra)
+
     def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds):
         self.stop_request = False
         self.optimization_data = {}
