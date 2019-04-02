@@ -32,6 +32,7 @@ class InputConfigParser:
         self.prediction_names = []
         self.non_prediction_names = []
         self.external_names = []
+        self.set_params = {}
         self.config_parser_utils = ConfigParserUtils()
         self.extract_mqtt_params()
         self.optimization_params = self.extract_optimization_values()
@@ -73,20 +74,7 @@ class InputConfigParser:
                     for k1, v1 in v.items():
                         if k1 == Constants.meta:
                             for k2, v2 in v1.items():
-                                try:
-                                    v2 = float(v2)
-                                except ValueError:
-                                    pass
-                                if isinstance(v2, float) and v2.is_integer():
-                                    v2 = int(v2)
-                                if k2 in self.model_variables.keys():
-                                    indexing = self.model_variables[k2]["indexing"]
-                                    if indexing == "index":
-                                        data[k2] = {int(0): v2}
-                                    elif indexing == "None":
-                                        data[k2] = {None: v2}
-                                else:
-                                    data[k2] = {None: v2}
+                                self.add_value_to_data(data, k2, v2)
                         elif k1 == Constants.SoC_Value and isinstance(v1, int):
                             indexing = self.model_variables[Constants.SoC_Value]["indexing"]
                             if indexing == "index":
@@ -97,14 +85,27 @@ class InputConfigParser:
                             self.add_name_to_list(k1)
                         elif k == "generic" and not isinstance(v1, dict):
                             logger.debug("Generic single value")
-                            try:
-                                v1 = float(v1)
-                            except ValueError:
-                                pass
-                            if isinstance(v1, float) and v1.is_integer():
-                                v1 = int(v1)
-                            data[k1] = {None: v1}
+                            self.add_value_to_data(data, k1, v1)
         return data
+
+    def add_value_to_data(self, data, k, v):
+        try:
+            v = float(v)
+        except ValueError:
+            pass
+        if isinstance(v, float) and v.is_integer():
+            v = int(v)
+        if k in self.model_variables.keys():
+            if self.model_variables[k]["type"] == "Set":
+                self.set_params[k] = v
+            else:
+                indexing = self.model_variables[k]["indexing"]
+                if indexing == "index":
+                    data[k] = {int(0): v}
+                elif indexing == "None":
+                    data[k] = {None: v}
+        else:
+            data[k] = {None: v}
 
     def get_forecast_flag(self, topic):
         if topic in self.mqtt_params:
@@ -136,6 +137,9 @@ class InputConfigParser:
     def get_optimization_values(self):
         return self.optimization_params
 
+    def get_set_params(self):
+        return self.set_params
+
     def check_keys_for_completeness(self):
         all_keys = []
         all_keys.extend(self.prediction_names)
@@ -143,10 +147,12 @@ class InputConfigParser:
         all_keys.extend(self.external_names)
         all_keys.extend(self.generic_names)
         all_keys.extend(self.optimization_params.keys())
+        all_keys.extend(self.set_params.keys())
         all_keys.append("dT")
+        all_keys.append("T")
 
         not_available_keys = []
-        for key in self.param_key_list:
-            if key not in all_keys:
+        for key in self.model_variables.keys():
+            if key not in all_keys and self.model_variables[key]["type"] in ["Set", "Params"]:
                 not_available_keys.append(key)
         return not_available_keys

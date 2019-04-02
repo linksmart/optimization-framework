@@ -10,9 +10,8 @@ from shutil import copyfile
 
 from IO.redisDB import RedisDB
 from prediction.processingData import ProcessingData
+from utils.messageLogger import MessageLogger
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
 
 """
 Creates a thread for prediction and a thread for training
@@ -20,6 +19,8 @@ Creates a thread for prediction and a thread for training
 class LoadPrediction:
 
     def __init__(self, config, control_frequency, horizon_in_steps, topic_name, topic_param, dT_in_seconds, id, predictionFlag):
+        self.logger = MessageLogger.get_logger(__file__, id)
+        
         self.predictionFlag = predictionFlag
 
         self.topic_name = topic_name
@@ -41,14 +42,16 @@ class LoadPrediction:
             self.output_size = 1
         self.id = id
 
+        """
         dir_data = os.path.join("/usr/src/app", "res", self.id)
         if not os.path.exists(dir_data):
             os.makedirs(dir_data)
+        """
 
-        self.raw_data_file_container = os.path.join("/usr/src/app", "res", self.id, "raw_data_"+str(topic_name)+".csv")
-        self.model_file_container = os.path.join("/usr/src/app", "res", self.id, "model_"+str(topic_name)+".h5")
-        self.model_file_container_temp = os.path.join("/usr/src/app", "res", "model_temp_"+str(topic_name)+".h5")
-        self.model_file_container_train = os.path.join("/usr/src/app", "res", self.id, "model_train_"+str(topic_name)+".h5")
+        self.raw_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id, "raw_data_"+str(topic_name)+".csv")
+        self.model_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_"+str(topic_name)+".h5")
+        self.model_file_container_temp = os.path.join("/usr/src/app", "prediction/resources", "model_temp_"+str(topic_name)+".h5")
+        self.model_file_container_train = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_train_"+str(topic_name)+".h5")
 
         self.processingData = ProcessingData()
 
@@ -95,17 +98,17 @@ class LoadPrediction:
 
 
     def Stop(self):
-        logger.info("start load controller thread exit")
+        self.logger.info("start load controller thread exit")
         if self.prediction_thread:
             self.prediction_thread.Stop()
         if self.training_thread:
             self.training_thread.Stop()
         if self.load_forecast_pub:
-            logger.info("Stopping load forecast thread")
+            self.logger.info("Stopping load forecast thread")
             self.load_forecast_pub.Stop()
         if self.raw_data:
             self.raw_data.exit()
-        logger.info("load controller thread exited")
+        self.logger.info("load controller thread exited")
 
 
 class Training(threading.Thread):
@@ -119,7 +122,7 @@ class Training(threading.Thread):
     """
 
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
-                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size):
+                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, log):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -141,6 +144,7 @@ class Training(threading.Thread):
         self.id = id
         self.dT_in_seconds = dT_in_seconds
         self.output_size = output_size
+        self.logger = log
 
     def run(self):
         while not self.stopRequest.is_set():
@@ -152,14 +156,14 @@ class Training(threading.Thread):
                     from prediction.rawDataReader import RawDataReader
                     # at-most last 5 days' data
                     data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
-                    logger.debug("raw data ready " + str(len(data)))
+                    self.logger.debug("raw data ready " + str(len(data)))
                     data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
                                                                                self.num_timesteps, self.output_size)
                     if self.sufficient_data_available(data):
                         self.trained = True
-                        logger.info("start training")
+                        self.logger.info("start training")
                         Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps, self.output_size)
-                        logger.info("pre proc done")
+                        self.logger.info("pre proc done")
                         try:
                             if self.redisDB.get_lock(self.training_lock_key, self.id+"_"+self.topic_name):
                                 from prediction.trainModel import TrainModel
@@ -167,17 +171,17 @@ class Training(threading.Thread):
                                 trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
                                                  self.num_timesteps, self.output_size, self.model_file_container_train)
                                 copyfile(self.model_file_container_train, self.model_file_container)
-                                logger.info("trained successfully")
+                                self.logger.info("trained successfully")
                         except Exception as e:
                             self.trained = False
-                            logger.error("error training model " + str(e))
+                            self.logger.error("error training model " + str(e))
                         finally:
                             self.redisDB.release_lock(self.training_lock_key, self.id+"_"+self.topic_name)
                     else:
                         time.sleep(600)
                 time.sleep(60)
             except Exception as e:
-                logger.error("training thread exception "+str(e))
+                self.logger.error("training thread exception "+str(e))
 
     def checktime(self):
         return (not self.trained or datetime.datetime.now().day > self.today.day
@@ -185,18 +189,18 @@ class Training(threading.Thread):
                 or datetime.datetime.now().year > self.today.year)
 
     def Stop(self):
-        logger.info("start training thread exit")
+        self.logger.info("start training thread exit")
         self.stopRequest.set()
         if self.isAlive():
             self.join(4)
-        logger.info("training thread exited")
+        self.logger.info("training thread exited")
 
     def stop_request_status(self):
         return self.stopRequest.is_set()
 
     def sufficient_data_available(self, data_blocks):
         for block in data_blocks:
-            logger.info("length of block = "+str(len(block)))
+            self.logger.info("length of block = "+str(len(block)))
             if len(block) >= self.min_training_size:
                 return True
         return False
@@ -211,7 +215,7 @@ class Prediction(threading.Thread):
     - predict for next horizon points (eg. 24 predictions)
     """
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
-                 model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds, output_size):
+                 model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds, output_size, log):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -232,24 +236,25 @@ class Prediction(threading.Thread):
         self.topic_name = topic_name
         self.id = id
         self.output_size = output_size
+        self.logger = log
 
     def run(self):
         while not self.stopRequest.is_set():
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
-                logger.debug("len data = " + str(len(data)))
+                self.logger.debug("len data = " + str(len(data)))
                 data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
-                logger.debug("len resample data = " + str(len(data)))
+                self.logger.debug("len resample data = " + str(len(data)))
                 true_data = data
                 if len(data) > 0:
                     data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
-                    logger.debug("len appended data = " + str(len(data)))
+                    self.logger.debug("len appended data = " + str(len(data)))
                 if len(data) >= self.num_timesteps:
                     st = time.time()
                     test_predictions = []
                     model, model_temp, temp_flag, graph = self.models.get_model(self.id+"_"+self.topic_name)
                     if temp_flag:
-                        logger.debug("temp flag true")
+                        self.logger.debug("temp flag true")
                         model = model_temp
                     if model is not None:
                         try:
@@ -260,12 +265,12 @@ class Prediction(threading.Thread):
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
                         except Exception as e:
-                            logger.error(str(e))
+                            self.logger.error(str(e))
                     else:
-                        logger.info("prediction model is none, extending the known values")
+                        self.logger.info("prediction model is none, extending the known values")
                         test_predictions = self.processingData.get_regression_values(true_data, self.num_timesteps, self.output_size + 1, self.dT_in_seconds)
                         self.q.put(test_predictions)
-                    logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
+                    self.logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
                     st = time.time() - st
                     ss = self.control_frequency - st
                     if ss < 0:
@@ -274,14 +279,14 @@ class Prediction(threading.Thread):
                 else:
                     time.sleep(1)
             except Exception as e:
-                logger.error(str(self.topic_name) + " prediction thread exception " + str(e))
+                self.logger.error(str(self.topic_name) + " prediction thread exception " + str(e))
 
     def Stop(self):
-        logger.info("start prediction thread exit")
+        self.logger.info("start prediction thread exit")
         self.stopRequest.set()
         if self.isAlive():
             self.join(4)
-        logger.info("prediction thread exited")
+        self.logger.info("prediction thread exited")
 
     def stop_request_status(self):
         return self.stopRequest.is_set()

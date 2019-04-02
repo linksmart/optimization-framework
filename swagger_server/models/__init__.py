@@ -3,8 +3,6 @@
 # flake8: noqa
 from __future__ import absolute_import
 # import models into model package
-from swagger_server.models.dataset import Dataset
-from swagger_server.models.e import E
 from swagger_server.models.ess import ESS
 from swagger_server.models.ess_file import ESSFile
 from swagger_server.models.ess_output import ESSOutput
@@ -17,6 +15,7 @@ from swagger_server.models.global_control import GlobalControl
 from swagger_server.models.global_control_file import GlobalControlFile
 from swagger_server.models.grid import Grid
 from swagger_server.models.grid_output import GridOutput
+from swagger_server.models.horizons import Horizons
 from swagger_server.models.load import Load
 from swagger_server.models.load_file import LoadFile
 from swagger_server.models.mqtt import MQTT
@@ -24,6 +23,7 @@ from swagger_server.models.mqtt_input_source import MQTTInputSource
 from swagger_server.models.mqtt_output_all import MQTTOutputAll
 from swagger_server.models.meta_ess import MetaESS
 from swagger_server.models.meta_grid import MetaGrid
+from swagger_server.models.meta_horizon import MetaHorizon
 from swagger_server.models.meta_load import MetaLoad
 from swagger_server.models.meta_pv import MetaPV
 from swagger_server.models.model import Model

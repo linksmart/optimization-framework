@@ -1244,38 +1244,6 @@ definitions:
       qos: 1
       host: "hostname"
       topic: "topic_name"
-  dataset:
-    type: "object"
-    properties:
-      bn:
-        type: "string"
-      bt:
-        type: "integer"
-        format: "int64"
-      bu:
-        type: "string"
-      ver:
-        type: "integer"
-        format: "int64"
-      e:
-        $ref: "#/definitions/e"
-  e:
-    type: "object"
-    properties:
-      t:
-        type: "integer"
-        format: "int64"
-      n:
-        type: "string"
-      u:
-        type: "string"
-      v:
-        type: "integer"
-        format: "int64"
-      sv:
-        type: "string"
-      bv:
-        type: "boolean"
   Model:
     type: "object"
     xml:
@@ -1305,6 +1273,8 @@ definitions:
         $ref: "#/definitions/grid"
       global_control:
         $ref: "#/definitions/Global_Control"
+      horizons:
+        $ref: "#/definitions/Horizons"
     example:
       generic:
         custom_name_1:
@@ -1450,6 +1420,9 @@ definitions:
             host: "hostname"
             topic: "topic_name"
           predict: true
+      horizons:
+        meta:
+          T_SoC: 25
   FileInputSource:
     type: "object"
     properties:
@@ -1465,6 +1438,8 @@ definitions:
         $ref: "#/definitions/grid"
       global_control:
         $ref: "#/definitions/Global_Control_File"
+      horizons:
+        $ref: "#/definitions/Horizons"
     example:
       generic:
         custom_name_1:
@@ -1522,6 +1497,9 @@ definitions:
         ESS_Control:
         - 1300.200000000000045474735088646411895751953125
         - 1200.5
+      horizons:
+        meta:
+          T_SoC: 25
   OutputSource:
     type: "object"
     properties:
@@ -2256,3 +2234,18 @@ definitions:
     - "a123asd456"
     - "b456fgh789"
     - "c852edc963"
+  Horizons:
+    type: "object"
+    properties:
+      meta:
+        $ref: "#/definitions/metaHorizon"
+    example:
+      meta:
+        T_SoC: 25
+  metaHorizon:
+    type: "object"
+    example:
+      T_SoC: 25
+    additionalProperties:
+      type: "integer"
+      format: "int32"

@@ -17,14 +17,13 @@ from optimization.controllerMpc import OptControllerMPC
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 from optimization.ModelException import InvalidModelException
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils.messageLogger import MessageLogger
 
 
 class ThreadFactory:
 
     def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id, optimization_type):
+        self.logger = MessageLogger.get_logger(__file__, id)
         self.model_name = model_name
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -44,38 +43,38 @@ class ThreadFactory:
         return data_file
 
     def startOptControllerThread(self):
-        logger.info("Creating optimization controller thread")
-        logger.info("Number of repetitions: " + str(self.repetition))
-        logger.info("Output with the following control_frequency: " + str(self.control_frequency))
-        logger.info("Optimization calculated with the following horizon_in_steps: " + str(self.horizon_in_steps))
-        logger.info("Optimization calculated with the following dT_in_seconds: " + str(self.dT_in_seconds))
-        logger.info("Optimization calculated with the following model: " + self.model_name)
-        logger.info("Optimization calculated with the following solver: " + self.solver)
-        logger.info("Optimization calculated with the following optimization_type: " + self.optimization_type)
+        self.logger.info("Creating optimization controller thread")
+        self.logger.info("Number of repetitions: " + str(self.repetition))
+        self.logger.info("Output with the following control_frequency: " + str(self.control_frequency))
+        self.logger.info("Optimization calculated with the following horizon_in_steps: " + str(self.horizon_in_steps))
+        self.logger.info("Optimization calculated with the following dT_in_seconds: " + str(self.dT_in_seconds))
+        self.logger.info("Optimization calculated with the following model: " + self.model_name)
+        self.logger.info("Optimization calculated with the following solver: " + self.solver)
+        self.logger.info("Optimization calculated with the following optimization_type: " + self.optimization_type)
 
         self.redisDB.set("Error mqtt" + self.id, False)
-        logger.debug("Error mqtt "+str(self.redisDB.get("Error mqtt" + self.id)))
+        self.logger.debug("Error mqtt "+str(self.redisDB.get("Error mqtt" + self.id)))
 
         # Creating an object of the configuration file (standard values)
         try:
             config = configparser.RawConfigParser()
             config.read(self.getFilePath("optimization/resources", "ConfigFile.properties"))
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
 
         # Loads the solver name if it was not given thorough the endpoint command/start/id
         if not self.model_name:
             self.model_name = config.get("SolverSection", "model.name")
-        logger.debug("This is the model name: " + self.model_name)
+        self.logger.debug("This is the model name: " + self.model_name)
         self.model_path = os.path.join(config.get("SolverSection", "model.base.path"), self.model_name) + ".py"
-        logger.debug("This is the path of the model: " + str(self.model_path))
+        self.logger.debug("This is the path of the model: " + str(self.model_path))
 
         # Loads the solver name if not specified in command/start/id
         if not self.solver:
             self.solver_name = config.get("SolverSection", "solver.name")
         else:
             self.solver_name = self.solver
-        logger.debug("Optimization calculated with the following solver: " + self.solver_name)
+        self.logger.debug("Optimization calculated with the following solver: " + self.solver_name)
 
         ##############################################################################################
         output_config = None
@@ -83,42 +82,42 @@ class ThreadFactory:
             # Reads the registry/output and stores it into an object
             path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Output.registry.mqtt")
             if not os.path.exists(path):
-                logger.debug("Output.registry.mqtt not set, only file output available")
+                self.logger.debug("Output.registry.mqtt not set, only file output available")
             else:
                 with open(path, "r") as file:
                     output_config = json.loads(file.read())
         except Exception as e:
-            logger.error("Output.registry.mqtt not set, only file output available")
+            self.logger.error("Output.registry.mqtt not set, only file output available")
 
         try:
             # Reads the registry/input and stores it into an object
             path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Input.registry.file")
             if not os.path.exists(path):
                 input_config_file = {}
-                logger.debug("Not Input.registry.file present")
+                self.logger.debug("Not Input.registry.file present")
             else:
                 with open(path, "r") as file:
                     input_config_file = json.loads(file.read())
-                logger.debug("Input.registry.file found")
+                self.logger.debug("Input.registry.file found")
         except Exception as e:
-            logger.error("Input file not found")
+            self.logger.error("Input file not found")
             input_config_file = {}
-            logger.error(e)
+            self.logger.error(e)
 
         try:
             # Reads the registry/input and stores it into an object
             path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Input.registry.mqtt")
             if not os.path.exists(path):
                 input_config_mqtt = {}
-                logger.debug("Not Input.registry.mqtt present")
+                self.logger.debug("Not Input.registry.mqtt present")
             else:
                 with open(path, "r") as file:
                     input_config_mqtt = json.loads(file.read())
-                logger.debug("Input.registry.mqtt found")
+                self.logger.debug("Input.registry.mqtt found")
         except Exception as e:
-            logger.error("Input file not found")
+            self.logger.error("Input file not found")
             input_config_mqtt = {}
-            logger.error(e)
+            self.logger.error(e)
 
         input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name)
 
@@ -132,7 +131,7 @@ class ThreadFactory:
             for prediction_name in self.prediction_names:
                 flag = input_config_parser.get_forecast_flag(prediction_name)
                 if flag:
-                    logger.info("Creating prediction controller thread for topic " + str(prediction_name))
+                    self.logger.info("Creating prediction controller thread for topic " + str(prediction_name))
                     topic_param = input_config_parser.get_params(prediction_name)
                     parameters = json.dumps(
                         {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
@@ -172,19 +171,19 @@ class ThreadFactory:
 
         try:
         ####starts the optimization controller thread
-            logger.debug("Error mqtt 8 " + str(self.redisDB.get("Error mqtt" + self.id)))
+            self.logger.debug("Error mqtt 8 " + str(self.redisDB.get("Error mqtt" + self.id)))
             if "False" in self.redisDB.get("Error mqtt" + self.id):
                 self.opt.start()
-                logger.debug("Optimization object started")
+                self.logger.debug("Optimization object started")
                 return 0
             else:
                 self.redisDB.set("run:" + self.id, "stopping")
                 self.stopOptControllerThread()
                 self.redisDB.set("run:" + self.id,"stopped")
-                logger.error("Optimization object could not be started")
+                self.logger.error("Optimization object could not be started")
                 return 1
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
             return 1
 
 
@@ -196,12 +195,12 @@ class ThreadFactory:
                 obj.Stop()
             for name, obj in self.non_prediction_threads.items():
                 obj.Stop()
-            logger.info("Stopping optimization controller thread")
+            self.logger.info("Stopping optimization controller thread")
             self.opt.Stop()
-            logger.info("Optimization controller thread stopped")
+            self.logger.info("Optimization controller thread stopped")
             return "Optimization controller thread stopped"
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
             return e
 
     def is_running(self):

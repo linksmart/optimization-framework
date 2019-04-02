@@ -13,19 +13,18 @@ from random import randrange
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils.messageLogger import MessageLogger
 
 class DataPublisher(ABC,threading.Thread):
 
     def __init__(self, internal, topic_params, config, publish_frequency, id=None):
         super().__init__()
+        self.logger = MessageLogger.get_logger(__file__, id)
         self.internal = internal
         self.config = config
         self.channel = "MQTT"
         self.id = id
-        logger.debug("id = " + str(self.id))
+        self.logger.debug("id = " + str(self.id))
         if internal:
             self.channel = config.get("IO", "channel")
         if topic_params is None:
@@ -41,7 +40,7 @@ class DataPublisher(ABC,threading.Thread):
         elif self.channel == "ZMQ":
             self.init_zmq()
 
-        logger.info("Initializing data publisher thread for topic " + str(self.topic_params))
+        self.logger.info("Initializing data publisher thread for topic " + str(self.topic_params))
 
     def init_mqtt(self):
         self.mqtt = None
@@ -59,12 +58,13 @@ class DataPublisher(ABC,threading.Thread):
                 self.qos = 1
             self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
             self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
-                               username=self.config.get("IO", "mqtt.username", fallback=None),
-                               password=self.config.get("IO", "mqtt.password", fallback=None),
-                               ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
-                               set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)))
+                                   username=self.config.get("IO", "mqtt.username", fallback=None),
+                                   password=self.config.get("IO", "mqtt.password", fallback=None),
+                                   ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
+                                   set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)),
+                                   id=self.id)
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
             # error for mqtt will be caught at parent
             raise e
 
@@ -78,7 +78,7 @@ class DataPublisher(ABC,threading.Thread):
         super(DataPublisher, self).join(timeout)
 
     def Stop(self):
-        logger.info("start data publisher thread exit")
+        self.logger.info("start data publisher thread exit")
         self.stopRequest.set()
         if self.channel == "MQTT" and self.mqtt is not None:
             self.mqtt.MQTTExit()
@@ -86,7 +86,7 @@ class DataPublisher(ABC,threading.Thread):
             self.zmq.stop()
         if self.isAlive():
             self.join(4)
-        logger.info("data publisher thread exit")
+        self.logger.info("data publisher thread exit")
 
     def run(self):
         """Get data from internet or any other source"""
@@ -116,20 +116,20 @@ class DataPublisher(ABC,threading.Thread):
                 topic = self.topic_params["topic"]
             if self.internal:
                 topic = topic + "/" + self.id
-            logger.debug("Sending results to mqtt on this topic: " + topic)
+            self.logger.debug("Sending results to mqtt on this topic: " + topic)
             self.mqtt.publish(topic, data, True, self.qos)
-            logger.debug("Results published")
+            self.logger.debug("Results published")
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
 
     def zmq_publish(self, data, topic=None):
         if topic is None:
             topic = self.topic_params["topic"]
         if self.internal:
             topic = topic + "/" + self.id
-        logger.debug("Sending results to zmq on this topic: " + topic)
+        self.logger.debug("Sending results to zmq on this topic: " + topic)
         self.zmq.publish_message(topic, data)
-        logger.debug("Results published")
+        self.logger.debug("Results published")
 
     @abstractmethod
     def get_data(self):

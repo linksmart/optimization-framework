@@ -18,8 +18,8 @@ RUN apt-get update -y && apt-get install -y \
 
 RUN pip3 install --upgrade pip
 
-
 RUN pip3 install -U paho-mqtt
+RUN apt-get install python3-setuptools
 RUN pip3 install -U pyzmq
 
 RUN pip3 install -U senml

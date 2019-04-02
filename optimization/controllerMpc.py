@@ -27,9 +27,7 @@ from optimization.ModelException import InvalidModelException
 import logging
 from threading import Event
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
-
+from utils.messageLogger import MessageLogger
 
 class OptControllerMPC(threading.Thread):
 
@@ -37,7 +35,8 @@ class OptControllerMPC(threading.Thread):
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
         # threading.Thread.__init__(self)
         super(OptControllerMPC, self).__init__()
-        logger.info("Initializing optimization controller")
+        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger.info("Initializing optimization controller")
         # Loading variables
         self.id = id
         self.results = ""
@@ -57,13 +56,13 @@ class OptControllerMPC(threading.Thread):
 
         try:
             # dynamic load of a class
-            logger.info("This is the model path: " + self.model_path)
+            self.logger.info("This is the model path: " + self.model_path)
             module = self.path_import2(self.model_path)
-            logger.info(getattr(module, 'Model'))
+            self.logger.info(getattr(module, 'Model'))
             self.my_class = getattr(module, 'Model')
 
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
         if "False" in self.redisDB.get("Error mqtt"+self.id):
@@ -86,11 +85,11 @@ class OptControllerMPC(threading.Thread):
         try:
             self.input.Stop()
         except Exception as e:
-            logger.error("error stopping input " +  str(e))
+            self.logger.error("error stopping input " +  str(e))
         try:
             self.output.Stop()
         except Exception as e:
-            logger.error("error stopping output " +  str(e))
+            self.logger.error("error stopping output " +  str(e))
         if self.isAlive():
             self.join(1)
 
@@ -126,7 +125,7 @@ class OptControllerMPC(threading.Thread):
 
     # Start the optimization process and gives back a result
     def run(self):
-        logger.info("Starting optimization controller")
+        self.logger.info("Starting optimization controller")
         solver_manager = None
         return_msg = "success"
         try:
@@ -135,50 +134,50 @@ class OptControllerMPC(threading.Thread):
 
             #####create a solver
             optsolver = SolverFactory(self.solver_name)
-            logger.debug("Solver factory: " + str(optsolver))
+            self.logger.debug("Solver factory: " + str(optsolver))
             # optsolver.options["max_iter"]=5000
-            logger.info("solver instantiated with " + self.solver_name)
+            self.logger.info("solver instantiated with " + self.solver_name)
 
             ###create a solver manager
             solver_manager = SolverManagerFactory('pyro')
 
             if solver_manager is None:
-                logger.error("Failed to create a solver manager")
+                self.logger.error("Failed to create a solver manager")
             else:
-                logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
+                self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
 
             count = 0
-            logger.info("This is the id: " + self.id)
+            self.logger.info("This is the id: " + self.id)
             while not self.stopRequest.isSet():
-                logger.info("waiting for data")
+                self.logger.info("waiting for data")
                 data_dict = self.input.get_data()  # blocking call
-                logger.debug("Data is: " + json.dumps(data_dict, indent=4))
+                self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
                 if self.stopRequest.isSet():
                     break
 
                 # Creating an optimization instance with the referenced model
                 try:
-                    logger.debug("Creating an optimization instance")
+                    self.logger.debug("Creating an optimization instance")
                     instance = self.my_class.model.create_instance(data_dict)
                 except Exception as e:
-                    logger.error(e)
+                    self.logger.error(e)
                 # instance = self.my_class.model.create_instance(self.data_path)
-                logger.info("Instance created with pyomo")
+                self.logger.info("Instance created with pyomo")
 
                 run_count = 0
                 while True:
                     try:
-                        # logger.info(instance.pprint())
+                        # self.logger.info(instance.pprint())
                         action_handle = solver_manager.queue(instance, opt=optsolver)
-                        logger.debug("Solver queue created " + str(action_handle))
-                        logger.debug("solver queue actions = "+ str(solver_manager.num_queued()))
+                        self.logger.debug("Solver queue created " + str(action_handle))
+                        self.logger.debug("solver queue actions = "+ str(solver_manager.num_queued()))
                         action_handle_map[action_handle] = str(self.id)
-                        logger.debug("Action handle map: " + str(action_handle_map))
+                        self.logger.debug("Action handle map: " + str(action_handle_map))
                         start_time = time.time()
-                        logger.debug("Optimization starting time: " + str(start_time))
+                        self.logger.debug("Optimization starting time: " + str(start_time))
                         break
                     except Exception as e:
-                        logger.error("exception "+str(e))
+                        self.logger.error("exception "+str(e))
                         if run_count == 5:
                             raise e
                         time.sleep(5)
@@ -188,25 +187,25 @@ class OptControllerMPC(threading.Thread):
                 for i in range(1):
                     this_action_handle = solver_manager.wait_any()
                     self.results = solver_manager.get_results(this_action_handle)
-                    logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                    self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                     if this_action_handle in action_handle_map.keys():
                         self.solved_name = action_handle_map.pop(this_action_handle)
                     else:
                         self.solved_name = None
 
                 start_time = time.time() - start_time
-                logger.info("Time to run optimizer = " + str(start_time) + " sec.")
+                self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
                 if (self.results.solver.status == SolverStatus.ok) and (
                         self.results.solver.termination_condition == TerminationCondition.optimal):
                     # this is feasible and optimal
-                    logger.info("Solver status and termination condition ok")
-                    logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-                    logger.debug(self.results)
+                    self.logger.info("Solver status and termination condition ok")
+                    self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
+                    self.logger.debug(self.results)
                     instance.solutions.load_from(self.results)
                     try:
                         my_dict = {}
                         for v in instance.component_objects(Var, active=True):
-                            # logger.debug("Variable in the optimization: "+ str(v))
+                            # self.logger.debug("Variable in the optimization: "+ str(v))
                             varobject = getattr(instance, str(v))
                             var_list = []
                             try:
@@ -215,35 +214,35 @@ class OptControllerMPC(threading.Thread):
                                     var_list.append(varobject[index].value)
                                 my_dict[str(v)] = var_list
                             except Exception as e:
-                                logger.error(e)
+                                self.logger.error(e)
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
 
                         if "stop_system" not in my_dict.keys() or ("stop_system" in my_dict.keys() and my_dict["stop_system"][0] == 0.0):
-                            logger.debug("model.stop_system false")
+                            self.logger.debug("model.stop_system false")
                             self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
                         else:
-                            logger.debug("model.stop_system true")
+                            self.logger.debug("model.stop_system true")
                     except Exception as e:
-                        logger.error(e)
+                        self.logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:
                     # do something about it? or exit?
-                    logger.info("Termination condition is infeasible")
+                    self.logger.info("Termination condition is infeasible")
                 else:
-                    logger.info("Nothing fits")
+                    self.logger.info("Nothing fits")
 
                 count += 1
                 if self.repetition > 0 and count >= self.repetition:
                     break
 
-                logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
+                self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
                 time_spent = self.update_count()
                 for i in range(self.control_frequency - time_spent):
                     time.sleep(1)
                     if self.stopRequest.isSet():
                         break
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
             e = str(e)
             solver_error = "The SolverFactory was unable to create the solver"
             if solver_error in e:
@@ -256,17 +255,17 @@ class OptControllerMPC(threading.Thread):
                 return_msg = e
         finally:
             # Closing the pyomo servers
-            logger.debug("Deactivating pyro servers")
+            self.logger.debug("Deactivating pyro servers")
             # TODO : 'SolverManager_Pyro' object has no attribute 'deactivate'
             # this error was not present before pyomo update
             #solver_manager.deactivate()
-            logger.debug("Pyro servers deactivated: " + str(solver_manager))
+            self.logger.debug("Pyro servers deactivated: " + str(solver_manager))
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
             for key, object in self.output.mqtt.items():
                 object.MQTTExit()
-                logger.debug("Client " + key + " is being disconnected")
+                self.logger.debug("Client " + key + " is being disconnected")
 
-            logger.info(return_msg)
+            self.logger.info(return_msg)
             self.finish_status = True
             return return_msg

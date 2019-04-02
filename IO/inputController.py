@@ -95,19 +95,23 @@ class InputController:
                                                                                    self.id, self.required_buffer_data, self.dT_in_seconds)
 
     def set_timestep_data(self):
-        i = 0
-        T = []
-        T_SoC = []
-        while i < self.horizon_in_steps:
-            T.append(i)
-            T_SoC.append(i)
-            i += 1
-        T_SoC.append(i)
         self.optimization_data["N"] = {None: [0]}
-        self.optimization_data["T"] = {None: T}
-        self.optimization_data["T_SoC"] = {None: T_SoC}
-        # self.optimization_data["Target"] = {None: 1}
         self.optimization_data["dT"] = {None: self.dT_in_seconds}
+
+        T = self.get_array(self.horizon_in_steps)
+        self.optimization_data["T"] = {None: T}
+
+        set_params = self.input_config_parser.get_set_params()
+        if len(set_params) > 0:
+            for key, value in set_params.items():
+                v = self.get_array(value)
+                self.optimization_data[key] = {None: v}
+
+    def get_array(self, len):
+        a = []
+        for i in range(len):
+            a.append(i)
+        return a
 
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
