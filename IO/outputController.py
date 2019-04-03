@@ -82,7 +82,7 @@ class OutputController:
             self.logger.error(e)
 
     def publish_data(self, id, data, dT):
-        # self.logger.debug("data "+str(data))
+        self.logger.debug("output data : "+ json.dumps(data, indent=4))
         current_time = int(time.time())
         try:
             senml_data = self.senml_message_format(data, current_time, self.mqtt_params, dT)
@@ -125,15 +125,7 @@ class OutputController:
                     u = "W"
                 flag = params[key]["horizon_values"]
             meas_list = []
-            first = False
-            if len(value) > 1:
-                first = True
             for v in value:
-                if first:
-                    first = False
-                    if not flag:
-                        time += dT
-                        continue
                 meas = senml.SenMLMeasurement()
                 meas.name = key
                 meas.time = time
@@ -152,6 +144,10 @@ class OutputController:
     def save_to_redis(self, id, data, time):
         try:
             part_key = "o:" + id + ":"
+            output_keys = self.redisDB.get_keys_for_pattern(part_key+"*")
+            if output_keys is not None:
+                for key in output_keys:
+                    self.redisDB.remove(key)
             for key, value in data.items():
                 index = 0
                 for v in value:

@@ -150,9 +150,10 @@ class InputConfigParser:
         all_keys.extend(self.set_params.keys())
         all_keys.append("dT")
         all_keys.append("T")
-
+        logger.info("model_variables : "+ str(self.model_variables))
+        logger.info("all_keys : " + str(all_keys))
         not_available_keys = []
         for key in self.model_variables.keys():
-            if key not in all_keys and self.model_variables[key]["type"] in ["Set", "Params"]:
+            if key not in all_keys and self.model_variables[key]["type"] in ["Set", "Param"]:
                 not_available_keys.append(key)
         return not_available_keys

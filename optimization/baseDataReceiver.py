@@ -106,11 +106,16 @@ class BaseDataReceiver(DataReceiver, ABC):
     def unit_value_change(self, value, unit):
         pass
 
-    def get_bucket_aligned_data(self, bucket, steps):
-        self.logger.info("Get "+str(self.generic_name)+" data for bucket = "+str(bucket))
+    def get_bucket_aligned_data(self, bucket, steps, wait_for_data=True, check_bucket_change=True):
+        bucket_requested = bucket
+        self.logger.info("Get "+str(self.generic_name)+" data for bucket = "+str(bucket_requested))
         bucket_available = True
         final_data = {self.generic_name: {}}
-        data = self.get_data()
+        if wait_for_data:
+            data = self.get_data()
+        else:
+            data = self.get_data(require_updated=2)
+        self.logger.debug(str(self.generic_name)+ " data from mqtt is : "+ json.dumps(data, indent=4))
         if steps > self.length:
             steps = self.length
         day = None
@@ -138,6 +143,13 @@ class BaseDataReceiver(DataReceiver, ABC):
                             day_i = 0
                         day = str(day_i)
                 final_data = {self.generic_name: new_data}
+        if not bucket_available and check_bucket_change:
+            self.logger.debug("bucket " + str(bucket_requested) + " is not available for " + str(self.generic_name))
+            new_bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
+            if new_bucket > bucket_requested:
+                self.logger.debug("bucket changed from " + str(bucket_requested) +
+                                  " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
+                final_data, bucket_available = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
         return final_data, bucket_available
 
     def time_to_bucket(self, time):

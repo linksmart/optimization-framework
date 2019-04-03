@@ -63,7 +63,7 @@ services:
     depends_on:
       - redis
     volumes:
-      - ../optimization-framework/prediction/resources:/usr/src/app/res
+      - ../optimization-framework/prediction/resources:/usr/src/app/prediction/resources
       - ../optimization-framework/optimization/resources:/usr/src/app/optimization/resources
       - ../optimization-framework/utils/resources:/usr/src/app/utils/resources
  #   depends_on:
@@ -102,7 +102,7 @@ services:
     depends_on:
       - redis
     volumes:
-      - ../optimization-framework/prediction/resources:/usr/src/app/res
+      - ../optimization-framework/prediction/resources:/usr/src/app/prediction/resources
     logging:
       driver: "json-file"
       options:

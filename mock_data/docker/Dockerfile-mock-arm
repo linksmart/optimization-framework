@@ -35,3 +35,4 @@ COPY IO/ZMQClient.py /usr/src/app/IO/ZMQClient.py
 COPY mock_data /usr/src/app/mock_data
 COPY mockdata.py /usr/src/app/
 COPY config /usr/src/app/config
+COPY utils /usr/src/app/utils

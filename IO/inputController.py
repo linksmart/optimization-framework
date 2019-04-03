@@ -16,28 +16,17 @@ from IO.redisDB import RedisDB
 
 from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils.messageLogger import MessageLogger
 
 
 class InputController:
 
-    def setup_logger(self, id):
-        logger = logging.getLogger(__file__)
-        syslog = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(id)s %(name)s: %(message)s')
-        syslog.setFormatter(formatter)
-        logger.setLevel(logging.DEBUG)
-        logger.addHandler(syslog)
-        extra = {"id": id}
-        self.logger = logging.LoggerAdapter(logger, extra)
-
     def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds):
+        self.logger = MessageLogger.get_logger(__file__, id)
         self.stop_request = False
         self.optimization_data = {}
         self.input_config_parser = input_config_parser
-        logger.debug("Config parser: " + str(self.input_config_parser))
+        self.logger.debug("Config parser: " + str(self.input_config_parser))
         self.config = config
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -82,7 +71,7 @@ class InputController:
             if flag:
                 if topic == "SoC_Value":
                     params = self.input_config_parser.get_params("SoC_Value")
-                    logger.debug("params for MQTT SoC_Value: " + str(params))
+                    self.logger.debug("params for MQTT SoC_Value: " + str(params))
                     self.external_data_receiver[topic] = SoCValueDataReceiver(False, params, config, self.id,
                                                                               self.required_buffer_data, self.dT_in_seconds)
 
@@ -130,7 +119,7 @@ class InputController:
         self.set_mqtt_flags(self.generic_names, self.generic_data_mqtt_flags)
 
     def set_mqtt_flags(self, names, mqtt_flags):
-        logger.debug("names = " + str(names))
+        self.logger.debug("names = " + str(names))
         if names is not None and len(names) > 0:
             for name in names:
                 mqtt_flags[name] = self.input_config_parser.get_forecast_flag(name)
@@ -139,19 +128,19 @@ class InputController:
         """"/ usr / src / app / optimization / resources / 95c38e56d913 / p_load.txt"""
         data = {}
         path = os.path.join("/usr/src/app", "optimization/resources", str(id), "file", file)
-        logger.debug("Data path: " + str(path))
+        self.logger.debug("Data path: " + str(path))
         rows = []
         i = 0
         try:
             with open(path, "r") as file:
                 rows = file.readlines()
         except Exception as e:
-            logger.error("Read input file exception: " + str(e))
+            self.logger.error("Read input file exception: " + str(e))
         for row in rows:
             data[i] = float(row)
             i += 1
         if len(data) == 0:
-            logger.error("Data file empty " + topic)
+            self.logger.error("Data file empty " + topic)
         else:
             self.optimization_data[topic] = data
 
@@ -159,7 +148,7 @@ class InputController:
         success = False
         while not success:
             current_bucket = self.get_current_bucket()
-            logger.info("Get input data for bucket "+str(current_bucket))
+            self.logger.info("Get input data for bucket "+str(current_bucket))
             success = self.fetch_mqtt_and_file_data(self.prediction_mqtt_flags, self.internal_receiver, [], [], current_bucket)
             if success:
                 success = self.fetch_mqtt_and_file_data(self.non_prediction_mqtt_flags, self.internal_receiver, [], [], current_bucket)
@@ -170,34 +159,34 @@ class InputController:
         return {None: self.optimization_data.copy()}
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket):
-        logger.debug("mqtt flags " + str(mqtt_flags))
-        logger.info("current bucket = "+str(current_bucket))
+        self.logger.debug("mqtt flags " + str(mqtt_flags))
+        self.logger.info("current bucket = "+str(current_bucket))
         data_available_for_bucket = True
         if mqtt_flags is not None:
             for name, mqtt_flag in mqtt_flags.items():
                 if mqtt_flag:
-                    logger.debug("mqtt True " + str(name))
+                    self.logger.debug("mqtt True " + str(name))
                     if name not in mqtt_exception_list:
                         data, bucket_available = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
                         if not bucket_available:
                             data_available_for_bucket = False
-                            logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
+                            self.logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
                             break
                         data = self.set_indexing(data)
                         self.optimization_data.update(data)
                 else:
-                    logger.debug("file name: " + str(name))
+                    self.logger.debug("file name: " + str(name))
                     if name not in file_exception_list:
                         self.read_input_data(self.id, name, name + ".txt")
         return data_available_for_bucket
 
     def Stop(self):
         self.stop_request = True
-        logger.debug("internal receiver exit start")
+        self.logger.debug("internal receiver exit start")
         self.exit_receiver(self.internal_receiver)
-        logger.debug("external receiver exit start")
+        self.logger.debug("external receiver exit start")
         self.exit_receiver(self.external_data_receiver)
-        logger.debug("generic receiver exit start")
+        self.logger.debug("generic receiver exit start")
         self.exit_receiver(self.generic_data_receiver)
 
     def exit_receiver(self, receiver):

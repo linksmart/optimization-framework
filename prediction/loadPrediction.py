@@ -42,11 +42,9 @@ class LoadPrediction:
             self.output_size = 1
         self.id = id
 
-        """
-        dir_data = os.path.join("/usr/src/app", "res", self.id)
+        dir_data = os.path.join("/usr/src/app", "prediction/resources", self.id)
         if not os.path.exists(dir_data):
             os.makedirs(dir_data)
-        """
 
         self.raw_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id, "raw_data_"+str(topic_name)+".csv")
         self.model_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_"+str(topic_name)+".h5")
@@ -86,14 +84,14 @@ class LoadPrediction:
         self.training_thread = Training(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
-                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, self.output_size)
+                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, self.output_size, self.logger)
         self.training_thread.start()
 
     def startPrediction(self):
         self.prediction_thread = Prediction(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                             self.hidden_size, self.batch_size, self.num_epochs,
                                             self.raw_data, self.processingData, self.model_file_container_temp,
-                                            self.model_file_container, self.q, self.topic_name, self.id, self.dT_in_seconds, self.output_size)
+                                            self.model_file_container, self.q, self.topic_name, self.id, self.dT_in_seconds, self.output_size, self.logger)
         self.prediction_thread.start()
 
 
