@@ -143,8 +143,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                             day_i = 0
                         day = str(day_i)
                 final_data = {self.generic_name: new_data}
-        if not bucket_available and check_bucket_change:
-            self.logger.debug("bucket " + str(bucket_requested) + " is not available for " + str(self.generic_name))
+        if check_bucket_change:
             new_bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
             if new_bucket > bucket_requested:
                 self.logger.debug("bucket changed from " + str(bucket_requested) +
