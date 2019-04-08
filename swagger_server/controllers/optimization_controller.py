@@ -85,6 +85,7 @@ class CommandController:
             self.dT_in_seconds = json_object.d_t_in_seconds
             self.repetition = json_object.repetition
             self.solver = json_object.solver
+            self.optimization_type = json_object.optimization_type
         elif dict_object is not None:
             self.model_name = dict_object["model"]
             self.control_frequency = dict_object["control_frequency"]
@@ -92,13 +93,13 @@ class CommandController:
             self.dT_in_seconds = dict_object["dT_in_seconds"]
             self.repetition = dict_object["repetition"]
             self.solver = dict_object["solver"]
-
+            self.optimization_type = dict_object["optimization_type"]
 
         self.start_name_servers()
         self.start_pryo_mip_server()
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
-                               self.repetition, self.solver, id))
+                               self.repetition, self.solver, id, self.optimization_type))
 
         logger.info("Thread: " + str(self.get(id)))
         self.redisDB.set("run:" + id, "starting")
@@ -117,6 +118,7 @@ class CommandController:
                     "dT_in_seconds": self.dT_in_seconds,
                     "repetition": self.repetition,
                     "solver": self.solver,
+                    "optimization_type" : self.optimization_type,
                     "ztarttime": time.time()}
             self.redisDB.set("run:"+id, "running")
             self.redisDB.set("id_meta:"+id, json.dumps(meta_data))
@@ -160,7 +162,7 @@ class CommandController:
             time.sleep(1)
 
     def persist_id(self, id, start, meta_data):
-        path = "/usr/src/app/utils/ids_status.txt"
+        path = "/usr/src/app/optimization/resources/ids_status.txt"
         try:
             if self.redisDB.get_lock(self.lock_key, id):
                 if start:
@@ -187,7 +189,7 @@ class CommandController:
             self.redisDB.release_lock(self.lock_key, id)
 
     def get_ids(self):
-        path = "/usr/src/app/utils/ids_status.txt"
+        path = "/usr/src/app/optimization/resources/ids_status.txt"
         if os.path.exists(path):
             old_ids = []
             try:
@@ -221,7 +223,7 @@ class CommandController:
 
     def number_of_active_ids(self):
         num = 0
-        path = "/usr/src/app/utils/ids_status.txt"
+        path = "/usr/src/app/optimization/resources/ids_status.txt"
         if os.path.exists(path):
             try:
                 if self.redisDB.get_lock(self.lock_key, "start"):
@@ -364,7 +366,8 @@ def framework_start(id, startOFW):  # noqa: E501
 
     :rtype: None
     """
-    available_solvers = ["ipopt", "glpk", "bonmin"]
+    available_solvers = ["ipopt", "glpk", "bonmin", "gurobi"]
+    available_optimizers = ["discrete", "stochastic", "MPC"]
     if connexion.request.is_json:
         logger.info("Starting the system")
         startOFW = Start.from_dict(connexion.request.get_json())
@@ -373,7 +376,9 @@ def framework_start(id, startOFW):  # noqa: E501
             return "Model not available. Available models are :" + str(models)
         if startOFW.solver not in available_solvers:
             return "Use one of the following solvers :" + str(available_solvers)
-        dir = os.path.join(os.getcwd(), "utils", str(id))
+        if startOFW.optimization_type not in available_optimizers:
+            return "Use one of the following optimizer types : " + str(available_optimizers)
+        dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
         if not os.path.exists(dir):
             return "Id not existing"
         redis_db = RedisDB()

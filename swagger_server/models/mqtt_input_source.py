@@ -10,6 +10,7 @@ from swagger_server.models.ess import ESS  # noqa: F401,E501
 from swagger_server.models.generic import Generic  # noqa: F401,E501
 from swagger_server.models.global_control import GlobalControl  # noqa: F401,E501
 from swagger_server.models.grid import Grid  # noqa: F401,E501
+from swagger_server.models.horizons import Horizons  # noqa: F401,E501
 from swagger_server.models.load import Load  # noqa: F401,E501
 from swagger_server.models.pv import PV  # noqa: F401,E501
 from swagger_server import util
@@ -21,7 +22,7 @@ class MQTTInputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, generic: Generic=None, load: Load=None, photovoltaic: PV=None, ess: ESS=None, grid: Grid=None, global_control: GlobalControl=None):  # noqa: E501
+    def __init__(self, generic: Generic=None, load: Load=None, photovoltaic: PV=None, ess: ESS=None, grid: Grid=None, global_control: GlobalControl=None, horizons: Horizons=None):  # noqa: E501
         """MQTTInputSource - a model defined in Swagger
 
         :param generic: The generic of this MQTTInputSource.  # noqa: E501
@@ -36,6 +37,8 @@ class MQTTInputSource(Model):
         :type grid: Grid
         :param global_control: The global_control of this MQTTInputSource.  # noqa: E501
         :type global_control: GlobalControl
+        :param horizons: The horizons of this MQTTInputSource.  # noqa: E501
+        :type horizons: Horizons
         """
         self.swagger_types = {
             'generic': Generic,
@@ -43,7 +46,8 @@ class MQTTInputSource(Model):
             'photovoltaic': PV,
             'ess': ESS,
             'grid': Grid,
-            'global_control': GlobalControl
+            'global_control': GlobalControl,
+            'horizons': Horizons
         }
 
         self.attribute_map = {
@@ -52,7 +56,8 @@ class MQTTInputSource(Model):
             'photovoltaic': 'photovoltaic',
             'ess': 'ESS',
             'grid': 'grid',
-            'global_control': 'global_control'
+            'global_control': 'global_control',
+            'horizons': 'horizons'
         }
 
         self._generic = generic
@@ -61,6 +66,7 @@ class MQTTInputSource(Model):
         self._ess = ess
         self._grid = grid
         self._global_control = global_control
+        self._horizons = horizons
 
     @classmethod
     def from_dict(cls, dikt) -> 'MQTTInputSource':
@@ -198,3 +204,24 @@ class MQTTInputSource(Model):
         """
 
         self._global_control = global_control
+
+    @property
+    def horizons(self) -> Horizons:
+        """Gets the horizons of this MQTTInputSource.
+
+
+        :return: The horizons of this MQTTInputSource.
+        :rtype: Horizons
+        """
+        return self._horizons
+
+    @horizons.setter
+    def horizons(self, horizons: Horizons):
+        """Sets the horizons of this MQTTInputSource.
+
+
+        :param horizons: The horizons of this MQTTInputSource.
+        :type horizons: Horizons
+        """
+
+        self._horizons = horizons

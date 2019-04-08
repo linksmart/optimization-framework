@@ -1,5 +1,4 @@
 from pyomo.core import *
-import pyomo.environ
 class Model:
 	model = AbstractModel()
 	
@@ -45,6 +44,7 @@ class Model:
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
+	model.stop_system = Var(within=Boolean)
 	
 	################################################################################################
 	
@@ -66,6 +66,11 @@ class Model:
 	#Definition of the energy balance in the system
 	def con_rule_energy_balance(model,t):
 	    return 0 == model.P_Load[t] + model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
+
+	def stop_rule(model):
+		return model.stop_system == True
+
+	model.rule_stop = Constraint(rule=stop_rule)
 	
 	# Generation-feed in balance
 	#def con_rule_generation_feedin(model, t):

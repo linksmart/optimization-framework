@@ -13,14 +13,14 @@ from senml import senml
 
 from IO.dataPublisher import DataPublisher
 from IO.redisDB import RedisDB
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils.messageLogger import MessageLogger
 
 
 class LoadForecastPublisher(DataPublisher):
 
-    def __init__(self, internal_topic_params, config, queue, publish_frequency, topic, id, horizon_in_steps, dT_in_seconds):
+    def __init__(self, internal_topic_params, config, queue, publish_frequency, topic, id, horizon_in_steps,
+                 dT_in_seconds):
+        self.logger = MessageLogger.get_logger(__file__, id)
         self.load_data = {}
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "optimization", "loadData.dat")
@@ -33,7 +33,7 @@ class LoadForecastPublisher(DataPublisher):
         except Exception as e:
             redisDB = RedisDB()
             redisDB.set("Error mqtt" + self.id, True)
-            logger.error(e)
+            self.logger.error(e)
 
     def get_data(self):
         try:
@@ -44,15 +44,15 @@ class LoadForecastPublisher(DataPublisher):
                     self.q.task_done()
                     self.load_data = new_data
                 except Exception:
-                    logger.debug("Queue empty")
+                    self.logger.debug("Queue empty")
             if not self.load_data:
                 return None
-            logger.debug("extract load data")
+            self.logger.debug("extract load data")
             data = self.extract_horizon_data()
-            logger.debug(str(data))
+            self.logger.debug(str(data))
             return data
         except Exception as e:
-            logger.error(str(e))
+            self.logger.error(str(e))
             return None
 
     def extract_horizon_data(self):

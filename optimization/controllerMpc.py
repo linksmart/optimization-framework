@@ -24,21 +24,19 @@ from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
+import logging
 from threading import Event
 
 from utils.messageLogger import MessageLogger
 
-import pyutilib.subprocess.GlobalData
-pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
-
-class OptController(threading.Thread):
+class OptControllerMPC(threading.Thread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
         # threading.Thread.__init__(self)
-        super(OptController, self).__init__()
+        super(OptControllerMPC, self).__init__()
         self.logger = MessageLogger.get_logger(__file__, id)
-        self.logger.info("Initializing optimization controller " + id)
+        self.logger.info("Initializing optimization controller")
         # Loading variables
         self.id = id
         self.results = ""
@@ -67,11 +65,11 @@ class OptController(threading.Thread):
             self.logger.error(e)
             raise InvalidModelException("model is invalid/contains python syntax errors")
 
-        if "False" in self.redisDB.get("Error mqtt" + self.id):
+        if "False" in self.redisDB.get("Error mqtt"+self.id):
             self.output = OutputController(self.id, self.output_config)
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
-                                         self.horizon_in_steps, self.dT_in_seconds)
+                                     self.horizon_in_steps, self.dT_in_seconds)
 
     # Importint a class dynamically
     def path_import2(self, absolute_path):
@@ -81,24 +79,24 @@ class OptController(threading.Thread):
 
     def join(self, timeout=None):
         self.stopRequest.set()
-        super(OptController, self).join(timeout)
+        super(OptControllerMPC, self).join(timeout)
 
     def Stop(self):
         try:
             self.input.Stop()
         except Exception as e:
-            self.logger.error("error stopping input " + str(e))
+            self.logger.error("error stopping input " +  str(e))
         try:
             self.output.Stop()
         except Exception as e:
-            self.logger.error("error stopping output " + str(e))
+            self.logger.error("error stopping output " +  str(e))
         if self.isAlive():
             self.join(1)
 
     def update_count(self):
         st = time.time()
         if self.repetition > 0:
-            path = "/usr/src/app/optimization/resources/ids_status.txt"
+            path = "/usr/src/app/utils/ids_status.txt"
             if os.path.exists(path):
                 try:
                     if self.redisDB.get_lock(self.lock_key, self.id):
@@ -119,7 +117,7 @@ class OptController(threading.Thread):
                                 with open(path, "w") as f:
                                     f.writelines(data)
                 except Exception as e:
-                    self.logger.error("error updating count in file " + str(e))
+                    logging.error("error updating count in file " + str(e))
                 finally:
                     self.redisDB.release_lock(self.lock_key, self.id)
         st = int(time.time() - st)
@@ -148,10 +146,6 @@ class OptController(threading.Thread):
             else:
                 self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
 
-            # self.logger.info("Solvers ipopt = "+ str(SolverFactory('ipopt').available()))
-            # self.logger.info("Solvers glpk = "+ str(SolverFactory('glpk').available()))
-            # self.logger.info("Solvers gurobi = " + str(SolverFactory('gurobi').available()))
-
             count = 0
             self.logger.info("This is the id: " + self.id)
             while not self.stopRequest.isSet():
@@ -176,14 +170,14 @@ class OptController(threading.Thread):
                         # self.logger.info(instance.pprint())
                         action_handle = solver_manager.queue(instance, opt=optsolver)
                         self.logger.debug("Solver queue created " + str(action_handle))
-                        self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                        self.logger.debug("solver queue actions = "+ str(solver_manager.num_queued()))
                         action_handle_map[action_handle] = str(self.id)
                         self.logger.debug("Action handle map: " + str(action_handle_map))
                         start_time = time.time()
                         self.logger.debug("Optimization starting time: " + str(start_time))
                         break
                     except Exception as e:
-                        self.logger.error("exception " + str(e))
+                        self.logger.error("exception "+str(e))
                         if run_count == 5:
                             raise e
                         time.sleep(5)
@@ -224,7 +218,11 @@ class OptController(threading.Thread):
                                 # Append new index to currently existing items
                                 # my_dict = {**my_dict, **{v: list}}
 
-                        self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
+                        if "stop_system" not in my_dict.keys() or ("stop_system" in my_dict.keys() and my_dict["stop_system"][0] == 0.0):
+                            self.logger.debug("model.stop_system false")
+                            self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
+                        else:
+                            self.logger.debug("model.stop_system true")
                     except Exception as e:
                         self.logger.error(e)
                 elif self.results.solver.termination_condition == TerminationCondition.infeasible:
@@ -260,7 +258,7 @@ class OptController(threading.Thread):
             self.logger.debug("Deactivating pyro servers")
             # TODO : 'SolverManager_Pyro' object has no attribute 'deactivate'
             # this error was not present before pyomo update
-            # solver_manager.deactivate()
+            #solver_manager.deactivate()
             self.logger.debug("Pyro servers deactivated: " + str(solver_manager))
 
             # If Stop signal arrives it tries to disconnect all mqtt clients

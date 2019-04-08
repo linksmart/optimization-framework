@@ -100,7 +100,7 @@ optimization/resources/
 prediction/resources/
 connector/resources/
 mock_data/resources/
-utils/*
+utils/resources/
 
 !utils/.gitkeep
 

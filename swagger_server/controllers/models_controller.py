@@ -45,13 +45,13 @@ def delete_models(name):  # noqa: E501
             check_and_remove_from_resources(file_name)
             # Creating an object of the configuration file in order to change the model.name into the SolverSection
             config = configparser.RawConfigParser()
-            config.read(getFilePath("utils", "ConfigFile.properties"))
+            config.read(getFilePath("optimization/resources", "ConfigFile.properties"))
             model_name = config.get('SolverSection', 'model.name')
             if model_name == name:
                 config.set('SolverSection', 'model.name', "ReferenceModel")
-                with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
+                with open(getFilePath("optimization/resources", "ConfigFile.properties"), mode='w') as configfile:
                     config.write(configfile)
-                config.read(getFilePath("utils", "ConfigFile.properties"))
+                config.read(getFilePath("optimization/resources", "ConfigFile.properties"))
                 logger.info(
                     "The model name was changed in the configuration file: " + config['SolverSection']['model.name'])
             answer = "OK"
@@ -136,11 +136,11 @@ def optimization_model(name, upModel):  # noqa: E501
 
         # Creating an object of the configuration file in order to change the model.name into the SolverSection
         config = configparser.RawConfigParser()
-        config.read(getFilePath("utils", "ConfigFile.properties"))
+        config.read(getFilePath("optimization/resources", "ConfigFile.properties"))
         config.set('SolverSection', 'model.name', name)
-        with open(getFilePath("utils", "ConfigFile.properties"), mode='w') as configfile:
+        with open(getFilePath("optimization/resources", "ConfigFile.properties"), mode='w') as configfile:
             config.write(configfile)
-        config.read(getFilePath("utils", "ConfigFile.properties"))
+        config.read(getFilePath("optimization/resources", "ConfigFile.properties"))
         logger.info("The model name was saved in the configuration file: "+config['SolverSection']['model.name'])
         answer = "OK"
 

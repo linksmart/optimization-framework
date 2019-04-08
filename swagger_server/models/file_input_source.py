@@ -10,6 +10,7 @@ from swagger_server.models.ess_file import ESSFile  # noqa: F401,E501
 from swagger_server.models.generic_files import GenericFiles  # noqa: F401,E501
 from swagger_server.models.global_control_file import GlobalControlFile  # noqa: F401,E501
 from swagger_server.models.grid import Grid  # noqa: F401,E501
+from swagger_server.models.horizons import Horizons  # noqa: F401,E501
 from swagger_server.models.load_file import LoadFile  # noqa: F401,E501
 from swagger_server.models.pv_file import PVFile  # noqa: F401,E501
 from swagger_server import util
@@ -21,7 +22,7 @@ class FileInputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, generic: GenericFiles=None, load: LoadFile=None, photovoltaic: PVFile=None, ess: ESSFile=None, grid: Grid=None, global_control: GlobalControlFile=None):  # noqa: E501
+    def __init__(self, generic: GenericFiles=None, load: LoadFile=None, photovoltaic: PVFile=None, ess: ESSFile=None, grid: Grid=None, global_control: GlobalControlFile=None, horizons: Horizons=None):  # noqa: E501
         """FileInputSource - a model defined in Swagger
 
         :param generic: The generic of this FileInputSource.  # noqa: E501
@@ -36,6 +37,8 @@ class FileInputSource(Model):
         :type grid: Grid
         :param global_control: The global_control of this FileInputSource.  # noqa: E501
         :type global_control: GlobalControlFile
+        :param horizons: The horizons of this FileInputSource.  # noqa: E501
+        :type horizons: Horizons
         """
         self.swagger_types = {
             'generic': GenericFiles,
@@ -43,7 +46,8 @@ class FileInputSource(Model):
             'photovoltaic': PVFile,
             'ess': ESSFile,
             'grid': Grid,
-            'global_control': GlobalControlFile
+            'global_control': GlobalControlFile,
+            'horizons': Horizons
         }
 
         self.attribute_map = {
@@ -52,7 +56,8 @@ class FileInputSource(Model):
             'photovoltaic': 'photovoltaic',
             'ess': 'ESS',
             'grid': 'grid',
-            'global_control': 'global_control'
+            'global_control': 'global_control',
+            'horizons': 'horizons'
         }
 
         self._generic = generic
@@ -61,6 +66,7 @@ class FileInputSource(Model):
         self._ess = ess
         self._grid = grid
         self._global_control = global_control
+        self._horizons = horizons
 
     @classmethod
     def from_dict(cls, dikt) -> 'FileInputSource':
@@ -198,3 +204,24 @@ class FileInputSource(Model):
         """
 
         self._global_control = global_control
+
+    @property
+    def horizons(self) -> Horizons:
+        """Gets the horizons of this FileInputSource.
+
+
+        :return: The horizons of this FileInputSource.
+        :rtype: Horizons
+        """
+        return self._horizons
+
+    @horizons.setter
+    def horizons(self, horizons: Horizons):
+        """Sets the horizons of this FileInputSource.
+
+
+        :param horizons: The horizons of this FileInputSource.
+        :type horizons: Horizons
+        """
+
+        self._horizons = horizons

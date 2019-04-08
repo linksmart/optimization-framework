@@ -57,8 +57,8 @@ def clear_redis():
 
 
 if __name__ == '__main__':
-    config_path = "/usr/src/app/utils/ConfigFile.properties"
-    config_path_default = "/usr/src/app/config/ConfigFile.properties"
+    config_path = "/usr/src/app/prediction/resources/trainingConfig.properties"
+    config_path_default = "/usr/src/app/config/trainingConfig.properties"
     ConfigUpdater.copy_config(config_path_default, config_path)
 
     try:

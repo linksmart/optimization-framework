@@ -16,14 +16,13 @@ from senml import senml
 from IO.dataPublisher import DataPublisher
 from IO.radiation import Radiation
 from IO.redisDB import RedisDB
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils.messageLogger import MessageLogger
 
 
 class PVForecastPublisher(DataPublisher):
 
     def __init__(self, internal_topic_params, config, id, maxPV, control_frequency, horizon_in_steps, dT_in_seconds, location):
+        self.logger = MessageLogger.get_logger(__file__, id)
         self.pv_data = {}
         radiation = Radiation(config, maxPV, dT_in_seconds, location)
         self.q = Queue(maxsize=0)
@@ -38,20 +37,20 @@ class PVForecastPublisher(DataPublisher):
         except Exception as e:
             redisDB = RedisDB()
             redisDB.set("Error mqtt" + self.id, True)
-            logger.error(e)
+            self.logger.error(e)
 
     def get_pv_data_from_source(self, radiation, q):
         """PV Data fetch thread. Runs at 23:30 every day"""
         while True:
             try:
-                logger.info("Fetching pv data from radiation api")
+                self.logger.info("Fetching pv data from radiation api")
                 data = radiation.get_data()
                 pv_data = json.loads(data)
                 q.put(pv_data)
                 delay = self.get_delay_time(23, 30)
                 time.sleep(delay)
             except Exception as e:
-                logger.error(e)
+                self.logger.error(e)
                 time.sleep(10)
 
     def get_delay_time(self, hour, min):
@@ -69,19 +68,19 @@ class PVForecastPublisher(DataPublisher):
                 self.q.task_done()
                 self.pv_data = new_data
             except Exception:
-                logger.debug("Queue empty")
-        logger.debug("extract pv data")
+                self.logger.debug("Queue empty")
+        self.logger.debug("extract pv data")
         data = self.extract_horizon_data()
         return data
 
     def extract_horizon_data(self):
         meas = []
         if len(self.pv_data) > 0:
-            current_timestamp = datetime.datetime.now()
+            current_timestamp = datetime.datetime.now().timestamp()
             closest_index = self.find_closest_prev_timestamp(self.pv_data, current_timestamp)
             for i in range(self.horizon_in_steps):
                 row = self.pv_data[closest_index]
-                meas.append(self.get_senml_meas(float(row["pv_output"]), datetime.datetime.strptime(row["date"], "%Y-%m-%d %H:%M:%S")))
+                meas.append(self.get_senml_meas(float(row[1]), row[0]))
                 closest_index += 1
                 if closest_index >= len(self.pv_data):
                     closest_index = 0
@@ -101,7 +100,7 @@ class PVForecastPublisher(DataPublisher):
     def find_closest_prev_timestamp(self, data, date):
         closest = 0
         for i, item in enumerate(data, 0):
-            if datetime.datetime.strptime(item["date"], "%Y-%m-%d %H:%M:%S") <= date:
+            if item[0] <= date:
                 closest = i
             else:
                 break

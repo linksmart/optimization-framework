@@ -18,7 +18,7 @@ utils = Utils()
 
 def delete_data(id, registry_file):
     try:
-        path = os.path.join(os.getcwd(), "utils", str(id), registry_file)
+        path = os.path.join(os.getcwd(), "optimization/resources", str(id), registry_file)
         logger.info("file to be deleted is "+str(path))
         if not os.path.exists(path):
             return "Id not existing"
@@ -78,14 +78,14 @@ def output_source_mqtt(id, Output_Source):  # noqa: E501
             Output_Source = connexion.request.get_json()
 
             try:
-                dir = os.path.join(os.getcwd(), "utils", str(id))
+                dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
                 if not os.path.exists(dir):
                     os.makedirs(dir)
             except Exception as e:
                 logger.error(e)
 
             # saves the registry into the new folder
-            path = os.path.join(os.getcwd(), "utils", str(id), "Output.registry.mqtt")
+            path = os.path.join(os.getcwd(), "optimization/resources", str(id), "Output.registry.mqtt")
             with open(path, 'w') as outfile:
                 json.dump(Output_Source, outfile, ensure_ascii=False)
             logger.info("control output saved into memory")
@@ -150,7 +150,7 @@ def get_output_source_mqtt(id):  # noqa: E501
     :rtype: OutputSource
     """
     response = {}
-    dir = os.path.join(os.getcwd(), "utils", str(id))
+    dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
     try:
         if not os.path.exists(dir):
             return "output mqtt not existing"

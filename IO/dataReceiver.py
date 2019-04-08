@@ -15,15 +15,14 @@ from random import randrange
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils.messageLogger import MessageLogger
 
 
 class DataReceiver(ABC):
 
     def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None):
         super().__init__()
+        self.logger = MessageLogger.get_logger(__file__, id)
         self.stop_request = False
         self.internal = internal
         self.topic_params = topic_params
@@ -117,7 +116,7 @@ class DataReceiver(ABC):
             return topics, None
 
     def init_mqtt(self, topic_qos):
-        logger.info("Initializing mqtt subscription client")
+        self.logger.info("Initializing mqtt subscription client")
         #if we set it to false here again then it may overwrite previous true value
         #self.redisDB.set("Error mqtt"+self.id, False)
         try:
@@ -125,22 +124,22 @@ class DataReceiver(ABC):
                 self.port = 1883
                 #read from config
             self.client_id = "client_receive" + str(randrange(100000)) + str(time.time()).replace(".","")
-            self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
-                               username=self.host_params["username"], password=self.host_params["password"],
-                               ca_cert_path=self.host_params["ca_cert_path"], set_insecure=self.host_params["insecure_flag"])
+            self.mqtt = MQTTClient(str(self.host), self.port, self.client_id, username=self.host_params["username"],
+                                   password=self.host_params["password"], ca_cert_path=self.host_params["ca_cert_path"],
+                                   set_insecure=self.host_params["insecure_flag"], id=self.id)
             self.mqtt.subscribe(topic_qos, self.on_msg_received)
             while not self.mqtt.subscribe_ack_wait():
                 self.mqtt.subscribe(topic_qos, self.on_msg_received)
-                logger.error("Topic subscribe missing ack")
+                self.logger.error("Topic subscribe missing ack")
 
-            logger.info("successfully subscribed")
+            self.logger.info("successfully subscribed")
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
             # error for mqtt will be caught by parent
             raise e
 
     def init_zmq(self, topics):
-        logger.info("Initializing zmq subscription client")
+        self.logger.info("Initializing zmq subscription client")
         self.zmq = ZMQClient(self.host, None, self.port)
         self.zmq.init_subscriber(topics, self.id)
 
@@ -152,7 +151,7 @@ class DataReceiver(ABC):
         if require_updated == 1 and not self.data:
             require_updated = 0
         while require_updated == 0 and not self.data_update and not self.stop_request:
-            logger.debug("wait for data")
+            self.logger.debug("wait for data")
             time.sleep(0.5)
         return self.get_and_update_data(clearData)
 
@@ -162,13 +161,13 @@ class DataReceiver(ABC):
             self.mqtt.MQTTExit()
         elif self.channel == "ZMQ":
             self.zmq.stop()
-        logger.info("InputController safe exit")
+        self.logger.info("InputController safe exit")
 
     def get_zmq_msg(self, clearData):
         while True and not self.stop_request:
-            logger.debug("get zmq msg")
+            self.logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
-            logger.debug("zmq subscription msg received for topic "+str(topic)+" for id "+str(self.id))
+            self.logger.debug("zmq subscription msg received for topic "+str(topic)+" for id "+str(self.id))
             if flag:
                 self.on_msg_received(message)
                 break

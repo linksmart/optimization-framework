@@ -58,7 +58,7 @@ class PredictModel:
 
     def save_to_file(self, input, output, raw_data):
         try:
-            path = os.path.join("/usr/src/app", "res", "output_data" + ".csv")
+            path = os.path.join("/usr/src/app", "prediction/resources", "output_data" + ".csv")
             with open(path, "a+") as file:
                 file.write("raw:\n")
                 for line in raw_data:
