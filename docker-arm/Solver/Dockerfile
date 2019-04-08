@@ -174,8 +174,9 @@ RUN python3 setup.py build
 RUN python3 setup.py install
 #RUN apk add clean
 
-ENV GUROBI_HOME "/share/gurobi811/linux64"
+ENV GUROBI_HOME "/usr/src/app/share/gurobi811/linux64"
 ENV PATH "$PATH:/usr/src/app/share/gurobi811/linux64/bin"
 ENV LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+ENV GRB_LICENSE_FILE "/usr/src/app/share/gurobi811/license/gurobi.lic"
 
 RUN apt-get clean
