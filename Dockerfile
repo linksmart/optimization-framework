@@ -1,6 +1,6 @@
 
 # Use an official Python runtime as a parent image
-FROM garagon/ipopt:V0.2
+FROM garagon/solvers:amd_v2
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
@@ -21,7 +21,7 @@ RUN pip3 install --upgrade pip
 
 RUN pip3 install -U requests==2.21.0
 RUN pip3 install -U pyomo==5.6.1
-RUN pip3 install -U pyomo.extras==2.0
+#RUN pip3 install -U pyomo.extras==2.0
 RUN pip3 install -U gunicorn==19.9.0
 RUN pip3 install -U sh==1.12.14
 RUN pip3 install -U connexion==2.2.0
