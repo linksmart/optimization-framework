@@ -158,7 +158,7 @@ class OptController(threading.Thread):
 
                 start_time_offset = int(data_dict[None]["Start_Time"][None])
 
-                forecast_pv = data_dict[None]["P_PV_Forecast"]
+                forecast_pv = data_dict[None]["P_PV"]
                 car_park = self.input_config_parser.car_park
                 max_number_of_cars = car_park.number_of_cars
 
@@ -256,7 +256,7 @@ class OptController(threading.Thread):
                         data_dict[None]["Behavior_Model"] = bm
 
                         pv_forecast_for_current_timestep = forecast_pv[timestep]
-                        data_dict[None]["P_PV_Forecast"] = {None: pv_forecast_for_current_timestep}
+                        data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
 
                         # * Create Optimization instance
 
@@ -326,15 +326,16 @@ class OptController(threading.Thread):
                                         logger.error(e)
 
                                 Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['Grid'] = \
-                                    my_dict["P_GRID"][0]
+                                    my_dict["P_GRID_OUTPUT"][0]
                                 Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['PV'] = \
-                                    my_dict["P_PV"][0]
+                                    my_dict["P_PV_OUTPUT"][0]
                                 Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] = - \
-                                    my_dict["P_ESS"][0]
+                                    my_dict["P_ESS_OUTPUT"][0]
                                 Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] = - \
-                                    my_dict["P_VAC"][0]
+                                    my_dict["P_VAC_OUTPUT"][0]
 
-                                Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
+                                Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = \
+                                    my_dict["P_PV_OUTPUT"][0]
 
                                 logger.info("Done".center(80, "#"))
                                 logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
@@ -349,8 +350,8 @@ class OptController(threading.Thread):
                         else:
                             logger.info("Nothing fits")
 
-                initial_ess_soc_value = 50
-                initial_vac_soc_value = 50
+                initial_ess_soc_value = ess_soc_states[len(ess_soc_states) // 2]
+                initial_vac_soc_value = vac_soc_states[len(vac_soc_states) // 2]
 
                 p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
                 p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
