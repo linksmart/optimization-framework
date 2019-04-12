@@ -221,8 +221,6 @@ class OptController(threading.Thread):
                     logger.info(f"Timestep :#{timestep}")
                     for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
-                        # TODO: Remove below until updated
-
                         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                         for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                             if min(ess_soc_states) <= p_ESS + ini_ess_soc <= max(
@@ -350,8 +348,8 @@ class OptController(threading.Thread):
                         else:
                             logger.info("Nothing fits")
 
-                initial_ess_soc_value = ess_soc_states[len(ess_soc_states) // 2]
-                initial_vac_soc_value = vac_soc_states[len(vac_soc_states) // 2]
+                initial_ess_soc_value = int(data_dict[None]["SoC_Value"][None])
+                initial_vac_soc_value = int(data_dict[None]["VAC_SoC_Value"][None])
 
                 p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
                 p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
@@ -378,10 +376,12 @@ class OptController(threading.Thread):
                 connections = self.input_config_parser.car_park.max_charge_power_calculator(dT)
 
                 # Calculation of the feasible charging power at the commercial station
-                feasible_ev_charging_power = min(sum(connections.values()), p_vac)
+                max_power_for_cars = sum(connections.values())
+                feasible_ev_charging_power = min(max_power_for_cars, p_vac)
 
-                for charger, maxChargePower in connections.items():
-                    power_output_of_charger = maxChargePower / feasible_ev_charging_power
+                for charger, max_charge_power_of_car in connections.items():
+                    power_output_of_charger = feasible_ev_charging_power * (
+                            max_charge_power_of_car / max_power_for_cars)
                     p_ev[charger] = power_output_of_charger
                 #############################################################################
 
@@ -431,6 +431,7 @@ class OptController(threading.Thread):
                     "p_pv": p_pv,
                     "p_grid": p_grid,
                     "p_ess": p_ess,
+                    "p_vac": p_vac,
                     "feasible_ev_charging_power": feasible_ev_charging_power,
                     "p_ev": p_ev,
                     "execution_time": execution_time
