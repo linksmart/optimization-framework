@@ -68,7 +68,7 @@ class SolarRadiation:
                     break
                 date_file = datetime.datetime.strptime(w[0], "%Y%m%d:%H%M%S")
                 date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
-                if now <= date - datetime.timedelta(hours=-2) <= (now + datetime.timedelta(hours=47)):
+                if now <= date - datetime.timedelta(hours=-1) <= (now + datetime.timedelta(hours=48)):
                     rad_data.append(RadiationData(date, w[1], w[2], w[3], w[4], w[5], w[6], w[7]))
             we = sorted(rad_data, key=lambda w: w.date)
             data = SolarRadiation.extract_data(we)

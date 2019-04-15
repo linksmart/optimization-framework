@@ -101,6 +101,7 @@ prediction/resources/
 connector/resources/
 mock_data/resources/
 utils/resources/
+docker/Solvers/gurobi811/
 
 !utils/.gitkeep
 
