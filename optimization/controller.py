@@ -348,8 +348,8 @@ class OptController(threading.Thread):
                         else:
                             logger.info("Nothing fits")
 
-                initial_ess_soc_value = int(data_dict[None]["SoC_Value"][None])
-                initial_vac_soc_value = int(data_dict[None]["VAC_SoC_Value"][None])
+                initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
+                initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
 
                 p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
                 p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
@@ -378,11 +378,17 @@ class OptController(threading.Thread):
                 # Calculation of the feasible charging power at the commercial station
                 max_power_for_cars = sum(connections.values())
                 feasible_ev_charging_power = min(max_power_for_cars, p_vac)
+                print("feasible_ev_charging_power"+str(feasible_ev_charging_power))
+                print("max_power_for_cars " +str(max_power_for_cars))
 
                 for charger, max_charge_power_of_car in connections.items():
-                    power_output_of_charger = feasible_ev_charging_power * (
-                            max_charge_power_of_car / max_power_for_cars)
-                    p_ev[charger] = power_output_of_charger
+                    if feasible_ev_charging_power == 0:
+                        p_ev[charger] = 0
+                    else:
+                        power_output_of_charger = feasible_ev_charging_power * (
+                                max_charge_power_of_car / max_power_for_cars)
+                        p_ev[charger] = power_output_of_charger
+                    #print("power_output_of_charger "+str(power_output_of_charger)+"in charger "+str(charger) )
                 #############################################################################
 
                 #############################################################################
