@@ -30,7 +30,7 @@ class Model:
 
     model.Behavior_Model_Index = Set()
     model.Behavior_Model = Param(model.Behavior_Model_Index)
-    model.Behavior_Model.pprint()
+    #+model.Behavior_Model.pprint()
 
     model.dT = Param(within=PositiveIntegers)
 
@@ -71,7 +71,7 @@ class Model:
 
     def home_demandmeeting(model):
         # Power demand must be met anyway
-        return model.P_VAC_OUTPUT + model.P_ESS_OUTPUT == model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+        return model.P_VAC_OUTPUT - model.P_ESS_OUTPUT == model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     model.const_demand = Constraint(rule=home_demandmeeting)
 
