@@ -393,9 +393,15 @@ class OptController(threading.Thread):
 
                 #############################################################################
                 # This section decides what to do with the non utilized virtual capacity charging power
-
+                """
                 # Power leftover: Non implemented part of virtual capacity charging power
                 leftover_vac_charging_power = p_vac - feasible_ev_charging_power
+
+                # Still leftover is attempted to be charged to the ESS
+                ess_charger_limit = ESS_Max_Charge
+                ess_capacity_limit = ((100 - initial_ess_soc_value) / 100) * (ESS_Capacity / dT)
+                max_ess_charging_power = ess_capacity_limit - p_ess#min(ess_charger_limit, ess_capacity_limit, still_leftover)
+                p_ess = p_ess + max_ess_charging_power
 
                 # Leftover is attempted to be removed with less import
                 less_import = min(p_grid, leftover_vac_charging_power)
@@ -404,17 +410,12 @@ class OptController(threading.Thread):
                 # Some part could be still left
                 still_leftover = leftover_vac_charging_power - less_import
 
-                # Still leftover is attempted to be charged to the ESS
 
-                ess_charger_limit = ESS_Max_Charge
-                ess_capacity_limit = (100 - initial_ess_soc_value) / 100 * ESS_Capacity / dT
-                max_ess_charging_power = min(ess_charger_limit, ess_capacity_limit, still_leftover)
-                p_ess = p_ess - max_ess_charging_power
 
                 # Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
                 final_leftover = still_leftover - max_ess_charging_power
                 p_pv = p_pv - final_leftover
-
+                """
                 print("Implemented actions")
                 print("PV generation:", p_pv)
                 print("Import:", p_grid)
