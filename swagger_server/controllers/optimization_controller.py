@@ -364,7 +364,7 @@ def framework_start(id, startOFW):  # noqa: E501
 
     :rtype: None
     """
-    available_solvers = ["ipopt", "glpk", "bonmin"]
+    available_solvers = ["ipopt", "glpk", "bonmin","gurobi","cbc"]
     if connexion.request.is_json:
         logger.info("Starting the system")
         startOFW = Start.from_dict(connexion.request.get_json())
