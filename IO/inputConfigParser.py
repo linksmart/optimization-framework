@@ -78,9 +78,9 @@ class InputConfigParser:
                         elif k1 == Constants.SoC_Value and isinstance(v1, int):
                             indexing = self.model_variables[Constants.SoC_Value]["indexing"]
                             if indexing == "index":
-                                data[Constants.SoC_Value] = {int(0): float(v1 / 100)}
+                                data[Constants.SoC_Value] = {int(0): float(v1)}
                             elif indexing == "None":
-                                data[Constants.SoC_Value] = {None: float(v1 / 100)}
+                                data[Constants.SoC_Value] = {None: float(v1)}
                         elif isinstance(v1, list):
                             self.add_name_to_list(k1)
                         elif k == "generic" and not isinstance(v1, dict):

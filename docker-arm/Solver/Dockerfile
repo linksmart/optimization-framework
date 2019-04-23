@@ -33,11 +33,11 @@ RUN mkdir -p /usr/src/app/share
 WORKDIR /usr/src/app/share
 
 # Install ipopt from http
-RUN wget https://www.coin-or.org/download/source/Ipopt/Ipopt-3.12.9.tgz
-RUN gunzip Ipopt-3.12.9.tgz
-RUN tar xvf Ipopt-3.12.9.tar
+RUN wget https://www.coin-or.org/download/source/Ipopt/Ipopt-3.12.13.tgz
+RUN gunzip Ipopt-3.12.13.tgz
+RUN tar xvf Ipopt-3.12.13.tar
 
-RUN mv Ipopt-3.12.9 CoinIpopt
+RUN mv Ipopt-3.12.13 CoinIpopt
 ## Verify package contents
 # RUN wget http://ftp.gnu.org/gnu/glpk/glpk-4.57.tar.gz.sig \
 #	&& gpg --verify glpk-4.57.tar.gz.sig
@@ -75,7 +75,7 @@ RUN make install
 RUN make distclean
 RUN ldconfig
 # Cleanup
-RUN rm -rf /usr/src/app/share/Ipopt-3.12.9.tgz
+RUN rm -rf /usr/src/app/share/Ipopt-3.12.13.tgz
 #RUN apk add clean
 ENV PATH "$PATH:/usr/src/app/share/CoinIpopt/build/bin"
 
@@ -85,11 +85,11 @@ ENV PATH "$PATH:/usr/src/app/share/CoinIpopt/build/bin"
 WORKDIR /usr/src/app/share
 
 # Install ipopt from http
-RUN wget https://www.coin-or.org/download/source/Bonmin/Bonmin-1.8.6.tgz
-RUN gunzip Bonmin-1.8.6.tgz
-RUN tar xvf Bonmin-1.8.6.tar
+RUN wget https://www.coin-or.org/download/source/Bonmin/Bonmin-1.8.7.tgz
+RUN gunzip Bonmin-1.8.7.tgz
+RUN tar xvf Bonmin-1.8.7.tar
 
-RUN mv Bonmin-1.8.6 CoinBonmin
+RUN mv Bonmin-1.8.7 CoinBonmin
 
 #Installing thirdparty services
 WORKDIR /usr/src/app/share/CoinBonmin/ThirdParty/Blas
@@ -123,7 +123,7 @@ RUN make install
 RUN make distclean
 RUN ldconfig
 # Cleanup
-RUN rm -rf /usr/src/app/share/Bonmin-1.8.6.tgz
+RUN rm -rf /usr/src/app/share/Bonmin-1.8.7.tgz
 #RUN apk add clean
 ENV PATH "$PATH:/usr/src/app/share/CoinBonmin/build/bin"
 
@@ -159,24 +159,37 @@ RUN rm -rf /usr/src/app/share/glpk-4.65.tar.gz \
 ENV PATH "$PATH:/usr/bin/local"
 
 
-###############################gurobi############################################
-
-
+################CBC#################
 # Set the working directory to usr/src/app/share
 RUN mkdir -p /usr/src/app/share
 WORKDIR /usr/src/app/share
 
 # Install ipopt from http
-COPY gurobi811 /usr/src/app/share/gurobi811
-WORKDIR /usr/src/app/share/gurobi811/linux64
+RUN wget https://www.coin-or.org/download/source/Cbc/Cbc-2.10.1.tgz
+RUN gunzip Cbc-2.10.1.tgz
+RUN tar xvf Cbc-2.10.1.tar
 
-RUN python3 setup.py build
-RUN python3 setup.py install
+RUN mv Cbc-2.10.1 CoinCBC
+
+#Creating a directory for building ipopt
+WORKDIR /usr/src/app/share/CoinCBC
+RUN mkdir -p /usr/src/app/share/CoinCBC/build
+WORKDIR /usr/src/app/share/CoinCBC/build
+
+RUN ../configure --enable-cbc-parallel
+#--withglpk-lib=""
+RUN echo "Configuration finished"
+
+RUN make
+RUN echo "Make finished"
+
+RUN make test
+RUN echo "Make test finished"
+RUN make install
+RUN echo "Install finished"
+RUN make distclean
+RUN ldconfig
+# Cleanup
+RUN rm -rf /usr/src/app/share/Cbc-2.10.1.tgz
 #RUN apk add clean
-
-ENV GUROBI_HOME "/usr/src/app/share/gurobi811/linux64"
-ENV PATH "$PATH:/usr/src/app/share/gurobi811/linux64/bin"
-ENV LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
-ENV GRB_LICENSE_FILE "/usr/src/app/share/gurobi811/license/gurobi.lic"
-
-RUN apt-get clean
+ENV PATH "$PATH:/usr/src/app/share/CoinCBC/build/bin"

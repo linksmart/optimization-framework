@@ -17,4 +17,4 @@ class SoCValueDataReceiver(BaseDataReceiver):
         super().__init__(internal, topic_params, config, self.generic_name, id, buffer, dT)
 
     def unit_value_change(self, value, unit):
-        return float(value)/100
+        return float(value)
