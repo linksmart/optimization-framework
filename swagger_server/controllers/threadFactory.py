@@ -12,7 +12,7 @@ from IO.MQTTClient import InvalidMQTTHostException
 from IO.inputConfigParser import InputConfigParser
 from IO.redisDB import RedisDB
 from optimization.ModelException import MissingKeysException
-from optimization.controller import OptController
+from optimization.controllerDiscrete import OptController
 from optimization.controllerMpc import OptControllerMPC
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
