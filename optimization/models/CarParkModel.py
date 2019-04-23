@@ -14,7 +14,7 @@ class Model:
     model.Value_Index = Set(dimen=2)
 
     model.Value = Param(model.Value_Index, mutable=True)
-    model.Value.pprint()
+    #model.Value.pprint()
 
     model.P_PV = Param(within=NonNegativeReals)
 
@@ -39,8 +39,8 @@ class Model:
     # Combined decision
     model.Decision = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
 
-    model.P_ESS_OUTPUT = Var(within=Reals)
-    model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
+    model.P_ESS_OUTPUT = Var(within=Reals, bounds=(-33, 33)) #change bounds
+    model.P_VAC_OUTPUT = Var(within=NonNegativeReals, bounds=(0, 65)) # change bounds
     model.P_PV_OUTPUT = Var(bounds=(0, model.P_PV))
     model.P_GRID_OUTPUT = Var(within=Reals)
 
@@ -71,7 +71,7 @@ class Model:
 
     def home_demandmeeting(model):
         # Power demand must be met anyway
-        return model.P_VAC_OUTPUT - model.P_ESS_OUTPUT == model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+        return model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     model.const_demand = Constraint(rule=home_demandmeeting)
 
