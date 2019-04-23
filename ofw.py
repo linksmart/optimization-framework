@@ -39,7 +39,10 @@ def parseArgs():
 def main():
     global OPTIONS
 
-    logger.info("Optiframework started")
+    logger.debug("###################################")
+    logger.info("OFW started")
+    logger.debug("###################################")
+
     setup()
     logger.info("Starting webserver")
     webserver.main()

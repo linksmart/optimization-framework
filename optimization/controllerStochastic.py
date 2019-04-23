@@ -31,6 +31,8 @@ pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 logger = logging.getLogger(__file__)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 
+import pyutilib.subprocess.GlobalData
+pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 class OptControllerStochastic(threading.Thread):
 
@@ -161,7 +163,7 @@ class OptControllerStochastic(threading.Thread):
 
                 start_time_offset = int(data_dict[None]["Start_Time"][None])
 
-                forecast_pv = data_dict[None]["P_PV_Forecast"]
+                forecast_pv = data_dict[None]["P_PV"]
                 car_park = self.input_config_parser.car_park
                 max_number_of_cars = car_park.number_of_cars
 
@@ -224,8 +226,6 @@ class OptControllerStochastic(threading.Thread):
                     logger.info(f"Timestep :#{timestep}")
                     for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
-                        # TODO: Remove below until updated
-
                         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                         for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                             if min(ess_soc_states) <= p_ESS + ini_ess_soc <= max(
@@ -259,7 +259,7 @@ class OptControllerStochastic(threading.Thread):
                         data_dict[None]["Behavior_Model"] = bm
 
                         pv_forecast_for_current_timestep = forecast_pv[timestep]
-                        data_dict[None]["P_PV_Forecast"] = {None: pv_forecast_for_current_timestep}
+                        data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
 
                         # * Create Optimization instance
 
@@ -329,15 +329,16 @@ class OptControllerStochastic(threading.Thread):
                                         logger.error(e)
 
                                 Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['Grid'] = \
-                                    my_dict["P_GRID"][0]
+                                    my_dict["P_GRID_OUTPUT"][0]
                                 Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['PV'] = \
-                                    my_dict["P_PV"][0]
-                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] = - \
-                                    my_dict["P_ESS"][0]
-                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] = - \
-                                    my_dict["P_VAC"][0]
+                                    my_dict["P_PV_OUTPUT"][0]
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] =  \
+                                    my_dict["P_ESS_OUTPUT"][0]
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] =  \
+                                    my_dict["P_VAC_OUTPUT"][0]
 
-                                Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = my_dict["P_PV"][0]
+                                Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = \
+                                    my_dict["P_PV_OUTPUT"][0]
 
                                 logger.info("Done".center(80, "#"))
                                 logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
@@ -352,13 +353,13 @@ class OptControllerStochastic(threading.Thread):
                         else:
                             logger.info("Nothing fits")
 
-                initial_ess_soc_value = 50
-                initial_vac_soc_value = 50
+                initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
+                initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
 
                 p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
                 p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
                 p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['ESS']
-                p_vac = -Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
+                p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
                 p_ev = {}
 
                 print("Dynamic programming calculations")
@@ -380,18 +381,32 @@ class OptControllerStochastic(threading.Thread):
                 connections = self.input_config_parser.car_park.max_charge_power_calculator(dT)
 
                 # Calculation of the feasible charging power at the commercial station
-                feasible_ev_charging_power = min(sum(connections.values()), p_vac)
+                max_power_for_cars = sum(connections.values())
+                feasible_ev_charging_power = min(max_power_for_cars, p_vac)
+                print("feasible_ev_charging_power"+str(feasible_ev_charging_power))
+                print("max_power_for_cars " +str(max_power_for_cars))
 
-                for charger, maxChargePower in connections.items():
-                    power_output_of_charger = maxChargePower / feasible_ev_charging_power
-                    p_ev[charger] = power_output_of_charger
+                for charger, max_charge_power_of_car in connections.items():
+                    if feasible_ev_charging_power == 0:
+                        p_ev[charger] = 0
+                    else:
+                        power_output_of_charger = feasible_ev_charging_power * (
+                                max_charge_power_of_car / max_power_for_cars)
+                        p_ev[charger] = power_output_of_charger
+                    #print("power_output_of_charger "+str(power_output_of_charger)+"in charger "+str(charger) )
                 #############################################################################
 
                 #############################################################################
                 # This section decides what to do with the non utilized virtual capacity charging power
-
+                """
                 # Power leftover: Non implemented part of virtual capacity charging power
                 leftover_vac_charging_power = p_vac - feasible_ev_charging_power
+
+                # Still leftover is attempted to be charged to the ESS
+                ess_charger_limit = ESS_Max_Charge
+                ess_capacity_limit = ((100 - initial_ess_soc_value) / 100) * (ESS_Capacity / dT)
+                max_ess_charging_power = ess_capacity_limit - p_ess#min(ess_charger_limit, ess_capacity_limit, still_leftover)
+                p_ess = p_ess + max_ess_charging_power
 
                 # Leftover is attempted to be removed with less import
                 less_import = min(p_grid, leftover_vac_charging_power)
@@ -400,17 +415,12 @@ class OptControllerStochastic(threading.Thread):
                 # Some part could be still left
                 still_leftover = leftover_vac_charging_power - less_import
 
-                # Still leftover is attempted to be charged to the ESS
 
-                ess_charger_limit = ESS_Max_Charge
-                ess_capacity_limit = (100 - initial_ess_soc_value) / 100 * ESS_Capacity / dT
-                max_ess_charging_power = min(ess_charger_limit, ess_capacity_limit, still_leftover)
-                p_ess = p_ess - max_ess_charging_power
 
                 # Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
                 final_leftover = still_leftover - max_ess_charging_power
                 p_pv = p_pv - final_leftover
-
+                """
                 print("Implemented actions")
                 print("PV generation:", p_pv)
                 print("Import:", p_grid)
@@ -433,6 +443,7 @@ class OptControllerStochastic(threading.Thread):
                     "p_pv": p_pv,
                     "p_grid": p_grid,
                     "p_ess": p_ess,
+                    "p_vac": p_vac,
                     "feasible_ev_charging_power": feasible_ev_charging_power,
                     "p_ev": p_ev,
                     "execution_time": execution_time
