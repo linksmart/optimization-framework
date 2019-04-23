@@ -353,10 +353,10 @@ class OptController(threading.Thread):
                 initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
                 initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
 
-                p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
-                p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
-                p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['ESS']
-                p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
+                p_pv = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['PV']
+                p_grid = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['Grid']
+                p_ess = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['ESS']
+                p_vac = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['VAC']
                 p_ev = {}
 
                 print("Dynamic programming calculations")
