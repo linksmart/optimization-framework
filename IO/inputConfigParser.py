@@ -148,7 +148,7 @@ class InputConfigParser:
                         if k1 == Constants.meta:
                             for k2, v2 in v1.items():
                                 self.add_value_to_data(data, k2, v2)
-                        elif k1 == Constants.SoC_Value and isinstance(v1, int):
+                        elif k1 == Constants.SoC_Value:
                             indexing = self.model_variables[Constants.SoC_Value]["indexing"]
                             if indexing == "index":
                                 data[Constants.SoC_Value] = {int(0): float(v1)}

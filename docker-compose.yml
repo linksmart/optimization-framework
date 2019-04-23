@@ -17,7 +17,7 @@ services:
       dockerfile: Dockerfile
     image: ofw-solvers
     ports:
-      - "8001:8000"
+      - "8080:8080"
     depends_on:
       - redis
     volumes:

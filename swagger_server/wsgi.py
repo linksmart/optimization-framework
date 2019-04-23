@@ -37,7 +37,7 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 def main():
     options = {
-        'bind': '%s:%s' % ('0.0.0.0', '8000'),
+        'bind': '%s:%s' % ('0.0.0.0', '8080'),
         'workers': 8,
     }
     StandaloneApplication(web(), options).run()
