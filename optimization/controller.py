@@ -28,6 +28,8 @@ from optimization.ModelException import InvalidModelException
 logger = logging.getLogger(__file__)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 
+import pyutilib.subprocess.GlobalData
+pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 class OptController(threading.Thread):
 
@@ -327,9 +329,9 @@ class OptController(threading.Thread):
                                     my_dict["P_GRID_OUTPUT"][0]
                                 Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['PV'] = \
                                     my_dict["P_PV_OUTPUT"][0]
-                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] = - \
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] =  \
                                     my_dict["P_ESS_OUTPUT"][0]
-                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] = - \
+                                Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] =  \
                                     my_dict["P_VAC_OUTPUT"][0]
 
                                 Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = \
@@ -354,7 +356,7 @@ class OptController(threading.Thread):
                 p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
                 p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
                 p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['ESS']
-                p_vac = -Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
+                p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
                 p_ev = {}
 
                 print("Dynamic programming calculations")
