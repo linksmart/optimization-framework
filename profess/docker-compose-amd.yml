@@ -20,9 +20,10 @@ services:
     depends_on:
       - redis
     volumes:
-      - ./optimization-framework/prediction/resources:/usr/src/app/res
+      - ./optimization-framework/prediction/resources:/usr/src/app/prediction/resources
       - ./optimization-framework/optimization/resources:/usr/src/app/optimization/resources
-      - ./optimization-framework/utils:/usr/src/app/utils
+      - ./optimization-framework/utils/resources:/usr/src/app/utils/resources
+      - ./optimization-framework/utils/gurobi/license:/usr/src/app/share/gurobi811/license/gurobi.lic
     command: ["python3", "-u", "ofw.py"]
     restart: "always"
   ml:
@@ -31,7 +32,7 @@ services:
     depends_on:
       - redis
     volumes:
-      - ./optimization-framework/prediction/resources:/usr/src/app/res
+      - ./optimization-framework/prediction/resources:/usr/src/app/prediction/resources
     command: ["python3", "-u", "mlTraining.py"]
     restart: "always"
   #mock:

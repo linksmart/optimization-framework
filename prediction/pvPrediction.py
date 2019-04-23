@@ -8,14 +8,14 @@ import logging
 
 from IO.locationData import LocationData
 from optimization.pvForecastPublisher import PVForecastPublisher
+from utils.messageLogger import MessageLogger
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
 
 class PVPrediction:
 
     def __init__(self, config, input_config_parser, id, control_frequency, horizon_in_steps, dT_in_seconds, name):
-        logger.debug("PV prediction class")
+        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger.debug("PV prediction class")
         self.config = config
         self.input_config_parser = input_config_parser
         raw_pv_data_topic = input_config_parser.get_params("P_PV")
@@ -32,7 +32,7 @@ class PVPrediction:
             city = opt_values["City"][None]
             country = opt_values["Country"][None]
         except Exception:
-            logger.error("City or country not present in pv meta")
+            self.logger.error("City or country not present in pv meta")
 
         location = {"city":city,"country":country}
 
@@ -46,7 +46,7 @@ class PVPrediction:
         self.pv_forecast_pub.start()
 
     def Stop(self):
-        logger.debug("Stopping pv forecast thread")
+        self.logger.debug("Stopping pv forecast thread")
         if self.pv_forecast_pub is not None:
             self.pv_forecast_pub.Stop()
-        logger.debug("pv prediction thread exit")
+        self.logger.debug("pv prediction thread exit")

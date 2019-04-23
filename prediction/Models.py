@@ -34,20 +34,26 @@ class Models:
         self.model_weights_path = save_path
         self.model_weights_path_temp = save_path_temp
         self.last_loaded = None
+        logger.info("paths = " + str(self.model_weights_path))
 
     def get_model(self, id_topic):
-        """manages which model to load
+        """
+        manages which model to load
         If model.h5 present in disk
 	    then present then use model.h5
 	    else load model_temp.h5 from disk (temp pre-trained model)
 	    """
+        logger.debug("get model method")
         temp = False
         if os.path.exists(self.model_weights_path):
             last_updated = os.path.getmtime(self.model_weights_path)
+            logger.debug(self.model_weights_path + " file exists")
         else:
             last_updated = None
-        if self.model and (self.last_loaded is not None and last_updated is not None and last_updated <= self.last_loaded):
-            logger.info(str(id_topic)+"model present in memory ")
+            logger.debug(self.model_weights_path + " file does not exist")
+        if self.model and (
+                self.last_loaded is not None and last_updated is not None and last_updated <= self.last_loaded):
+            logger.info(str(id_topic) + "model present in memory ")
             return self.model, self.model_temp, temp, self.graph
         model, graph = self.load_saved_model(self.model_weights_path)
         if model:
@@ -57,7 +63,7 @@ class Models:
         else:
             """try temp model"""
             if self.model_temp:
-                logger.info(str(id_topic)+"temp model present in memory")
+                logger.info(str(id_topic) + "temp model present in memory")
                 temp = True
                 return model, self.model_temp, temp, self.graph
             model_temp, graph = self.load_saved_model(self.model_weights_path_temp)
@@ -71,9 +77,9 @@ class Models:
 
     def load_saved_model(self, path):
         try:
-            #os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'
-            #os.environ['OMP_NUM_THREAD'] = '8'
-            #os.environ['KERAS_BACKEND'] = 'theano'
+            # os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'
+            # os.environ['OMP_NUM_THREAD'] = '8'
+            # os.environ['KERAS_BACKEND'] = 'theano'
             from keras.models import load_model
             from keras import backend as K
             import tensorflow as tf

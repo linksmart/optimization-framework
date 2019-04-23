@@ -78,7 +78,7 @@ class RawLoadDataReceiver(DataReceiver):
             file.close()
             self.minute_data = []
         except Exception as e:
-            logger.error("failed to save_to_redis "+ str(e))
+            logger.error("failed to save_to_file "+ str(e))
 
     def get_raw_data(self, train=False, topic_name=None):
         if train:

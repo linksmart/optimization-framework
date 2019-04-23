@@ -41,7 +41,7 @@ class Model:
 	##################################       VARIABLES             #################################
 	################################################################################################
 	
-	model.P_Grid_Output = Var(model.T, within=Reals)
+	model.P_Grid_Output = Var(model.T, within=Reals, bounds=(-model.P_Grid_Max_Export_Power, 0))
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
@@ -61,7 +61,14 @@ class Model:
 	
 	#initialization of the first SoC value to the value entered through the API
 	def con_rule_iniSoC(model):
-	    return model.SoC_ESS[0] == model.SoC_Value
+		if model.SoC_Value > model.ESS_Max_SoC:
+			model.SoC_Value = model.ESS_Max_SoC
+			return model.SoC_ESS[0] == model.SoC_Value
+		elif model.SoC_Value < model.ESS_Min_SoC:
+			model.SoC_Value = model.ESS_Min_SoC
+			return model.SoC_ESS[0] == model.SoC_Value
+		else:
+			return model.SoC_ESS[0] == model.SoC_Value
 	
 	#Definition of the energy balance in the system
 	def con_rule_energy_balance(model,t):

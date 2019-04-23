@@ -14,20 +14,18 @@ from senml import senml
 
 from IO.dataReceiver import DataReceiver
 from IO.redisDB import RedisDB
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
-
+from utils.messageLogger import MessageLogger
 
 class BaseDataReceiver(DataReceiver, ABC):
 
     def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT):
         redisDB = RedisDB()
+        self.logger = MessageLogger.get_logger(__file__, id)
         try:
             super().__init__(internal, topic_params, config, id=id)
         except Exception as e:
             redisDB.set("Error mqtt" + self.id, True)
-            logger.error(e)
+            self.logger.error(e)
         self.generic_name = generic_name
         self.buffer = buffer
         self.dT = dT
@@ -46,7 +44,7 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.data.update(formated_data)
             self.data_update = True
         except Exception as e:
-            logger.error(e)
+            self.logger.error(e)
 
     def add_formated_data(self, json_data):
         doc = None
@@ -85,13 +83,11 @@ class BaseDataReceiver(DataReceiver, ABC):
                         v = self.unit_value_change(v, u)
                         raw_data.append([t, v])
                     except Exception as e:
-                        logger.error("error " + str(e) + "  n = " + str(n))
-                #logger.debug("data: " + str(data))
-                logger.debug("len data before expansion = "+str(len(raw_data)))
-                logger.debug("before expansion = "+str(raw_data[0][0])+ " "+ str(raw_data[-1][0]))
+                        self.logger.error("error " + str(e) + "  n = " + str(n))
+                #self.logger.debug("data: " + str(data))
+                self.logger.debug("len data before expansion = "+str(len(raw_data)))
                 raw_data = self.expand_and_resample(raw_data, self.dT)
-                logger.debug("len data after expansion = " + str(len(raw_data)))
-                logger.debug("after expansion = "+str(raw_data[0][0])+ " "+ str(raw_data[-1][0]))
+                self.logger.debug("len data after expansion = " + str(len(raw_data)))
                 if len(raw_data) > 0:
                     bucket = self.time_to_bucket(raw_data[0][0])
                     for row in raw_data:
@@ -110,11 +106,16 @@ class BaseDataReceiver(DataReceiver, ABC):
     def unit_value_change(self, value, unit):
         pass
 
-    def get_bucket_aligned_data(self, bucket, steps):
-        logger.info("Get "+str(self.generic_name)+" data for bucket = "+str(bucket))
+    def get_bucket_aligned_data(self, bucket, steps, wait_for_data=True, check_bucket_change=True):
+        bucket_requested = bucket
+        self.logger.info("Get "+str(self.generic_name)+" data for bucket = "+str(bucket_requested))
         bucket_available = True
         final_data = {self.generic_name: {}}
-        data = self.get_data()
+        if wait_for_data:
+            data = self.get_data()
+        else:
+            data = self.get_data(require_updated=2)
+        self.logger.debug(str(self.generic_name)+ " data from mqtt is : "+ json.dumps(data, indent=4))
         if steps > self.length:
             steps = self.length
         day = None
@@ -142,6 +143,12 @@ class BaseDataReceiver(DataReceiver, ABC):
                             day_i = 0
                         day = str(day_i)
                 final_data = {self.generic_name: new_data}
+        if check_bucket_change:
+            new_bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
+            if new_bucket > bucket_requested:
+                self.logger.debug("bucket changed from " + str(bucket_requested) +
+                                  " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
+                final_data, bucket_available = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
         return final_data, bucket_available
 
     def time_to_bucket(self, time):
@@ -149,7 +156,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         if bucket > self.total_steps_in_day:
             bucket = self.total_steps_in_day
         elif bucket < 0:
-            logger.info("Received data is of older timestamp = "+str(time)+" than start of today = "+str(self.start_of_day))
+            self.logger.info("Received data is of older timestamp = "+str(time)+" than start of today = "+str(self.start_of_day))
             bucket = bucket%self.total_steps_in_day
         return bucket
 
