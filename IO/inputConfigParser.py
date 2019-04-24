@@ -149,7 +149,9 @@ class InputConfigParser:
                             for k2, v2 in v1.items():
                                 self.add_value_to_data(data, k2, v2)
                         elif k1 == Constants.SoC_Value:
-                            indexing = self.model_variables[Constants.SoC_Value]["indexing"]
+                            indexing = "None"
+                            if Constants.SoC_Value in self.model_variables.keys():
+                                indexing = self.model_variables[Constants.SoC_Value]["indexing"]
                             if indexing == "index":
                                 data[Constants.SoC_Value] = {int(0): float(v1)}
                             elif indexing == "None":
