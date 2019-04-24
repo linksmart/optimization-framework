@@ -14,6 +14,7 @@ import time
 import uuid
 import datetime
 from itertools import product
+import math
 
 import numpy as np
 from pyomo.environ import *
@@ -174,21 +175,26 @@ class OptController(threading.Thread):
                 domain_range = (car_park.total_charging_stations_power * self.dT_in_seconds) / (
                     car_park.vac_capacity) * 100
 
+                ess_domain_range = 47 # ess max power / capacity
+
                 ess_steps = self.input_config_parser.ess_steps
-                ess_domain_min = ess_soc_states[0] - domain_range / 2
-                ess_domain_max = (domain_range / 2) + ess_steps
+                ess_domain_min = - (math.floor(ess_domain_range / ess_steps) * ess_steps)
+                ess_domain_max = (math.floor(ess_domain_range / ess_steps) * ess_steps) + ess_steps
 
                 vac_steps = self.input_config_parser.vac_steps
                 vac_domain_min = vac_soc_states[0]
                 vac_domain_max = domain_range + vac_steps
 
-                ess_domain_min = ess_steps * round(ess_domain_min / ess_steps)
-                ess_domain_max = ess_steps * round(ess_domain_max / ess_steps)
-                vac_domain_min = vac_steps * round(vac_domain_min / vac_steps)
-                vac_domain_max = vac_steps * round(vac_domain_max / vac_steps)
+                #ess_domain_min = ess_steps * round(ess_domain_min / ess_steps)
+                #ess_domain_max = ess_steps * round(ess_domain_max / ess_steps)
+                vac_domain_min = vac_steps * math.floor(vac_domain_min / vac_steps)
+                vac_domain_max = vac_steps * math.floor(vac_domain_max / vac_steps)
 
                 ess_decision_domain = np.arange(ess_domain_min, ess_domain_max, ess_steps).tolist()
+
                 vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
+
+
 
                 T = self.horizon_in_steps
 
@@ -208,16 +214,26 @@ class OptController(threading.Thread):
                 for s_ess, s_vac in product(ess_soc_states, vac_soc_states):
                     Value[T, s_ess, s_vac] = 1.0
 
+                #logger.debug("Value "+str(Value))
+                logger.debug("ess_decision_domain " + str(ess_decision_domain))
+                logger.debug("vac_decision_domain " + str(vac_decision_domain))
+                logger.debug("ess_soc_states "+str(ess_soc_states))
+                logger.debug("vac_soc_states "+str(vac_soc_states))
+
                 time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H:%M:%S")
                 filename = f"log-{uuid.uuid1()}-{time_info}.json"
 
                 input_log_filepath = os.path.join("/usr/src/app/logs", f"input-{filename}")
                 output_log_filepath = os.path.join("/usr/src/app/logs", f"output-{filename}")
+                decision_log_filepath = os.path.join("/usr/src/app/logs", f"decision-{filename}")
 
                 with open(input_log_filepath, "w") as log_file:
                     json.dump(data_dict, log_file, indent=4)
 
                 stochastic_start_time = time.time()
+
+                min_value = 100* 0.2#data_dict[None]["ESS_Min_SoC"]
+                max_value = 100* 1#data_dict[None]["ESS_Max_SoC"]
 
                 for timestep in reversed(range(start_time_offset, start_time_offset + self.horizon_in_steps)):
                     logger.info(f"Timestep :#{timestep}")
@@ -225,21 +241,28 @@ class OptController(threading.Thread):
 
                         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                         for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
-                            if min(ess_soc_states) <= p_ESS + ini_ess_soc <= max(
-                                    ess_soc_states):  # if the final ess_SoC is within the specified domain
+                            compare_value =  ini_ess_soc - p_ESS
+                            #logger.debug("min_value "+str(min_value))
+                            #logger.debug("max_value " + str(max_value))
+                            if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                                 feasible_Pess.append(p_ESS)
+                        logger.debug("feasible p_ESS "+str(feasible_Pess))
 
                         feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                         for p_VAC in vac_decision_domain:  # When decided charging with p_VAC
                             if p_VAC + ini_vac_soc <= max(
                                     vac_soc_states):  # if the final vac_SoC is within the specified domain
                                 feasible_Pvac.append(p_VAC)
+                        logger.debug("feasible p_VAC " + str(feasible_Pvac))
 
                         data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
                         data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
 
                         data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
+                        #logger.debug("ini_ess_soc "+str(ini_ess_soc))
+
                         data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
+                        #logger.debug("ini_vac_soc " + str(ini_vac_soc))
 
                         value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
                                        t == timestep + 1 - start_time_offset]
@@ -247,6 +270,7 @@ class OptController(threading.Thread):
 
                         value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
                         data_dict[None]["Value"] = value
+                        #logger.debug("value "+str(value))
 
                         # * Updated
                         bm_idx = behaviour_model[timestep - start_time_offset].keys()
@@ -279,8 +303,8 @@ class OptController(threading.Thread):
                             logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                             action_handle_map[action_handle] = str(self.id)
                             logger.debug("Action handle map: " + str(action_handle_map))
-                            start_time = time.time()
-                            logger.debug("Optimization starting time: " + str(start_time))
+                            #start_time = time.time()
+                            #logger.debug("Optimization starting time: " + str(start_time))
                         except Exception as e:
                             logger.error("exception " + str(e))
 
@@ -298,8 +322,8 @@ class OptController(threading.Thread):
 
                         # * Check whether it is solved
 
-                        start_time = time.time() - start_time
-                        logger.info("Time to run optimizer = " + str(start_time) + " sec.")
+                        #start_time = time.time() - start_time
+                        #logger.info("Time to run optimizer = " + str(start_time) + " sec.")
                         if (self.results.solver.status == SolverStatus.ok) and (
                                 self.results.solver.termination_condition == TerminationCondition.optimal):
                             # this is feasible and optimal
@@ -353,10 +377,10 @@ class OptController(threading.Thread):
                 initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
                 initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
 
-                p_pv = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['PV']
-                p_grid = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['Grid']
-                p_ess = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['ESS']
-                p_vac = Decision[start_time_offset, initial_ess_soc_value, initial_vac_soc_value]['VAC']
+                p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
+                p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
+                p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['ESS']
+                p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
                 p_ev = {}
 
                 print("Dynamic programming calculations")
@@ -446,8 +470,15 @@ class OptController(threading.Thread):
                     "execution_time": execution_time
                 }
 
+
                 with open(output_log_filepath, "w") as log_file:
                     json.dump(results, log_file, indent=4)
+
+
+                jsonDecision = {str(k): v for k,v in Decision.items()}
+
+                with open(decision_log_filepath, "w") as log_file:
+                    json.dump(jsonDecision, log_file, indent=4)
 
                 count += 1
                 if self.repetition > 0 and count >= self.repetition:
