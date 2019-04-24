@@ -14,7 +14,7 @@ class Model:
     model.Value_Index = Set(dimen=2)
 
     model.Value = Param(model.Value_Index, mutable=True)
-    #model.Value.pprint()
+    model.Value.pprint()
 
     model.P_PV = Param(within=NonNegativeReals)
 
@@ -39,10 +39,10 @@ class Model:
     # Combined decision
     model.Decision = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
 
-    model.P_ESS_OUTPUT = Var(within=Reals, bounds=(-33, 33)) #change bounds
-    model.P_VAC_OUTPUT = Var(within=NonNegativeReals, bounds=(0, 65)) # change bounds
+    model.P_ESS_OUTPUT = Var(within=Reals) #change bounds
+    model.P_VAC_OUTPUT = Var(within=NonNegativeReals) # change bounds
     model.P_PV_OUTPUT = Var(bounds=(0, model.P_PV))
-    model.P_GRID_OUTPUT = Var(within=Reals)
+    model.P_GRID_OUTPUT = Var(within=Reals, initialize=0)
 
     def __init__(model, value, behaviorModel):
         model.Value = value
@@ -58,14 +58,15 @@ class Model:
     def ess_chargepower(model):
         return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
                                          product(model.Feasible_ESS_Decisions,
-                                                 model.Feasible_VAC_Decisions)) / 100 * model.ESS_Capacity / model.dT
+                                                 model.Feasible_VAC_Decisions))  * model.ESS_Capacity / (100*model.dT)
 
     model.const_esschargepw = Constraint(rule=ess_chargepower)
+
 
     def vac_chargepower(model):
         return model.P_VAC_OUTPUT == sum(model.Decision[ess, vac] * vac for ess, vac in
                                          product(model.Feasible_ESS_Decisions,
-                                                 model.Feasible_VAC_Decisions)) / 100 * model.VAC_Capacity / model.dT
+                                                 model.Feasible_VAC_Decisions)) * model.VAC_Capacity / (100 * model.dT)
 
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
@@ -81,7 +82,7 @@ class Model:
         # If vac is charged with one of the feasible decision 'p_ev'
         for ess, vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):
 
-            essSoC = ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
+            essSoC = -ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
             vacSoC = vac + model.Initial_VAC_SoC  # Transition between VAC SOC states are stochastic
 
             # Value of having fin_ess_soc and fin_vac_soc in next time interval
