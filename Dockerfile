@@ -44,6 +44,7 @@ RUN pip3 install -U Pyro4
 
 RUN pip3 install -U pydevd
 RUN pip3 install -U xlrd
+RUN pip3 install -U pebble
 
 WORKDIR /usr/src/app
 

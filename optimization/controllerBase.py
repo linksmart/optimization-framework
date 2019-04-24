@@ -11,18 +11,13 @@ import os
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
-from pyomo.opt import SolverStatus, TerminationCondition
-import subprocess
 import time
 
-from IO.MQTTClient import InvalidMQTTHostException
-from pyutilib.pyro import shutdown_pyro_components
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
-from threading import Event
 
 from utils.messageLogger import MessageLogger
 
@@ -31,14 +26,12 @@ import pyutilib.subprocess.GlobalData
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 from abc import ABC, abstractmethod
+from pebble import concurrent
 
-
-class ControllerBase(ABC, threading.Thread):
+class ControllerBase(ABC):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
-        # threading.Thread.__init__(self)
-        super(ControllerBase, self).__init__()
         self.logger = MessageLogger.get_logger(__file__, id)
         self.logger.info("Initializing optimization controller " + id)
         # Loading variables
@@ -52,11 +45,13 @@ class ControllerBase(ABC, threading.Thread):
         self.dT_in_seconds = dT_in_seconds
         self.output_config = output_config
         self.input_config_parser = input_config_parser
-        self.stopRequest = threading.Event()
-        self.finish_status = False
         self.redisDB = RedisDB()
         self.lock_key = "id_lock"
         self.optimization_type = optimization_type
+        self.stop_signal_key = "opt_stop_" + self.id
+        self.finish_status_key = "finish_status_" + self.id
+        self.redisDB.set(self.stop_signal_key, False)
+        self.redisDB.set(self.finish_status_key, False)
 
         try:
             # dynamic load of a class
@@ -81,10 +76,6 @@ class ControllerBase(ABC, threading.Thread):
         module = spec.loader.load_module(spec.name)
         return module
 
-    def join(self, timeout=None):
-        self.stopRequest.set()
-        super(ControllerBase, self).join(timeout)
-
     def Stop(self):
         try:
             self.input.Stop()
@@ -94,8 +85,7 @@ class ControllerBase(ABC, threading.Thread):
             self.output.Stop()
         except Exception as e:
             self.logger.error("error stopping output " + str(e))
-        if self.isAlive():
-            self.join(1)
+        self.redisDB.set(self.stop_signal_key, True)
 
     def update_count(self):
         st = time.time()
@@ -127,7 +117,7 @@ class ControllerBase(ABC, threading.Thread):
         st = int(time.time() - st)
         return st
 
-    # Start the optimization process and gives back a result
+    @concurrent.process
     def run(self):
         self.logger.info("Starting optimization controller")
         solver_manager = None
@@ -149,10 +139,6 @@ class ControllerBase(ABC, threading.Thread):
                 self.logger.error("Failed to create a solver manager")
             else:
                 self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
-
-            # self.logger.info("Solvers ipopt = "+ str(SolverFactory('ipopt').available()))
-            # self.logger.info("Solvers glpk = "+ str(SolverFactory('glpk').available()))
-            # self.logger.info("Solvers gurobi = " + str(SolverFactory('gurobi').available()))
 
             count = 0
             self.logger.info("This is the id: " + self.id)
@@ -183,10 +169,16 @@ class ControllerBase(ABC, threading.Thread):
                 self.logger.debug("Client " + key + " is being disconnected")
 
             self.logger.info(return_msg)
-            self.finish_status = True
+            self.redisDB.set(self.finish_status_key, True)
             return return_msg
 
     @abstractmethod
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
-        while not self.stopRequest.isSet():
+        while not self.redisDB.get_bool(self.stop_signal_key):
             pass
+
+    def get_finish_status(self):
+        return self.redisDB.get_bool(self.finish_status_key)
+
+    def start(self):
+        future = self.run()

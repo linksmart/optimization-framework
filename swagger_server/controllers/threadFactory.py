@@ -167,7 +167,7 @@ class ThreadFactory:
         elif self.optimization_type == "stochastic":
             self.opt = OptControllerStochastic(self.id, self.solver_name, self.model_path, self.control_frequency,
                                  self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
-                                 self.dT_in_seconds)
+                                 self.dT_in_seconds, self.optimization_type)
 
         try:
         ####starts the optimization controller thread
@@ -204,7 +204,7 @@ class ThreadFactory:
             return e
 
     def is_running(self):
-        return not self.opt.finish_status
+        return not self.opt.get_finish_status()
 
     def update_training_params(self, key, parameters):
         while True:

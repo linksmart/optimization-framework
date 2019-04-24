@@ -26,11 +26,11 @@ class OptControllerMPC(ControllerBase):
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
-        while not self.stopRequest.isSet():
+        while not self.redisDB.get_bool(self.stop_signal_key):
             self.logger.info("waiting for data")
             data_dict = self.input.get_data()  # blocking call
             self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
-            if self.stopRequest.isSet():
+            if self.redisDB.get_bool(self.stop_signal_key):
                 break
 
             # Creating an optimization instance with the referenced model
@@ -118,5 +118,5 @@ class OptControllerMPC(ControllerBase):
             time_spent = self.update_count()
             for i in range(self.control_frequency - time_spent):
                 time.sleep(1)
-                if self.stopRequest.isSet():
+                if self.redisDB.get_bool(self.stop_signal_key):
                     break
