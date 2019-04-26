@@ -38,14 +38,16 @@ class RecPub:
 class Receiver(DataReceiver):
 
     def __init__(self, internal, topic_params, config, q, data_formater, section, id):
-        super().__init__(internal, topic_params, config, id=id, section=section)
         self.q = q
         self.data_formater = data_formater
+        super().__init__(internal, topic_params, config, id=id, section=section)
 
     def on_msg_received(self, payload):
         try:
             logger.info("msg rec : "+str(payload))
             data = self.data_formater(payload)
+            if len(data) == 0:
+                logger.info("No keys found in received data")
             for topic, value in data.items():
                 d = {"topic": topic, "data": value}
                 self.q.put(d)
@@ -60,8 +62,9 @@ class Publisher():
         self.q = q
         self.id = id
         self.num_of_workers = workers
-        self.mqtt_clients = self.init_mqtt_clients(workers)
-        self.executor = ThreadPoolExecutor(max_workers=workers)
+        logger.info("number_of_workers = "+ str(self.num_of_workers))
+        self.mqtt_clients = self.init_mqtt_clients(self.num_of_workers)
+        self.executor = ThreadPoolExecutor(max_workers=self.num_of_workers)
         self.consumer_thread = threading.Thread(target=self.consumer)
         self.consumer_thread.start()
 
@@ -94,6 +97,8 @@ class Publisher():
     def consumer(self):
         i = 0
         while True and not self.stopRequest.is_set():
+            #logger.info("q size " + str(self.q.qsize()))
+            time.sleep(10)
             if not self.q.empty():
                 try:
                     logger.debug("Queue size: " + str(self.q.qsize()))

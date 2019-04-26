@@ -31,6 +31,8 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(e)
 
+    workers = config.getint("IO", "number.of.workers", fallback=2)
+
     try:
         connector_list = []
         for section in config.sections():
@@ -44,7 +46,7 @@ if __name__ == '__main__':
                     rec_params = config.get(section, "con.topic", fallback=None)
                     if rec_params:
                         rec_params = json.loads(rec_params)
-                        connector = Connector(rec_params, 2, config, section)
+                        connector = Connector(rec_params, workers, config, section)
                         connector_list.append(connector)
     except Exception as e:
         logger.error(e)
