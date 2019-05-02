@@ -98,7 +98,6 @@ class Publisher():
         i = 0
         while True and not self.stopRequest.is_set():
             #logger.info("q size " + str(self.q.qsize()))
-            time.sleep(10)
             if not self.q.empty():
                 try:
                     logger.debug("Queue size: " + str(self.q.qsize()))
@@ -112,6 +111,8 @@ class Publisher():
                             i = 0
                 except Exception as e:
                     logger.error("Error in consuming queue "+str(e))
+            else:
+                time.sleep(2)
 
     def publish_data(self, data, mqtt_client):
         try:
