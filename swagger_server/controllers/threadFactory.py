@@ -15,6 +15,7 @@ from optimization.ModelException import MissingKeysException
 from optimization.controllerDiscrete import OptControllerDiscrete
 from optimization.controllerMpc import OptControllerMPC
 from optimization.controllerStochastic import OptControllerStochastic
+from optimization.controllerStochasticTest import OptControllerStochasticTest
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 from optimization.ModelException import InvalidModelException

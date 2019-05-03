@@ -28,10 +28,11 @@ pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 from abc import ABC, abstractmethod
 from pebble import concurrent
 
-class ControllerBase(ABC):
+class ControllerBase(ABC, threading.Thread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
+        super().__init__()
         self.logger = MessageLogger.get_logger(__file__, id)
         self.logger.info("Initializing optimization controller " + id)
         # Loading variables
@@ -117,7 +118,7 @@ class ControllerBase(ABC):
         st = int(time.time() - st)
         return st
 
-    @concurrent.process
+    #@concurrent.process
     def run(self):
         self.logger.info("Starting optimization controller")
         solver_manager = None
@@ -133,8 +134,8 @@ class ControllerBase(ABC):
             self.logger.info("solver instantiated with " + self.solver_name)
 
             ###create a solver manager
+            #solver_manager = None
             solver_manager = SolverManagerFactory('pyro')
-
             if solver_manager is None:
                 self.logger.error("Failed to create a solver manager")
             else:
@@ -180,5 +181,7 @@ class ControllerBase(ABC):
     def get_finish_status(self):
         return self.redisDB.get_bool(self.finish_status_key)
 
+    """
     def start(self):
         future = self.run()
+    """
