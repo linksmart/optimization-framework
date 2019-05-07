@@ -15,8 +15,7 @@ logger = logging.getLogger(__file__)
 class RedisDB:
 
     def __init__(self):
-        self.redis_db = redis.StrictRedis(host="192.168.99.100", port=6379, db=0)
-        #self.redis_db = redis.StrictRedis(host="redis_S4G", port=6379, db=0)
+        self.redis_db = redis.StrictRedis(host="redis_S4G", port=6379, db=0)
 
     def get(self, key, default=None):
         value = self.redis_db.get(name=key)
