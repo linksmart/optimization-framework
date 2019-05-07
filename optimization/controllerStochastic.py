@@ -281,11 +281,11 @@ class OptControllerStochastic(ControllerBase):
             p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
             p_ev = {}
 
-            print("Dynamic programming calculations")
-            print("PV generation:", p_pv)
-            print("Import:", p_grid)
-            print("ESS discharge:", p_ess)
-            print("VAC charging", p_vac)
+            self.logger.debug("Dynamic programming calculations")
+            self.logger.debug("PV generation:" + str(p_pv))
+            self.logger.debug("Import:"+ str(p_grid))
+            self.logger.debug("ESS discharge:"+ str(p_ess))
+            self.logger.debug("VAC charging"+ str(p_vac))
 
             #############################################################################
             # This section distributes virtual capacity charging power into the cars plugged chargers in the station
@@ -302,8 +302,8 @@ class OptControllerStochastic(ControllerBase):
             # Calculation of the feasible charging power at the commercial station
             max_power_for_cars = sum(connections.values())
             feasible_ev_charging_power = min(max_power_for_cars, p_vac)
-            print("feasible_ev_charging_power" + str(feasible_ev_charging_power))
-            print("max_power_for_cars " + str(max_power_for_cars))
+            self.logger.debug("feasible_ev_charging_power" + str(feasible_ev_charging_power))
+            self.logger.debug("max_power_for_cars " + str(max_power_for_cars))
 
             for charger, max_charge_power_of_car in connections.items():
                 if feasible_ev_charging_power == 0:
@@ -312,7 +312,7 @@ class OptControllerStochastic(ControllerBase):
                     power_output_of_charger = feasible_ev_charging_power * (
                             max_charge_power_of_car / max_power_for_cars)
                     p_ev[charger] = power_output_of_charger
-                # print("power_output_of_charger "+str(power_output_of_charger)+"in charger "+str(charger) )
+                # self.logger.debug("power_output_of_charger "+str(power_output_of_charger)+"in charger "+str(charger) )
             #############################################################################
 
             #############################################################################
@@ -340,22 +340,22 @@ class OptControllerStochastic(ControllerBase):
             final_leftover = still_leftover - max_ess_charging_power
             p_pv = p_pv - final_leftover
             """
-            print("Implemented actions")
-            print("PV generation:", p_pv)
-            print("Import:", p_grid)
-            print("ESS discharge:", p_ess)
-            print("Real EV charging", feasible_ev_charging_power)
+            self.logger.debug("Implemented actions")
+            self.logger.debug("PV generation:" + str(p_pv))
+            self.logger.debug("Import:"+ str(p_grid))
+            self.logger.debug("ESS discharge:"+ str(p_ess))
+            self.logger.debug("Real EV charging"+ str(feasible_ev_charging_power))
 
             stochastic_end_time = time.time()
 
-            print("Time Information".center(80, "#"))
-            print("")
-            print(f"Start time: {stochastic_start_time}")
-            print(f"End time: {stochastic_end_time}")
+            self.logger.debug("Time Information".center(80, "#"))
+            self.logger.debug("")
+            self.logger.debug(f"Start time: {stochastic_start_time}")
+            self.logger.debug(f"End time: {stochastic_end_time}")
             execution_time = stochastic_end_time - stochastic_start_time
-            print(f"Programming execution time: {execution_time}")
-            print("")
-            print("#" * 80)
+            self.logger.debug(f"Programming execution time: {execution_time}")
+            self.logger.debug("")
+            self.logger.debug("#" * 80)
 
             results = {
                 "id": self.id,
