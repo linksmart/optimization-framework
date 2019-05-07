@@ -2,7 +2,7 @@ import logging
 import paho.mqtt.client as mqtt
 import time
 
-from utils.messageLogger import MessageLogger
+from utils_intern.messageLogger import MessageLogger
 
 class MQTTClient:
 

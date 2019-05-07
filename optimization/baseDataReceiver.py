@@ -4,7 +4,6 @@ Created on Aug 13 11:03 2018
 @author: nishit
 """
 import json
-import logging
 from abc import ABC, abstractmethod
 
 import datetime
@@ -14,7 +13,7 @@ from senml import senml
 
 from IO.dataReceiver import DataReceiver
 from IO.redisDB import RedisDB
-from utils.messageLogger import MessageLogger
+from utils_intern.messageLogger import MessageLogger
 
 class BaseDataReceiver(DataReceiver, ABC):
 

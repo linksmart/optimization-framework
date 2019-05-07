@@ -14,19 +14,14 @@ from pyomo.environ import *
 from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
 from pyomo.opt import SolverStatus, TerminationCondition
-import subprocess
 import time
-
-from IO.MQTTClient import InvalidMQTTHostException
-from pyutilib.pyro import shutdown_pyro_components
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
-from threading import Event
 
-from utils.messageLogger import MessageLogger
+from utils_intern.messageLogger import MessageLogger
 
 import pyutilib.subprocess.GlobalData
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False

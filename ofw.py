@@ -83,6 +83,7 @@ def copy_models():
             if os.path.isfile(file_path) and ".py" in file:
                 shutil.copyfile(file_path, os.path.join("/usr/src/app/optimization/models", file))
 
+
 def clear_redis():
     logger.info("reset redis")
     from IO.redisDB import RedisDB

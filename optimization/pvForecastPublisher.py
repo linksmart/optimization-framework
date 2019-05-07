@@ -5,7 +5,6 @@ Created on Jun 27 15:35 2018
 """
 import datetime
 import json
-import logging
 import threading
 
 import time
@@ -16,7 +15,7 @@ from senml import senml
 from IO.dataPublisher import DataPublisher
 from IO.radiation import Radiation
 from IO.redisDB import RedisDB
-from utils.messageLogger import MessageLogger
+from utils_intern.messageLogger import MessageLogger
 
 
 class PVForecastPublisher(DataPublisher):

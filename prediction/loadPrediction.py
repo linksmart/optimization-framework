@@ -1,6 +1,5 @@
 import datetime
 import json
-import logging
 import threading
 from queue import Queue
 import time
@@ -10,7 +9,7 @@ from shutil import copyfile
 
 from IO.redisDB import RedisDB
 from prediction.processingData import ProcessingData
-from utils.messageLogger import MessageLogger
+from utils_intern.messageLogger import MessageLogger
 
 
 """
