@@ -132,6 +132,7 @@ class OptControllerStochasticTest(ControllerBase):
                 for i, future in enumerate(futures, 0):
                     self.logger.debug("future "+str(i))
                     d, v = future.result()
+                    self.logger.debug("future result " + str(i) + " " + str(v))
                     Decision.update(d)
                     Value.update(v)
 
@@ -256,8 +257,6 @@ class OptControllerStochasticTest(ControllerBase):
         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
         for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
             compare_value = ini_ess_soc - p_ESS
-            # self.logger.debug("min_value "+str(min_value))
-            # self.logger.debug("max_value " + str(max_value))
             if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                 feasible_Pess.append(p_ESS)
         self.logger.debug("feasible p_ESS " + str(feasible_Pess))
@@ -267,18 +266,18 @@ class OptControllerStochasticTest(ControllerBase):
                     vac_soc_states):  # if the final vac_SoC is within the specified domain
                 feasible_Pvac.append(p_VAC)
         self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+
         data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
         data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
         data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
-        # self.logger.debug("ini_ess_soc "+str(ini_ess_soc))
         data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
-        # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
+
         value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
                        t == timestep + 1 - start_time_offset]
         data_dict[None]["Value_Index"] = {None: value_index}
         value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
         data_dict[None]["Value"] = value
-        # self.logger.debug("value "+str(value))
+
         # * Updated
         bm_idx = behaviour_model[timestep - start_time_offset].keys()
         bm = behaviour_model[timestep - start_time_offset]
@@ -293,41 +292,13 @@ class OptControllerStochasticTest(ControllerBase):
             instance = self.my_class.model.create_instance(data_dict)
         except Exception as e:
             self.logger.error("Error creating instance")
-            self.logger.error(e)
-        # instance = self.my_class.model.create_instance(self.data_path)
+            self.logger.error("error creating instance "+ str(e))
         self.logger.info("Instance created with pyomo")
         # * Queue the optimization instance
-        """
-                            try:
-                                # self.logger.info(instance.pprint())
-                                action_handle = solver_manager.queue(instance, opt=optsolver)
-                                self.logger.debug("Solver queue created " + str(action_handle))
-                                self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                                action_handle_map[action_handle] = str(self.id)
-                                self.logger.debug("Action handle map: " + str(action_handle_map))
-                                # start_time = time.time()
-                                # self.logger.debug("Optimization starting time: " + str(start_time))
-                            except Exception as e:
-                                self.logger.error("exception " + str(e))
-                            """
+
         optsolver = SolverFactory(self.solver_name)
         self.results = optsolver.solve(instance)
-        # * Run the solver
-        """
-                            # retrieve the solutions
-                            for i in range(1):
-                                this_action_handle = solver_manager.wait_any()
-                                self.results = solver_manager.get_results(this_action_handle)
-                                self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                                if this_action_handle in action_handle_map.keys():
-                                    self.solved_name = action_handle_map.pop(this_action_handle)
-                                else:
-                                    self.solved_name = None
-                            
-                            """
-        # * Check whether it is solved
-        # start_time = time.time() - start_time
-        # self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
+
         if (self.results.solver.status == SolverStatus.ok) and (
                 self.results.solver.termination_condition == TerminationCondition.optimal):
             # this is feasible and optimal
@@ -352,7 +323,9 @@ class OptControllerStochasticTest(ControllerBase):
                         self.logger.debug("Identified variables " + str(var_list))
                         my_dict[str(v)] = var_list
                     except Exception as e:
-                        self.logger.error(e)
+                        self.logger.error("error createing my dict "+str(e))
+
+                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = {}
 
                 decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['Grid'] = \
                     my_dict["P_GRID_OUTPUT"][0]
@@ -373,7 +346,7 @@ class OptControllerStochasticTest(ControllerBase):
                 return decision_update, value_update
                 # self.output.publish_data(self.id, my_dict)
             except Exception as e:
-                self.logger.error(e)
+                self.logger.error("error in reading result "+ str(e))
         elif self.results.solver.termination_condition == TerminationCondition.infeasible:
             # do something about it? or exit?
             self.logger.info("Termination condition is infeasible")

@@ -145,7 +145,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.info("This is the id: " + self.id)
             self.optimize(action_handle_map, count, optsolver, solver_manager)
         except Exception as e:
-            self.logger.error(e)
+            self.logger.error("error overall "+ str(e))
             e = str(e)
             solver_error = "The SolverFactory was unable to create the solver"
             if solver_error in e:
