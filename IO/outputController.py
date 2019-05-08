@@ -1,5 +1,4 @@
 import json
-import logging
 
 import time
 
@@ -8,11 +7,9 @@ from senml import senml
 from IO.ConfigParserUtils import ConfigParserUtils
 from IO.MQTTClient import MQTTClient
 from IO.redisDB import RedisDB
-from IO.constants import Constants
-import os
 from random import randrange
 
-from utils.messageLogger import MessageLogger
+from utils_intern.messageLogger import MessageLogger
 
 class OutputController:
 

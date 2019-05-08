@@ -74,6 +74,7 @@ services:
       - ../optimization-framework/optimization/resources:/usr/src/app/optimization/resources
       - ../optimization-framework/utils/resources:/usr/src/app/utils/resources
       - ../optimization-framework/logs:/usr/src/app/logs
+      - ../optimization-framework/utils/gurobi/license:/usr/src/app/share/gurobi811/license
     logging:
       driver: "json-file"
       options:

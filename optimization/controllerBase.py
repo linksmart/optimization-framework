@@ -24,9 +24,10 @@ from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
 from threading import Event
 
-from utils.messageLogger import MessageLogger
 
 import pyutilib.subprocess.GlobalData
+
+from utils_intern.messageLogger import MessageLogger
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 

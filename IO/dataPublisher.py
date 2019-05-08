@@ -4,7 +4,6 @@ Created on Jun 27 15:28 2018
 @author: nishit
 """
 
-import logging
 import threading
 
 import time
@@ -13,7 +12,7 @@ from random import randrange
 
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
-from utils.messageLogger import MessageLogger
+from utils_intern.messageLogger import MessageLogger
 
 class DataPublisher(ABC,threading.Thread):
 
