@@ -76,3 +76,16 @@ class RedisDB:
 
     def get_start_time(self):
         return float(self.redis_db.get("time"))
+
+    def get_bool(self, key, default=False):
+        value = self.redis_db.get(name=key)
+        if value is not None:
+            if not isinstance(value, bool):
+                value = str(value, "utf-8")
+                if value == "True":
+                    value = True
+                elif value == "False":
+                    value = False
+            return value
+        else:
+            return default

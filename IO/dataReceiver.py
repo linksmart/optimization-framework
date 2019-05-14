@@ -123,11 +123,8 @@ class DataReceiver(ABC):
             self.mqtt = MQTTClient(str(self.host), self.port, self.client_id, username=self.host_params["username"],
                                    password=self.host_params["password"], ca_cert_path=self.host_params["ca_cert_path"],
                                    set_insecure=self.host_params["insecure_flag"], id=self.id)
-            self.mqtt.subscribe(topic_qos, self.on_msg_received)
-            while not self.mqtt.subscribe_ack_wait():
-                self.mqtt.subscribe(topic_qos, self.on_msg_received)
-                self.logger.error("Topic subscribe missing ack")
 
+            self.mqtt.subscribe_to_topics(topic_qos, self.on_msg_received)
             self.logger.info("successfully subscribed")
         except Exception as e:
             self.logger.error(e)

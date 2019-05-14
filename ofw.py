@@ -53,16 +53,17 @@ def main():
     # print(results)
     # time.sleep(5)
 
-
-zmqForwarder = None
-
-
 def signal_handler(sig, frame):
     logger.info('You pressed Ctrl+C!')
     if zmqForwarder:
         logger.info("stopping zmq forwarder")
         zmqForwarder.Stop()
     sys.exit(0)
+
+zmqForwarder = None
+
+# Register the signal to the handler
+signal.signal(signal.SIGTERM, signal_handler)
 
 
 def setup():

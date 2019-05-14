@@ -46,7 +46,7 @@ class ConfigUpdater:
                         section1[key] = source_config[section][key]
                     if section in destination_config.sections():
                         for key in section1.keys():
-                            if key not in destination_config[section]:
+                            if key not in destination_config[section] and section != "KEYS":
                                 destination_config[section][key] = section1[key]
                                 logger.info("updated config with section: " + str(section) + " key: " + str(key))
                     else:

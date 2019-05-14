@@ -8,23 +8,16 @@ import re
 
 import os
 import subprocess
-import six
 import time
-
-from flask import jsonify
-from pyutilib.pyro import shutdown_pyro_components
 
 from IO.MQTTClient import InvalidMQTTHostException
 
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException, MissingKeysException
 from swagger_server.controllers.threadFactory import ThreadFactory
-from swagger_server.models import Status
 from swagger_server.models.start import Start  # noqa: E501
 from swagger_server.models.status_output import StatusOutput  # noqa: E501
-from swagger_server import util
-
-
+from optimization.idStatusManager import IDStatusManager
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
@@ -122,14 +115,14 @@ class CommandController:
                     "ztarttime": time.time()}
             self.redisDB.set("run:"+id, "running")
             self.redisDB.set("id_meta:"+id, json.dumps(meta_data))
-            self.persist_id(id, True, meta_data)
+            IDStatusManager.persist_id(id, True, meta_data, self.redisDB)
             logger.info("running status " + str(self.running))
             logger.debug("Command controller start finished")
             return 0
         else:
             self.set_isRunning(id, False)
             logger.debug("Flag isRunning set to False")
-            self.persist_id(id, False, None)
+            IDStatusManager.persist_id(id, False, None, self.redisDB)
             self.redisDB.set("run:" + id, "stopped")
             logger.error("Command controller start could not be finished")
             #logger.debug("System stopped succesfully")
@@ -139,7 +132,7 @@ class CommandController:
         logger.debug("Stop signal received")
         logger.debug("This is the factory object: " + str(self.get(id)))
         if self.factory[id]:
-            self.persist_id(id, False, None)
+            IDStatusManager.persist_id(id, False, None, self.redisDB)
             self.factory[id].stopOptControllerThread()
             self.stop_pyro_servers()
             self.stop_name_servers()
@@ -162,80 +155,56 @@ class CommandController:
             time.sleep(1)
 
     def persist_id(self, id, start, meta_data):
-        path = "/usr/src/app/optimization/resources/ids_status.txt"
-        try:
-            if self.redisDB.get_lock(self.lock_key, id):
-                if start:
-                    with open(path, "a+") as f:
-                        f.write(json.dumps(meta_data,sort_keys=True,separators=(', ', ': '))+"\n")
-                else:
-                    if os.path.exists(path):
-                        data = []
-                        with open(path, "r") as f:
-                            data = f.readlines()
-                        lines = []
-                        if len(data) > 0:
-                            for s in data:
-                                if id in s:
-                                    lines.append(s)
-                            for line in lines:
-                                if line in data:
-                                    data.remove(line)
-                            with open(path, "w") as f:
-                                f.writelines(data)
-        except Exception as e:
-            logging.error("error persisting id " + id + " " + str(start) + " " + str(e))
-        finally:
-            self.redisDB.release_lock(self.lock_key, id)
-
-    def get_ids(self):
-        path = "/usr/src/app/optimization/resources/ids_status.txt"
-        if os.path.exists(path):
-            old_ids = []
+        if not self.redisDB.get_bool("kill_signal", default=False):
+            logger.info("persist id called with "+str(start)+ " for id "+str(id))
+            path = "/usr/src/app/optimization/resources/ids_status.txt"
             try:
-                if self.redisDB.get_lock(self.lock_key, "start"):
-                    data = []
-                    with open(path, "r") as f:
-                        data = f.readlines()
-                    if len(data) > 0:
-                        for s in data:
-                            a = s.replace("\n", "")
-                            if self.redisDB.get_start_time() > float(a[a.find("\"ztarttime\": ") + 13:-1]):
-                                old_ids.append(s)
-                        for s in old_ids:
-                            if s in data:
-                                data.remove(s)
-                        with open(path, "w") as f:
-                            f.writelines(data)
+                if self.redisDB.get_lock(self.lock_key, id):
+                    if start:
+                        with open(path, "a+") as f:
+                            f.write(json.dumps(meta_data,sort_keys=True,separators=(', ', ': '))+"\n")
+                    else:
+                        if os.path.exists(path):
+                            data = []
+                            with open(path, "r") as f:
+                                data = f.readlines()
+                            lines = []
+                            if len(data) > 0:
+                                for s in data:
+                                    if id in s:
+                                        lines.append(s)
+                                for line in lines:
+                                    if line is not None and line in data:
+                                        i = data.index(line)
+                                        line = json.loads(line.replace("\n", ""))
+                                        line["repetition"] = -9
+                                        data[i] = json.dumps(line, sort_keys=True, separators=(', ', ': ')) + "\n"
+                                        #data.remove(line)
+                                with open(path, "w") as f:
+                                    f.writelines(data)
             except Exception as e:
-                logging.error("error reading ids file " + str(e))
+                logging.error("error persisting id " + id + " " + str(start) + " " + str(e))
             finally:
-                self.redisDB.release_lock(self.lock_key, "start")
-            for s in old_ids:
-                val = json.loads(s)
-                try:
-                    self.start(val["id"], None, val)
-                except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
-                    # TODO: should we catch these exceptions here?
-                    logger.error("Error " + str(e))
-                    self.redisDB.set("run:" + val["id"], "stopped")
-                    return str(e)
+                self.redisDB.release_lock(self.lock_key, id)
+        else:
+            logger.info("Since it is a kill signal we do not persist stop data to ids_status")
 
-    def number_of_active_ids(self):
-        num = 0
-        path = "/usr/src/app/optimization/resources/ids_status.txt"
-        if os.path.exists(path):
+    def restart_ids(self):
+        old_ids, stopped_ids = IDStatusManager.instances_to_restart(self.redisDB)
+        for s in old_ids:
+            val = json.loads(s)
             try:
-                if self.redisDB.get_lock(self.lock_key, "start"):
-                    data = []
-                    with open(path, "r") as f:
-                        data = f.readlines()
-                        num = len(data)
-            except Exception as e:
-                logging.error("error reading ids file " + str(e))
-            finally:
-                self.redisDB.release_lock(self.lock_key, "start")
-        return num
+                self.start(val["id"], None, val)
+            except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
+                # TODO: should we catch these exceptions here?
+                logger.error("Error " + str(e))
+                self.redisDB.set("run:" + val["id"], "stopped")
+                return str(e)
+        for s in stopped_ids:
+            val = json.loads(s)
+            id = val["id"]
+            self.redisDB.set("run:" + id, "stopped")
+            self.redisDB.set("id_meta:" + id, json.dumps(val))
 
     def start_name_servers(self):
         logger.debug("Starting name_server and dispatch_server")
@@ -256,7 +225,7 @@ class CommandController:
         return pid
 
     def stop_name_servers(self):
-        if self.number_of_active_ids() == 0:
+        if IDStatusManager.number_of_active_ids(self.redisDB) == 0:
             pid = self.redisDB.get(self.name_server_key)
             self.os_proc_stop(pid, "name server", self.name_server_key)
             pid = self.redisDB.get(self.dispatch_server_key)
@@ -274,9 +243,10 @@ class CommandController:
 
     def stop_pyro_servers(self):
         logger.info("stop pyro server init")
-        logger.debug("active ids = "+str(self.number_of_active_ids()))
+        num_of_active_ids = IDStatusManager.number_of_active_ids(self.redisDB)
+        logger.debug("active ids = "+str(num_of_active_ids))
         count = 0
-        if self.number_of_active_ids() == 0:
+        if num_of_active_ids == 0:
             self.redisDB.set("pyro_mip", 0)
             keys = self.redisDB.get_keys_for_pattern("pyro_mip_pid:*")
             if keys is not None:
@@ -294,7 +264,7 @@ class CommandController:
 
     def start_pryo_mip_server(self):
         active_pyro_servers = int(self.redisDB.get("pyro_mip",0))
-        if active_pyro_servers <= self.number_of_active_ids():
+        if active_pyro_servers <= IDStatusManager.number_of_active_ids(self.redisDB):
             ###pyro_mip_server
             pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server")
             self.redisDB.set("pyro_mip", active_pyro_servers+1)
@@ -337,7 +307,7 @@ class CommandController:
         return status
 
 variable = CommandController()
-variable.get_ids()
+variable.restart_ids()
 
 def get_models():
     f = []

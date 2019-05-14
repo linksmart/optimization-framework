@@ -37,47 +37,54 @@ class MockGenericDataPublisher(DataPublisher):
             self.file_lines = self.read_file_data(file_path)
             self.file_index = 0
             self.file_length = len(self.file_lines)
-        else:
+        elif self.source == "random":
             self.is_timed = False
             self.rand_min = mock_params["mock_random_min"]
             self.rand_max = mock_params["mock_random_max"]
             self.data_type = mock_params["mock_data_type"]
+        elif self.source == "constant":
+            self.constant_value = mock_params["mock_constant"]
 
     def get_data(self):
         try:
-            meas_list = []
-            current_time = int(math.floor(time.time()))
-            if self.source == "file":
-                vals = self.get_file_line(current_time)
-                logger.debug("Length: " + str(self.length))
-                if len(vals) < self.length:
-                    logger.error(str(self.generic_name) + " mock file has invalid data. Less values than horizon_step")
-                    return None
+            if self.source == "constant":
+                val = self.constant_value
+                logger.debug("Sent MQTT:" + str(val))
+                return val
             else:
-                vals = self.get_random_floats()
-                logger.debug("Vals: "+str(vals))
-            logger.debug("Length: " + str(self.length))
-            prev_time = 0
-            for index in range(self.length):
-                meas = senml.SenMLMeasurement()
-                if self.is_timed:
-                    meas.value = vals[index][1]
-                    if prev_time > vals[index][0]:
-                        meas.time = prev_time + self.delta_time
+                meas_list = []
+                current_time = int(math.floor(time.time()))
+                if self.source == "file":
+                    vals = self.get_file_line(current_time)
+                    logger.debug("Length: " + str(self.length))
+                    if len(vals) < self.length:
+                        logger.error(str(self.generic_name) + " mock file has invalid data. Less values than horizon_step")
+                        return None
+                elif self.source == "random":
+                    vals = self.get_random_floats()
+                    logger.debug("Vals: "+str(vals))
+                logger.debug("Length: " + str(self.length))
+                prev_time = 0
+                for index in range(self.length):
+                    meas = senml.SenMLMeasurement()
+                    if self.is_timed:
+                        meas.value = vals[index][1]
+                        if prev_time > vals[index][0]:
+                            meas.time = prev_time + self.delta_time
+                        else:
+                            meas.time = int(vals[index][0])
+                        prev_time = meas.time
                     else:
-                        meas.time = int(vals[index][0])
-                    prev_time = meas.time
-                else:
-                    meas.value = vals[index]
-                    meas.time = int(current_time)
-                meas.name = self.generic_name
-                meas_list.append(meas)
-                current_time += self.delta_time
-            doc = senml.SenMLDocument(meas_list)
-            val = doc.to_json()
-            val = json.dumps(val)
-            logger.debug("Sent MQTT:" + str(val))
-            return val
+                        meas.value = vals[index]
+                        meas.time = int(current_time)
+                    meas.name = self.generic_name
+                    meas_list.append(meas)
+                    current_time += self.delta_time
+                doc = senml.SenMLDocument(meas_list)
+                val = doc.to_json()
+                val = json.dumps(val)
+                logger.debug("Sent MQTT:" + str(val))
+                return val
         except Exception as e:
             logger.error(e)
 

@@ -61,6 +61,14 @@ class MockData:
                         mock_params["mock_random_min"] = mock_random_min
                         mock_params["mock_random_max"] = mock_random_max
                         mock_params["mock_data_type"] = mock_data_type
+                    elif mock_source == "constant":
+                        mock_params["mock_source"] = mock_source
+                        contant_value = config.get(section, "mock.constant.val", fallback=None)
+                        if contant_value is None:
+                            logger.error("no constant value specified for "+str(section))
+                            continue
+                        mock_params["mock_constant"] = contant_value
+                        mock_params["horizon_steps"] = 1
                     mgdp = MockGenericDataPublisher(config, mock_params)
                     mgdp.start()
                     self.publishers[section] = mgdp

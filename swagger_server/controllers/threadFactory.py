@@ -198,7 +198,7 @@ class ThreadFactory:
             return e
 
     def is_running(self):
-        return not self.opt.finish_status
+        return not self.opt.get_finish_status()
 
     def update_training_params(self, key, parameters):
         while True:

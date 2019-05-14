@@ -54,10 +54,14 @@ class ControllerBase(ABC, threading.Thread):
         self.output_config = output_config
         self.input_config_parser = input_config_parser
         self.stopRequest = threading.Event()
-        self.finish_status = False
         self.redisDB = RedisDB()
         self.lock_key = "id_lock"
         self.optimization_type = optimization_type
+        self.stop_signal_key = "opt_stop_" + self.id
+        self.finish_status_key = "finish_status_" + self.id
+        self.redisDB.set(self.stop_signal_key, False)
+        self.redisDB.set(self.finish_status_key, False)
+        self.repetition_completed = False
 
         try:
             # dynamic load of a class
@@ -95,6 +99,7 @@ class ControllerBase(ABC, threading.Thread):
             self.output.Stop()
         except Exception as e:
             self.logger.error("error stopping output " + str(e))
+        self.redisDB.set(self.stop_signal_key, True)
         if self.isAlive():
             self.join(1)
 
@@ -172,6 +177,12 @@ class ControllerBase(ABC, threading.Thread):
                 return_msg = e
         finally:
             # Closing the pyomo servers
+            self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
+            self.logger.info("repetition completed "+ str(self.repetition_completed))
+            self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
+            if not self.redisDB.get_bool(self.stop_signal_key) and not self.repetition_completed:
+                self.logger.error("Process interrupted")
+                self.redisDB.set("kill_signal", True)
             self.logger.debug("Deactivating pyro servers")
             # TODO : 'SolverManager_Pyro' object has no attribute 'deactivate'
             # this error was not present before pyomo update
@@ -184,10 +195,13 @@ class ControllerBase(ABC, threading.Thread):
                 self.logger.debug("Client " + key + " is being disconnected")
 
             self.logger.info(return_msg)
-            self.finish_status = True
+            self.redisDB.set(self.finish_status_key, True)
             return return_msg
 
     @abstractmethod
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
-        while not self.stopRequest.isSet():
+        while not self.redisDB.get_bool(self.stop_signal_key):
             pass
+
+    def get_finish_status(self):
+        return self.redisDB.get_bool(self.finish_status_key)

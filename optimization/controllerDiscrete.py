@@ -15,6 +15,8 @@ from optimization.controllerBase import ControllerBase
 
 import pyutilib.subprocess.GlobalData
 
+from optimization.idStatusManager import IDStatusManager
+
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 
@@ -26,11 +28,11 @@ class OptControllerDiscrete(ControllerBase):
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
-        while not self.stopRequest.isSet():
+        while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
             self.logger.info("waiting for data")
             data_dict = self.input.get_data()  # blocking call
             self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
-            if self.stopRequest.isSet():
+            if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
                 break
 
             # Creating an optimization instance with the referenced model
@@ -107,11 +109,12 @@ class OptControllerDiscrete(ControllerBase):
 
             count += 1
             if self.repetition > 0 and count >= self.repetition:
+                self.repetition_completed = True
                 break
 
             self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
-            time_spent = self.update_count()
+            time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
             for i in range(self.control_frequency - time_spent):
                 time.sleep(1)
-                if self.stopRequest.isSet():
+                if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
                     break
