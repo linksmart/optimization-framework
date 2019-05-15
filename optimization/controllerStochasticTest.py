@@ -29,9 +29,112 @@ class OptControllerStochasticTest(ControllerBase):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
-        self.executor = ThreadPoolExecutor(max_workers=5)
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
+
+    def single_step(self, Value, behaviour_model, data_dict, ess_decision_domain, forecast_pv, ini_ess_soc,
+                    ini_vac_soc, max_value, min_value, start_time_offset, timestep, vac_decision_domain,
+                    vac_soc_states):
+        feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
+        for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
+            compare_value = ini_ess_soc - p_ESS
+            if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
+                feasible_Pess.append(p_ESS)
+        self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+        feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
+        for p_VAC in vac_decision_domain:  # When decided charging with p_VAC
+            if p_VAC + ini_vac_soc <= max(
+                    vac_soc_states):  # if the final vac_SoC is within the specified domain
+                feasible_Pvac.append(p_VAC)
+        self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+
+        data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
+        data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
+        data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
+        data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
+
+        value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
+                       t == timestep + 1 - start_time_offset]
+        data_dict[None]["Value_Index"] = {None: value_index}
+        value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
+        data_dict[None]["Value"] = value
+
+        # * Updated
+        bm_idx = behaviour_model[timestep - start_time_offset].keys()
+        bm = behaviour_model[timestep - start_time_offset]
+        data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
+        data_dict[None]["Behavior_Model"] = bm
+        pv_forecast_for_current_timestep = forecast_pv[timestep]
+        data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
+        # * Create Optimization instance
+        # Creating an optimization instance with the referenced model
+        try:
+            self.logger.debug("Creating an optimization instance")
+            instance = self.my_class.model.create_instance(data_dict)
+        except Exception as e:
+            self.logger.error("Error creating instance")
+            self.logger.error("error creating instance " + str(e))
+        self.logger.info("Instance created with pyomo")
+        # * Queue the optimization instance
+
+        optsolver = SolverFactory(self.solver_name)
+        results = optsolver.solve(instance)
+
+        if (results.solver.status == SolverStatus.ok) and (
+                results.solver.termination_condition == TerminationCondition.optimal):
+            # this is feasible and optimal
+            self.logger.info("Solver status and termination condition ok")
+            # self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
+            self.logger.debug(results)
+            instance.solutions.load_from(results)
+
+            # * if solved get the values in dict
+            decision_update = {}
+            value_update = {}
+            try:
+                my_dict = {}
+                for v in instance.component_objects(Var, active=True):
+                    self.logger.debug("Variable in the optimization: " + str(v))
+                    varobject = getattr(instance, str(v))
+                    var_list = []
+                    try:
+                        # Try and add to the dictionary by key ref
+                        for index in varobject:
+                            var_list.append(varobject[index].value)
+                        self.logger.debug("Identified variables " + str(var_list))
+                        my_dict[str(v)] = var_list
+                    except Exception as e:
+                        self.logger.error("error creating my dict " + str(e))
+
+                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = {}
+
+                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['Grid'] = \
+                    my_dict["P_GRID_OUTPUT"][0]
+                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['PV'] = \
+                    my_dict["P_PV_OUTPUT"][0]
+                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] = \
+                    my_dict["P_ESS_OUTPUT"][0]
+                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] = \
+                    my_dict["P_VAC_OUTPUT"][0]
+
+                value_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = \
+                    my_dict["P_PV_OUTPUT"][0]
+
+                self.logger.info("Done".center(80, "#"))
+                self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
+                self.logger.info("#" * 80)
+
+                return decision_update, value_update
+                # self.output.publish_data(self.id, my_dict)
+            except Exception as e:
+                self.logger.error("error in reading result " + str(e))
+        elif results.solver.termination_condition == TerminationCondition.infeasible:
+            # do something about it? or exit?
+            self.logger.info("Termination condition is infeasible")
+        else:
+            self.logger.info("Nothing fits")
+
+        return {}, {}
 
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
         while not self.redisDB.get_bool(self.stop_signal_key):
@@ -121,17 +224,20 @@ class OptControllerStochasticTest(ControllerBase):
             for timestep in reversed(range(start_time_offset, start_time_offset + self.horizon_in_steps)):
                 self.logger.info(f"Timestep :#{timestep}")
                 futures = []
+
+                # with ThreadPoolExecutor(max_workers=5) as executor:
                 for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
-                    future = self.executor.submit(self.single_step, Value, behaviour_model, data_dict, ess_decision_domain, forecast_pv,
-                                     ini_ess_soc, ini_vac_soc, max_value, min_value, start_time_offset, timestep,
-                                     vac_decision_domain, vac_soc_states)
+                    future = self.single_step(Value, behaviour_model, data_dict,
+                                              ess_decision_domain, forecast_pv, ini_ess_soc, ini_vac_soc,
+                                              max_value, min_value, start_time_offset,
+                                              timestep, vac_decision_domain, vac_soc_states)
                     futures.append(future)
 
-                self.logger.info("len of futures = "+str(len(futures)))
-                time.sleep(100)
+                self.logger.info("len of futures = " + str(len(futures)))
+
                 for i, future in enumerate(futures, 0):
-                    self.logger.debug("future "+str(i))
-                    d, v = future.result()
+                    self.logger.debug("future " + str(i))
+                    d, v = future
                     self.logger.debug("future result " + str(i) + " " + str(v))
                     Decision.update(d)
                     Value.update(v)
@@ -250,107 +356,3 @@ class OptControllerStochasticTest(ControllerBase):
                 time.sleep(1)
                 if self.redisDB.get_bool(self.stop_signal_key):
                     break
-
-    def single_step(self, Value, behaviour_model, data_dict, ess_decision_domain, forecast_pv, ini_ess_soc,
-                    ini_vac_soc, max_value, min_value, start_time_offset, timestep, vac_decision_domain,
-                    vac_soc_states):
-        feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
-        for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
-            compare_value = ini_ess_soc - p_ESS
-            if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
-                feasible_Pess.append(p_ESS)
-        self.logger.debug("feasible p_ESS " + str(feasible_Pess))
-        feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
-        for p_VAC in vac_decision_domain:  # When decided charging with p_VAC
-            if p_VAC + ini_vac_soc <= max(
-                    vac_soc_states):  # if the final vac_SoC is within the specified domain
-                feasible_Pvac.append(p_VAC)
-        self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
-
-        data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
-        data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
-        data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
-        data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
-
-        value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
-                       t == timestep + 1 - start_time_offset]
-        data_dict[None]["Value_Index"] = {None: value_index}
-        value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
-        data_dict[None]["Value"] = value
-
-        # * Updated
-        bm_idx = behaviour_model[timestep - start_time_offset].keys()
-        bm = behaviour_model[timestep - start_time_offset]
-        data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
-        data_dict[None]["Behavior_Model"] = bm
-        pv_forecast_for_current_timestep = forecast_pv[timestep]
-        data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
-        # * Create Optimization instance
-        # Creating an optimization instance with the referenced model
-        try:
-            self.logger.debug("Creating an optimization instance")
-            instance = self.my_class.model.create_instance(data_dict)
-        except Exception as e:
-            self.logger.error("Error creating instance")
-            self.logger.error("error creating instance "+ str(e))
-        self.logger.info("Instance created with pyomo")
-        # * Queue the optimization instance
-
-        optsolver = SolverFactory(self.solver_name)
-        self.results = optsolver.solve(instance)
-
-        if (self.results.solver.status == SolverStatus.ok) and (
-                self.results.solver.termination_condition == TerminationCondition.optimal):
-            # this is feasible and optimal
-            self.logger.info("Solver status and termination condition ok")
-            # self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-            self.logger.debug(self.results)
-            instance.solutions.load_from(self.results)
-
-            # * if solved get the values in dict
-            decision_update = {}
-            value_update = {}
-            try:
-                my_dict = {}
-                for v in instance.component_objects(Var, active=True):
-                    self.logger.debug("Variable in the optimization: " + str(v))
-                    varobject = getattr(instance, str(v))
-                    var_list = []
-                    try:
-                        # Try and add to the dictionary by key ref
-                        for index in varobject:
-                            var_list.append(varobject[index].value)
-                        self.logger.debug("Identified variables " + str(var_list))
-                        my_dict[str(v)] = var_list
-                    except Exception as e:
-                        self.logger.error("error createing my dict "+str(e))
-
-                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = {}
-
-                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['Grid'] = \
-                    my_dict["P_GRID_OUTPUT"][0]
-                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['PV'] = \
-                    my_dict["P_PV_OUTPUT"][0]
-                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] = \
-                    my_dict["P_ESS_OUTPUT"][0]
-                decision_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] = \
-                    my_dict["P_VAC_OUTPUT"][0]
-
-                value_update[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = \
-                    my_dict["P_PV_OUTPUT"][0]
-
-                self.logger.info("Done".center(80, "#"))
-                self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
-                self.logger.info("#" * 80)
-
-                return decision_update, value_update
-                # self.output.publish_data(self.id, my_dict)
-            except Exception as e:
-                self.logger.error("error in reading result "+ str(e))
-        elif self.results.solver.termination_condition == TerminationCondition.infeasible:
-            # do something about it? or exit?
-            self.logger.info("Termination condition is infeasible")
-        else:
-            self.logger.info("Nothing fits")
-
-        return {}, {}

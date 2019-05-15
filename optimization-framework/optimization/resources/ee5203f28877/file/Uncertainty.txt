@@ -1,0 +1,1 @@
+{'Plugged_Time': {'mean': 18.76, 'std': 1.3}, 'Unplugged_Time': {'mean': 7.32, 'std': 0.78}, 'simulation_repetition': 10000, 'ESS_States': {'Min': 0, 'Max': 100, 'Steps': 10}, 'VAC_States': {'Min': 0, 'Max': 100, 'Steps': 2.5}}
