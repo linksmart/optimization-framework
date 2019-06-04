@@ -22,5 +22,5 @@ class MessageLogger:
             logger.addHandler(syslog)
         extra = {"id": id}
         logger = logging.LoggerAdapter(logger, extra)
-        # for changing
+        # TODO: for changing
         return logger
