@@ -10,14 +10,16 @@ import os
 import datetime
 from math import floor
 
+from IO.inputPreprocess import InputPreprocess
 from optimization.SoCValueDataReceiver import SoCValueDataReceiver
+from optimization.chargerDataReceiver import ChargerDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
 from utils_intern.messageLogger import MessageLogger
 
 
 class InputController:
 
-    def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds):
+    def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds, preprocess):
         self.logger = MessageLogger.get_logger(__file__, id)
         self.stop_request = False
         self.optimization_data = {}
@@ -31,8 +33,11 @@ class InputController:
         self.prediction_mqtt_flags = {}
         self.non_prediction_mqtt_flags = {}
         self.external_mqtt_flags = {}
+        self.preprocess_mqtt_flags = {}
         self.generic_data_mqtt_flags = {}
         self.generic_names = None
+        self.preprocess = preprocess
+        self.inputPreprocess = InputPreprocess(self.id)
 
         self.parse_input_config()
         self.set_timestep_data()
@@ -52,24 +57,35 @@ class InputController:
                 prediction_topic = config.get("IO", "forecast.topic")
                 prediction_topic = json.loads(prediction_topic)
                 prediction_topic["topic"] = prediction_topic["topic"] + name
-                self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name,
-                                                                   self.id, self.required_buffer_data, self.dT_in_seconds)
+                self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name, self.id,
+                                                                   self.required_buffer_data, self.dT_in_seconds)
         for name, flag in self.non_prediction_mqtt_flags.items():
             if flag:
                 non_prediction_topic = config.get("IO", "forecast.topic")
                 non_prediction_topic = json.loads(non_prediction_topic)
                 non_prediction_topic["topic"] = non_prediction_topic["topic"] + name
-                self.internal_receiver[name] = GenericDataReceiver(True, non_prediction_topic, config, name,
-                                                                   self.id, self.required_buffer_data, self.dT_in_seconds)
+                self.internal_receiver[name] = GenericDataReceiver(True, non_prediction_topic, config, name, self.id,
+                                                                   self.required_buffer_data, self.dT_in_seconds)
         # ESS data
         self.external_data_receiver = {}
-        for topic, flag in self.external_mqtt_flags.items():
+        for name, flag in self.external_mqtt_flags.items():
             if flag:
-                if topic == "SoC_Value":
-                    params = self.input_config_parser.get_params("SoC_Value")
+                if name == "SoC_Value":
+                    params = self.input_config_parser.get_params(name)
                     self.logger.debug("params for MQTT SoC_Value: " + str(params))
-                    self.external_data_receiver[topic] = SoCValueDataReceiver(False, params, config, self.id,
-                                                                              self.required_buffer_data, self.dT_in_seconds)
+                    self.external_data_receiver[name] = SoCValueDataReceiver(False, params, config, self.id,
+                                                                             self.required_buffer_data,
+                                                                             self.dT_in_seconds)
+
+        self.preprocess_data_receiver = {}
+        for name, flag in self.preprocess_mqtt_flags.items():
+            if flag:
+                if "charger" in name:
+                    params = self.input_config_parser.get_params(name)
+                    self.logger.debug("params for MQTT " + name + " : " + str(params))
+                    self.external_data_receiver[name] = ChargerDataReceiver(False, params, config, name, self.id,
+                                                                             self.required_buffer_data,
+                                                                             self.dT_in_seconds)
 
         self.generic_data_receiver = {}
         if len(self.generic_data_mqtt_flags) > 0:
@@ -77,7 +93,8 @@ class InputController:
                 if mqtt_flag:
                     topic = self.input_config_parser.get_params(generic_name)
                     self.generic_data_receiver[generic_name] = GenericDataReceiver(False, topic, config, generic_name,
-                                                                                   self.id, self.required_buffer_data, self.dT_in_seconds)
+                                                                                   self.id, self.required_buffer_data,
+                                                                                   self.dT_in_seconds)
 
     def set_timestep_data(self):
         self.optimization_data["N"] = {None: [0]}
@@ -100,6 +117,10 @@ class InputController:
 
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
+
+        if self.preprocess:
+            data = self.inputPreprocess.preprocess(data)
+
         self.optimization_data.update(data)
 
         self.prediction_names = self.input_config_parser.get_prediction_names()
@@ -110,6 +131,9 @@ class InputController:
 
         self.external_names = self.input_config_parser.get_external_names()
         self.set_mqtt_flags(self.external_names, self.external_mqtt_flags)
+
+        self.preprocess_names = self.input_config_parser.get_preprocess_names()
+        self.set_mqtt_flags(self.preprocess_names, self.preprocess_mqtt_flags)
 
         self.generic_names = self.input_config_parser.get_generic_data_names()
         self.set_mqtt_flags(self.generic_names, self.generic_data_mqtt_flags)
@@ -150,6 +174,9 @@ class InputController:
                 success = self.fetch_mqtt_and_file_data(self.non_prediction_mqtt_flags, self.internal_receiver, [], [], current_bucket)
             if success:
                 success = self.fetch_mqtt_and_file_data(self.external_mqtt_flags, self.external_data_receiver, [], ["SoC_Value"], current_bucket)
+            if success:
+                success = self.fetch_mqtt_and_file_data(self.preprocess_mqtt_flags, self.external_data_receiver, [],
+                                                        ["SoC_Value"], current_bucket)
             if success:
                 success = self.fetch_mqtt_and_file_data(self.generic_data_mqtt_flags, self.generic_data_receiver, [], [], current_bucket)
         return {None: self.optimization_data.copy()}

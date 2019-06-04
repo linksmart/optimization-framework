@@ -6,3 +6,9 @@ class Car:
 
     def charge(self, soc, charge_period, charge_power):
         return soc + charge_power * charge_period / self.battery_capacity
+
+    def __repr__(self):
+        return self.car_name
+
+    def __str__(self):
+        return self.car_name
