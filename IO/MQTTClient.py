@@ -136,7 +136,7 @@ class MQTTClient:
     def subscribe_ack_wait(self):
         count = 0
         if self.connected:
-            while count < 10:
+            while count < 20:
                 if len(self.topic_ack_wait) == 0:
                     return True
                 else:
