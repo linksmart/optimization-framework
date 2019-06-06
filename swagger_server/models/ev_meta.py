@@ -15,31 +15,26 @@ class EvMeta(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, unit_consumption_assumption: float=None, unit_drop_penalty: float=None, vac_so_c_value: float=None):  # noqa: E501
+    def __init__(self, unit_consumption_assumption: float=None, unit_drop_penalty: float=None):  # noqa: E501
         """EvMeta - a model defined in Swagger
 
         :param unit_consumption_assumption: The unit_consumption_assumption of this EvMeta.  # noqa: E501
         :type unit_consumption_assumption: float
         :param unit_drop_penalty: The unit_drop_penalty of this EvMeta.  # noqa: E501
         :type unit_drop_penalty: float
-        :param vac_so_c_value: The vac_so_c_value of this EvMeta.  # noqa: E501
-        :type vac_so_c_value: float
         """
         self.swagger_types = {
             'unit_consumption_assumption': float,
-            'unit_drop_penalty': float,
-            'vac_so_c_value': float
+            'unit_drop_penalty': float
         }
 
         self.attribute_map = {
             'unit_consumption_assumption': 'Unit_Consumption_Assumption',
-            'unit_drop_penalty': 'Unit_Drop_Penalty',
-            'vac_so_c_value': 'VAC_SoC_Value'
+            'unit_drop_penalty': 'Unit_Drop_Penalty'
         }
 
         self._unit_consumption_assumption = unit_consumption_assumption
         self._unit_drop_penalty = unit_drop_penalty
-        self._vac_so_c_value = vac_so_c_value
 
     @classmethod
     def from_dict(cls, dikt) -> 'EvMeta':
@@ -93,24 +88,3 @@ class EvMeta(Model):
         """
 
         self._unit_drop_penalty = unit_drop_penalty
-
-    @property
-    def vac_so_c_value(self) -> float:
-        """Gets the vac_so_c_value of this EvMeta.
-
-
-        :return: The vac_so_c_value of this EvMeta.
-        :rtype: float
-        """
-        return self._vac_so_c_value
-
-    @vac_so_c_value.setter
-    def vac_so_c_value(self, vac_so_c_value: float):
-        """Sets the vac_so_c_value of this EvMeta.
-
-
-        :param vac_so_c_value: The vac_so_c_value of this EvMeta.
-        :type vac_so_c_value: float
-        """
-
-        self._vac_so_c_value = vac_so_c_value

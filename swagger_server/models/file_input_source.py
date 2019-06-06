@@ -6,13 +6,16 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
+from swagger_server.models.chargers_file import ChargersFile  # noqa: F401,E501
 from swagger_server.models.ess_file import ESSFile  # noqa: F401,E501
+from swagger_server.models.ev_file import EvFile  # noqa: F401,E501
 from swagger_server.models.generic_files import GenericFiles  # noqa: F401,E501
 from swagger_server.models.global_control_file import GlobalControlFile  # noqa: F401,E501
 from swagger_server.models.grid import Grid  # noqa: F401,E501
 from swagger_server.models.horizons import Horizons  # noqa: F401,E501
 from swagger_server.models.load_file import LoadFile  # noqa: F401,E501
 from swagger_server.models.pv_file import PVFile  # noqa: F401,E501
+from swagger_server.models.uncertainity_file import UncertainityFile  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -22,7 +25,7 @@ class FileInputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, generic: GenericFiles=None, load: LoadFile=None, photovoltaic: PVFile=None, ess: ESSFile=None, grid: Grid=None, global_control: GlobalControlFile=None, horizons: Horizons=None):  # noqa: E501
+    def __init__(self, generic: GenericFiles=None, load: LoadFile=None, photovoltaic: PVFile=None, ess: ESSFile=None, grid: Grid=None, global_control: GlobalControlFile=None, horizons: Horizons=None, ev: EvFile=None, chargers: ChargersFile=None, uncertainity: UncertainityFile=None):  # noqa: E501
         """FileInputSource - a model defined in Swagger
 
         :param generic: The generic of this FileInputSource.  # noqa: E501
@@ -39,6 +42,12 @@ class FileInputSource(Model):
         :type global_control: GlobalControlFile
         :param horizons: The horizons of this FileInputSource.  # noqa: E501
         :type horizons: Horizons
+        :param ev: The ev of this FileInputSource.  # noqa: E501
+        :type ev: EvFile
+        :param chargers: The chargers of this FileInputSource.  # noqa: E501
+        :type chargers: ChargersFile
+        :param uncertainity: The uncertainity of this FileInputSource.  # noqa: E501
+        :type uncertainity: UncertainityFile
         """
         self.swagger_types = {
             'generic': GenericFiles,
@@ -47,7 +56,10 @@ class FileInputSource(Model):
             'ess': ESSFile,
             'grid': Grid,
             'global_control': GlobalControlFile,
-            'horizons': Horizons
+            'horizons': Horizons,
+            'ev': EvFile,
+            'chargers': ChargersFile,
+            'uncertainity': UncertainityFile
         }
 
         self.attribute_map = {
@@ -57,7 +69,10 @@ class FileInputSource(Model):
             'ess': 'ESS',
             'grid': 'grid',
             'global_control': 'global_control',
-            'horizons': 'horizons'
+            'horizons': 'horizons',
+            'ev': 'EV',
+            'chargers': 'chargers',
+            'uncertainity': 'uncertainity'
         }
 
         self._generic = generic
@@ -67,6 +82,9 @@ class FileInputSource(Model):
         self._grid = grid
         self._global_control = global_control
         self._horizons = horizons
+        self._ev = ev
+        self._chargers = chargers
+        self._uncertainity = uncertainity
 
     @classmethod
     def from_dict(cls, dikt) -> 'FileInputSource':
@@ -225,3 +243,66 @@ class FileInputSource(Model):
         """
 
         self._horizons = horizons
+
+    @property
+    def ev(self) -> EvFile:
+        """Gets the ev of this FileInputSource.
+
+
+        :return: The ev of this FileInputSource.
+        :rtype: EvFile
+        """
+        return self._ev
+
+    @ev.setter
+    def ev(self, ev: EvFile):
+        """Sets the ev of this FileInputSource.
+
+
+        :param ev: The ev of this FileInputSource.
+        :type ev: EvFile
+        """
+
+        self._ev = ev
+
+    @property
+    def chargers(self) -> ChargersFile:
+        """Gets the chargers of this FileInputSource.
+
+
+        :return: The chargers of this FileInputSource.
+        :rtype: ChargersFile
+        """
+        return self._chargers
+
+    @chargers.setter
+    def chargers(self, chargers: ChargersFile):
+        """Sets the chargers of this FileInputSource.
+
+
+        :param chargers: The chargers of this FileInputSource.
+        :type chargers: ChargersFile
+        """
+
+        self._chargers = chargers
+
+    @property
+    def uncertainity(self) -> UncertainityFile:
+        """Gets the uncertainity of this FileInputSource.
+
+
+        :return: The uncertainity of this FileInputSource.
+        :rtype: UncertainityFile
+        """
+        return self._uncertainity
+
+    @uncertainity.setter
+    def uncertainity(self, uncertainity: UncertainityFile):
+        """Sets the uncertainity of this FileInputSource.
+
+
+        :param uncertainity: The uncertainity of this FileInputSource.
+        :type uncertainity: UncertainityFile
+        """
+
+        self._uncertainity = uncertainity

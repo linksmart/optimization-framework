@@ -62,6 +62,7 @@ class ControllerBase(ABC, threading.Thread):
         self.redisDB.set(self.stop_signal_key, False)
         self.redisDB.set(self.finish_status_key, False)
         self.repetition_completed = False
+        self.preprocess = False
 
         try:
             # dynamic load of a class

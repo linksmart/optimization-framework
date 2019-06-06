@@ -154,41 +154,6 @@ class CommandController:
                 break
             time.sleep(1)
 
-    def persist_id(self, id, start, meta_data):
-        if not self.redisDB.get_bool("kill_signal", default=False):
-            logger.info("persist id called with "+str(start)+ " for id "+str(id))
-            path = "/usr/src/app/optimization/resources/ids_status.txt"
-            try:
-                if self.redisDB.get_lock(self.lock_key, id):
-                    if start:
-                        with open(path, "a+") as f:
-                            f.write(json.dumps(meta_data,sort_keys=True,separators=(', ', ': '))+"\n")
-                    else:
-                        if os.path.exists(path):
-                            data = []
-                            with open(path, "r") as f:
-                                data = f.readlines()
-                            lines = []
-                            if len(data) > 0:
-                                for s in data:
-                                    if id in s:
-                                        lines.append(s)
-                                for line in lines:
-                                    if line is not None and line in data:
-                                        i = data.index(line)
-                                        line = json.loads(line.replace("\n", ""))
-                                        line["repetition"] = -9
-                                        data[i] = json.dumps(line, sort_keys=True, separators=(', ', ': ')) + "\n"
-                                        #data.remove(line)
-                                with open(path, "w") as f:
-                                    f.writelines(data)
-            except Exception as e:
-                logging.error("error persisting id " + id + " " + str(start) + " " + str(e))
-            finally:
-                self.redisDB.release_lock(self.lock_key, id)
-        else:
-            logger.info("Since it is a kill signal we do not persist stop data to ids_status")
-
     def restart_ids(self):
         old_ids, stopped_ids = IDStatusManager.instances_to_restart(self.redisDB)
         for s in old_ids:

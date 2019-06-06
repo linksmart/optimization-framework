@@ -16,26 +16,31 @@ class Source(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None, predict: bool=None):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None, predict: bool=None, preprocess: bool=None):  # noqa: E501
         """Source - a model defined in Swagger
 
         :param mqtt: The mqtt of this Source.  # noqa: E501
         :type mqtt: MQTT
         :param predict: The predict of this Source.  # noqa: E501
         :type predict: bool
+        :param preprocess: The preprocess of this Source.  # noqa: E501
+        :type preprocess: bool
         """
         self.swagger_types = {
             'mqtt': MQTT,
-            'predict': bool
+            'predict': bool,
+            'preprocess': bool
         }
 
         self.attribute_map = {
             'mqtt': 'mqtt',
-            'predict': 'predict'
+            'predict': 'predict',
+            'preprocess': 'preprocess'
         }
 
         self._mqtt = mqtt
         self._predict = predict
+        self._preprocess = preprocess
 
     @classmethod
     def from_dict(cls, dikt) -> 'Source':
@@ -89,3 +94,24 @@ class Source(Model):
         """
 
         self._predict = predict
+
+    @property
+    def preprocess(self) -> bool:
+        """Gets the preprocess of this Source.
+
+
+        :return: The preprocess of this Source.
+        :rtype: bool
+        """
+        return self._preprocess
+
+    @preprocess.setter
+    def preprocess(self, preprocess: bool):
+        """Sets the preprocess of this Source.
+
+
+        :param preprocess: The preprocess of this Source.
+        :type preprocess: bool
+        """
+
+        self._preprocess = preprocess

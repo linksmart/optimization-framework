@@ -37,18 +37,18 @@ class IDStatusManager:
         new_data = []
         if isinstance(data, str):
             old_data = IDStatusManager.read_file()
-            data = json.loads(data)
-            id = data["id"]
+            json_data = json.loads(data)
+            id = json_data["id"]
             for s in old_data:
                 if id not in s:
                     new_data.append(s)
             new_data.append(data)
-        else:
+        elif isinstance(data, list):
             d = {}
             for s in data:
                 j = json.loads(s)
                 d[j["id"]] = s
-            for k, v in d:
+            for k, v in d.items():
                 new_data.append(v)
         return new_data
 
@@ -115,6 +115,7 @@ class IDStatusManager:
                                     line["repetition"] = -9
                                     data[i] = json.dumps(line, sort_keys=True, separators=(', ', ': ')) + "\n"
                                     #data.remove(line)
+                            logger.info("11")
                             IDStatusManager.write_file(data)
             except Exception as e:
                 logging.error("error persisting id " + id + " " + str(start) + " " + str(e))

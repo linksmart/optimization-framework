@@ -58,7 +58,7 @@ class Model:
     def ess_chargepower(model):
         return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
                                          product(model.Feasible_ESS_Decisions,
-                                                 model.Feasible_VAC_Decisions))  * model.ESS_Capacity / (100*model.dT)
+                                                 model.Feasible_VAC_Decisions))  * (model.ESS_Capacity * 3600) / (100*model.dT)
 
     model.const_esschargepw = Constraint(rule=ess_chargepower)
 
@@ -66,7 +66,7 @@ class Model:
     def vac_chargepower(model):
         return model.P_VAC_OUTPUT == sum(model.Decision[ess, vac] * vac for ess, vac in
                                          product(model.Feasible_ESS_Decisions,
-                                                 model.Feasible_VAC_Decisions)) * model.VAC_Capacity / (100 * model.dT)
+                                                 model.Feasible_VAC_Decisions)) * (model.VAC_Capacity * 3600) / (100 * model.dT)
 
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
@@ -96,7 +96,7 @@ class Model:
                 final_vac_soc = vacSoC - d * model.Unit_Consumption_Assumption
                 fin_vac_soc = final_vac_soc if final_vac_soc > 0 else 0
 
-                penalty_for_negative_soc = -final_vac_soc / 100 * model.Unit_Drop_Penalty * model.VAC_Capacity if final_vac_soc < 0 else 0
+                penalty_for_negative_soc = -final_vac_soc / 100 * model.Unit_Drop_Penalty * (model.VAC_Capacity * 3600) if final_vac_soc < 0 else 0
                 # Value of having fin_ess_soc,fin_ev_soc and home position in next time interval
                 future_value_of_p_cars_at_Park = model.Value[(essSoC, fin_vac_soc)] + penalty_for_negative_soc
                 # Probablity of p cars at home==Probability of d cars driving

@@ -15,7 +15,7 @@ from optimization.ModelParamsInfo import ModelParamsInfo
 from optimization.modelDerivedParameters import ModelDerivedParameters
 from profev.EV import EV
 from profev.ChargingStation import ChargingStation
-from profev.EVPark import CarPark
+from profev.EVPark import EVPark
 from profev.MonteCarloSimulator import simulate
 from utils_intern.messageLogger import MessageLogger
 

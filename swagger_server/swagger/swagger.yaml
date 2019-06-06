@@ -1176,6 +1176,8 @@ definitions:
         $ref: "#/definitions/MQTT"
       predict:
         type: "boolean"
+      preprocess:
+        type: "boolean"
     description: "Selection between MQTT or file mode inputs or outputs"
     example:
       mqtt:
@@ -1183,6 +1185,7 @@ definitions:
         host: "hostname"
         topic: "topic_name"
       predict: true
+      preprocess: true
   SourceESS:
     type: "object"
     properties:
@@ -1275,6 +1278,12 @@ definitions:
         $ref: "#/definitions/Global_Control"
       horizons:
         $ref: "#/definitions/Horizons"
+      EV:
+        $ref: "#/definitions/ev_File"
+      chargers:
+        $ref: "#/definitions/chargers_mqtt"
+      uncertainity:
+        $ref: "#/definitions/uncertainity_File"
     example:
       generic:
         custom_name_1:
@@ -1423,6 +1432,48 @@ definitions:
       horizons:
         meta:
           T_SoC: 25
+      EV:
+        meta:
+          Unit_Consumption_Assumption: 2.5
+          Unit_Drop_Penalty: 1
+        ev1:
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
+        ev2:
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
+      chargers:
+        charger1:
+          Max_Charging_Power_kW: 7
+          SoC:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            preprocess: true
+        charger2:
+          Max_Charging_Power_kW: 7
+          SoC:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            preprocess: true
+      uncertainity:
+        meta:
+          monte_carlo_repetition: 10000
+        Plugged_Time:
+          mean: 18.760000000000001563194018672220408916473388671875
+          std: 1.3000000000000000444089209850062616169452667236328125
+        Unplugged_Time:
+          mean: 7.32000000000000028421709430404007434844970703125
+          std: 0.7800000000000000266453525910037569701671600341796875
+        ESS_States:
+          Min: 0
+          Max: 100
+          Steps: 10
+        VAC_States:
+          Min: 0
+          Max: 100
+          Steps: 2.5
   FileInputSource:
     type: "object"
     properties:
@@ -1440,6 +1491,12 @@ definitions:
         $ref: "#/definitions/Global_Control_File"
       horizons:
         $ref: "#/definitions/Horizons"
+      EV:
+        $ref: "#/definitions/ev_File"
+      chargers:
+        $ref: "#/definitions/chargers_File"
+      uncertainity:
+        $ref: "#/definitions/uncertainity_File"
     example:
       generic:
         custom_name_1:
@@ -1500,6 +1557,40 @@ definitions:
       horizons:
         meta:
           T_SoC: 25
+      EV:
+        meta:
+          Unit_Consumption_Assumption: 2.5
+          Unit_Drop_Penalty: 1
+        ev1:
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
+        ev2:
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
+      chargers:
+        charger1:
+          Max_Charging_Power_kW: 7
+          Hosted_EV: "ev1"
+          SoC: 0.200000000000000011102230246251565404236316680908203125
+        charger2:
+          Max_Charging_Power_kW: 7
+          Hosted_EV: "ev2"
+          SoC: 0.200000000000000011102230246251565404236316680908203125
+      uncertainity:
+        meta:
+          monte_carlo_repetition: 10000
+        Plugged_Time:
+          mean: 18.760000000000001563194018672220408916473388671875
+          std: 1.3000000000000000444089209850062616169452667236328125
+        Unplugged_Time:
+          mean: 7.32000000000000028421709430404007434844970703125
+          std: 0.7800000000000000266453525910037569701671600341796875
+        ESS_States:
+          Min: 0
+          Max: 100
+          Steps: 10
+        VAC_States:
+          Min: 0
+          Max: 100
+          Steps: 2.5
   OutputSource:
     type: "object"
     properties:
@@ -2249,3 +2340,162 @@ definitions:
     additionalProperties:
       type: "integer"
       format: "int32"
+  ev_File:
+    type: "object"
+    properties:
+      meta:
+        $ref: "#/definitions/ev_meta"
+    example:
+      meta:
+        Unit_Consumption_Assumption: 2.5
+        Unit_Drop_Penalty: 1
+      ev1:
+        Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
+      ev2:
+        Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
+    additionalProperties:
+      $ref: "#/definitions/ev"
+  ev:
+    type: "object"
+    properties:
+      Battery_Capacity_kWh:
+        type: "number"
+        format: "float"
+    example:
+      Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
+  ev_meta:
+    type: "object"
+    properties:
+      Unit_Consumption_Assumption:
+        type: "number"
+        format: "float"
+      Unit_Drop_Penalty:
+        type: "number"
+        format: "float"
+    example:
+      Unit_Consumption_Assumption: 2.5
+      Unit_Drop_Penalty: 1
+  chargers_File:
+    type: "object"
+    example:
+      charger1:
+        Max_Charging_Power_kW: 7
+        Hosted_EV: "ev1"
+        SoC: 0.200000000000000011102230246251565404236316680908203125
+      charger2:
+        Max_Charging_Power_kW: 7
+        Hosted_EV: "ev2"
+        SoC: 0.200000000000000011102230246251565404236316680908203125
+    additionalProperties:
+      $ref: "#/definitions/charger"
+  charger:
+    type: "object"
+    properties:
+      Max_Charging_Power_kW:
+        type: "number"
+        format: "float"
+      Hosted_EV:
+        type: "string"
+      SoC:
+        type: "number"
+        format: "float"
+        minimum: 0
+        maximum: 100
+    example:
+      Max_Charging_Power_kW: 7
+      Hosted_EV: "ev1"
+      SoC: 0.200000000000000011102230246251565404236316680908203125
+  uncertainity_File:
+    type: "object"
+    properties:
+      meta:
+        $ref: "#/definitions/uncertainity_meta"
+      Plugged_Time:
+        $ref: "#/definitions/uncertainity_File_Plugged_Time"
+      Unplugged_Time:
+        $ref: "#/definitions/uncertainity_File_Plugged_Time"
+      ESS_States:
+        $ref: "#/definitions/uncertainity_File_ESS_States"
+      VAC_States:
+        $ref: "#/definitions/uncertainity_File_ESS_States"
+    example:
+      meta:
+        monte_carlo_repetition: 10000
+      Plugged_Time:
+        mean: 18.760000000000001563194018672220408916473388671875
+        std: 1.3000000000000000444089209850062616169452667236328125
+      Unplugged_Time:
+        mean: 7.32000000000000028421709430404007434844970703125
+        std: 0.7800000000000000266453525910037569701671600341796875
+      ESS_States:
+        Min: 0
+        Max: 100
+        Steps: 10
+      VAC_States:
+        Min: 0
+        Max: 100
+        Steps: 2.5
+  uncertainity_meta:
+    type: "object"
+    properties:
+      monte_carlo_repetition:
+        type: "integer"
+        format: "int32"
+    example:
+      monte_carlo_repetition: 10000
+  chargers_mqtt:
+    type: "object"
+    example:
+      charger1:
+        Max_Charging_Power_kW: 7
+        SoC:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          preprocess: true
+      charger2:
+        Max_Charging_Power_kW: 7
+        SoC:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          preprocess: true
+    additionalProperties:
+      $ref: "#/definitions/charger_mqtt"
+  charger_mqtt:
+    type: "object"
+    properties:
+      Max_Charging_Power_kW:
+        type: "number"
+        format: "float"
+      SoC:
+        $ref: "#/definitions/Source"
+    example:
+      Max_Charging_Power_kW: 7
+      SoC:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        preprocess: true
+  uncertainity_File_Plugged_Time:
+    properties:
+      mean:
+        type: "number"
+        format: "float"
+      std:
+        type: "number"
+        format: "float"
+  uncertainity_File_ESS_States:
+    properties:
+      Min:
+        type: "integer"
+        format: "int32"
+      Max:
+        type: "integer"
+        format: "int32"
+      Steps:
+        type: "integer"
+        format: "int32"

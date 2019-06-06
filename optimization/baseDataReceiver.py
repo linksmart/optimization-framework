@@ -17,7 +17,7 @@ from utils_intern.messageLogger import MessageLogger
 
 class BaseDataReceiver(DataReceiver, ABC):
 
-    def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT):
+    def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT, base_value_flag, preprocess):
         redisDB = RedisDB()
         self.logger = MessageLogger.get_logger(__file__, id)
         try:
@@ -28,6 +28,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         self.generic_name = generic_name
         self.buffer = buffer
         self.dT = dT
+        self.base_value_flag = base_value_flag
         self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
         self.total_steps_in_day = floor(24 * 60 * 60 / self.dT)
         self.current_day_index = 0
@@ -79,8 +80,11 @@ class BaseDataReceiver(DataReceiver, ABC):
                     if not n:
                         n = self.generic_name
                     try:
-                        v = self.unit_value_change(v, u)
-                        raw_data.append([t, v])
+                        v, processed_data = self.preprocess_data(bn, n, v, u)
+                        if self.base_value_flag:
+                            raw_data.append([processed_data])
+                        else:
+                            raw_data.append([t, v])
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))
@@ -102,7 +106,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         return {}
 
     @abstractmethod
-    def unit_value_change(self, value, unit):
+    def preprocess_data(self, base, name, value, unit):
         pass
 
     def get_bucket_aligned_data(self, bucket, steps, wait_for_data=True, check_bucket_change=True):

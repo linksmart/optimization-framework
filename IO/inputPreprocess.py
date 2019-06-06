@@ -10,7 +10,7 @@ import numpy as np
 import time
 
 from profev.EV import EV
-from profev.EVPark import CarPark
+from profev.EVPark import EVPark
 from profev.ChargingStation import ChargingStation
 from profev.MonteCarloSimulator import simulate
 from utils_intern.messageLogger import MessageLogger
@@ -23,16 +23,16 @@ class InputPreprocess:
     def __init__(self, id):
         self.data_dict = {}
         self.logger = self.logger = MessageLogger.get_logger(__file__, id)
-        self.ev_park = CarPark()
 
     def preprocess(self, data_dict):
+        self.ev_park = EVPark()
         self.data_dict = {}
         self.data_dict = data_dict
 
-        chargers_list = self.generate_charger_classes()
-        self.ev_park.add_chargers(chargers_list)
         evs_list = self.generate_ev_classes()
         self.ev_park.add_evs(evs_list)
+        chargers_list = self.generate_charger_classes()
+        self.ev_park.add_chargers(chargers_list)
         number_of_evs, vac_capacity = self.ev_park.get_num_of_cars(), self.ev_park.get_vac_capacity()
         data_dict["Number_of_Parked_Cars"] = {None: number_of_evs}
         data_dict["VAC_Capacity"] = {None: vac_capacity}
@@ -40,6 +40,16 @@ class InputPreprocess:
         self.process_uncertainty_data()
 
         return data_dict
+
+    def validate_unit_consumption_assumption(self, vac_min, vac_step):
+        self.logger.info("data_dict : "+str(self.data_dict))
+        if "Unit_Consumption_Assumption" in self.data_dict.keys():
+            uac = self.data_dict["Unit_Consumption_Assumption"][None]
+            if not (uac >= vac_min and ((uac - vac_min) / vac_step).is_integer()):
+                raise Exception("Unit_Consumption_Assumption should be a valid step of VAC_steps and greater than "
+                                "VAC_min")
+        else:
+            raise Exception("Unit_Consumption_Assumption missing")
 
     def remove_key_base(self, key):
         i = key.rfind("/")
@@ -65,13 +75,14 @@ class InputPreprocess:
         chargers = self.get_required_keys("charger")
         for charger in chargers:
             charger_dict = self.data_dict[charger]
+            self.logger.info("charger dict "+str(charger_dict))
             max_charging_power_kw = charger_dict.get("Max_Charging_Power_kW", None)
-            hosted_car = charger_dict.get("Hosted_Car", None)
+            hosted_ev = charger_dict.get("Hosted_EV", None)
             soc = charger_dict.get("SoC", None)
             if not (isinstance(soc, float) or isinstance(soc, int)):
                 soc = None
             assert max_charging_power_kw, f"Incorrect input: Max_Charging_Power_kW missing for charger: {charger}"
-            chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_car, soc))
+            chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc))
         self.remove_used_keys(chargers)
         return chargers_list
 
@@ -128,13 +139,19 @@ class InputPreprocess:
         assert vac_states, "VAC_States is missing in Uncertainty"
 
         _, _, ess_steps, ess_soc_states = self.generate_states(ess_states, "ESS_States")
-        _, _, vac_steps, vac_soc_states = self.generate_states(vac_states, "VAC_States")
+        vac_min, vac_max, vac_steps, vac_soc_states = self.generate_states(vac_states, "VAC_States")
 
         self.ess_steps = ess_steps
         self.vac_steps = vac_steps
         self.ess_soc_states = ess_soc_states
         self.vac_soc_states = vac_soc_states
 
+        vac_soc_value = self.ev_park.calculate_vac_soc_value()
+        vac_soc_value = self.round_to_steps(vac_soc_value, vac_min, vac_steps)
+
+        self.logger.info("vac_soc_value = "+str(vac_soc_value))
+
+        self.data_dict["VAC_SoC_Value"] = vac_soc_value
         self.data_dict["Value"] = "null"
         self.data_dict["Initial_ESS_SoC"] = "null"
         self.data_dict["Initial_VAC_SoC"] = "null"
@@ -142,6 +159,8 @@ class InputPreprocess:
 
         self.remove_used_keys(ess_states_keys)
         self.remove_used_keys(vac_states_keys)
+
+        self.validate_unit_consumption_assumption(vac_min, vac_steps)
 
     def generate_behaviour_model(self, plugged_time, unplugged_time, monte_carlo_repetition):
         plugged_time_mean = plugged_time.get("mean", None)
@@ -174,3 +193,8 @@ class InputPreprocess:
         max_value = int(max_value)
 
         return min_value, max_value, steps, np.arange(min_value, max_value + steps, steps).tolist()
+
+    def round_to_steps(self, value, min, step):
+        self.logger.info("round values "+str(value)+" "+str(min)+" "+str(step))
+        return round((value - min) / step) * step + min
+

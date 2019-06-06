@@ -14,5 +14,5 @@ class Constants:
     Q_Load = "Q_Load"
     mqtt = "mqtt"
     unit = "unit"
-    CarPark = "CarPark"
+    CarPark = "EVPark"
     Uncertainty = "Uncertainty"

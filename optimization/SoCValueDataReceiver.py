@@ -12,9 +12,7 @@ logger = logging.getLogger(__file__)
 
 class SoCValueDataReceiver(BaseDataReceiver):
 
-    def __init__(self, internal, topic_params, config, id, buffer, dT):
+    def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT):
         self.generic_name = "SoC_Value"
-        super().__init__(internal, topic_params, config, self.generic_name, id, buffer, dT)
+        super().__init__(internal, topic_params, config, self.generic_name, id, buffer, dT, False, False)
 
-    def unit_value_change(self, value, unit):
-        return float(value)

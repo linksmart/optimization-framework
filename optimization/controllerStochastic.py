@@ -36,7 +36,7 @@ class OptControllerStochastic(ControllerBase):
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
         while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
             self.logger.info("waiting for data")
-            data_dict = self.input.get_data()  # blocking call
+            data_dict = self.input.get_data(preprocess=True)  # blocking call
 
             if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
                 break
@@ -44,29 +44,33 @@ class OptControllerStochastic(ControllerBase):
             ######################################
             # STOCHASTIC OPTIMIZATION
 
-            start_time_offset = int(data_dict[None]["Start_Time"][None])
+            #start_time_offset = int(data_dict[None]["Start_Time"][None])
+            start_time_offset = 0
 
             forecast_pv = data_dict[None]["P_PV"]
-            car_park = self.input_config_parser.car_park
-            max_number_of_cars = car_park.number_of_cars
+            ev_park = self.input.inputPreprocess.ev_park
+            max_number_of_cars = ev_park.get_num_of_cars()
 
-            behaviour_model = self.input_config_parser.simulator(time_resolution=self.dT_in_seconds,
+            behaviour_model = self.input.inputPreprocess.simulator(time_resolution=self.dT_in_seconds,
                                                                  horizon=self.horizon_in_steps + start_time_offset,
                                                                  max_number_of_cars=max_number_of_cars)
 
-            ess_soc_states = self.input_config_parser.ess_soc_states
-            vac_soc_states = self.input_config_parser.vac_soc_states
+            ess_soc_states = self.input.inputPreprocess.ess_soc_states
+            vac_soc_states = self.input.inputPreprocess.vac_soc_states
 
-            domain_range = (car_park.total_charging_stations_power * self.dT_in_seconds) / (
-                car_park.vac_capacity) * 100
+            domain_range = (ev_park.total_charging_stations_power * self.dT_in_seconds) / (
+                ev_park.get_vac_capacity() * 3600) * 100
 
-            ess_domain_range = 47  # ess max power / capacity
+            ess_max_power = data_dict[None]["ESS_Max_Charge_Power"][None]
+            ess_capacity = data_dict[None]["ESS_Capacity"][None]
 
-            ess_steps = self.input_config_parser.ess_steps
+            ess_domain_range = math.floor((ess_max_power / ess_capacity) * 100)
+
+            ess_steps = self.input.inputPreprocess.ess_steps
             ess_domain_min = - (math.floor(ess_domain_range / ess_steps) * ess_steps)
             ess_domain_max = (math.floor(ess_domain_range / ess_steps) * ess_steps) + ess_steps
 
-            vac_steps = self.input_config_parser.vac_steps
+            vac_steps = self.input.inputPreprocess.vac_steps
             vac_domain_min = vac_soc_states[0]
             vac_domain_max = domain_range + vac_steps
 
@@ -75,8 +79,9 @@ class OptControllerStochastic(ControllerBase):
             vac_domain_min = vac_steps * math.floor(vac_domain_min / vac_steps)
             vac_domain_max = vac_steps * math.floor(vac_domain_max / vac_steps)
 
-            ess_decision_domain = np.arange(ess_domain_min, ess_domain_max, ess_steps).tolist()
+            self.logger.info("vac domain : "+str(vac_domain_min)+ " "+ str(vac_domain_max)+ " " + str(vac_steps))
 
+            ess_decision_domain = np.arange(ess_domain_min, ess_domain_max, ess_steps).tolist()
             vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
 
             T = self.horizon_in_steps
@@ -282,7 +287,7 @@ class OptControllerStochastic(ControllerBase):
             ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
             ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
 
-            connections = self.input_config_parser.car_park.max_charge_power_calculator(dT)
+            connections = self.input.inputPreprocess.ev_park.max_charge_power_calculator(dT)
 
             # Calculation of the feasible charging power at the commercial station
             max_power_for_cars = sum(connections.values())
@@ -352,6 +357,17 @@ class OptControllerStochastic(ControllerBase):
                 "p_ev": p_ev,
                 "execution_time": execution_time
             }
+
+            results_publish = {
+                "p_pv": [p_pv],
+                "p_grid": [p_grid],
+                "p_ess": [p_ess],
+                "p_vac": [p_vac],
+                "feasible_ev_charging_power": [feasible_ev_charging_power],
+                "p_ev": [p_ev]
+            }
+
+            self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
             with open(output_log_filepath, "w") as log_file:
                 json.dump(results, log_file, indent=4)

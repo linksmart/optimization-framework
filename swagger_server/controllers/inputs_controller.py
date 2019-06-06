@@ -545,7 +545,7 @@ def get_all_data_source_ids():  # noqa: E501
 def input_header_validation(data):
     invalid_headers = []
     for header in data:
-        if header not in ["generic", "load", "photovoltaic", "ESS", "grid", "global_control", "horizons", "PROFEV"]:
+        if header not in ["generic", "load", "photovoltaic", "ESS", "grid", "global_control", "horizons", "EV", "chargers", "uncertainty"]:
             invalid_headers.append(header)
     if len(invalid_headers) > 0:
         raise InvalidHeaderException("Following headers are invalid: " + str(invalid_headers))

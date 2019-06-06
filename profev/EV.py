@@ -1,14 +1,14 @@
-class Car:
+class EV:
 
-    def __init__(self, car_name, battery_capacity):
-        self.car_name = car_name
-        self.battery_capacity = battery_capacity * 3600
+    def __init__(self, ev_name, battery_capacity):
+        self.ev_name = ev_name
+        self.battery_capacity = battery_capacity
 
     def charge(self, soc, charge_period, charge_power):
         return soc + charge_power * charge_period / self.battery_capacity
 
     def __repr__(self):
-        return self.car_name
+        return self.ev_name
 
     def __str__(self):
-        return self.car_name
+        return self.ev_name
