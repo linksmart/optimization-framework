@@ -34,12 +34,12 @@ class InputPreprocess:
         chargers_list = self.generate_charger_classes()
         self.ev_park.add_chargers(chargers_list)
         number_of_evs, vac_capacity = self.ev_park.get_num_of_cars(), self.ev_park.get_vac_capacity()
-        data_dict["Number_of_Parked_Cars"] = {None: number_of_evs}
-        data_dict["VAC_Capacity"] = {None: vac_capacity}
+        self.data_dict["Number_of_Parked_Cars"] = {None: number_of_evs}
+        self.data_dict["VAC_Capacity"] = {None: vac_capacity}
 
         self.process_uncertainty_data()
 
-        return data_dict
+        return self.data_dict
 
     def validate_unit_consumption_assumption(self, vac_min, vac_step):
         self.logger.info("data_dict : "+str(self.data_dict))
@@ -151,7 +151,7 @@ class InputPreprocess:
 
         self.logger.info("vac_soc_value = "+str(vac_soc_value))
 
-        self.data_dict["VAC_SoC_Value"] = vac_soc_value
+        self.data_dict["VAC_SoC_Value"] = {None: vac_soc_value}
         self.data_dict["Value"] = "null"
         self.data_dict["Initial_ESS_SoC"] = "null"
         self.data_dict["Initial_VAC_SoC"] = "null"

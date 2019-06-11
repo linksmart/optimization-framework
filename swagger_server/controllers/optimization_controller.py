@@ -230,7 +230,7 @@ class CommandController:
     def start_pryo_mip_server(self, optimization_type):
         if optimization_type == "stochastic":
             new = 5
-            old = 4
+            old = 1
         else:
             new = 1
             old = 1
@@ -242,6 +242,7 @@ class CommandController:
                 pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server")
                 self.redisDB.set("pyro_mip", active_pyro_servers+i+1)
                 self.redisDB.set("pyro_mip_pid:"+str(pyro_mip_server_pid), pyro_mip_server_pid)
+                logger.info("started pyro mip server "+str(pyro_mip_server_pid))
 
     def get_status(self):
         status = {}

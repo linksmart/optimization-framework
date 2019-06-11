@@ -265,9 +265,9 @@ class OptControllerStochastic(ControllerBase):
                             Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = \
                                 my_dict["P_PV_OUTPUT"][0]
 
-                            self.logger.info("Done".center(80, "#"))
+                            #self.logger.info("Done".center(80, "#"))
                             self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
-                            self.logger.info("#" * 80)
+                            #self.logger.info("#" * 80)
 
                             # self.output.publish_data(self.id, my_dict)
                         except Exception as e:
@@ -380,8 +380,10 @@ class OptControllerStochastic(ControllerBase):
                 "p_ess": [p_ess],
                 "p_vac": [p_vac],
                 "feasible_ev_charging_power": [feasible_ev_charging_power],
-                "p_ev": [p_ev]
             }
+
+            for key, value in p_ev.items():
+                results_publish["p_ev/"+key] = [value]
 
             self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
