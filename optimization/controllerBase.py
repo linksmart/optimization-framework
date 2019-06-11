@@ -62,6 +62,8 @@ class ControllerBase(ABC, threading.Thread):
         self.redisDB.set(self.finish_status_key, False)
         self.repetition_completed = False
         self.preprocess = False
+        self.input = None
+        self.output = None
 
         try:
             # dynamic load of a class
@@ -92,11 +94,13 @@ class ControllerBase(ABC, threading.Thread):
 
     def Stop(self):
         try:
-            self.input.Stop()
+            if self.input:
+                self.input.Stop()
         except Exception as e:
             self.logger.error("error stopping input " + str(e))
         try:
-            self.output.Stop()
+            if self.output:
+                self.output.Stop()
         except Exception as e:
             self.logger.error("error stopping output " + str(e))
         self.redisDB.set(self.stop_signal_key, True)
