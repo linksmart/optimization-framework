@@ -45,6 +45,7 @@ RUN pip3 install -U pyzmq
 
 RUN pip3 install -U senml
 RUN pip3 install -U redis
+RUN pip3 install -U requests
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app
