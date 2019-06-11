@@ -48,7 +48,7 @@ class ThreadFactory:
         self.logger.info("Optimization calculated with the following optimization_type: " + self.optimization_type)
 
         self.redisDB.set("Error mqtt" + self.id, False)
-        self.logger.debug("Error mqtt "+str(self.redisDB.get("Error mqtt" + self.id)))
+        self.logger.debug("Error mqtt " + str(self.redisDB.get("Error mqtt" + self.id)))
 
         # Creating an object of the configuration file (standard values)
         try:
@@ -118,7 +118,7 @@ class ThreadFactory:
 
         missing_keys = input_config_parser.check_keys_for_completeness()
         if len(missing_keys) > 0:
-            raise MissingKeysException("Data source for following keys not declared: "+str(missing_keys))
+            raise MissingKeysException("Data source for following keys not declared: " + str(missing_keys))
 
         self.prediction_threads = {}
         self.prediction_names = input_config_parser.get_prediction_names()
@@ -165,7 +165,7 @@ class ThreadFactory:
 
         try:
         ####starts the optimization controller thread
-            self.logger.debug("Error mqtt 8 " + str(self.redisDB.get("Error mqtt" + self.id)))
+            self.logger.debug("Mqtt issue " + str(self.redisDB.get("Error mqtt" + self.id)))
             if "False" in self.redisDB.get("Error mqtt" + self.id):
                 self.opt.start()
                 self.logger.debug("Optimization object started")
@@ -173,13 +173,12 @@ class ThreadFactory:
             else:
                 self.redisDB.set("run:" + self.id, "stopping")
                 self.stopOptControllerThread()
-                self.redisDB.set("run:" + self.id,"stopped")
+                self.redisDB.set("run:" + self.id, "stopped")
                 self.logger.error("Optimization object could not be started")
                 return 1
         except Exception as e:
             self.logger.error(e)
             return 1
-
 
     def stopOptControllerThread(self):
         try:

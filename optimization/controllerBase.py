@@ -38,7 +38,6 @@ class ControllerBase(ABC, threading.Thread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
-        # threading.Thread.__init__(self)
         super(ControllerBase, self).__init__()
         self.logger = MessageLogger.get_logger(__file__, id)
         self.logger.info("Initializing optimization controller " + id)
@@ -104,36 +103,6 @@ class ControllerBase(ABC, threading.Thread):
         if self.isAlive():
             self.join(1)
 
-    def update_count(self):
-        st = time.time()
-        if self.repetition > 0:
-            path = "/usr/src/app/optimization/resources/ids_status.txt"
-            if os.path.exists(path):
-                try:
-                    if self.redisDB.get_lock(self.lock_key, self.id):
-                        data = []
-                        with open(path, "r") as f:
-                            data = f.readlines()
-                        if len(data) > 0:
-                            line = None
-                            for s in data:
-                                if self.id in s and "repetition\": -1" not in s:
-                                    line = s
-                                    break
-                            if line is not None:
-                                i = data.index(line)
-                                line = json.loads(line.replace("\n", ""))
-                                line["repetition"] -= 1
-                                data[i] = json.dumps(line, sort_keys=True, separators=(', ', ': ')) + "\n"
-                                with open(path, "w") as f:
-                                    f.writelines(data)
-                except Exception as e:
-                    self.logger.error("error updating count in file " + str(e))
-                finally:
-                    self.redisDB.release_lock(self.lock_key, self.id)
-        st = int(time.time() - st)
-        return st
-
     # Start the optimization process and gives back a result
     def run(self):
         self.logger.info("Starting optimization controller")
@@ -157,15 +126,11 @@ class ControllerBase(ABC, threading.Thread):
             else:
                 self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
 
-            # self.logger.info("Solvers ipopt = "+ str(SolverFactory('ipopt').available()))
-            # self.logger.info("Solvers glpk = "+ str(SolverFactory('glpk').available()))
-            # self.logger.info("Solvers gurobi = " + str(SolverFactory('gurobi').available()))
-
             count = 0
             self.logger.info("This is the id: " + self.id)
             self.optimize(action_handle_map, count, optsolver, solver_manager)
         except Exception as e:
-            self.logger.error(e)
+            self.logger.error("error overall "+ str(e))
             e = str(e)
             solver_error = "The SolverFactory was unable to create the solver"
             if solver_error in e:

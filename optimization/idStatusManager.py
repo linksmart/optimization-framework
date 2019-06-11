@@ -149,3 +149,21 @@ class IDStatusManager:
                 redisDB.release_lock(lock_key, id)
         st = int(time.time() - st)
         return st
+
+    @staticmethod
+    def num_of_required_pyro_mip_servers(multi, redisDB):
+        num = 0
+        try:
+            if redisDB.get_lock(lock_key, "start"):
+                data = IDStatusManager.read_file()
+                num = len(data)
+                for row in data:
+                    if "stochastic" in row:
+                        j = json.loads(row)
+                        if j["optimization_type"] == "stochastic":
+                            num += multi
+        except Exception as e:
+            logging.error("error reading ids file " + str(e))
+        finally:
+            redisDB.release_lock(lock_key, "start")
+        return num

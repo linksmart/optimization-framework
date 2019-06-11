@@ -89,7 +89,7 @@ class CommandController:
             self.optimization_type = dict_object["optimization_type"]
 
         self.start_name_servers()
-        self.start_pryo_mip_server()
+        self.start_pryo_mip_server(self.optimization_type)
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
                                self.repetition, self.solver, id, self.optimization_type))
@@ -227,13 +227,21 @@ class CommandController:
             else:
                 logger.info("keys is none")
 
-    def start_pryo_mip_server(self):
+    def start_pryo_mip_server(self, optimization_type):
+        if optimization_type == "stochastic":
+            new = 5
+            old = 4
+        else:
+            new = 1
+            old = 1
         active_pyro_servers = int(self.redisDB.get("pyro_mip",0))
-        if active_pyro_servers <= IDStatusManager.number_of_active_ids(self.redisDB):
+        required = IDStatusManager.num_of_required_pyro_mip_servers(old, self.redisDB) + new
+        if active_pyro_servers < required:
             ###pyro_mip_server
-            pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server")
-            self.redisDB.set("pyro_mip", active_pyro_servers+1)
-            self.redisDB.set("pyro_mip_pid:"+str(pyro_mip_server_pid), pyro_mip_server_pid)
+            for i in range(required-active_pyro_servers):
+                pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server")
+                self.redisDB.set("pyro_mip", active_pyro_servers+i+1)
+                self.redisDB.set("pyro_mip_pid:"+str(pyro_mip_server_pid), pyro_mip_server_pid)
 
     def get_status(self):
         status = {}

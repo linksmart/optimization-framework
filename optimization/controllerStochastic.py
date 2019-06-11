@@ -21,6 +21,7 @@ import pyutilib.subprocess.GlobalData
 
 from optimization.controllerBase import ControllerBase
 from optimization.idStatusManager import IDStatusManager
+from optimization.instance import Instance
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
@@ -125,6 +126,10 @@ class OptControllerStochastic(ControllerBase):
 
             for timestep in reversed(range(start_time_offset, start_time_offset + self.horizon_in_steps)):
                 self.logger.info(f"Timestep :#{timestep}")
+
+                instance_id = 0
+                instance_info = []
+
                 for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
                     feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
@@ -189,36 +194,47 @@ class OptControllerStochastic(ControllerBase):
                         action_handle = solver_manager.queue(instance, opt=optsolver)
                         self.logger.debug("Solver queue created " + str(action_handle))
                         self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                        action_handle_map[action_handle] = str(self.id)
-                        self.logger.debug("Action handle map: " + str(action_handle_map))
+                        #action_handle_map[action_handle] = str(self.id)
+                        action_handle_map[action_handle] = str(instance_id)
+                        #self.logger.debug("Action handle map: " + str(action_handle_map))
                         # start_time = time.time()
                         # self.logger.debug("Optimization starting time: " + str(start_time))
+                        inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc)
+                        # print(str(instance_id), ini_ess_soc, ini_vac_soc)
+
+                        instance_info.append(inst)
+
+                        instance_id += 1
                     except Exception as e:
                         self.logger.error("exception " + str(e))
 
                     # * Run the solver
 
-                    # retrieve the solutions
-                    for i in range(1):
-                        this_action_handle = solver_manager.wait_any()
-                        self.results = solver_manager.get_results(this_action_handle)
-                        self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                        if this_action_handle in action_handle_map.keys():
-                            self.solved_name = action_handle_map.pop(this_action_handle)
-                        else:
-                            self.solved_name = None
+                # retrieve the solutions
+                for i in range(instance_id):
+                    this_action_handle = solver_manager.wait_any()
+                    result = solver_manager.get_results(this_action_handle)
+                    self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                    solved_name = None
+                    if this_action_handle in action_handle_map.keys():
+                        solved_name = action_handle_map.pop(this_action_handle)
+                    if solved_name:
+                        #inst = instance_info[int(solved_name)]
+                        instance_info[int(solved_name)].addResult(result)
+                # * Check whether it is solved
 
-                    # * Check whether it is solved
+                for inst in instance_info:
+                    result = inst.result
+                    ini_ess_soc = inst.ini_ess_soc
+                    ini_vac_soc = inst.ini_vac_soc
 
-                    # start_time = time.time() - start_time
-                    # self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
-                    if (self.results.solver.status == SolverStatus.ok) and (
-                            self.results.solver.termination_condition == TerminationCondition.optimal):
+                    if (result.solver.status == SolverStatus.ok) and (
+                            result.solver.termination_condition == TerminationCondition.optimal):
                         # this is feasible and optimal
                         self.logger.info("Solver status and termination condition ok")
-                        self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-                        self.logger.debug(self.results)
-                        instance.solutions.load_from(self.results)
+                        self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
+                        self.logger.debug(result)
+                        instance.solutions.load_from(result)
 
                         # * if solved get the values in dict
 
@@ -256,7 +272,7 @@ class OptControllerStochastic(ControllerBase):
                             # self.output.publish_data(self.id, my_dict)
                         except Exception as e:
                             self.logger.error(e)
-                    elif self.results.solver.termination_condition == TerminationCondition.infeasible:
+                    elif result.solver.termination_condition == TerminationCondition.infeasible:
                         # do something about it? or exit?
                         self.logger.info("Termination condition is infeasible")
                     else:
