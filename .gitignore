@@ -102,6 +102,7 @@ connector/resources/
 mock_data/resources/
 utils/resources/
 docker/Solvers/gurobi811/
+jupyter_notebooks
 
 !utils/.gitkeep
 
