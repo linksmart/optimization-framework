@@ -10,6 +10,7 @@ from optimization.ModelException import MissingKeysException
 from optimization.controllerDiscrete import OptControllerDiscrete
 from optimization.controllerMpc import OptControllerMPC
 from optimization.controllerStochastic import OptControllerStochastic
+from optimization.controllerStochasticSingleEV import OptControllerStochasticSingleEV
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 from utils_intern.messageLogger import MessageLogger
@@ -17,7 +18,8 @@ from utils_intern.messageLogger import MessageLogger
 
 class ThreadFactory:
 
-    def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id, optimization_type):
+    def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id,
+                 optimization_type, single_ev):
         self.logger = MessageLogger.get_logger(__file__, id)
         self.model_name = model_name
         self.control_frequency = control_frequency
@@ -27,6 +29,7 @@ class ThreadFactory:
         self.solver = solver
         self.id = id
         self.optimization_type = optimization_type
+        self.single_ev = single_ev
         self.redisDB = RedisDB()
         self.pyro_mip_server = None
 
@@ -145,26 +148,39 @@ class ThreadFactory:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
                     if non_prediction_name == "P_PV":
-                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser, self.id,
-                                                                                        self.control_frequency, self.horizon_in_steps,
-                                                                                        self.dT_in_seconds, non_prediction_name)
+                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser,
+                                                                                        self.id,
+                                                                                        self.control_frequency,
+                                                                                        self.horizon_in_steps,
+                                                                                        self.dT_in_seconds,
+                                                                                        non_prediction_name)
 
         # Initializing constructor of the optimization controller thread
         if self.optimization_type == "MPC":
             self.opt = OptControllerMPC(self.id, self.solver_name, self.model_path, self.control_frequency,
-                                 self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
-                                 self.dT_in_seconds, self.optimization_type)
+                                        self.repetition, output_config, input_config_parser, config,
+                                        self.horizon_in_steps,
+                                        self.dT_in_seconds, self.optimization_type)
         elif self.optimization_type == "discrete":
             self.opt = OptControllerDiscrete(self.id, self.solver_name, self.model_path, self.control_frequency,
-                                 self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
-                                 self.dT_in_seconds, self.optimization_type)
+                                             self.repetition, output_config, input_config_parser, config,
+                                             self.horizon_in_steps,
+                                             self.dT_in_seconds, self.optimization_type)
         elif self.optimization_type == "stochastic":
-            self.opt = OptControllerStochastic(self.id, self.solver_name, self.model_path, self.control_frequency,
-                                 self.repetition, output_config, input_config_parser, config, self.horizon_in_steps,
-                                 self.dT_in_seconds, self.optimization_type)
+            if self.single_ev:
+                self.opt = OptControllerStochasticSingleEV(self.id, self.solver_name, self.model_path,
+                                                           self.control_frequency,
+                                                           self.repetition, output_config, input_config_parser, config,
+                                                           self.horizon_in_steps,
+                                                           self.dT_in_seconds, self.optimization_type)
+            else:
+                self.opt = OptControllerStochastic(self.id, self.solver_name, self.model_path, self.control_frequency,
+                                                   self.repetition, output_config, input_config_parser, config,
+                                                   self.horizon_in_steps,
+                                                   self.dT_in_seconds, self.optimization_type)
 
         try:
-        ####starts the optimization controller thread
+            ####starts the optimization controller thread
             self.logger.debug("Mqtt issue " + str(self.redisDB.get("Error mqtt" + self.id)))
             if "False" in self.redisDB.get("Error mqtt" + self.id):
                 self.opt.start()

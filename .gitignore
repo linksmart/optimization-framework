@@ -113,3 +113,4 @@ profess/executables/windows/**/*
 !/jupyter_notebooks/*.ipynb
 **/*/*.csv*
 /logs
+/stochastic_programming/
