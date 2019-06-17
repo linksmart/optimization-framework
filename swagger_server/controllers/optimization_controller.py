@@ -22,6 +22,7 @@ from optimization.idStatusManager import IDStatusManager
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+
 class CommandController:
     _instance = None
     _lock = threading.Lock()
@@ -71,6 +72,7 @@ class CommandController:
         return self.statusThread[id]
 
     def start(self, id, json_object, dict_object=None):
+        logger.debug(str(json_object))
         if json_object is not None:
             self.model_name = json_object.model_name
             self.control_frequency = json_object.control_frequency
@@ -79,6 +81,7 @@ class CommandController:
             self.repetition = json_object.repetition
             self.solver = json_object.solver
             self.optimization_type = json_object.optimization_type
+            self.single_ev = json_object.single_ev
         elif dict_object is not None:
             self.model_name = dict_object["model"]
             self.control_frequency = dict_object["control_frequency"]
@@ -87,17 +90,18 @@ class CommandController:
             self.repetition = dict_object["repetition"]
             self.solver = dict_object["solver"]
             self.optimization_type = dict_object["optimization_type"]
+            self.single_ev = dict_object["single_ev"]
 
         self.start_name_servers()
         self.start_pryo_mip_server(self.optimization_type)
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
-                               self.repetition, self.solver, id, self.optimization_type))
+                               self.repetition, self.solver, id, self.optimization_type, self.single_ev))
 
         logger.info("Thread: " + str(self.get(id)))
         self.redisDB.set("run:" + id, "starting")
-        msg=self.get(id).startOptControllerThread()
-        logger.debug("Answer from Thread factory"+str(msg))
+        msg = self.get(id).startOptControllerThread()
+        logger.debug("Answer from Thread factory" + str(msg))
         if msg == 0:
             self.set_isRunning(id, True)
             logger.debug("Flag isRunning set to True")
@@ -105,16 +109,17 @@ class CommandController:
             logger.debug("Status of the Thread started")
             self.statusThread[id].start()
             meta_data = {"id": id,
-                    "model": self.model_name,
-                    "control_frequency": self.control_frequency,
-                    "horizon_in_steps": self.horizon_in_steps,
-                    "dT_in_seconds": self.dT_in_seconds,
-                    "repetition": self.repetition,
-                    "solver": self.solver,
-                    "optimization_type" : self.optimization_type,
-                    "ztarttime": time.time()}
-            self.redisDB.set("run:"+id, "running")
-            self.redisDB.set("id_meta:"+id, json.dumps(meta_data))
+                         "model": self.model_name,
+                         "control_frequency": self.control_frequency,
+                         "horizon_in_steps": self.horizon_in_steps,
+                         "dT_in_seconds": self.dT_in_seconds,
+                         "repetition": self.repetition,
+                         "solver": self.solver,
+                         "optimization_type": self.optimization_type,
+                         "single_ev": self.single_ev,
+                         "ztarttime": time.time()}
+            self.redisDB.set("run:" + id, "running")
+            self.redisDB.set("id_meta:" + id, json.dumps(meta_data))
             IDStatusManager.persist_id(id, True, meta_data, self.redisDB)
             logger.info("running status " + str(self.running))
             logger.debug("Command controller start finished")
@@ -125,7 +130,7 @@ class CommandController:
             IDStatusManager.persist_id(id, False, None, self.redisDB)
             self.redisDB.set("run:" + id, "stopped")
             logger.error("Command controller start could not be finished")
-            #logger.debug("System stopped succesfully")
+            # logger.debug("System stopped succesfully")
             return 1
 
     def stop(self, id):
@@ -180,13 +185,13 @@ class CommandController:
         pid = self.redisDB.get(redis_key)
         if pid is None:
             try:
-                logger.debug("Trying to start "+server_name)
+                logger.debug("Trying to start " + server_name)
                 pid = subprocess.Popen([command], preexec_fn=os.setsid, shell=True).pid
                 logger.debug(server_name + "  started, pid = " + str(pid))
                 if redis_key is not None:
                     self.redisDB.set(redis_key, pid)
             except Exception as e:
-                logger.error(server_name+" already exists error")
+                logger.error(server_name + " already exists error")
         return pid
 
     def stop_name_servers(self):
@@ -200,16 +205,16 @@ class CommandController:
         if pid is not None:
             try:
                 os.killpg(os.getpgid(int(pid)), signal.SIGTERM)
-                logger.debug(server_name+" stoped : " + str(pid))
+                logger.debug(server_name + " stoped : " + str(pid))
                 if redis_key is not None:
                     self.redisDB.remove(redis_key)
             except Exception as e:
-                logger.error(server_name+" kill error "+str(e))
+                logger.error(server_name + " kill error " + str(e))
 
     def stop_pyro_servers(self):
         logger.info("stop pyro server init")
         num_of_active_ids = IDStatusManager.number_of_active_ids(self.redisDB)
-        logger.debug("active ids = "+str(num_of_active_ids))
+        logger.debug("active ids = " + str(num_of_active_ids))
         count = 0
         if num_of_active_ids == 0:
             self.redisDB.set("pyro_mip", 0)
@@ -217,7 +222,7 @@ class CommandController:
             if keys is not None:
                 for key in keys:
                     pid = int(self.redisDB.get(key))
-                    self.os_proc_stop(pid, "mip server "+str(pid), key)
+                    self.os_proc_stop(pid, "mip server " + str(pid), key)
                     count += 1
                 active_pyro_servers = int(self.redisDB.get("pyro_mip", 0))
                 active_pyro_servers -= count
@@ -234,15 +239,15 @@ class CommandController:
         else:
             new = 1
             old = 1
-        active_pyro_servers = int(self.redisDB.get("pyro_mip",0))
+        active_pyro_servers = int(self.redisDB.get("pyro_mip", 0))
         required = IDStatusManager.num_of_required_pyro_mip_servers(old, self.redisDB) + new
         if active_pyro_servers < required:
             ###pyro_mip_server
-            for i in range(required-active_pyro_servers):
+            for i in range(required - active_pyro_servers):
                 pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server")
-                self.redisDB.set("pyro_mip", active_pyro_servers+i+1)
-                self.redisDB.set("pyro_mip_pid:"+str(pyro_mip_server_pid), pyro_mip_server_pid)
-                logger.info("started pyro mip server "+str(pyro_mip_server_pid))
+                self.redisDB.set("pyro_mip", active_pyro_servers + i + 1)
+                self.redisDB.set("pyro_mip_pid:" + str(pyro_mip_server_pid), pyro_mip_server_pid)
+                logger.info("started pyro mip server " + str(pyro_mip_server_pid))
 
     def get_status(self):
         status = {}
@@ -268,10 +273,10 @@ class CommandController:
                 if id not in status.keys():
                     status[id] = {}
                     status[id]["status"] = "stopped"
-                status[id]["config"]={}
+                status[id]["config"] = {}
                 if value is not None:
                     status[id]["config"].update(json.loads(value))
-                    #logger.debug("status id config "+str(status))
+                    # logger.debug("status id config "+str(status))
                     if "ztarttime" in status[id]["config"].keys():
                         status[id]["start_time"] = status[id]["config"]["ztarttime"]
                         status[id]["config"].pop("ztarttime")
@@ -280,8 +285,10 @@ class CommandController:
                         status[id]["config"].pop("model")
         return status
 
+
 variable = CommandController()
 variable.restart_ids()
+
 
 def get_models():
     f = []
@@ -297,7 +304,6 @@ def get_models():
     return f_new
 
 
-
 def framework_start(id, startOFW):  # noqa: E501
     """Command for starting the framework
 
@@ -310,6 +316,7 @@ def framework_start(id, startOFW):  # noqa: E501
 
     :rtype: None
     """
+
     available_solvers = ["ipopt", "glpk", "bonmin", "gurobi", "cbc"]
     available_optimizers = ["discrete", "stochastic", "MPC"]
     if connexion.request.is_json:
@@ -331,9 +338,9 @@ def framework_start(id, startOFW):  # noqa: E501
             return "System already running"
         else:
             try:
-                msg=variable.start(id, startOFW)
+                msg = variable.start(id, startOFW)
                 if msg == 0:
-                    msg_to_send="System started succesfully"
+                    msg_to_send = "System started succesfully"
                 else:
                     msg_to_send = "System could not start"
                 return msg_to_send
@@ -356,12 +363,13 @@ def framework_status():  # noqa: E501
     :rtype: StatusOutput
     """
     results = variable.get_status()
-    answer_dict={}
+    answer_dict = {}
     if len(results) > 0:
-        answer_dict["status"]=results
-    response=StatusOutput.from_dict(answer_dict)
-    #logger.debug("response: " + str(response2))
+        answer_dict["status"] = results
+    response = StatusOutput.from_dict(answer_dict)
+    # logger.debug("response: " + str(response2))
     return response
+
 
 def framework_stop(id):  # noqa: E501
     """Command for stoping the framework
@@ -376,21 +384,21 @@ def framework_stop(id):  # noqa: E501
     try:
         redis_db = RedisDB()
         flag = redis_db.get("run:" + id)
-        logger.debug("Flag "+str(flag))
+        logger.debug("Flag " + str(flag))
         message = ""
         if flag is not None and flag == "running":
             logger.debug("System running and trying to stop")
             redis_db.set("run:" + id, "stop")
             time.sleep(1)
             flag = redis_db.get("run:" + id)
-            logger.debug("Flag in stop: "+str(flag))
+            logger.debug("Flag in stop: " + str(flag))
 
             if flag is None:
                 logger.debug("System stopped succesfully")
                 message = "System stopped succesfully"
             elif "stopping" in flag:
                 message = "System stopped succesfully"
-                counter=0
+                counter = 0
                 while ("stopping" in flag):
                     flag = redis_db.get("run:" + id)
                     counter = counter + 1

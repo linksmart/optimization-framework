@@ -8,12 +8,15 @@ import logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
+
 class ModelDerivedParameters:
 
     @staticmethod
     def get_derived_parameter_mapping(model_name):
         base, derived = [], []
         if model_name == "CarParkModel":
+            base, derived = ModelDerivedParameters.car_park_model()
+        if model_name == "StochasticResidentialMaxPV":
             base, derived = ModelDerivedParameters.car_park_model()
         return base, derived
 

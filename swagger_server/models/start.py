@@ -15,7 +15,10 @@ class Start(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, repetition: int=None, control_frequency: int=None, horizon_in_steps: int=None, model_name: str=None, solver: str=None, d_t_in_seconds: int=None, optimization_type: str=None):  # noqa: E501
+    def __init__(self, repetition: int = None, control_frequency: int = None, horizon_in_steps: int = None, model_name:
+    str = None, solver: str = None, d_t_in_seconds: int = None, optimization_type: str = None,
+                 single_ev: bool = False):  # noqa:
+        # E501
         """Start - a model defined in Swagger
 
         :param repetition: The repetition of this Start.  # noqa: E501
@@ -40,7 +43,8 @@ class Start(Model):
             'model_name': str,
             'solver': str,
             'd_t_in_seconds': int,
-            'optimization_type': str
+            'optimization_type': str,
+            'single_ev': bool,
         }
 
         self.attribute_map = {
@@ -50,7 +54,8 @@ class Start(Model):
             'model_name': 'model_name',
             'solver': 'solver',
             'd_t_in_seconds': 'dT_in_seconds',
-            'optimization_type': 'optimization_type'
+            'optimization_type': 'optimization_type',
+            'single_ev': 'single_ev'
         }
 
         self._repetition = repetition
@@ -60,6 +65,7 @@ class Start(Model):
         self._solver = solver
         self._d_t_in_seconds = d_t_in_seconds
         self._optimization_type = optimization_type
+        self._single_ev = single_ev
 
     @classmethod
     def from_dict(cls, dikt) -> 'Start':
@@ -228,3 +234,26 @@ class Start(Model):
             raise ValueError("Invalid value for `optimization_type`, must not be `None`")  # noqa: E501
 
         self._optimization_type = optimization_type
+
+    @property
+    def single_ev(self) -> bool:
+        """Gets the single_ev of this Start.
+
+
+        :return: The single_ev of this Start.
+        :rtype: str
+        """
+        return self._single_ev
+
+    @single_ev.setter
+    def single_ev(self, single_ev: bool):
+        """Sets the single_ev of this Start.
+
+
+        :param single_ev: The single_ev of this Start.
+        :type single_ev: str
+        """
+        if single_ev is None:
+            single_ev = False
+
+        self._single_ev = single_ev
