@@ -15,10 +15,7 @@ class Start(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, repetition: int = None, control_frequency: int = None, horizon_in_steps: int = None, model_name:
-    str = None, solver: str = None, d_t_in_seconds: int = None, optimization_type: str = None,
-                 single_ev: bool = False):  # noqa:
-        # E501
+    def __init__(self, repetition: int=None, control_frequency: int=None, horizon_in_steps: int=None, model_name: str=None, solver: str=None, d_t_in_seconds: int=None, optimization_type: str=None, single_ev: bool=False):  # noqa: E501
         """Start - a model defined in Swagger
 
         :param repetition: The repetition of this Start.  # noqa: E501
@@ -35,6 +32,8 @@ class Start(Model):
         :type d_t_in_seconds: int
         :param optimization_type: The optimization_type of this Start.  # noqa: E501
         :type optimization_type: str
+        :param single_ev: The single_ev of this Start.  # noqa: E501
+        :type single_ev: bool
         """
         self.swagger_types = {
             'repetition': int,
@@ -44,7 +43,7 @@ class Start(Model):
             'solver': str,
             'd_t_in_seconds': int,
             'optimization_type': str,
-            'single_ev': bool,
+            'single_ev': bool
         }
 
         self.attribute_map = {
@@ -241,7 +240,7 @@ class Start(Model):
 
 
         :return: The single_ev of this Start.
-        :rtype: str
+        :rtype: bool
         """
         return self._single_ev
 
@@ -251,9 +250,7 @@ class Start(Model):
 
 
         :param single_ev: The single_ev of this Start.
-        :type single_ev: str
+        :type single_ev: bool
         """
-        if single_ev is None:
-            single_ev = False
 
         self._single_ev = single_ev
