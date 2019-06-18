@@ -194,12 +194,29 @@ class InputController:
                             self.logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
                             break
                         data = self.set_indexing(data)
-                        self.optimization_data.update(data)
+                        self.update_data(data)
+                        #self.optimization_data.update(data)
                 else:
                     self.logger.debug("file name: " + str(name))
                     if name not in file_exception_list:
                         self.read_input_data(self.id, name, name + ".txt")
         return data_available_for_bucket
+
+    def update_data(self, data):
+        for k,v_new in data.items():
+            new_data = {}
+            if k in self.optimization_data.keys():
+                v_old = self.optimization_data[k]
+                if isinstance(v_old, dict) and isinstance(v_new, dict):
+                    new_data.update(v_old)
+                    new_data.update(v_new)
+                    self.optimization_data[k] = new_data
+                else:
+                    new_data[k] = v_new
+                    self.optimization_data.update(new_data)
+            else:
+                new_data[k] = v_new
+                self.optimization_data.update(data)
 
     def Stop(self):
         self.stop_request = True

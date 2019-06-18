@@ -80,11 +80,11 @@ class BaseDataReceiver(DataReceiver, ABC):
                     if not n:
                         n = self.generic_name
                     try:
-                        v, processed_data = self.preprocess_data(bn, n, v, u)
+                        processed_value = self.preprocess_data(bn, n, v, u)
                         if self.base_value_flag:
-                            raw_data.append([processed_data])
+                            raw_data.append([t, processed_value])
                         else:
-                            raw_data.append([t, v])
+                            raw_data.append([t, processed_value])
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))
@@ -107,13 +107,16 @@ class BaseDataReceiver(DataReceiver, ABC):
 
     @abstractmethod
     def preprocess_data(self, base, name, value, unit):
-        pass
+        return value
 
     def get_bucket_aligned_data(self, bucket, steps, wait_for_data=True, check_bucket_change=True):
         bucket_requested = bucket
         self.logger.info("Get "+str(self.generic_name)+" data for bucket = "+str(bucket_requested))
         bucket_available = True
-        final_data = {self.generic_name: {}}
+        if self.base_value_flag:
+            final_data = {}
+        else:
+            final_data = {self.generic_name: {}}
         if wait_for_data:
             data = self.get_data()
         else:
@@ -145,7 +148,12 @@ class BaseDataReceiver(DataReceiver, ABC):
                         if day_i >= self.number_of_bucket_days:
                             day_i = 0
                         day = str(day_i)
-                final_data = {self.generic_name: new_data}
+                if self.base_value_flag:
+                    for k, v in new_data.items():
+                        if isinstance(v, dict):
+                            final_data.update(v)
+                else:
+                    final_data = {self.generic_name: new_data}
         if check_bucket_change:
             new_bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
             if new_bucket > bucket_requested:
@@ -164,35 +172,50 @@ class BaseDataReceiver(DataReceiver, ABC):
         return bucket
 
     def expand_and_resample(self, raw_data, dT):
-        step = float(dT)
-        j = len(raw_data) - 1
-        new_data = []
-        if j > 0:
-            start_time = raw_data[j][0]
-            start_value = raw_data[j][1]
-            new_data.append([start_time, start_value])
-            prev_time = start_time
-            prev_value = start_value
-            required_diff = step
-            j -= 1
-            while j >= 0:
-                end_time = raw_data[j][0]
-                end_value = raw_data[j][1]
-                diff_sec = prev_time - end_time
-                if diff_sec >= required_diff:
-                    ratio = required_diff / diff_sec
-                    inter_time = prev_time - required_diff
-                    inter_value = prev_value - (prev_value - end_value) * ratio
-                    new_data.append([inter_time, inter_value])
-                    prev_time = inter_time
-                    prev_value = inter_value
-                    required_diff = step
-                else:
-                    required_diff -= diff_sec
-                    prev_time = end_time
-                    prev_value = end_value
-                    j -= 1
+        if self.expand_data_valid(raw_data):
+            step = float(dT)
+            j = len(raw_data) - 1
+            new_data = []
+            if j > 0:
+                start_time = raw_data[j][0]
+                start_value = raw_data[j][1]
+                new_data.append([start_time, start_value])
+                prev_time = start_time
+                prev_value = start_value
+                required_diff = step
+                j -= 1
+                while j >= 0:
+                    end_time = raw_data[j][0]
+                    end_value = raw_data[j][1]
+                    diff_sec = prev_time - end_time
+                    if diff_sec >= required_diff:
+                        ratio = required_diff / diff_sec
+                        inter_time = prev_time - required_diff
+                        inter_value = prev_value - (prev_value - end_value) * ratio
+                        new_data.append([inter_time, inter_value])
+                        prev_time = inter_time
+                        prev_value = inter_value
+                        required_diff = step
+                    else:
+                        required_diff -= diff_sec
+                        prev_time = end_time
+                        prev_value = end_value
+                        j -= 1
+            else:
+                new_data = raw_data
+            new_data.reverse()
         else:
             new_data = raw_data
-        new_data.reverse()
         return new_data
+
+    def expand_data_valid(self, raw_data):
+        try:
+            if isinstance(raw_data, list):
+                if len(raw_data) > 0:
+                    sample = raw_data[0]
+                    if len(sample) == 2:
+                        if (isinstance(sample[0], float) or isinstance(sample[0], int)) and (isinstance(sample[1], float) or isinstance(sample[1], int)):
+                            return True
+            return False
+        except Exception:
+            return False

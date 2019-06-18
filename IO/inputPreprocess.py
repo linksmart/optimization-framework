@@ -25,6 +25,7 @@ class InputPreprocess:
         self.logger = self.logger = MessageLogger.get_logger(__file__, id)
 
     def preprocess(self, data_dict):
+        self.logger.info("data_dict = "+str(data_dict))
         self.ev_park = EVPark()
         self.data_dict = {}
         self.data_dict = data_dict

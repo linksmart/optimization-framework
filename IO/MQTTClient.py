@@ -13,7 +13,7 @@ class MQTTClient:
         self.port = int(mqttPort)
         self.keepalive = keepalive
         self.receivedMessages = []
-        self.topic_ack_wait = []
+        self.topic_sub_ack = []
         self.callback_function = None
         self.client_id = client_id
         self.id = id
@@ -104,9 +104,9 @@ class MQTTClient:
             count += 1
             if count > 15:
                 raise Exception
-        self.subscribe(topics_qos, callback_function)
-        while not self.subscribe_ack_wait():
-            self.subscribe(topics_qos, callback_function)
+        mid = self.subscribe(topics_qos, callback_function)
+        while not self.subscribe_ack_wait(mid):
+            mid = self.subscribe(topics_qos, callback_function)
             self.logger.error("Topic subscribe missing ack")
 
     def subscribe(self, topics_qos, callback_function):
@@ -117,33 +117,32 @@ class MQTTClient:
                 result, mid = self.client.subscribe(topics_qos)
                 if result == 0:
                     self.logger.debug("Subscribed to topics: "+ str(topics_qos) + " result = " + str(result) + " , mid = " + str(mid))
-                    self.topic_ack_wait.append(tuple([str(topics_qos), mid]))
-                    self.logger.debug("sub ack wait = "+str(self.topic_ack_wait))
                     self.callback_function = callback_function
-                    logging.info("callback functions set")
+                    return mid
                 else:
-                    logging.info("error on subscribing " + str(result))
+                    self.logger.info("error on subscribing " + str(result))
+                    return -1
         except Exception as e:
             self.logger.error(e)
+        return -1
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         """check mid values from topic ack list"""
-        if len(self.topic_ack_wait) > 0:
-            for i, m in enumerate(self.topic_ack_wait):
-                if m[1] == mid:
-                    self.topic_ack_wait.pop(i)
+        self.topic_sub_ack.append(mid)
 
-    def subscribe_ack_wait(self):
+    def subscribe_ack_wait(self, mid):
+        if mid < 0:
+            return False
         count = 0
         if self.connected:
             while count < 15:
-                if len(self.topic_ack_wait) == 0:
+                if mid in self.topic_sub_ack:
                     return True
                 else:
-                    self.logger.info("topic ack wait len = "+str(len(self.topic_ack_wait)))
+                    self.logger.info("topic sub ack len = "+str(len(self.topic_sub_ack)))
                 time.sleep(1)
                 count+=1
-            self.topic_ack_wait.pop()
+            self.topic_sub_ack.remove(mid)
         return False
 
 
