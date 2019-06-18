@@ -716,6 +716,9 @@ definitions:
         format: "int32"
       optimization_type:
         type: "string"
+      single_ev:
+        type: "boolean"
+        default: false
     example:
       control_frequency: 60
       horizon_in_steps: 24
