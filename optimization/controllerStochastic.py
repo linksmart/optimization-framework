@@ -84,6 +84,7 @@ class OptControllerStochastic(ControllerBase):
 
             ess_decision_domain = np.arange(ess_domain_min, ess_domain_max, ess_steps).tolist()
             vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
+            vac_decision_domain_n = np.arange(vac_domain_min, vac_domain_max, vac_steps)
 
             T = self.horizon_in_steps
 
@@ -124,11 +125,31 @@ class OptControllerStochastic(ControllerBase):
             min_value = 100 * 0.2  # data_dict[None]["ESS_Min_SoC"]
             max_value = 100 * 1  # data_dict[None]["ESS_Max_SoC"]
 
+            max_vac_soc_states = max(vac_soc_states)
+
             for timestep in reversed(range(start_time_offset, start_time_offset + self.horizon_in_steps)):
                 self.logger.info(f"Timestep :#{timestep}")
 
                 instance_id = 0
                 instance_info = []
+
+                value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
+                               t == timestep + 1 - start_time_offset]
+                data_dict[None]["Value_Index"] = {None: value_index}
+
+                value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
+                data_dict[None]["Value"] = value
+                # self.logger.debug("value "+str(value))
+
+                # * Updated
+                bm_idx = behaviour_model[timestep - start_time_offset].keys()
+                bm = behaviour_model[timestep - start_time_offset]
+
+                data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
+                data_dict[None]["Behavior_Model"] = bm
+
+                pv_forecast_for_current_timestep = forecast_pv[timestep]
+                data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
 
                 for ini_ess_soc, ini_vac_soc in product(ess_soc_states, vac_soc_states):
 
@@ -142,10 +163,11 @@ class OptControllerStochastic(ControllerBase):
                     self.logger.debug("feasible p_ESS " + str(feasible_Pess))
 
                     feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
-                    for p_VAC in vac_decision_domain:  # When decided charging with p_VAC
-                        if p_VAC + ini_vac_soc <= max(
-                                vac_soc_states):  # if the final vac_SoC is within the specified domain
-                            feasible_Pvac.append(p_VAC)
+                    # When decided charging with p_VAC
+                    if vac_decision_domain[0] <= max_vac_soc_states - ini_vac_soc:
+                        # if the final vac_SoC is within the specified domain
+                        index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
+                        feasible_Pvac = vac_decision_domain[0:index + 1]
                     self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
 
                     data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
@@ -156,26 +178,6 @@ class OptControllerStochastic(ControllerBase):
 
                     data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
                     # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
-
-                    value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
-                                   t == timestep + 1 - start_time_offset]
-                    data_dict[None]["Value_Index"] = {None: value_index}
-
-                    value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
-                    data_dict[None]["Value"] = value
-                    # self.logger.debug("value "+str(value))
-
-                    # * Updated
-                    bm_idx = behaviour_model[timestep - start_time_offset].keys()
-                    bm = behaviour_model[timestep - start_time_offset]
-
-                    data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
-                    data_dict[None]["Behavior_Model"] = bm
-
-                    pv_forecast_for_current_timestep = forecast_pv[timestep]
-                    data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
-
-                    # * Create Optimization instance
 
                     # Creating an optimization instance with the referenced model
                     try:
@@ -200,7 +202,6 @@ class OptControllerStochastic(ControllerBase):
                         # start_time = time.time()
                         # self.logger.debug("Optimization starting time: " + str(start_time))
                         inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc)
-                        # print(str(instance_id), ini_ess_soc, ini_vac_soc)
 
                         instance_info.append(inst)
 

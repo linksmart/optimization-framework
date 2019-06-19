@@ -11,12 +11,8 @@ import os
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
-from pyomo.opt import SolverStatus, TerminationCondition
-import subprocess
 import time
 
-from IO.MQTTClient import InvalidMQTTHostException
-from pyutilib.pyro import shutdown_pyro_components
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
@@ -32,13 +28,13 @@ from utils_intern.messageLogger import MessageLogger
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 from abc import ABC, abstractmethod
-
+from pebble import concurrent
 
 class ControllerBase(ABC, threading.Thread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
-        super(ControllerBase, self).__init__()
+        super().__init__()
         self.logger = MessageLogger.get_logger(__file__, id)
         self.logger.info("Initializing optimization controller " + id)
         # Loading variables

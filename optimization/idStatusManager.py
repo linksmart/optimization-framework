@@ -115,7 +115,6 @@ class IDStatusManager:
                                     line["repetition"] = -9
                                     data[i] = json.dumps(line, sort_keys=True, separators=(', ', ': ')) + "\n"
                                     #data.remove(line)
-                            logger.info("11")
                             IDStatusManager.write_file(data)
             except Exception as e:
                 logging.error("error persisting id " + id + " " + str(start) + " " + str(e))

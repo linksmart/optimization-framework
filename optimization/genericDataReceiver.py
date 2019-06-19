@@ -13,7 +13,7 @@ logger = logging.getLogger(__file__)
 
 class GenericDataReceiver(BaseDataReceiver):
 
-    def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT, preprocess):
+    def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT):
         super().__init__(internal, topic_params, config, generic_name, id, buffer, dT, False)
         self.generic_name = generic_name
 

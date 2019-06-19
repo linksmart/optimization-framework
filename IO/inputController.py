@@ -57,14 +57,14 @@ class InputController:
                 prediction_topic = json.loads(prediction_topic)
                 prediction_topic["topic"] = prediction_topic["topic"] + name
                 self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name, self.id,
-                                                                   self.required_buffer_data, self.dT_in_seconds, )
+                                                                   self.required_buffer_data, self.dT_in_seconds)
         for name, flag in self.non_prediction_mqtt_flags.items():
             if flag:
                 non_prediction_topic = config.get("IO", "forecast.topic")
                 non_prediction_topic = json.loads(non_prediction_topic)
                 non_prediction_topic["topic"] = non_prediction_topic["topic"] + name
                 self.internal_receiver[name] = GenericDataReceiver(True, non_prediction_topic, config, name, self.id,
-                                                                   self.required_buffer_data, self.dT_in_seconds, )
+                                                                   self.required_buffer_data, self.dT_in_seconds)
         # ESS data
         self.external_data_receiver = {}
         for name, flag in self.external_mqtt_flags.items():
@@ -74,7 +74,7 @@ class InputController:
                     self.logger.debug("params for MQTT SoC_Value: " + str(params))
                     self.external_data_receiver[name] = SoCValueDataReceiver(False, params, config, name, self.id,
                                                                              self.required_buffer_data,
-                                                                             self.dT_in_seconds, )
+                                                                             self.dT_in_seconds)
 
         self.preprocess_data_receiver = {}
         for name, flag in self.preprocess_mqtt_flags.items():
@@ -84,7 +84,7 @@ class InputController:
                     self.logger.debug("params for MQTT " + name + " : " + str(params))
                     self.external_data_receiver[name] = ChargerDataReceiver(False, params, config, name, self.id,
                                                                             self.required_buffer_data,
-                                                                            self.dT_in_seconds, )
+                                                                            self.dT_in_seconds)
 
         self.generic_data_receiver = {}
         if len(self.generic_data_mqtt_flags) > 0:
@@ -93,7 +93,7 @@ class InputController:
                     topic = self.input_config_parser.get_params(generic_name)
                     self.generic_data_receiver[generic_name] = GenericDataReceiver(False, topic, config, generic_name,
                                                                                    self.id, self.required_buffer_data,
-                                                                                   self.dT_in_seconds, )
+                                                                                   self.dT_in_seconds)
 
     def set_timestep_data(self):
         self.optimization_data["N"] = {None: [0]}
