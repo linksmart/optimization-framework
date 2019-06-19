@@ -64,7 +64,7 @@ class EVPark:
             logger.info("ev "+str(hosted_ev))
             if hosted_ev:
                 ev = self.evs[hosted_ev]
-                battery_depth_of_discharge = (1 - charger.soc) * ev.battery_capacity # max_charging_power_kw-sec
+                battery_depth_of_discharge = (1 - charger.soc) * ev.battery_capacity * 3600 # max_charging_power_kw-sec
 
                 charger_limit = charger.max_charging_power_kw
                 car_limit = battery_depth_of_discharge / charging_period

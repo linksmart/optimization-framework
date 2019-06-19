@@ -45,15 +45,12 @@ class OptControllerStochastic(ControllerBase):
             ######################################
             # STOCHASTIC OPTIMIZATION
 
-            #start_time_offset = int(data_dict[None]["Start_Time"][None])
-            start_time_offset = 0
-
             forecast_pv = data_dict[None]["P_PV"]
             ev_park = self.input.inputPreprocess.ev_park
             max_number_of_cars = ev_park.get_num_of_cars()
 
             behaviour_model = self.input.inputPreprocess.simulator(time_resolution=self.dT_in_seconds,
-                                                                 horizon=self.horizon_in_steps + start_time_offset,
+                                                                 horizon=self.horizon_in_steps,
                                                                  max_number_of_cars=max_number_of_cars)
 
             ess_soc_states = self.input.inputPreprocess.ess_soc_states
@@ -122,28 +119,28 @@ class OptControllerStochastic(ControllerBase):
 
             stochastic_start_time = time.time()
 
-            min_value = 100 * 0.2  # data_dict[None]["ESS_Min_SoC"]
-            max_value = 100 * 1  # data_dict[None]["ESS_Max_SoC"]
+            min_value = 100 * float(data_dict[None]["ESS_Min_SoC"][None])
+            max_value = 100 * float(data_dict[None]["ESS_Max_SoC"][None])
 
             max_vac_soc_states = max(vac_soc_states)
 
-            for timestep in reversed(range(start_time_offset, start_time_offset + self.horizon_in_steps)):
+            for timestep in reversed(range(0, self.horizon_in_steps)):
                 self.logger.info(f"Timestep :#{timestep}")
 
                 instance_id = 0
                 instance_info = []
 
                 value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
-                               t == timestep + 1 - start_time_offset]
+                               t == timestep + 1]
                 data_dict[None]["Value_Index"] = {None: value_index}
 
-                value = {v: Value[timestep + 1 - start_time_offset, v[0], v[1]] for v in value_index}
+                value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
                 data_dict[None]["Value"] = value
                 # self.logger.debug("value "+str(value))
 
                 # * Updated
-                bm_idx = behaviour_model[timestep - start_time_offset].keys()
-                bm = behaviour_model[timestep - start_time_offset]
+                bm_idx = behaviour_model[timestep].keys()
+                bm = behaviour_model[timestep]
 
                 data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
                 data_dict[None]["Behavior_Model"] = bm
@@ -254,16 +251,16 @@ class OptControllerStochastic(ControllerBase):
                                 except Exception as e:
                                     self.logger.error(e)
 
-                            Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['Grid'] = \
+                            Decision[timestep, ini_ess_soc, ini_vac_soc]['Grid'] = \
                                 my_dict["P_GRID_OUTPUT"][0]
-                            Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['PV'] = \
+                            Decision[timestep, ini_ess_soc, ini_vac_soc]['PV'] = \
                                 my_dict["P_PV_OUTPUT"][0]
-                            Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['ESS'] = \
+                            Decision[timestep, ini_ess_soc, ini_vac_soc]['ESS'] = \
                                 my_dict["P_ESS_OUTPUT"][0]
-                            Decision[timestep - start_time_offset, ini_ess_soc, ini_vac_soc]['VAC'] = \
+                            Decision[timestep, ini_ess_soc, ini_vac_soc]['VAC'] = \
                                 my_dict["P_VAC_OUTPUT"][0]
 
-                            Value[timestep - start_time_offset, ini_ess_soc, ini_vac_soc] = \
+                            Value[timestep, ini_ess_soc, ini_vac_soc] = \
                                 my_dict["P_PV_OUTPUT"][0]
 
                             #self.logger.info("Done".center(80, "#"))
@@ -384,7 +381,7 @@ class OptControllerStochastic(ControllerBase):
             }
 
             for key, value in p_ev.items():
-                results_publish["p_ev/"+key] = [value]
+                results_publish[key+"~p_ev"] = [value]
 
             self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 

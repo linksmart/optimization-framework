@@ -14,7 +14,7 @@ class Model:
     model.Value_Index = Set(dimen=2)
 
     model.Value = Param(model.Value_Index, mutable=True)
-    model.Value.pprint()
+
 
     model.P_PV = Param(within=NonNegativeReals)
 
@@ -30,7 +30,7 @@ class Model:
 
     model.Behavior_Model_Index = Set()
     model.Behavior_Model = Param(model.Behavior_Model_Index)
-    #+model.Behavior_Model.pprint()
+
 
     model.dT = Param(within=PositiveIntegers)
 

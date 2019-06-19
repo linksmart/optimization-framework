@@ -83,16 +83,17 @@ class OutputController:
         current_time = int(time.time())
         try:
             senml_data = self.senml_message_format(data, current_time, self.mqtt_params, dT)
-            for key, value in senml_data.items():
-                v = json.dumps(value)
-                # self.logger.debug("key: "+str(key))
-                # self.logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
-                if key in self.mqtt_params.keys():
-                    value2 = self.mqtt_params[key]
-                    topic = value2["topic"]
-                    host = value2["host"]
-                    qos = value2["qos"]
-                    self.mqtt[key].sendResults(topic, v, qos)
+            for base_name, value_dict in senml_data.items():
+                for name, value in value_dict.items():
+                    v = json.dumps(value)
+                    # self.logger.debug("key: "+str(key))
+                    # self.logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
+                    if name in self.mqtt_params.keys():
+                        value2 = self.mqtt_params[name]
+                        topic = value2["topic"]
+                        host = value2["host"]
+                        qos = value2["qos"]
+                        self.mqtt[name].sendResults(topic, v, qos)
         except Exception as e:
             self.logger.error("error in publish data ", e)
         self.save_to_redis(id, data, current_time)
@@ -115,16 +116,26 @@ class OutputController:
         for key, value in data.items():
             flag = False
             time = current_time
-            if key in params.keys():
-                if params[key]["unit"] is not None:
-                    u = params[key]["unit"]
+            bn = None
+            base = None
+            if "~" in key:
+                ks = key.split("~")
+                name = ks[1]
+                bn = ks[0]
+                base = senml.SenMLMeasurement()
+                base.name = ks[0]
+            else:
+                name = key
+            if name in params.keys():
+                if params[name]["unit"] is not None:
+                    u = params[name]["unit"]
                 else:
                     u = "W"
-                flag = params[key]["horizon_values"]
+                flag = params[name]["horizon_values"]
             meas_list = []
             for v in value:
                 meas = senml.SenMLMeasurement()
-                meas.name = key
+                meas.name = name
                 meas.time = time
                 meas.value = v
                 meas.unit = u
@@ -133,8 +144,16 @@ class OutputController:
                 if not flag:
                     break  # only want the first value
             if len(meas_list) > 0:
-                doc = senml.SenMLDocument(meas_list)
-                new_data[key] = doc.to_json()
+                if bn is not None:
+                    doc = senml.SenMLDocument(meas_list, base=base)
+                    if bn not in new_data.keys():
+                        new_data[bn] = {}
+                    new_data[bn][name] = doc.to_json()
+                else:
+                    doc = senml.SenMLDocument(meas_list)
+                    if "none" not in new_data.keys():
+                        new_data["none"] = {}
+                    new_data["none"][name] = doc.to_json()
         # self.logger.debug("Topic MQTT Senml message: "+str(new_data))
         return new_data
 
