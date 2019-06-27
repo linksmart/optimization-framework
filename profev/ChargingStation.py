@@ -1,16 +1,18 @@
 class ChargingStation:
 
-    def __init__(self, charger, max_charging_power_kw, hosted_ev=None, soc=None):
+    def __init__(self, charger, max_charging_power_kw, hosted_ev=None, soc=None, ev_unplugged=False):
         self.charger_id = charger
         self.max_charging_power_kw = max_charging_power_kw
-        self.hosted_ev = hosted_ev
-        self.soc = soc
+        self.hosted_ev = None
+        self.soc = 0  # TODO: 0 or None
         self.plugged = False
 
         if hosted_ev:
-            self.hosted_ev = hosted_ev
-            self.plugged = True
+            self.plug(hosted_ev)
             self.soc = soc
+
+        if ev_unplugged:
+            self.unplug()
 
     def plug(self, ev):
         self.hosted_ev = ev

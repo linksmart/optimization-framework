@@ -35,7 +35,7 @@ class EVPark:
                 self.total_charging_stations_power += charger.max_charging_power_kw
 
     def validate_hosted_ev(self, charger):
-        if charger.hosted_ev not in self.evs.keys():
+        if charger.hosted_ev is not None and charger.hosted_ev not in self.evs.keys():
             raise Exception("EV "+str(charger.hosted_ev)+" hosted on charger "+str(charger.charger_id)+" but not registered")
 
     def update_charger(self, charger, charger_id):
@@ -86,5 +86,8 @@ class EVPark:
                 vac_soc_value += charger.soc * ev.battery_capacity
                 vac += ev.battery_capacity
         logger.info("cal "+str(vac_soc_value)+ " "+ str(vac))
-        vac_soc_value = vac_soc_value * 100 / vac
+        if vac <= 0:
+            vac_soc_value = 0
+        else:
+            vac_soc_value = vac_soc_value * 100 / vac
         return vac_soc_value

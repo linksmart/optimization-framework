@@ -1187,6 +1187,7 @@ definitions:
         qos: 1
         host: "hostname"
         topic: "topic_name"
+        detachable: true
       predict: true
       preprocess: true
   SourceESS:
@@ -1245,6 +1246,8 @@ definitions:
       ca_cert_path:
         type: "string"
       insecure:
+        type: "boolean"
+      detachable:
         type: "boolean"
     example:
       qos: 1
@@ -1451,6 +1454,7 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
+              detachable: "true"
             preprocess: true
         charger2:
           Max_Charging_Power_kW: 7
@@ -1459,6 +1463,7 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
+              detachable: "true"
             preprocess: true
       uncertainity:
         meta:
@@ -2456,6 +2461,7 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
+            detachable: "true"
           preprocess: true
       charger2:
         Max_Charging_Power_kW: 7
@@ -2464,6 +2470,7 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
+            detachable: "true"
           preprocess: true
     additionalProperties:
       $ref: "#/definitions/charger_mqtt"
@@ -2482,6 +2489,7 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
+          detachable: "true"
         preprocess: true
   uncertainity_File_Plugged_Time:
     properties:

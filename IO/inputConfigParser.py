@@ -65,8 +65,8 @@ class InputConfigParser:
     def extract_mqtt_params_level(self, value, base=""):
         for key2, value2 in value.items():
             mqtt = self.config_parser_utils.get_mqtt(value2)
-            self.read_mqtt_flags(value2, base+key2)
             if mqtt is not None:
+                self.read_mqtt_flags(value2, base+key2)
                 self.mqtt_params[base+key2] = mqtt.copy()
                 self.add_name_to_list(base+key2)
             elif len(base) == 0 and isinstance(value2, dict):
@@ -107,7 +107,8 @@ class InputConfigParser:
                             self.logger.debug("Generic single value")
                             self.add_value_to_data(data, k1, v1)
                         elif isinstance(v1, dict):
-                            data[k + "/" + k1] = v1
+                            #data[k + "/" + k1] = v1
+                            data[k1] = v1
                         else:
                             try:
                                 v1 = float(v1)

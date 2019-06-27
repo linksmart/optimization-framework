@@ -30,6 +30,8 @@ class DataReceiver(ABC):
         self.topics = None
         self.port = None
         self.host_params = {}
+        self.first_time = 0
+        self.last_time = 0
         self.id = id
         self.section = section
         if self.section is None:

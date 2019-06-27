@@ -15,7 +15,7 @@ class MQTT(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, host: str=None, topic: str=None, qos: int=None, port: int=None, username: str=None, password: str=None, ca_cert_path: str=None, insecure: bool=None):  # noqa: E501
+    def __init__(self, host: str=None, topic: str=None, qos: int=None, port: int=None, username: str=None, password: str=None, ca_cert_path: str=None, insecure: bool=None, detachable: bool=None):  # noqa: E501
         """MQTT - a model defined in Swagger
 
         :param host: The host of this MQTT.  # noqa: E501
@@ -34,6 +34,8 @@ class MQTT(Model):
         :type ca_cert_path: str
         :param insecure: The insecure of this MQTT.  # noqa: E501
         :type insecure: bool
+        :param detachable: The detachable of this MQTT.  # noqa: E501
+        :type detachable: bool
         """
         self.swagger_types = {
             'host': str,
@@ -43,7 +45,8 @@ class MQTT(Model):
             'username': str,
             'password': str,
             'ca_cert_path': str,
-            'insecure': bool
+            'insecure': bool,
+            'detachable': bool
         }
 
         self.attribute_map = {
@@ -54,7 +57,8 @@ class MQTT(Model):
             'username': 'username',
             'password': 'password',
             'ca_cert_path': 'ca_cert_path',
-            'insecure': 'insecure'
+            'insecure': 'insecure',
+            'detachable': 'detachable'
         }
 
         self._host = host
@@ -65,6 +69,7 @@ class MQTT(Model):
         self._password = password
         self._ca_cert_path = ca_cert_path
         self._insecure = insecure
+        self._detachable = detachable
 
     @classmethod
     def from_dict(cls, dikt) -> 'MQTT':
@@ -254,3 +259,24 @@ class MQTT(Model):
         """
 
         self._insecure = insecure
+
+    @property
+    def detachable(self) -> bool:
+        """Gets the detachable of this MQTT.
+
+
+        :return: The detachable of this MQTT.
+        :rtype: bool
+        """
+        return self._detachable
+
+    @detachable.setter
+    def detachable(self, detachable: bool):
+        """Sets the detachable of this MQTT.
+
+
+        :param detachable: The detachable of this MQTT.
+        :type detachable: bool
+        """
+
+        self._detachable = detachable

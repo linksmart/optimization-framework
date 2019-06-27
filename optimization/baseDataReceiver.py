@@ -7,6 +7,7 @@ import json
 from abc import ABC, abstractmethod
 
 import datetime
+import time
 from math import floor
 
 from senml import senml
@@ -29,6 +30,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         self.buffer = buffer
         self.dT = dT
         self.base_value_flag = base_value_flag
+        self.detachable = topic_params["detachable"]
         self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
         self.total_steps_in_day = floor(24 * 60 * 60 / self.dT)
         self.current_day_index = 0
@@ -43,6 +45,7 @@ class BaseDataReceiver(DataReceiver, ABC):
             formated_data = self.add_formated_data(senml_data)
             self.data.update(formated_data)
             self.data_update = True
+            self.last_time = time.time()
         except Exception as e:
             self.logger.error(e)
 
@@ -109,16 +112,24 @@ class BaseDataReceiver(DataReceiver, ABC):
     def preprocess_data(self, base, name, value, unit):
         return value
 
+    def iterative_init(self, d, v):
+        if len(v) <= 0:
+            return d
+        d = self.iterative_init({v[-1]: d}, v[:-1])
+        return d
+
     def get_bucket_aligned_data(self, bucket, steps, wait_for_data=True, check_bucket_change=True):
         bucket_requested = bucket
         self.logger.info("Get "+str(self.generic_name)+" data for bucket = "+str(bucket_requested))
         bucket_available = True
         if self.base_value_flag:
-            final_data = {}
+            final_data = self.iterative_init({}, self.generic_name.split("/"))
         else:
             final_data = {self.generic_name: {}}
-        if wait_for_data:
-            data = self.get_data()
+        if not self.detachable and wait_for_data:
+            data = self.get_data(require_updated=0)
+        elif self.detachable:
+            data = self.get_data(require_updated=2, clearData=True)
         else:
             data = self.get_data(require_updated=2)
         self.logger.debug(str(self.generic_name)+ " data from mqtt is : "+ json.dumps(data, indent=4))
@@ -160,7 +171,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                 self.logger.debug("bucket changed from " + str(bucket_requested) +
                                   " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
                 final_data, bucket_available = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
-        return final_data, bucket_available
+        return final_data, bucket_available, self.last_time
 
     def time_to_bucket(self, time):
         bucket = floor((time - self.start_of_day) / self.dT)

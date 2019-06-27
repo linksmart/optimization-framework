@@ -8,11 +8,12 @@ import json
 import os
 
 import datetime
+import time
 from math import floor
 
 from IO.inputPreprocess import InputPreprocess
 from optimization.SoCValueDataReceiver import SoCValueDataReceiver
-from optimization.chargerDataReceiver import ChargerDataReceiver
+from optimization.baseValueDataReceiver import BaseValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
 from utils_intern.messageLogger import MessageLogger
 
@@ -36,7 +37,9 @@ class InputController:
         self.preprocess_mqtt_flags = {}
         self.generic_data_mqtt_flags = {}
         self.generic_names = None
-        self.inputPreprocess = InputPreprocess(self.id)
+        self.mqtt_timer = {}
+        mqtt_time_threshold = float(self.config.get("IO", "mqtt.detach.threshold", fallback=180))
+        self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold)
 
         self.parse_input_config()
         self.set_timestep_data()
@@ -79,12 +82,12 @@ class InputController:
         self.preprocess_data_receiver = {}
         for name, flag in self.preprocess_mqtt_flags.items():
             if flag:
-                if "charger" in name:
-                    params = self.input_config_parser.get_params(name)
-                    self.logger.debug("params for MQTT " + name + " : " + str(params))
-                    self.external_data_receiver[name] = ChargerDataReceiver(False, params, config, name, self.id,
-                                                                            self.required_buffer_data,
-                                                                            self.dT_in_seconds)
+                #if "charger" in name:
+                params = self.input_config_parser.get_params(name)
+                self.logger.debug("params for MQTT " + name + " : " + str(params))
+                self.external_data_receiver[name] = BaseValueDataReceiver(False, params, config, name, self.id,
+                                                                          self.required_buffer_data,
+                                                                          self.dT_in_seconds)
 
         self.generic_data_receiver = {}
         if len(self.generic_data_mqtt_flags) > 0:
@@ -162,6 +165,8 @@ class InputController:
 
     def get_data(self, preprocess):
         success = False
+        self.logger.info("sleep for data")
+        time.sleep(60)
         while not success:
             current_bucket = self.get_current_bucket()
             self.logger.info("Get input data for bucket "+str(current_bucket))
@@ -176,7 +181,7 @@ class InputController:
             if success:
                 success = self.fetch_mqtt_and_file_data(self.generic_data_mqtt_flags, self.generic_data_receiver, [], [], current_bucket)
         if preprocess:
-            self.optimization_data = self.inputPreprocess.preprocess(self.optimization_data)
+            self.optimization_data = self.inputPreprocess.preprocess(self.optimization_data, self.mqtt_timer)
         return {None: self.optimization_data.copy()}
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket):
@@ -188,7 +193,8 @@ class InputController:
                 if mqtt_flag:
                     self.logger.debug("mqtt True " + str(name))
                     if name not in mqtt_exception_list:
-                        data, bucket_available = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
+                        data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
+                        self.mqtt_timer[name] = last_time
                         if not bucket_available:
                             data_available_for_bucket = False
                             self.logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")

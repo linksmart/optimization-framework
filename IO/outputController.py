@@ -18,9 +18,7 @@ class OutputController:
         self.logger.info("Output Class started")
         self.output_config = output_config
         self.mqtt = {}
-        self.client_id = "PROFESS"
         self.redisDB = RedisDB()
-        self.mqtt_names = []
         self.mqtt_params = {}
         self.output_mqtt = {}
         self.id = id
@@ -42,9 +40,7 @@ class OutputController:
                     self.mqtt_params[key2] = mqtt.copy()
                     self.mqtt_params[key2]["unit"] = unit
                     self.mqtt_params[key2]["horizon_values"] = horizon_values
-                    self.mqtt_names.append(key)
         self.logger.debug("params = " + str(self.mqtt_params))
-        self.logger.debug("mqtt names = " + str(self.mqtt_names))
 
     def read_extra_values(self, value2):
         unit = None
@@ -65,11 +61,15 @@ class OutputController:
                 self.logger.debug("key " + str(key) + " value " + str(value))
 
                 # self.output_mqtt[key2] = {"host":host, "topic":topic, "qos":qos}
-                self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".", "")
-                self.logger.debug("client " + str(self.client_id))
-                self.logger.debug("host " + str(value["host"]))
-                self.logger.debug("port " + str(value["mqtt.port"]))
-                self.mqtt[key] = MQTTClient(str(value["host"]), value["mqtt.port"], self.client_id,
+                client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".", "")
+                host = str(value["host"])
+                port = value["mqtt.port"]
+                self.logger.debug("client " + client_id)
+                self.logger.debug("host " + host)
+                self.logger.debug("port " + str(port))
+                client_key = host+":"+str(port)
+                if client_key not in self.mqtt.keys():
+                    self.mqtt[client_key] = MQTTClient(str(host), port, client_id,
                                             username=value["username"], password=value["password"],
                                             ca_cert_path=value["ca_cert_path"], set_insecure=value["insecure"], id=self.id)
             self.logger.info("successfully subscribed")
@@ -88,12 +88,17 @@ class OutputController:
                     v = json.dumps(value)
                     # self.logger.debug("key: "+str(key))
                     # self.logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
-                    if name in self.mqtt_params.keys():
-                        value2 = self.mqtt_params[name]
+                    mqtt_key = name
+                    if base_name is not "none":
+                        mqtt_key = base_name + "/" + mqtt_key
+                    if mqtt_key in self.mqtt_params.keys():
+                        value2 = self.mqtt_params[mqtt_key]
                         topic = value2["topic"]
                         host = value2["host"]
+                        port = value2["mqtt.port"]
                         qos = value2["qos"]
-                        self.mqtt[name].sendResults(topic, v, qos)
+                        client_key = host + ":" + str(port)
+                        self.mqtt[client_key].sendResults(topic, v, qos)
         except Exception as e:
             self.logger.error("error in publish data ", e)
         self.save_to_redis(id, data, current_time)
@@ -165,6 +170,7 @@ class OutputController:
                 for key in output_keys:
                     self.redisDB.remove(key)
             for key, value in data.items():
+                key = key.replace("~","/")
                 index = 0
                 for v in value:
                     k = part_key + key + ":" + str(index)

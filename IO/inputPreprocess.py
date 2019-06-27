@@ -20,16 +20,17 @@ logger = logging.getLogger(__file__)
 
 class InputPreprocess:
 
-    def __init__(self, id):
+    def __init__(self, id, mqtt_time_threshold):
         self.data_dict = {}
         self.logger = self.logger = MessageLogger.get_logger(__file__, id)
-
-    def preprocess(self, data_dict):
-        self.logger.info("data_dict = "+str(data_dict))
         self.ev_park = EVPark()
-        self.data_dict = {}
-        self.data_dict = data_dict
+        self.mqtt_time_threshold = mqtt_time_threshold
 
+    def preprocess(self, data_dict, mqtt_timer):
+        self.logger.info("data_dict = "+str(data_dict))
+        self.data_dict = data_dict
+        self.last_timesamps = mqtt_timer
+        self.logger.info("mqtt timer = "+str(mqtt_timer))
         evs_list = self.generate_ev_classes()
         self.ev_park.add_evs(evs_list)
         chargers_list = self.generate_charger_classes()
@@ -41,6 +42,14 @@ class InputPreprocess:
         self.process_uncertainty_data()
 
         return self.data_dict
+
+    def get_last_timestamp(self, partial_key):
+        timestamp = -1
+        for k, v in self.last_timesamps.items():
+            if partial_key in k:
+                timestamp = v
+                break
+        return timestamp
 
     def validate_unit_consumption_assumption(self, vac_min, vac_step):
         self.logger.info("data_dict : "+str(self.data_dict))
@@ -71,21 +80,42 @@ class InputPreprocess:
             self.data_dict.pop(k)
         return keys
 
+    def is_charger(self, data):
+        if data is not None and isinstance(data, dict):
+            if "Max_Charging_Power_kW" in data.keys() and "SoC" in data.keys():
+                return True
+        return False
+
     def generate_charger_classes(self):
         chargers_list = []
-        chargers = self.get_required_keys("charger")
-        for charger in chargers:
-            charger_dict = self.data_dict[charger]
-            self.logger.info("charger dict "+str(charger_dict))
-            max_charging_power_kw = charger_dict.get("Max_Charging_Power_kW", None)
-            hosted_ev = charger_dict.get("Hosted_EV", None)
-            soc = charger_dict.get("SoC", None)
-            if not (isinstance(soc, float) or isinstance(soc, int)):
-                soc = None
-            assert max_charging_power_kw, f"Incorrect input: Max_Charging_Power_kW missing for charger: {charger}"
-            chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc))
-        self.remove_used_keys(chargers)
+        for k, v in self.data_dict.items():
+            if self.is_charger(v):
+                charger = k
+                charger_dict = v
+                last_timestamp = self.get_last_timestamp(charger)
+                self.logger.info("charger "+ str(charger)+" "+str(last_timestamp))
+                self.logger.info("charger dict "+str(charger_dict))
+                max_charging_power_kw = charger_dict.get("Max_Charging_Power_kW", None)
+                hosted_ev = charger_dict.get("Hosted_EV", None)
+                soc = charger_dict.get("SoC", None)
+                ev_unplugged = False
+                if isinstance(soc, dict):
+                    # did not receive soc value from mqtt
+                    # check time threshold for EV unplugged
+                    if self.exceeded_time_threshold(last_timestamp):
+                        # EV unplugged
+                        ev_unplugged = True
+                if not (isinstance(soc, float) or isinstance(soc, int)):
+                    soc = None
+                assert max_charging_power_kw, f"Incorrect input: Max_Charging_Power_kW missing for charger: {charger}"
+                chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc, ev_unplugged))
         return chargers_list
+
+    def exceeded_time_threshold(self, last_time):
+        if last_time - time.time() > self.mqtt_time_threshold:
+            return True
+        else:
+            return False
 
     def generate_ev_classes(self):
         evs_list = []

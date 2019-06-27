@@ -23,6 +23,7 @@ class ConfigParserUtils:
             password = None
             ca_cert_path = None
             insecure = False
+            detachable = False
             if "host" in value[Constants.mqtt].keys():
                 host = value[Constants.mqtt]["host"]
             if "topic" in value[Constants.mqtt].keys():
@@ -40,9 +41,11 @@ class ConfigParserUtils:
                 ca_cert_path = os.path.join("/usr/src/app", ca_cert_path)
             if "insecure" in value[Constants.mqtt].keys():
                 insecure = value[Constants.mqtt]["insecure"]
+            if "detachable" in value[Constants.mqtt].keys():
+                detachable = value[Constants.mqtt]["detachable"]
             if host is not None and topic is not None:
                 return {"host": host, "topic": topic, "qos": qos, "mqtt.port": port, "username":username,
-                        "password":password, "ca_cert_path":ca_cert_path, "insecure":insecure}
+                        "password":password, "ca_cert_path":ca_cert_path, "insecure":insecure, "detachable":detachable}
             else:
                 return None
         else:
