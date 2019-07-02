@@ -73,6 +73,11 @@ class EVPark:
 
         return connections
 
+    def get_hosted_ev(self, charger_id):
+        if charger_id and charger_id in self.chargers.keys():
+            return self.chargers[charger_id].hosted_ev
+
+    # TODO: include all evs for calculation
     def calculate_vac_soc_value(self):
         vac_soc_value = 0
         vac = 0

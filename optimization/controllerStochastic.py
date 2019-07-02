@@ -301,7 +301,7 @@ class OptControllerStochastic(ControllerBase):
             ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
             ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
 
-            connections = self.input.inputPreprocess.ev_park.max_charge_power_calculator(dT)
+            connections = ev_park.max_charge_power_calculator(dT)
 
             # Calculation of the feasible charging power at the commercial station
             max_power_for_cars = sum(connections.values())
@@ -381,7 +381,9 @@ class OptControllerStochastic(ControllerBase):
             }
 
             for key, value in p_ev.items():
-                results_publish[key+"~p_ev"] = [value]
+                ev_id = ev_park.get_hosted_ev(key)
+                if ev_id:
+                    results_publish[key+"/p_ev"] = {"bn":"chargers/"+key, "n":ev_id+"/p_ev", "v":[value]}
 
             self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 

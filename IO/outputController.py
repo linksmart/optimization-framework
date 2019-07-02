@@ -82,23 +82,19 @@ class OutputController:
         self.logger.debug("output data : "+ json.dumps(data, indent=4))
         current_time = int(time.time())
         try:
-            senml_data = self.senml_message_format(data, current_time, self.mqtt_params, dT)
-            for base_name, value_dict in senml_data.items():
-                for name, value in value_dict.items():
-                    v = json.dumps(value)
-                    # self.logger.debug("key: "+str(key))
-                    # self.logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
-                    mqtt_key = name
-                    if base_name is not "none":
-                        mqtt_key = base_name + "/" + mqtt_key
-                    if mqtt_key in self.mqtt_params.keys():
-                        value2 = self.mqtt_params[mqtt_key]
-                        topic = value2["topic"]
-                        host = value2["host"]
-                        port = value2["mqtt.port"]
-                        qos = value2["qos"]
-                        client_key = host + ":" + str(port)
-                        self.mqtt[client_key].sendResults(topic, v, qos)
+            senml_data = self.senml_message_format(data, current_time, dT)
+            for mqtt_key, value in senml_data.items():
+                v = json.dumps(value)
+                # self.logger.debug("key: "+str(key))
+                # self.logger.debug("mqtt params: " + str(self.mqtt_params.keys()))
+                if mqtt_key in self.mqtt_params.keys():
+                    value2 = self.mqtt_params[mqtt_key]
+                    topic = value2["topic"]
+                    host = value2["host"]
+                    port = value2["mqtt.port"]
+                    qos = value2["qos"]
+                    client_key = host + ":" + str(port)
+                    self.mqtt[client_key].sendResults(topic, v, qos)
         except Exception as e:
             self.logger.error("error in publish data ", e)
         self.save_to_redis(id, data, current_time)
@@ -114,51 +110,44 @@ class OutputController:
         except Exception as e:
             self.logger.error(e)
 
-    def senml_message_format(self, data, current_time, params, dT):
+    def senml_message_format(self, data, current_time, dT):
         new_data = {}
         # self.logger.debug("data for senml "+str(data))
-        u = None
         for key, value in data.items():
             flag = False
             time = current_time
-            bn = None
+            u = None
             base = None
-            if "~" in key:
-                ks = key.split("~")
-                name = ks[1]
-                bn = ks[0]
-                base = senml.SenMLMeasurement()
-                base.name = ks[0]
+            if isinstance(value, dict):
+                bn, n, val = self.get_names(value)
             else:
-                name = key
-            if name in params.keys():
-                if params[name]["unit"] is not None:
-                    u = params[name]["unit"]
+                bn, n, val = None, None, value
+            if bn:
+                base = senml.SenMLMeasurement()
+                base.name = bn
+            if key in self.mqtt_params.keys():
+                if self.mqtt_params[key]["unit"] is not None:
+                    u = self.mqtt_params[key]["unit"]
+                """
                 else:
                     u = "W"
-                flag = params[name]["horizon_values"]
+                """
+                flag = self.mqtt_params[key]["horizon_values"]
             meas_list = []
-            for v in value:
+            for v in val:
                 meas = senml.SenMLMeasurement()
-                meas.name = name
+                meas.name = n
                 meas.time = time
                 meas.value = v
-                meas.unit = u
+                if u:
+                    meas.unit = u
                 meas_list.append(meas)
                 time += dT
                 if not flag:
                     break  # only want the first value
             if len(meas_list) > 0:
-                if bn is not None:
-                    doc = senml.SenMLDocument(meas_list, base=base)
-                    if bn not in new_data.keys():
-                        new_data[bn] = {}
-                    new_data[bn][name] = doc.to_json()
-                else:
-                    doc = senml.SenMLDocument(meas_list)
-                    if "none" not in new_data.keys():
-                        new_data["none"] = {}
-                    new_data["none"][name] = doc.to_json()
+                doc = senml.SenMLDocument(meas_list, base=base)
+                new_data[key] = doc.to_json()
         # self.logger.debug("Topic MQTT Senml message: "+str(new_data))
         return new_data
 
@@ -171,10 +160,28 @@ class OutputController:
                     self.redisDB.remove(key)
             for key, value in data.items():
                 key = key.replace("~","/")
+                if isinstance(value, dict):
+                    bn, n, val = self.get_names(value)
+                else:
+                    bn, n, val = None, key, value
+                if bn:
+                    n = bn + "/" + n
                 index = 0
-                for v in value:
-                    k = part_key + key + ":" + str(index)
+                for v in val:
+                    k = part_key + n + ":" + str(index)
                     self.redisDB.set(k, json.dumps({str(time): v}))
                     index += 1
         except Exception as e:
             self.logger.error("error adding to redis " + str(e))
+
+    def get_names(self, dict):
+        bn = None
+        n = None
+        v = None
+        if "bn" in dict.keys():
+            bn = dict["bn"]
+        if "n" in dict.keys():
+            n = dict["n"]
+        if "v" in dict.keys():
+            v = dict["v"]
+        return bn,n,v
