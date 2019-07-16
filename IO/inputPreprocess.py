@@ -25,6 +25,36 @@ class InputPreprocess:
         self.logger = self.logger = MessageLogger.get_logger(__file__, id)
         self.ev_park = EVPark()
         self.mqtt_time_threshold = mqtt_time_threshold
+        self.event_data = {}
+
+    def event_received(self, data):
+        self.event_data.update(data)
+        self.logger.info("events received = "+str(self.event_data))
+        events_completed = []
+        for key, value in data.items():
+            if isinstance(value, list):
+                for v in value:
+                    if isinstance(v, list):
+                        timestamp = v[0]
+                        event = v[1]
+                        if isinstance(event, dict):
+                            for charger_name, charger_value in event.items():
+                                if "recharge" in key:
+                                    if isinstance(charger_value, dict):
+                                        if "recharge" in charger_value.keys():
+                                            recharge_state = charger_value["recharge"]
+                                            hosted_ev = None
+                                            if "Hosted_EV" in charger_value.keys():
+                                                hosted_ev = charger_value["Hosted_EV"]
+                                            if charger_name in self.ev_park.chargers.keys():
+                                                self.ev_park.chargers[charger_name].recharge_event(recharge_state,
+                                                                                                   timestamp, hosted_ev)
+                                                events_completed.append(key)
+                                                self.logger.info("recharge event "+str(charger_value))
+
+        for event in events_completed:
+            self.event_data.pop(event)
+        self.logger.info("events to be considered later = "+str(self.event_data))
 
     def preprocess(self, data_dict, mqtt_timer):
         self.logger.info("data_dict = "+str(data_dict))
@@ -40,7 +70,11 @@ class InputPreprocess:
         self.data_dict["VAC_Capacity"] = {None: vac_capacity}
 
         self.process_uncertainty_data()
+        self.event_received(self.event_data)
 
+        for charger_id, charger in self.ev_park.chargers.items():
+            self.logger.info(charger.__str__())
+        #time.sleep(60)
         return self.data_dict
 
     def get_last_timestamp(self, partial_key):

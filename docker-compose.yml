@@ -11,11 +11,16 @@ services:
     command: redis-server
     ports:
       - "6379:6379"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
   ofw:
     build:
       context: ""
       dockerfile: Dockerfile
-    image: ofw-solvers
+    image: garagon/optimization:amd
     ports:
       - "8080:8080"
     depends_on:

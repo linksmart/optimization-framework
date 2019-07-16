@@ -1181,6 +1181,8 @@ definitions:
         type: "boolean"
       preprocess:
         type: "boolean"
+      event:
+        type: "boolean"
     description: "Selection between MQTT or file mode inputs or outputs"
     example:
       mqtt:
@@ -1456,6 +1458,12 @@ definitions:
               topic: "topic_name"
               detachable: "true"
             preprocess: true
+          recharge:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            event: true
         charger2:
           Max_Charging_Power_kW: 7
           SoC:
@@ -1465,6 +1473,12 @@ definitions:
               topic: "topic_name"
               detachable: "true"
             preprocess: true
+          recharge:
+            mqtt:
+              qos: 1
+              host: "hostname"
+              topic: "topic_name"
+            event: true
       uncertainity:
         meta:
           monte_carlo_repetition: 10000
@@ -2463,6 +2477,12 @@ definitions:
             topic: "topic_name"
             detachable: "true"
           preprocess: true
+        recharge:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          event: true
       charger2:
         Max_Charging_Power_kW: 7
         SoC:
@@ -2472,6 +2492,12 @@ definitions:
             topic: "topic_name"
             detachable: "true"
           preprocess: true
+        recharge:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          event: true
     additionalProperties:
       $ref: "#/definitions/charger_mqtt"
   charger_mqtt:
@@ -2482,6 +2508,8 @@ definitions:
         format: "float"
       SoC:
         $ref: "#/definitions/Source"
+      recharge:
+        $ref: "#/definitions/Source"
     example:
       Max_Charging_Power_kW: 7
       SoC:
@@ -2491,6 +2519,12 @@ definitions:
           topic: "topic_name"
           detachable: "true"
         preprocess: true
+      recharge:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        event: true
   uncertainity_File_Plugged_Time:
     properties:
       mean:

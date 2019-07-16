@@ -16,7 +16,7 @@ class Source(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None, predict: bool=None, preprocess: bool=None):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None, predict: bool=None, preprocess: bool=None, event: bool=None):  # noqa: E501
         """Source - a model defined in Swagger
 
         :param mqtt: The mqtt of this Source.  # noqa: E501
@@ -25,22 +25,27 @@ class Source(Model):
         :type predict: bool
         :param preprocess: The preprocess of this Source.  # noqa: E501
         :type preprocess: bool
+        :param event: The event of this Source.  # noqa: E501
+        :type event: bool
         """
         self.swagger_types = {
             'mqtt': MQTT,
             'predict': bool,
-            'preprocess': bool
+            'preprocess': bool,
+            'event': bool
         }
 
         self.attribute_map = {
             'mqtt': 'mqtt',
             'predict': 'predict',
-            'preprocess': 'preprocess'
+            'preprocess': 'preprocess',
+            'event': 'event'
         }
 
         self._mqtt = mqtt
         self._predict = predict
         self._preprocess = preprocess
+        self._event = event
 
     @classmethod
     def from_dict(cls, dikt) -> 'Source':
@@ -115,3 +120,24 @@ class Source(Model):
         """
 
         self._preprocess = preprocess
+
+    @property
+    def event(self) -> bool:
+        """Gets the event of this Source.
+
+
+        :return: The event of this Source.
+        :rtype: bool
+        """
+        return self._event
+
+    @event.setter
+    def event(self, event: bool):
+        """Sets the event of this Source.
+
+
+        :param event: The event of this Source.
+        :type event: bool
+        """
+
+        self._event = event

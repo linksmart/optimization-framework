@@ -96,7 +96,7 @@ class Model:
                 final_vac_soc = vacSoC - d * model.Unit_Consumption_Assumption
                 fin_vac_soc = final_vac_soc if final_vac_soc > 0 else 0
 
-                penalty_for_negative_soc = -final_vac_soc / 100 * model.Unit_Drop_Penalty * (model.VAC_Capacity * 3600) if final_vac_soc < 0 else 0
+                penalty_for_negative_soc = -final_vac_soc / 100 * model.Unit_Drop_Penalty * (model.VAC_Capacity * 3600 / model.dT) if final_vac_soc < 0 else 0
                 # Value of having fin_ess_soc,fin_ev_soc and home position in next time interval
                 future_value_of_p_cars_at_Park = model.Value[(essSoC, fin_vac_soc)] + penalty_for_negative_soc
                 # Probablity of p cars at home==Probability of d cars driving

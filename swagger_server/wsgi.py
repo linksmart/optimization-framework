@@ -39,6 +39,8 @@ def main():
     options = {
         'bind': '%s:%s' % ('0.0.0.0', '8080'),
         'workers': 8,
+        'timeout': 300,
+        'loglevel': 'debug',
     }
     StandaloneApplication(web(), options).run()
     logger.debug("Number of cores: " + str(number_of_workers()))

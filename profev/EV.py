@@ -1,11 +1,24 @@
 class EV:
 
-    def __init__(self, ev_name, battery_capacity):
+    def __init__(self, ev_name, battery_capacity, consumption_pro_100_km = (11.7 / 100)):
         self.ev_name = ev_name
         self.battery_capacity = battery_capacity
+        self.calculated_soc = 0
+        self.consumption = consumption_pro_100_km
 
-    def charge(self, soc, charge_period, charge_power):
-        return soc + charge_power * charge_period / self.battery_capacity
+    def charge(self, soc, charge_period, charge_power, n_eff=1):
+        if soc:
+            self.calculated_soc = soc + n_eff * charge_power * charge_period / self.battery_capacity
+        return self.calculated_soc
+
+    def discharge(self, soc, number_km_driven = 10):
+        if soc:
+            self.calculated_soc = soc - (self.consumption * number_km_driven / self.battery_capacity)
+        return self.calculated_soc
+
+    def update(self, battery_capacity, consumption_pro_100_km = (11.7 / 100)):
+        self.battery_capacity = battery_capacity
+        self.consumption = consumption_pro_100_km
 
     def __repr__(self):
         return self.ev_name

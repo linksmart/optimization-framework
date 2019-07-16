@@ -10,6 +10,7 @@ from optimization.ModelException import MissingKeysException
 from optimization.controllerDiscrete import OptControllerDiscrete
 from optimization.controllerMpc import OptControllerMPC
 from optimization.controllerStochastic import OptControllerStochastic
+from optimization.controllerStochasticSerial import OptControllerStochasticSerial
 from optimization.controllerStochasticSingleEV import OptControllerStochasticSingleEV
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction

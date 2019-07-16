@@ -84,10 +84,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                         n = self.generic_name
                     try:
                         processed_value = self.preprocess_data(bn, n, v, u)
-                        if self.base_value_flag:
-                            raw_data.append([t, processed_value])
-                        else:
-                            raw_data.append([t, processed_value])
+                        raw_data.append([t, processed_value])
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))
@@ -170,7 +167,7 @@ class BaseDataReceiver(DataReceiver, ABC):
             if new_bucket > bucket_requested:
                 self.logger.debug("bucket changed from " + str(bucket_requested) +
                                   " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
-                final_data, bucket_available = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
+                final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
         return final_data, bucket_available, self.last_time
 
     def time_to_bucket(self, time):

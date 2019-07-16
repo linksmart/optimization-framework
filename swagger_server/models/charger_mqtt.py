@@ -16,26 +16,31 @@ class ChargerMqtt(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, max_charging_power_k_w: float=None, so_c: Source=None):  # noqa: E501
+    def __init__(self, max_charging_power_k_w: float=None, so_c: Source=None, recharge: Source=None):  # noqa: E501
         """ChargerMqtt - a model defined in Swagger
 
         :param max_charging_power_k_w: The max_charging_power_k_w of this ChargerMqtt.  # noqa: E501
         :type max_charging_power_k_w: float
         :param so_c: The so_c of this ChargerMqtt.  # noqa: E501
         :type so_c: Source
+        :param recharge: The recharge of this ChargerMqtt.  # noqa: E501
+        :type recharge: Source
         """
         self.swagger_types = {
             'max_charging_power_k_w': float,
-            'so_c': Source
+            'so_c': Source,
+            'recharge': Source
         }
 
         self.attribute_map = {
             'max_charging_power_k_w': 'Max_Charging_Power_kW',
-            'so_c': 'SoC'
+            'so_c': 'SoC',
+            'recharge': 'recharge'
         }
 
         self._max_charging_power_k_w = max_charging_power_k_w
         self._so_c = so_c
+        self._recharge = recharge
 
     @classmethod
     def from_dict(cls, dikt) -> 'ChargerMqtt':
@@ -89,3 +94,24 @@ class ChargerMqtt(Model):
         """
 
         self._so_c = so_c
+
+    @property
+    def recharge(self) -> Source:
+        """Gets the recharge of this ChargerMqtt.
+
+
+        :return: The recharge of this ChargerMqtt.
+        :rtype: Source
+        """
+        return self._recharge
+
+    @recharge.setter
+    def recharge(self, recharge: Source):
+        """Sets the recharge of this ChargerMqtt.
+
+
+        :param recharge: The recharge of this ChargerMqtt.
+        :type recharge: Source
+        """
+
+        self._recharge = recharge

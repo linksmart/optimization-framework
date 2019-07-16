@@ -33,10 +33,12 @@ class InputConfigParser:
         self.defined_non_prediction_names = ["P_PV"]
         self.defined_external_names = ["SoC_Value"]
         self.defined_preprocess_names = []
+        self.defined_event_names = []
         self.prediction_names = []
         self.non_prediction_names = []
         self.external_names = []
         self.preprocess_names = []
+        self.event_names = []
         self.set_params = {}
         self.config_parser_utils = ConfigParserUtils()
         self.extract_mqtt_params()
@@ -56,6 +58,10 @@ class InputConfigParser:
                 preprocess = bool(value2["preprocess"])
                 if preprocess:
                     self.defined_preprocess_names.append(name)
+            if "event" in value2.keys():
+                event = bool(value2["event"])
+                if event:
+                    self.defined_event_names.append(name)
 
     def extract_mqtt_params(self):
         for key, value in self.input_config_mqtt.items():
@@ -81,6 +87,8 @@ class InputConfigParser:
             self.external_names.append(key)
         elif key in self.defined_preprocess_names:
             self.preprocess_names.append(key)
+        elif key in self.defined_event_names:
+            self.event_names.append(key)
         else:
             self.generic_names.append(key)
 
@@ -159,6 +167,9 @@ class InputConfigParser:
 
     def get_preprocess_names(self):
         return self.preprocess_names
+
+    def get_event_names(self):
+        return self.event_names
 
     def get_variable_index(self, name):
         if name in self.model_variables:

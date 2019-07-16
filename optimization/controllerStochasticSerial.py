@@ -26,7 +26,7 @@ from optimization.instance import Instance
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 
-class OptControllerStochastic(ControllerBase):
+class OptControllerStochasticSerial(ControllerBase):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
@@ -206,7 +206,7 @@ class OptControllerStochastic(ControllerBase):
                         # self.logger.debug("Optimization starting time: " + str(start_time))
                         inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc)
 
-                        instance_info.append(inst)
+                        #instance_info.append(inst)
 
                         instance_id += 1
                     except Exception as e:
@@ -214,20 +214,21 @@ class OptControllerStochastic(ControllerBase):
 
                     # * Run the solver
 
-                # retrieve the solutions
-                for i in range(instance_id):
-                    this_action_handle = solver_manager.wait_any()
-                    result = solver_manager.get_results(this_action_handle)
-                    self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                    solved_name = None
-                    if this_action_handle in action_handle_map.keys():
-                        solved_name = action_handle_map.pop(this_action_handle)
-                    if solved_name:
-                        #inst = instance_info[int(solved_name)]
-                        instance_info[int(solved_name)].addResult(result)
-                # * Check whether it is solved
+                    # retrieve the solutions
+                    for i in range(1):
+                        this_action_handle = solver_manager.wait_any()
+                        result = solver_manager.get_results(this_action_handle)
+                        self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                        solved_name = None
+                        if this_action_handle in action_handle_map.keys():
+                            solved_name = action_handle_map.pop(this_action_handle)
+                        if solved_name:
+                            #inst = instance_info[int(solved_name)]
+                            #instance_info[int(solved_name)].addResult(result)
+                            inst.addResult(result)
+                    # * Check whether it is solved
 
-                for inst in instance_info:
+
                     result = inst.result
                     ini_ess_soc = inst.ini_ess_soc
                     ini_vac_soc = inst.ini_vac_soc
