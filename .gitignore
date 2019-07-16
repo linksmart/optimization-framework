@@ -112,5 +112,7 @@ profess/executables/windows/**/*
 **/*/*.xlsx*
 !/jupyter_notebooks/*.ipynb
 **/*/*.csv*
-/logs
-/stochastic_programming/
+logs/*
+stochastic_programming/*
+!logs/__init__.py
+!stochastic_programming/__init__.py

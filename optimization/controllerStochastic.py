@@ -46,6 +46,7 @@ class OptControllerStochastic(ControllerBase):
             # STOCHASTIC OPTIMIZATION
 
             forecast_pv = data_dict[None]["P_PV"]
+            forecast_pload = data_dict[None]["P_Load"]
             ev_park = self.input.inputPreprocess.ev_park
             max_number_of_cars = ev_park.get_num_of_cars()
 
@@ -150,6 +151,10 @@ class OptControllerStochastic(ControllerBase):
 
                 pv_forecast_for_current_timestep = forecast_pv[timestep]
                 data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
+
+                pload_forecast_for_current_timestep = forecast_pload[timestep]
+                data_dict[None]["P_Load"] = {None: pload_forecast_for_current_timestep}
+
                 ess_vac_product = product(ess_soc_states, vac_soc_states)
                 for ini_ess_soc, ini_vac_soc in ess_vac_product:
                     self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")

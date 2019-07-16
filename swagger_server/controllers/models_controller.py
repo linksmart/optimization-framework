@@ -111,11 +111,12 @@ def optimization_model(name, upModel):  # noqa: E501
         logger.debug("This is the file name: " + name)
         data_file = os.path.join("/usr/src/app/optimization/models", name)+".py"
         string1 = "from pyomo.core import *\n"
-        string2 = "class Model:\n"
+        string2 = "from itertools import product\n"
+        string3 = "class Model:\n"
         upModel = connexion.request.get_data(as_text=True)
         upModel = upModel.splitlines()
 
-        classText = string1 + string2
+        classText = string1 + string2 + string3
 
         #Adds an indent at the beginning of each line
         for lines in upModel:

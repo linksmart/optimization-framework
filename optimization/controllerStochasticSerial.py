@@ -62,8 +62,7 @@ class OptControllerStochasticSerial(ControllerBase):
             ess_max_power = data_dict[None]["ESS_Max_Charge_Power"][None]
             ess_min_power = data_dict[None]["ESS_Max_Discharge_Power"][None]
             ess_capacity = data_dict[None]["ESS_Capacity"][None]
-            self.logger.debug("ess_capacity: "+str(ess_capacity)+" ess_min_power: "+str(ess_min_power)+
-                              " ess_max_power: "+str(ess_max_power))
+            #self.logger.debug("ess_capacity: "+str(ess_capacity)+" ess_min_power: "+str(ess_min_power)+ " ess_max_power: "+str(ess_max_power))
             ess_domain_range_max = math.floor((ess_max_power / ess_capacity) * 100)
             ess_domain_range_min = math.floor((ess_min_power / ess_capacity) * 100)
 
@@ -105,10 +104,10 @@ class OptControllerStochasticSerial(ControllerBase):
                 Value[T, s_ess, s_vac] = 1.0
 
             # self.logger.debug("Value "+str(Value))
-            self.logger.debug("ess_decision_domain " + str(ess_decision_domain))
-            self.logger.debug("vac_decision_domain " + str(vac_decision_domain))
-            self.logger.debug("ess_soc_states " + str(ess_soc_states))
-            self.logger.debug("vac_soc_states " + str(vac_soc_states))
+            #self.logger.debug("ess_decision_domain " + str(ess_decision_domain))
+            #self.logger.debug("vac_decision_domain " + str(vac_decision_domain))
+            #self.logger.debug("ess_soc_states " + str(ess_soc_states))
+            #self.logger.debug("vac_soc_states " + str(vac_soc_states))
 
             time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
             filename = f"log-{uuid.uuid1()}-{time_info}.json"
@@ -152,7 +151,7 @@ class OptControllerStochasticSerial(ControllerBase):
                 data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
                 ess_vac_product = product(ess_soc_states, vac_soc_states)
                 for ini_ess_soc, ini_vac_soc in ess_vac_product:
-                    self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
+                    #self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
                     feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                     for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                         compare_value = ini_ess_soc - p_ESS
@@ -160,7 +159,7 @@ class OptControllerStochasticSerial(ControllerBase):
                         # self.logger.debug("max_value " + str(max_value))
                         if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                             feasible_Pess.append(p_ESS)
-                    self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+                    #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
 
                     feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                     # When decided charging with p_VAC
@@ -168,7 +167,7 @@ class OptControllerStochasticSerial(ControllerBase):
                         # if the final vac_SoC is within the specified domain
                         index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
                         feasible_Pvac = vac_decision_domain[0:index + 1]
-                    self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+                    #self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
 
                     data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
                     data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
@@ -178,27 +177,27 @@ class OptControllerStochasticSerial(ControllerBase):
 
                     data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
                     # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
-                    self.logger.debug("ess_capacity: "+str(data_dict[None]["ESS_Capacity"][None]))
-                    self.logger.debug("vac_capacity: "+str(data_dict[None]["VAC_Capacity"][None]))
+                    #self.logger.debug("ess_capacity: "+str(data_dict[None]["ESS_Capacity"][None]))
+                    #self.logger.debug("vac_capacity: "+str(data_dict[None]["VAC_Capacity"][None]))
 
                     # Creating an optimization instance with the referenced model
                     try:
-                        self.logger.debug("Creating an optimization instance")
+                        #self.logger.debug("Creating an optimization instance")
                         instance = self.my_class.model.create_instance(data_dict)
-                        self.logger.debug("input data: " + str(data_dict))
+                        #self.logger.debug("input data: " + str(data_dict))
                     except Exception as e:
                         self.logger.error("Error creating instance")
                         self.logger.error(e)
                     # instance = self.my_class.model.create_instance(self.data_path)
-                    self.logger.info("Instance created with pyomo")
+                    #self.logger.info("Instance created with pyomo")
 
                     # * Queue the optimization instance
 
                     try:
                         # self.logger.info(instance.pprint())
                         action_handle = solver_manager.queue(instance, opt=optsolver)
-                        self.logger.debug("Solver queue created " + str(action_handle))
-                        self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                        #self.logger.debug("Solver queue created " + str(action_handle))
+                        #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         #action_handle_map[action_handle] = str(self.id)
                         action_handle_map[action_handle] = str(instance_id)
                         #self.logger.debug("Action handle map: " + str(action_handle_map))
@@ -218,7 +217,7 @@ class OptControllerStochasticSerial(ControllerBase):
                     for i in range(1):
                         this_action_handle = solver_manager.wait_any()
                         result = solver_manager.get_results(this_action_handle)
-                        self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                        #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         solved_name = None
                         if this_action_handle in action_handle_map.keys():
                             solved_name = action_handle_map.pop(this_action_handle)
@@ -236,9 +235,9 @@ class OptControllerStochasticSerial(ControllerBase):
                     if (result.solver.status == SolverStatus.ok) and (
                             result.solver.termination_condition == TerminationCondition.optimal):
                         # this is feasible and optimal
-                        self.logger.info("Solver status and termination condition ok")
-                        self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
-                        self.logger.debug(result)
+                        #self.logger.info("Solver status and termination condition ok")
+                        #self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
+                        #self.logger.debug(result)
                         instance.solutions.load_from(result)
 
                         # * if solved get the values in dict
@@ -246,14 +245,14 @@ class OptControllerStochasticSerial(ControllerBase):
                         try:
                             my_dict = {}
                             for v in instance.component_objects(Var, active=True):
-                                self.logger.debug("Variable in the optimization: " + str(v))
+                                #self.logger.debug("Variable in the optimization: " + str(v))
                                 varobject = getattr(instance, str(v))
                                 var_list = []
                                 try:
                                     # Try and add to the dictionary by key ref
                                     for index in varobject:
                                         var_list.append(varobject[index].value)
-                                    self.logger.debug("Identified variables " + str(var_list))
+                                    #self.logger.debug("Identified variables " + str(var_list))
                                     my_dict[str(v)] = var_list
                                 except Exception as e:
                                     self.logger.error(e)
@@ -271,7 +270,7 @@ class OptControllerStochasticSerial(ControllerBase):
                                 my_dict["P_PV_OUTPUT"][0]
 
                             #self.logger.info("Done".center(80, "#"))
-                            self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
+                            #self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
                             #self.logger.info("#" * 80)
 
                             # self.output.publish_data(self.id, my_dict)
