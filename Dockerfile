@@ -1,6 +1,6 @@
 
 # Use an official Python runtime as a parent image
-FROM garagon/ipopt:V0.2
+FROM garagon/solvers:amd_v3
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app

@@ -295,44 +295,40 @@ class MaximizePV():
 
 if __name__ == "__main__":
 
-    # 5678 is the default attach port in the VS Code debug configurations
-    print("Waiting for debugger attach")
-    ptvsd.enable_attach(address=('0.0.0.0', 5050), redirect_output=True)
-    ptvsd.wait_for_attach()
-    breakpoint()
-
-    charger1=Charger(6)
-    charger2=Charger(6)
-    charger3=Charger(6)
-    charger4=Charger(6)
-    charger5=Charger(6)
-    charger6=Charger(6)
-    charger7=Charger(6)
-    chargers=[charger1,charger2,charger3,charger4,charger5,charger6,charger7]
-    car1=Car(30)
-    car2=Car(30)
-    car3=Car(30)
-    car4=Car(30)
-    car5=Car(30)
-    car6=Car(30)
-    car7=Car(30)
-    car1.setSoC(0.5)
-    car2.setSoC(0.5)
-    car3.setSoC(0.5)
-    car4.setSoC(0.5)
-    car5.setSoC(0.5)
-    car6.setSoC(0.5)
-    car7.setSoC(0.5)
+    charger1=Charger(7)
+    charger2=Charger(7)
+    charger3=Charger(7)
+    charger4=Charger(22)
+    charger5=Charger(22)
+    #charger6=Charger(6)
+    #charger7=Charger(6)
+    chargers=[charger1,charger2,charger3,charger4,charger5]#,charger6,charger7]
+    car1=Car(18.7)
+    car2=Car(18.7)
+    car3=Car(18.7)
+    car4=Car(18.7)
+    car5=Car(18.7)
+    #car6=Car(30)
+    #car7=Car(30)
+    car1.setSoC(0.2)
+    car2.setSoC(0.2)
+    car3.setSoC(0.2)
+    car4.setSoC(0.2)
+    car5.setSoC(0.2)
+    #car6.setSoC(0.5)
+    #car7.setSoC(0.5)
     charger1.plug(car1)
     charger2.plug(car2)
     charger3.plug(car3)
-    cars=[car1,car2,car3,car4,car5,car6,car7]
+    charger4.plug(car4)
+    charger5.plug(car5)
+    cars=[car1,car2,car3,car4,car5]#,car6,car7]
     mycarpark=CarPark(chargers,cars)
 
 
     timeresolution=3600
     horizon=24
-    theSolver=SolverFactory("ipopt", executable="/usr/src/app/share/CoinIpopt/build/bin/ipopt")
+    theSolver=SolverFactory("cbc")
 
 
 
@@ -345,15 +341,15 @@ if __name__ == "__main__":
 
     forecast_pv=dict(enumerate(forecasts['PV'].values.tolist()))
     forecast_price=dict(enumerate(forecasts['Price'].values.tolist()))
-    ess_max_charge=0.62
-    ess_max_discharge=0.62
-    grid_max_export=10
-    pv_max_generation=1.5
-    ess_capacity=0.675
+    ess_max_charge=33#0.62
+    ess_max_discharge=33#0.62
+    grid_max_export=1000#10
+    pv_max_generation=50#1.5
+    ess_capacity=70#0.675
     ess_minSoC=0.2
     ess_maxSoC=1.0
     ess_soc_domain=range(0,110,10)
-    ess_decision_domain=range(-10,20,10)
+    ess_decision_domain=range(-40,50,10)#(-40,20,10)
     vac_soc_domain=[x * 0.1 for x in range(0, 1025,25)] #np.linspace(0,100.0,2.5,endpoint=True)
     vac_decision_domain=[x * 0.1 for x in range(0, 225,25)] #np.linspace(0.0,20.0,2.5,endpoint=True)
 
@@ -374,4 +370,4 @@ if __name__ == "__main__":
     optimizer.solve_dynamicprogram()
 
 
-    optimizer.control_action(50,50)
+    optimizer.control_action(40,20)
