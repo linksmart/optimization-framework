@@ -45,7 +45,6 @@ class OptControllerStochasticSerial(ControllerBase):
             ######################################
             # STOCHASTIC OPTIMIZATION
 
-            forecast_pv = data_dict[None]["P_PV"]
             ev_park = self.input.inputPreprocess.ev_park
             max_number_of_cars = ev_park.get_num_of_cars()
 
@@ -147,8 +146,8 @@ class OptControllerStochasticSerial(ControllerBase):
                 data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
                 data_dict[None]["Behavior_Model"] = bm
 
-                pv_forecast_for_current_timestep = forecast_pv[timestep]
-                data_dict[None]["P_PV"] = {None: pv_forecast_for_current_timestep}
+                data_dict[None]["Timestep"] = {None: timestep}
+
                 ess_vac_product = product(ess_soc_states, vac_soc_states)
                 for ini_ess_soc, ini_vac_soc in ess_vac_product:
                     #self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
@@ -237,7 +236,6 @@ class OptControllerStochasticSerial(ControllerBase):
                         # this is feasible and optimal
                         #self.logger.info("Solver status and termination condition ok")
                         #self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
-                        #self.logger.debug(result)
                         instance.solutions.load_from(result)
 
                         # * if solved get the values in dict
@@ -281,6 +279,13 @@ class OptControllerStochasticSerial(ControllerBase):
                         self.logger.info("Termination condition is infeasible")
                     else:
                         self.logger.info("Nothing fits")
+
+                #with open("/usr/src/app/optimization/resources/Decision_s.txt", "w") as f:
+                    #f.write(str(Decision))
+                #with open("/usr/src/app/optimization/resources/Value_s.txt", "w") as f:
+                    #f.write(str(Value))
+                #self.logger.info("written to file")
+                #break
 
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
@@ -380,7 +385,7 @@ class OptControllerStochasticSerial(ControllerBase):
 
             # update soc
             ev_park.charge_ev(p_ev, self.dT_in_seconds)
-            time.sleep(60)
+            #time.sleep(60)
 
             results_publish = {
                 "p_pv": [p_pv],
@@ -388,6 +393,7 @@ class OptControllerStochasticSerial(ControllerBase):
                 "p_ess": [p_ess],
                 "p_vac": [p_vac],
                 "feasible_ev_charging_power": [feasible_ev_charging_power],
+                "execution_time": [execution_time],
             }
 
             for key, value in p_ev.items():

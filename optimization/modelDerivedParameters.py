@@ -14,7 +14,7 @@ class ModelDerivedParameters:
     @staticmethod
     def get_derived_parameter_mapping(model_name):
         base, derived = [], []
-        if model_name == "CarParkModel":
+        if model_name == "CarParkModel" or model_name == "CarParkModel2":
             base, derived = ModelDerivedParameters.car_park_model()
         if model_name == "StochasticResidentialMaxPV":
             base, derived = ModelDerivedParameters.car_park_model()
@@ -25,5 +25,5 @@ class ModelDerivedParameters:
         base = []
         derived = ['Value', 'Initial_ESS_SoC', 'Initial_VAC_SoC', 'Number_of_Parked_Cars', 'VAC_Capacity',
                    'Behavior_Model', 'VAC_SoC_Value', 'Feasible_ESS_Decisions', 'Feasible_VAC_Decisions', 'Value_Index',
-                   'Behavior_Model_Index']
+                   'Behavior_Model_Index', 'Timestep']
         return base, derived

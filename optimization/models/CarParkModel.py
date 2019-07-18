@@ -5,18 +5,21 @@ from itertools import product
 class Model:
     model = AbstractModel()
 
+    model.T = Set()  # Index Set for time steps of optimization horizon
     # Feasible charge powers to ESS under the given conditions
     model.Feasible_ESS_Decisions = Set()
 
     # Feasible charge powers to VAC under the given conditions
     model.Feasible_VAC_Decisions = Set()
 
+
+
     model.Value_Index = Set(dimen=2)
 
     model.Value = Param(model.Value_Index, mutable=True)
 
+    model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
 
-    model.P_PV = Param(within=NonNegativeReals)
 
     model.Initial_ESS_SoC = Param(within=Reals, default=0)
     model.Initial_VAC_SoC = Param(within=Reals, default=0.0)
@@ -33,15 +36,17 @@ class Model:
 
 
     model.dT = Param(within=PositiveIntegers)
+    model.Timestep = Param(within=NonNegativeIntegers)
 
     #######################################      Outputs       #######################################################
 
     # Combined decision
     model.Decision = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
 
+    model.P_PV_single = Var(within=NonNegativeReals)
     model.P_ESS_OUTPUT = Var(within=Reals) #change bounds
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals) # change bounds
-    model.P_PV_OUTPUT = Var(bounds=(0, model.P_PV))
+    model.P_PV_OUTPUT = Var(within=NonNegativeReals)
     model.P_GRID_OUTPUT = Var(within=Reals, initialize=0)
 
     def __init__(model, value, behaviorModel):
@@ -54,6 +59,18 @@ class Model:
                         product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
 
     model.const_integer = Constraint(rule=combinatorics)
+
+    def rule_iniPV(model):
+        for j in model.P_PV:
+            if j == model.Timestep:
+                return model.P_PV_single == model.P_PV[j]
+
+    model.con_ess_IniPV = Constraint(rule=rule_iniPV)
+
+    def con_rule_pv_potential(model):
+        return model.P_PV_OUTPUT <= model.P_PV_single
+
+    model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
 
     def ess_chargepower(model):
         return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
@@ -107,6 +124,6 @@ class Model:
             # Adding the expected_future cost of taking 'ess and vac' decision when initial condition is combination of 'ini_ess_soc' and 'ini_vac_soc'
             future_cost += model.Decision[ess, vac] * expected_future_cost_of_this_decision
 
-        return model.P_PV - model.P_PV_OUTPUT + future_cost
+        return model.P_PV_single - model.P_PV_OUTPUT + future_cost
 
     model.obj = Objective(rule=objrule1, sense=minimize)
