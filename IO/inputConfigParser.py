@@ -4,7 +4,6 @@ Created on Aug 03 14:22 2018
 @author: nishit
 """
 from functools import partial
-import logging
 
 import os
 import numpy as np
@@ -19,7 +18,7 @@ from utils_intern.messageLogger import MessageLogger
 class InputConfigParser:
 
     def __init__(self, input_config_file, input_config_mqtt, model_name, id):
-        self.logger = self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
         self.input_config_file = input_config_file

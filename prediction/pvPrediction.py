@@ -12,7 +12,7 @@ from utils_intern.messageLogger import MessageLogger
 class PVPrediction:
 
     def __init__(self, config, input_config_parser, id, control_frequency, horizon_in_steps, dT_in_seconds, name):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.debug("PV prediction class")
         self.config = config
         self.input_config_parser = input_config_parser

@@ -18,7 +18,7 @@ Creates a thread for prediction and a thread for training
 class LoadPrediction:
 
     def __init__(self, config, control_frequency, horizon_in_steps, topic_name, topic_param, dT_in_seconds, id, predictionFlag):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         
         self.predictionFlag = predictionFlag
 

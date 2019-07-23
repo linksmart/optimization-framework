@@ -20,7 +20,7 @@ class BaseDataReceiver(DataReceiver, ABC):
 
     def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT, base_value_flag):
         redisDB = RedisDB()
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         try:
             super().__init__(internal, topic_params, config, id=id)
         except Exception as e:

@@ -6,8 +6,6 @@ Created on Aug 13 11:03 2018
 import json
 from abc import ABC, abstractmethod
 
-import time
-
 from senml import senml
 
 from IO.dataReceiver import DataReceiver
@@ -19,7 +17,7 @@ class BaseEventDataReceiver(DataReceiver, ABC):
 
     def __init__(self, internal, topic_params, config, generic_name, id, event_callback):
         redisDB = RedisDB()
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.generic_name = generic_name
         self.event_callback = event_callback
         try:

@@ -10,8 +10,7 @@ from gunicorn.six import iteritems
 from swagger_server.__main__ import create_app as web
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
-
+logger = logging.getLogger(__name__)
 
 def number_of_workers():
     return (psutil.cpu_count(logical=False) * 2) + 1

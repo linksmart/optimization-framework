@@ -3,15 +3,13 @@ Created on Jan 21 13:05 2019
 
 @author: nishit
 """
-import logging
-
 import time
 
 from prediction.offlineProcessingData import OfflineProcessingData
 from prediction.rawDataReader import RawDataReader
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 
 class OfflinePrediction:

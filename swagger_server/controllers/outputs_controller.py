@@ -1,5 +1,4 @@
 import json
-import logging
 
 import connexion
 import os
@@ -12,8 +11,8 @@ from swagger_server import util
 
 from optimization.utils import Utils
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 utils = Utils()
 
 def delete_data(id, registry_file):

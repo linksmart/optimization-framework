@@ -4,15 +4,14 @@ Created on Okt 19 11:54 2018
 @author: nishit
 """
 import json
-import logging
 
 import time
 from senml import senml
 
 from IO.RecPub import RecPub
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 
 class Connector(RecPub):

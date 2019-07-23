@@ -35,7 +35,7 @@ class ControllerBase(ABC, threading.Thread):
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
         super().__init__()
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.info("Initializing optimization controller " + id)
         # Loading variables
         self.id = id
@@ -108,6 +108,7 @@ class ControllerBase(ABC, threading.Thread):
         self.logger.info("Starting optimization controller")
         solver_manager = None
         return_msg = "success"
+        execution_error = False
         try:
             ###maps action handles to instances
             action_handle_map = {}
@@ -130,6 +131,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.info("This is the id: " + self.id)
             self.optimize(action_handle_map, count, optsolver, solver_manager)
         except Exception as e:
+            execution_error = True
             self.logger.error("error overall "+ str(e))
             e = str(e)
             solver_error = "The SolverFactory was unable to create the solver"
@@ -146,7 +148,8 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
-            if not self.redisDB.get_bool(self.stop_signal_key) and not self.repetition_completed:
+            self.logger.info("execution error "+str(execution_error))
+            if not self.redisDB.get_bool(self.stop_signal_key) and not self.repetition_completed and not execution_error:
                 self.logger.error("Process interrupted")
                 self.redisDB.set("kill_signal", True)
             self.logger.debug("Deactivating pyro servers")

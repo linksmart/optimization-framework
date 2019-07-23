@@ -3,12 +3,10 @@ Created on Aug 03 16:44 2018
 
 @author: nishit
 """
-import logging
-
 from optimization.baseDataReceiver import BaseDataReceiver
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 
 class SoCValueDataReceiver(BaseDataReceiver):

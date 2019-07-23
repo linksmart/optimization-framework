@@ -3,11 +3,10 @@ Created on Aug 31 12:02 2018
 
 @author: nishit
 """
-import logging
 import os
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 class ModelParamsInfo:
 

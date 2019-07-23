@@ -5,23 +5,20 @@ Created on Aug 17 13:36 2018
 """
 import configparser
 import json
-import logging
 
 import os
 
 from config.configUpdater import ConfigUpdater
 from mock_data.mockGenericDataPublisher import MockGenericDataPublisher
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
-
+from utils_intern.messageLogger import MessageLogger
 
 class MockData:
     def __init__(self, config):
         self.config = config
         self.publishers = {}
 
-    def startMockDataPublisherThreads(self):
+    def startMockDataPublisherThreads(self, logger):
         for section in config.sections():
             try:
                 if not (section.startswith('IO')):
@@ -83,18 +80,17 @@ class MockData:
 
 
 if __name__ == '__main__':
-    logger.info("Starting mock data generation")
 
     config = None
     config_path = "/usr/src/app/mock_data/resources/mockConfig.properties"
     config_path_default = "/usr/src/app/config/mockConfig.properties"
     ConfigUpdater.copy_config(config_path_default, config_path)
 
-    try:
-        config = configparser.RawConfigParser()
-        config.read(config_path)
-    except Exception as e:
-        logger.error(e)
+    config = configparser.RawConfigParser()
+    config.read(config_path)
+    log_level = config.get("IO", "log.level", fallback="DEBUG")
+    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
 
+    logger.info("Starting mock data generation")
     mockData = MockData(config)
-    mockData.startMockDataPublisherThreads()
+    mockData.startMockDataPublisherThreads(logger)

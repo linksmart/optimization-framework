@@ -5,13 +5,10 @@ Created on Okt 04 13:51 2018
 """
 import os
 
-import logging
-from datetime import datetime
-
 from senml import senml
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 
 class RawDataReader:

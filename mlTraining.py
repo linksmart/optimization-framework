@@ -5,7 +5,6 @@ Created on Okt 04 12:03 2018
 """
 import configparser
 import json
-import logging
 
 import time
 
@@ -13,15 +12,14 @@ from IO.redisDB import RedisDB
 from config.configUpdater import ConfigUpdater
 from prediction.loadPrediction import LoadPrediction
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
 
 redisDB = RedisDB()
 
 training_threads = {}
 
 
-def check_training(config):
+def check_training(config, logger):
     while True:
         keys = redisDB.get_keys_for_pattern("train:*")
         if keys is not None:
@@ -45,7 +43,7 @@ def check_training(config):
         time.sleep(1)
 
 
-def clear_redis():
+def clear_redis(logger):
     logger.info("reset redis training key locks")
     training_lock_key = "training_lock"
     from IO.redisDB import RedisDB
@@ -53,7 +51,7 @@ def clear_redis():
     try:
         redisDB.remove(training_lock_key)
     except Exception as e:
-        logger.debug("key does not exist")
+        logger.debug("training_lock key does not exist")
 
 
 if __name__ == '__main__':
@@ -61,10 +59,9 @@ if __name__ == '__main__':
     config_path_default = "/usr/src/app/config/trainingConfig.properties"
     ConfigUpdater.copy_config(config_path_default, config_path)
 
-    try:
-        clear_redis() #  need to relook
-        config = configparser.RawConfigParser()
-        config.read(config_path)
-        check_training(config)
-    except Exception as e:
-        logger.error(e)
+    config = configparser.RawConfigParser()
+    config.read(config_path)
+    log_level = config.get("IO", "log.level", fallback="DEBUG")
+    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
+    clear_redis(logger) #  need to relook
+    check_training(config, logger)

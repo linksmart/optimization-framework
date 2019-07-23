@@ -14,7 +14,7 @@ from utils_intern.messageLogger import MessageLogger
 class OutputController:
 
     def __init__(self, id=None, output_config=None):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.info("Output Class started")
         self.output_config = output_config
         self.mqtt = {}

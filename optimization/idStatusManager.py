@@ -4,13 +4,12 @@ Created on Mai 10 16:21 2019
 @author: nishit
 """
 import json
-import logging
 import os
 
 import time
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 lock_key = "id_lock"
 

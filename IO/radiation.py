@@ -1,15 +1,14 @@
 import configparser
 import datetime
 import json
-import logging
 from math import floor, ceil
 
 import requests
 
 from IO.locationData import LocationData
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 # Date  = Date & time (UTC)
 # EPV   = PV power output if requested (W)

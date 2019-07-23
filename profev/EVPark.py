@@ -1,11 +1,9 @@
-import logging
-
 from utils_intern.messageLogger import MessageLogger
 
 class EVPark:
 
-    def __init__(self):
-        self.logger = self.logger = MessageLogger.get_logger(__file__, id)
+    def __init__(self, id):
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.evs = {}
         self.chargers = {}
         self.total_charging_stations_power = 0

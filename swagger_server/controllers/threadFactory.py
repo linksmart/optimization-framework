@@ -21,7 +21,7 @@ class ThreadFactory:
 
     def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id,
                  optimization_type, single_ev):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps

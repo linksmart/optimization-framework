@@ -4,7 +4,6 @@ Created on Sep 19 16:19 2018
 @author: nishit
 """
 
-import logging
 import os
 
 import sys
@@ -18,8 +17,8 @@ rn.seed(12345)
 
 tf.set_random_seed(1234)
 """
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 
 class Models:

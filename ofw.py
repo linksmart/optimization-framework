@@ -1,12 +1,13 @@
 import subprocess
 
+from utils_intern.messageLogger import MessageLogger
+
 """
  Created by Gustavo Aragón on 14.03.2018
 
 """
 import configparser
 import os
-import logging
 import signal
 import sys
 import shutil
@@ -18,9 +19,6 @@ import swagger_server.wsgi as webserver
 
 from IO.ZMQClient import ForwarderDevice
 from config.configUpdater import ConfigUpdater
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
 
 """
 Get the address of the data.dat
@@ -39,11 +37,12 @@ def parseArgs():
 def main():
     global OPTIONS
 
+    logger = setup()
+
     logger.debug("###################################")
     logger.info("OFW started")
     logger.debug("###################################")
 
-    setup()
     logger.info("Starting webserver")
     webserver.main()
 
@@ -54,9 +53,9 @@ def main():
     # time.sleep(5)
 
 def signal_handler(sig, frame):
-    logger.info('You pressed Ctrl+C!')
+    print('You pressed Ctrl+C!')
     if zmqForwarder:
-        logger.info("stopping zmq forwarder")
+        print("stopping zmq forwarder")
         zmqForwarder.Stop()
     sys.exit(0)
 
@@ -67,25 +66,27 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 
 def setup():
+    signal.signal(signal.SIGINT, signal_handler)
+
     config_path = "/usr/src/app/optimization/resources/ConfigFile.properties"
     config_path_default = "/usr/src/app/config/ConfigFile.properties"
     ConfigUpdater.copy_config(config_path_default, config_path)
 
-    clear_redis()
-    copy_models()
-    signal.signal(signal.SIGINT, signal_handler)
     # Creating an object of the configuration file (standard values)
-    try:
-        config = configparser.RawConfigParser()
-        config.read(config_path)
-    except Exception as e:
-        logger.error(e)
+    config = configparser.RawConfigParser()
+    config.read(config_path)
+    log_level = config.get("IO", "log.level", fallback="DEBUG")
+    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
 
+    clear_redis(logger)
+    copy_models()
     zmqHost = config.get("IO", "zmq.host")
     pubPort = config.get("IO", "zmq.pub.port")
     subPort = config.get("IO", "zmq.sub.port")
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
+    return logger
+
 
 
 def copy_models():
@@ -97,7 +98,7 @@ def copy_models():
                 shutil.copyfile(file_path, os.path.join("/usr/src/app/optimization/models", file))
 
 
-def clear_redis():
+def clear_redis(logger):
     logger.info("reset redis")
     from IO.redisDB import RedisDB
     redisDB = RedisDB()

@@ -3,7 +3,6 @@ Created on Mai 21 14:08 2019
 
 @author: nishit
 """
-import logging
 from functools import partial
 
 import numpy as np
@@ -13,17 +12,15 @@ from profev.EV import EV
 from profev.EVPark import EVPark
 from profev.ChargingStation import ChargingStation
 from profev.MonteCarloSimulator import simulate
-from utils_intern.messageLogger import MessageLogger
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
 
 class InputPreprocess:
 
     def __init__(self, id, mqtt_time_threshold):
         self.data_dict = {}
-        self.logger = self.logger = MessageLogger.get_logger(__file__, id)
-        self.ev_park = EVPark()
+        self.logger = MessageLogger.get_logger(__name__, id)
+        self.ev_park = EVPark(id)
         self.mqtt_time_threshold = mqtt_time_threshold
         self.event_data = {}
 

@@ -1,5 +1,4 @@
 import json
-import logging
 
 import connexion
 import os
@@ -15,8 +14,8 @@ from swagger_server.models.mqtt_output_all import MQTTOutputAll  # noqa: E501
 from swagger_server.models.output_ids_list import OutputIdsList  # noqa: E501
 from swagger_server import util
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 utils = Utils()
 
 

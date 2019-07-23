@@ -4,20 +4,18 @@ Created on Aug 10 14:01 2018
 @author: nishit
 """
 import json
-import logging
 import random
 
 import time
 
 import math
 
-import datetime
 from senml import senml
 
 from IO.dataPublisher import DataPublisher
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 class MockGenericDataPublisher(DataPublisher):
 

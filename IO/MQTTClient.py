@@ -1,4 +1,3 @@
-import logging
 import paho.mqtt.client as mqtt
 import time
 
@@ -8,7 +7,7 @@ class MQTTClient:
 
     def __init__(self, host, mqttPort, client_id, keepalive=60, username=None, password=None, ca_cert_path=None,
                  set_insecure=False, id=None):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.host = host
         self.port = int(mqttPort)
         self.keepalive = keepalive

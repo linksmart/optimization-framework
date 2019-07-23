@@ -21,7 +21,7 @@ from utils_intern.messageLogger import MessageLogger
 class PVForecastPublisher(DataPublisher):
 
     def __init__(self, internal_topic_params, config, id, maxPV, control_frequency, horizon_in_steps, dT_in_seconds, location):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.pv_data = {}
         radiation = Radiation(config, maxPV, dT_in_seconds, location)
         self.q = Queue(maxsize=0)

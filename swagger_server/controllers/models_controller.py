@@ -1,5 +1,4 @@
 import configparser
-import logging
 
 import connexion
 import os
@@ -13,8 +12,8 @@ from swagger_server.models.model_answer import ModelAnswer  # noqa: E501
 from swagger_server import util
 
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 def getFilePath(dir, file_name):
     data_file = os.path.join("/usr/src/app", dir, file_name)

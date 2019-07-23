@@ -18,7 +18,7 @@ class DataReceiver(ABC):
 
     def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None):
         super().__init__()
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
         self.internal = internal
         self.topic_params = topic_params

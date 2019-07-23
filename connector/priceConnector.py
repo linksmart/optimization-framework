@@ -4,12 +4,11 @@ Created on Mär 27 12:18 2019
 @author: nishit
 """
 import datetime
-import logging
 
 from connector.apiConnector import ApiConnector
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 class PriceConnector(ApiConnector):
 

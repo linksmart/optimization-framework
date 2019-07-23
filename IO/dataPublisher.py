@@ -18,7 +18,7 @@ class DataPublisher(ABC,threading.Thread):
 
     def __init__(self, internal, topic_params, config, publish_frequency, id=None):
         super().__init__()
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.internal = internal
         self.config = config
         self.channel = "MQTT"

@@ -18,7 +18,7 @@ class LoadForecastPublisher(DataPublisher):
 
     def __init__(self, internal_topic_params, config, queue, publish_frequency, topic, id, horizon_in_steps,
                  dT_in_seconds):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.load_data = {}
         self.flag = True
         self.file_path = os.path.join("/usr/src/app", "optimization", "loadData.dat")

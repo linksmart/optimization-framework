@@ -8,7 +8,6 @@ import json
 import os
 
 import datetime
-import time
 from math import floor
 
 from IO.inputPreprocess import InputPreprocess
@@ -22,7 +21,7 @@ from utils_intern.messageLogger import MessageLogger
 class InputController:
 
     def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds):
-        self.logger = MessageLogger.get_logger(__file__, id)
+        self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
         self.optimization_data = {}
         self.input_config_parser = input_config_parser

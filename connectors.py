@@ -5,7 +5,6 @@ Created on Okt 19 11:53 2018
 """
 import configparser
 import json
-import logging
 
 import os
 
@@ -15,8 +14,7 @@ from config.configUpdater import ConfigUpdater
 from connector.Connector import Connector
 from connector.apiConnectorFactory import ApiConnectorFactory
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
 
 if __name__ == '__main__':
     config = None
@@ -24,12 +22,11 @@ if __name__ == '__main__':
     config_path_default = "/usr/src/app/config/connectorConfig.properties"
     ConfigUpdater.copy_config(config_path_default, config_path, True)
 
-    try:
-        config = configparser.ConfigParser()
-        config.optionxform = str
-        config.read(config_path)
-    except Exception as e:
-        logger.error(e)
+    config = configparser.ConfigParser()
+    config.optionxform = str
+    config.read(config_path)
+    log_level = config.get("IO", "log.level", fallback="DEBUG")
+    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
 
     workers = config.getint("IO", "number.of.workers", fallback=2)
 

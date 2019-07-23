@@ -6,7 +6,6 @@ Created on Mär 18 10:31 2019
 import datetime
 import time
 import json
-import logging
 import threading
 from abc import abstractmethod
 from queue import Queue
@@ -17,8 +16,8 @@ from senml import senml
 
 from IO.MQTTClient import MQTTClient
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 
 class ApiConnector:

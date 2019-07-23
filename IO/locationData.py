@@ -3,13 +3,12 @@ Created on Mär 11 15:12 2019
 
 @author: nishit
 """
-import logging
 import os
 import requests
 
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 class LocationData:
 

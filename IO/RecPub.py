@@ -3,7 +3,6 @@ Created on Okt 19 12:05 2018
 
 @author: nishit
 """
-import logging
 import threading
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
@@ -13,12 +12,10 @@ from random import randrange
 import time
 
 from IO.MQTTClient import MQTTClient
-from IO.dataPublisher import DataPublisher
 from IO.dataReceiver import DataReceiver
-from IO.redisDB import RedisDB
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 class RecPub:
 

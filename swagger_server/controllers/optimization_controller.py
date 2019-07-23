@@ -1,5 +1,4 @@
 import json
-import logging
 import signal
 import threading
 
@@ -19,8 +18,8 @@ from swagger_server.models.start import Start  # noqa: E501
 from swagger_server.models.status_output import StatusOutput  # noqa: E501
 from optimization.idStatusManager import IDStatusManager
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
-logger = logging.getLogger(__file__)
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 
 class CommandController:
