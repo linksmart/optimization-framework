@@ -42,8 +42,9 @@ class Model:
 
     model.P_ESS_OUTPUT = Var(within=Reals)
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
-    model.P_PV_OUTPUT = Var(bounds=(0, model.P_PV))
+    model.P_PV_OUTPUT = Var(within=NonNegativeReals)
     model.P_GRID_OUTPUT = Var(within=Reals)
+    model.P_PV_single = Var(within=NonNegativeReals)
 
     def __init__(model, value, behaviorModel):
         model.Value = value
@@ -55,6 +56,18 @@ class Model:
                         product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
 
     model.const_integer = Constraint(rule=combinatorics)
+
+    def rule_iniPV(model):
+        for j in model.P_PV:
+            if j == model.Timestep:
+                return model.P_PV_single == model.P_PV[j]
+
+    model.con_ess_IniPV = Constraint(rule=rule_iniPV)
+
+    def con_rule_pv_potential(model):
+        return model.P_PV_OUTPUT <= model.P_PV_single
+
+    model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
 
     def ess_chargepower(model):
         return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
