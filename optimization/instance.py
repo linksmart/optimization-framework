@@ -12,7 +12,6 @@ class Instance:
         self.ini_ess_soc = ini_ess_soc
         self.ini_vac_soc = ini_vac_soc
         self.instance = instance
-        #print(f"Instance {instance_id} created...")
 
     def addResult(self, result):
         self.result = result

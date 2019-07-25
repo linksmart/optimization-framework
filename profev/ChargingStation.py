@@ -7,7 +7,7 @@ class ChargingStation:
         self.charger_id = charger
         self.max_charging_power_kw = max_charging_power_kw
         self.hosted_ev = None
-        self.soc = None  # TODO: 0 or None
+        self.soc = soc  # TODO: 0 or None or soc?
         self.plugged = False
         self.recharge_start_time = None
         self.recharge_stop_time = None

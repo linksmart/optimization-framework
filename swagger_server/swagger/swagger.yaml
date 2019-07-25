@@ -1583,6 +1583,7 @@ definitions:
         meta:
           Unit_Consumption_Assumption: 2.5
           Unit_Drop_Penalty: 1
+          VAC_SoC_Value_override: 20
         ev1:
           Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
         ev2:
@@ -2371,6 +2372,7 @@ definitions:
       meta:
         Unit_Consumption_Assumption: 2.5
         Unit_Drop_Penalty: 1
+        VAC_SoC_Value_override: 20
       ev1:
         Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
       ev2:
@@ -2394,9 +2396,13 @@ definitions:
       Unit_Drop_Penalty:
         type: "number"
         format: "float"
+      VAC_SoC_Value_override:
+        type: "number"
+        format: "float"
     example:
       Unit_Consumption_Assumption: 2.5
       Unit_Drop_Penalty: 1
+      VAC_SoC_Value_override: 20
   chargers_File:
     type: "object"
     example:

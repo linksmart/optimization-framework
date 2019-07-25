@@ -79,10 +79,20 @@ class EVPark:
         if charger_id and charger_id in self.chargers.keys():
             return self.chargers[charger_id].hosted_ev
 
+    def avg_battery_capacity(self):
+        avg = 0
+        for ev_id, ev in self.evs.items():
+            avg += ev.battery_capacity
+        avg = avg/len(self.evs)
+        return avg
+
     # TODO: include all evs for calculation
-    def calculate_vac_soc_value(self):
+    def calculate_vac_soc_value(self, vac_soc_value_override=None):
+        default = 50
         vac_soc_value = 0
         vac = 0
+        all_soc_present = True
+        avg_battery_cap = self.avg_battery_capacity()
         self.logger.info(self.chargers.keys())
         self.logger.info(self.evs.keys())
         for key, charger in self.chargers.items():
@@ -92,11 +102,22 @@ class EVPark:
                 self.logger.info("inside "+str(ev.battery_capacity))
                 vac_soc_value += charger.soc * ev.battery_capacity
                 vac += ev.battery_capacity
+            elif charger.soc is not None:
+                vac_soc_value += charger.soc * avg_battery_cap
+                vac += avg_battery_cap
+            else:
+                all_soc_present = False
         self.logger.info("cal "+str(vac_soc_value)+ " "+ str(vac))
         if vac <= 0:
             vac_soc_value = 0
         else:
             vac_soc_value = vac_soc_value * 100 / vac
+        if not all_soc_present:
+            vac_soc_value = default
+            self.logger.info("Not all soc values present so using default vac_soc_value of "+str(default))
+        if vac_soc_value_override is not None:
+            vac_soc_value = vac_soc_value_override
+            self.logger.info("vac_soc_value_override to "+str(vac_soc_value_override))
         return vac_soc_value
 
     def charge_ev(self, p_ev, dT):

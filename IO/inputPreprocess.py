@@ -113,7 +113,7 @@ class InputPreprocess:
 
     def is_charger(self, data):
         if data is not None and isinstance(data, dict):
-            if "Max_Charging_Power_kW" in data.keys() and "SoC" in data.keys():
+            if "Max_Charging_Power_kW" in data.keys():
                 return True
         return False
 
@@ -208,7 +208,10 @@ class InputPreprocess:
         self.ess_soc_states = ess_soc_states
         self.vac_soc_states = vac_soc_states
 
-        vac_soc_value = self.ev_park.calculate_vac_soc_value()
+        VAC_SoC_Value_override = None
+        if "VAC_SoC_Value_override" in self.data_dict.keys():
+            VAC_SoC_Value_override = self.data_dict["VAC_SoC_Value_override"][None]
+        vac_soc_value = self.ev_park.calculate_vac_soc_value(vac_soc_value_override=VAC_SoC_Value_override)
         vac_soc_value = self.round_to_steps(vac_soc_value, vac_min, vac_steps)
 
         self.logger.info("vac_soc_value = "+str(vac_soc_value))
