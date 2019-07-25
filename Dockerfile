@@ -64,4 +64,5 @@ COPY profev /usr/src/app/profev
 COPY logs /usr/src/app/logs
 COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
+
 #ENTRYPOINT ["sh","/usr/src/app/entry.sh"]

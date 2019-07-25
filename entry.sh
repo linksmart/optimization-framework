@@ -2,4 +2,4 @@
 
 chown -R garagon: /usr/src/app/
 
-sudo -i -u garagon "$@"
+sudo -u garagon "$@"
