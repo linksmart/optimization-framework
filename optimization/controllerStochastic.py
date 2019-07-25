@@ -393,6 +393,7 @@ class OptControllerStochastic(ControllerBase):
                 "p_ess": [p_ess],
                 "p_vac": [p_vac],
                 "feasible_ev_charging_power": [feasible_ev_charging_power],
+                "execution_time": [execution_time]
             }
 
             for key, value in p_ev.items():

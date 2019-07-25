@@ -13,7 +13,10 @@ logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', le
 logger = logging.getLogger(__name__)
 
 def number_of_workers():
-    return (psutil.cpu_count(logical=False) * 2) + 1
+    cpu = psutil.cpu_count(logical=False)
+    if cpu is None:
+        cpu = psutil.cpu_count()
+    return (cpu * 2) + 1
     # return multiprocessing.cpu_count()
 
 
