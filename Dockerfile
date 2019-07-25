@@ -2,8 +2,8 @@
 # Use an official Python runtime as a parent image
 FROM garagon/solvers:amd_v3
 
-RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
-RUN chown garagon: /usr/src/app
+#RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
+#RUN chown garagon: /usr/src/app
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
@@ -49,7 +49,7 @@ RUN pip3 install -U pydevd
 RUN pip3 install -U xlrd
 RUN pip3 install -U pebble
 
-USER garagon
+#USER garagon
 WORKDIR /usr/src/app
 
 COPY ofw.py /usr/src/app/

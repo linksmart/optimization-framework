@@ -109,11 +109,11 @@ class OptControllerStochasticSerial(ControllerBase):
             #self.logger.debug("vac_soc_states " + str(vac_soc_states))
 
             time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-            filename = f"log-{uuid.uuid1()}-{time_info}.json"
+            filename = "log-"+str(uuid.uuid1())+"-"+str(time_info)+".json"
 
-            input_log_filepath = os.path.join("/usr/src/app/logs", f"input-{filename}")
-            output_log_filepath = os.path.join("/usr/src/app/logs", f"output-{filename}")
-            decision_log_filepath = os.path.join("/usr/src/app/logs", f"decision-{filename}")
+            input_log_filepath = os.path.join("/usr/src/app/logs", "input-"+str(filename))
+            output_log_filepath = os.path.join("/usr/src/app/logs", "output-"+str(filename))
+            decision_log_filepath = os.path.join("/usr/src/app/logs", "decision-"+str(filename))
 
             with open(input_log_filepath, "w") as log_file:
                 json.dump(data_dict, log_file, indent=4)
@@ -126,7 +126,7 @@ class OptControllerStochasticSerial(ControllerBase):
             max_vac_soc_states = max(vac_soc_states)
 
             for timestep in reversed(range(0, self.horizon_in_steps)):
-                self.logger.info(f"Timestep :#{timestep}")
+                self.logger.info("Timestep :#"+str(timestep))
 
                 instance_id = 0
                 instance_info = []
@@ -150,7 +150,7 @@ class OptControllerStochasticSerial(ControllerBase):
 
                 ess_vac_product = product(ess_soc_states, vac_soc_states)
                 for ini_ess_soc, ini_vac_soc in ess_vac_product:
-                    #self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
+                    #self.logger.info("Timestep :#"+str(timestep)+" : "+str(ini_ess_soc)+ ", " +str(ini_vac_soc))
                     feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                     for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                         compare_value = ini_ess_soc - p_ESS
@@ -268,7 +268,7 @@ class OptControllerStochasticSerial(ControllerBase):
                                 my_dict["P_PV_OUTPUT"][0]
 
                             #self.logger.info("Done".center(80, "#"))
-                            #self.logger.info(f"Timestep :#{timestep} : {ini_ess_soc}, {ini_vac_soc} ")
+                            #self.logger.info("Timestep :#"+str(timestep)+" : "+str(ini_ess_soc)+", "+str(ini_vac_soc))
                             #self.logger.info("#" * 80)
 
                             # self.output.publish_data(self.id, my_dict)
@@ -365,10 +365,10 @@ class OptControllerStochasticSerial(ControllerBase):
 
             self.logger.debug("Time Information".center(80, "#"))
             self.logger.debug("")
-            self.logger.debug(f"Start time: {stochastic_start_time}")
-            self.logger.debug(f"End time: {stochastic_end_time}")
+            self.logger.debug("Start time: "+str(stochastic_start_time))
+            self.logger.debug("End time: "+str(stochastic_end_time))
             execution_time = stochastic_end_time - stochastic_start_time
-            self.logger.debug(f"Programming execution time: {execution_time}")
+            self.logger.debug("Programming execution time: "+str(execution_time))
             self.logger.debug("")
             self.logger.debug("#" * 80)
 
@@ -393,7 +393,7 @@ class OptControllerStochasticSerial(ControllerBase):
                 "p_ess": [p_ess],
                 "p_vac": [p_vac],
                 "feasible_ev_charging_power": [feasible_ev_charging_power],
-                "execution_time": [execution_time],
+                "execution_time": [execution_time]
             }
 
             for key, value in p_ev.items():
