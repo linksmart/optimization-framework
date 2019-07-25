@@ -3,7 +3,7 @@
 FROM garagon/solvers:amd_v3
 
 RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
-RUN chown garagon: /usr/src/app
+
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
@@ -17,7 +17,7 @@ RUN apt-get autoclean
 RUN apt-get clean
 
 RUN apt-get update -y && apt-get install -y \
-    gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev libatlas-dev
+    sudo gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev libatlas-dev
 
 RUN pip3 install --upgrade pip
 
@@ -49,9 +49,9 @@ RUN pip3 install -U pydevd
 RUN pip3 install -U xlrd
 RUN pip3 install -U pebble
 
-USER garagon
 WORKDIR /usr/src/app
 
+COPY entry.sh /usr/src/app/
 COPY ofw.py /usr/src/app/
 COPY optimization /usr/src/app/optimization
 COPY utils /usr/src/app/utils
@@ -64,3 +64,5 @@ COPY profev /usr/src/app/profev
 COPY logs /usr/src/app/logs
 COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
+
+ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
