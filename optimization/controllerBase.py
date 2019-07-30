@@ -28,7 +28,6 @@ from utils_intern.messageLogger import MessageLogger
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 from abc import ABC, abstractmethod
-from pebble import concurrent
 
 class ControllerBase(ABC, threading.Thread):
 

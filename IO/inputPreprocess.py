@@ -138,7 +138,7 @@ class InputPreprocess:
                         ev_unplugged = True
                 if not (isinstance(soc, float) or isinstance(soc, int)):
                     soc = None
-                assert max_charging_power_kw, f"Incorrect input: Max_Charging_Power_kW missing for charger: {charger}"
+                assert max_charging_power_kw, "Incorrect input: Max_Charging_Power_kW missing for charger: " + str(charger)
                 chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc, ev_unplugged))
         return chargers_list
 
@@ -154,7 +154,7 @@ class InputPreprocess:
         for ev in evs:
             ev_dict = self.data_dict[ev]
             battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
-            assert battery_capacity, f"Incorrect input: Battery_Capacity_kWh missing for EV: {ev}"
+            assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
             ev_no_base = self.remove_key_base(ev)
             evs_list.append(EV(ev_no_base, battery_capacity))
         self.remove_used_keys(evs)
@@ -256,9 +256,9 @@ class InputPreprocess:
         max_value = states.get("Max", None)
         steps = states.get("Steps", None)
 
-        assert min_value != None, f"Min value missing in {state_name}"
-        assert max_value, f"Max value missing in {state_name}"
-        assert steps, f"Steps value missing in {state_name}"
+        assert min_value != None, "Min value missing in " + str(state_name)
+        assert max_value, "Max value missing in " + str(state_name)
+        assert steps, "Steps value missing in " + str(state_name)
 
         min_value = int(min_value)
         max_value = int(max_value)

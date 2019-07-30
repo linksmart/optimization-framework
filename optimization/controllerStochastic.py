@@ -176,8 +176,7 @@ class OptControllerStochastic(ControllerBase):
 
                     data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
                     # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
-                    #self.logger.debug("ess_capacity: "+str(data_dict[None]["ESS_Capacity"][None]))
-                    #self.logger.debug("vac_capacity: "+str(data_dict[None]["VAC_Capacity"][None]))
+
 
                     # Creating an optimization instance with the referenced model
                     try:
@@ -298,9 +297,9 @@ class OptControllerStochastic(ControllerBase):
 
             self.logger.debug("Dynamic programming calculations")
             self.logger.debug("PV generation:" + str(p_pv))
-            self.logger.debug("Import:"+ str(p_grid))
-            self.logger.debug("ESS discharge:"+ str(p_ess))
-            self.logger.debug("VAC charging"+ str(p_vac))
+            self.logger.debug("Import:" + str(p_grid))
+            self.logger.debug("ESS discharge:" + str(p_ess))
+            self.logger.debug("VAC charging" + str(p_vac))
 
             #############################################################################
             # This section distributes virtual capacity charging power into the cars plugged chargers in the station
@@ -357,9 +356,9 @@ class OptControllerStochastic(ControllerBase):
             """
             self.logger.debug("Implemented actions")
             self.logger.debug("PV generation:" + str(p_pv))
-            self.logger.debug("Import:"+ str(p_grid))
-            self.logger.debug("ESS discharge:"+ str(p_ess))
-            self.logger.debug("Real EV charging"+ str(feasible_ev_charging_power))
+            self.logger.debug("Import:" + str(p_grid))
+            self.logger.debug("ESS discharge:" + str(p_ess))
+            self.logger.debug("Real EV charging" + str(feasible_ev_charging_power))
 
             stochastic_end_time = time.time()
 
