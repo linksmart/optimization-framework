@@ -67,6 +67,7 @@ class InputPreprocess:
         self.data_dict["VAC_Capacity"] = {None: vac_capacity}
 
         self.process_uncertainty_data()
+        self.set_recharge_for_single_ev()
         self.event_received(self.event_data)
 
         for charger_id, charger in self.ev_park.chargers.items():
@@ -223,15 +224,21 @@ class InputPreprocess:
 
         self.data_dict["SoC_Value"] = {None: soc_value}
         self.data_dict["VAC_SoC_Value"] = {None: vac_soc_value}
+        self.data_dict["VAC_States_Min"] = {None: vac_min}
         self.data_dict["Value"] = "null"
         self.data_dict["Initial_ESS_SoC"] = "null"
         self.data_dict["Initial_VAC_SoC"] = "null"
         self.data_dict["Behavior_Model"] = "null"
 
+
         self.remove_used_keys(ess_states_keys)
         self.remove_used_keys(vac_states_keys)
 
         self.validate_unit_consumption_assumption(vac_min, vac_steps)
+
+    def set_recharge_for_single_ev(self):
+        recharge = self.ev_park.single_ev_recharge()
+        self.data_dict["Recharge"] = {None: recharge}
 
     def generate_behaviour_model(self, plugged_time, unplugged_time, monte_carlo_repetition):
         plugged_time_mean = plugged_time.get("mean", None)

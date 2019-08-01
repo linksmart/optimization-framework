@@ -23,5 +23,5 @@ class ModelDerivedParameters:
         base = []
         derived = ['Value', 'Initial_ESS_SoC', 'Initial_VAC_SoC', 'Number_of_Parked_Cars', 'VAC_Capacity',
                    'Behavior_Model', 'VAC_SoC_Value', 'Feasible_ESS_Decisions', 'Feasible_VAC_Decisions', 'Value_Index',
-                   'Behavior_Model_Index', 'Timestep']
+                   'Behavior_Model_Index', 'Timestep', "VAC_States_Min", "Recharge"]
         return base, derived

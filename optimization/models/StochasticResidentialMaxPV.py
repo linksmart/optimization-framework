@@ -6,6 +6,7 @@ from pyomo.core import *
 class Model:
     model = AbstractModel()
 
+    model.T = Set()  # Index Set for time steps of optimization horizon
     # Feasible charge powers to ESS under the given conditions
     model.Feasible_ESS_Decisions = Set()
 
@@ -16,7 +17,7 @@ class Model:
 
     model.Value = Param(model.Value_Index, mutable=True)
 
-    model.P_PV = Param(within=NonNegativeReals)
+    model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
 
     model.Initial_ESS_SoC = Param(within=Reals, default=0)
     model.Initial_VAC_SoC = Param(within=Reals, default=0.0)
@@ -33,7 +34,8 @@ class Model:
 
     model.dT = Param(within=PositiveIntegers)
     model.Recharge = Param(within=Binary)
-    model.VAC_States_Min = Param(within=PositiveReals) #it should accept 0
+    model.VAC_States_Min = Param(within=NonNegativeReals) #it should accept 0
+    model.Timestep = Param(within=NonNegativeIntegers)
 
     #######################################      Outputs       #######################################################
 
@@ -114,7 +116,7 @@ class Model:
                 future_cost += model.Decision[
                                    p_ess, p_vac] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
-            return model.P_PV - model.P_PV_OUTPUT + future_cost
+            return model.P_PV_single - model.P_PV_OUTPUT + future_cost
         else:
             # The car reaches to 'final_ev' by driving during one time interval
             final_ev_soc = model.Initial_VAC_SoC - model.Unit_Consumption_Assumption
@@ -140,7 +142,7 @@ class Model:
                 future_cost += model.Decision[
                                    p_ess] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
-            return model.P_PV - model.P_PV_OUTPUT + future_cost
+            return model.P_PV_single - model.P_PV_OUTPUT + future_cost
 
 
     model.obj = Objective(rule=objrule1, sense=minimize)

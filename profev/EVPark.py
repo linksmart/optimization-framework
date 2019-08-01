@@ -146,3 +146,11 @@ class EVPark:
                     self.logger.info("discharged " + str(charger.__str__()))
                 else:
                     self.logger.error("Charger "+charger.charger_id+" does not have hosted ev so cannot calculate soc")
+
+    def single_ev_recharge(self):
+        if len(self.chargers) == 1:
+            for charger_id, charger in self.chargers.items():
+                if charger.plugged:
+                    return 1
+        else:
+            return 0
