@@ -152,5 +152,4 @@ class EVPark:
             for charger_id, charger in self.chargers.items():
                 if charger.plugged:
                     return 1
-        else:
-            return 0
+        return 0

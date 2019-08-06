@@ -184,6 +184,7 @@ class OptControllerStochasticCombination(ControllerBase):
 
                 data_dict[None]["Timestep"] = {None: timestep}
 
+                self.logger.info(min_value, max_value, )
 
                 for combination in ess_vac_product:
                     feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
@@ -197,7 +198,7 @@ class OptControllerStochasticCombination(ControllerBase):
                             # self.logger.debug("max_value " + str(max_value))
                             if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                                 feasible_Pess.append(p_ESS)
-                        #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+                        self.logger.debug("feasible p_ESS " + str(feasible_Pess))
 
                     else:
                         ini_ess_soc, ini_vac_soc = combination
@@ -208,7 +209,7 @@ class OptControllerStochasticCombination(ControllerBase):
                             # self.logger.debug("max_value " + str(max_value))
                             if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                                 feasible_Pess.append(p_ESS)
-                        #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+                        self.logger.debug("feasible p_ESS " + str(feasible_Pess))
 
                     feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                     # When decided charging with p_VAC
@@ -222,17 +223,17 @@ class OptControllerStochasticCombination(ControllerBase):
                     data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
 
                     data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
-                    # self.logger.debug("ini_ess_soc "+str(ini_ess_soc))
+                    #self.logger.debug("ini_ess_soc "+str(ini_ess_soc))
 
                     data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
-                    # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
+                    #self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
 
 
                     # Creating an optimization instance with the referenced model
                     try:
                         #self.logger.debug("Creating an optimization instance")
-                        instance = self.my_class.model.create_instance(data_dict)
                         #self.logger.debug("input data: " + str(data_dict))
+                        instance = self.my_class.model.create_instance(data_dict)
                     except Exception as e:
                         self.logger.error("Error creating instance")
                         self.logger.error(e)
@@ -342,11 +343,12 @@ class OptControllerStochasticCombination(ControllerBase):
 
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
+            recharge_value = int(data_dict[None]["Recharge"][None])
 
-            p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
-            p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
-            p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['ESS']
-            p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
+            p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value, recharge_value]['PV']
+            p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value, recharge_value]['Grid']
+            p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value, recharge_value]['ESS']
+            p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value, recharge_value]['VAC']
             p_ev = {}
 
             self.logger.debug("Dynamic programming calculations")

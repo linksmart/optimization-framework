@@ -86,7 +86,7 @@ class Model:
                                                      model.Feasible_VAC_Decisions)) * (model.VAC_Capacity * 3600) / (
                                100 * model.dT)
         else:
-            model.P_VAC_OUTPUT = 0
+            return model.P_VAC_OUTPUT == 0
 
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 

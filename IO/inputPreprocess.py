@@ -239,6 +239,7 @@ class InputPreprocess:
     def set_recharge_for_single_ev(self):
         recharge = self.ev_park.single_ev_recharge()
         self.data_dict["Recharge"] = {None: recharge}
+        self.logger.info("Recharge value: "+str(recharge))
 
     def generate_behaviour_model(self, plugged_time, unplugged_time, monte_carlo_repetition):
         plugged_time_mean = plugged_time.get("mean", None)
