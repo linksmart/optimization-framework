@@ -140,7 +140,7 @@ class Model:
                     (0, 0)] * valueOf_away
 
                 future_cost += model.Decision[
-                                   p_ess] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
+                                   p_ess, vacSoC] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
             return model.P_PV_single - model.P_PV_OUTPUT + future_cost
 

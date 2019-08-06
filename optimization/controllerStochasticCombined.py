@@ -184,8 +184,6 @@ class OptControllerStochasticCombination(ControllerBase):
 
                 data_dict[None]["Timestep"] = {None: timestep}
 
-                self.logger.info(min_value, max_value, )
-
                 for combination in ess_vac_product:
                     feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
@@ -198,7 +196,7 @@ class OptControllerStochasticCombination(ControllerBase):
                             # self.logger.debug("max_value " + str(max_value))
                             if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                                 feasible_Pess.append(p_ESS)
-                        self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+                        #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
 
                     else:
                         ini_ess_soc, ini_vac_soc = combination
@@ -209,7 +207,7 @@ class OptControllerStochasticCombination(ControllerBase):
                             # self.logger.debug("max_value " + str(max_value))
                             if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                                 feasible_Pess.append(p_ESS)
-                        self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+                        #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
 
                     feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                     # When decided charging with p_VAC
@@ -232,7 +230,7 @@ class OptControllerStochasticCombination(ControllerBase):
                     # Creating an optimization instance with the referenced model
                     try:
                         #self.logger.debug("Creating an optimization instance")
-                        #self.logger.debug("input data: " + str(data_dict))
+                        self.logger.debug("input data: " + str(data_dict))
                         instance = self.my_class.model.create_instance(data_dict)
                     except Exception as e:
                         self.logger.error("Error creating instance")
