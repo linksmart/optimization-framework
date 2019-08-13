@@ -230,7 +230,7 @@ class OptControllerStochasticCombination(ControllerBase):
                     # Creating an optimization instance with the referenced model
                     try:
                         #self.logger.debug("Creating an optimization instance")
-                        self.logger.debug("input data: " + str(data_dict))
+                        #self.logger.debug("input data: " + str(data_dict))
                         instance = self.my_class.model.create_instance(data_dict)
                     except Exception as e:
                         self.logger.error("Error creating instance")
