@@ -48,6 +48,9 @@ RUN pip3 install -U Pyro4
 RUN pip3 install -U pydevd
 RUN pip3 install -U xlrd
 
+
+#USER garagon
+
 WORKDIR /usr/src/app
 
 COPY entry.sh /usr/src/app/
@@ -64,4 +67,16 @@ COPY logs /usr/src/app/logs
 COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
 
+
 #ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
+
+#USER root
+
+#RUN groupadd ofw
+#RUN usermod -aG ofw garagon
+#RUN newgrp ofw
+#RUN chown -R garagon:ofw /usr/src/app/
+#RUN chmod g+rwx /usr/src/app/ -R
+
+#USER garagon
+
