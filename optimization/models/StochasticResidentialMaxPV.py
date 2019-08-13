@@ -40,7 +40,8 @@ class Model:
     #######################################      Outputs       #######################################################
 
     # Combined decision
-    model.Decision = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
+    model.Decision_with_EV = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
+    model.Decision_without_EV = Var(model.Feasible_ESS_Decisions, within=Binary)
 
     model.P_ESS_OUTPUT = Var(within=Reals)
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
@@ -54,8 +55,11 @@ class Model:
 
     def combinatorics(model):
         # only one of the feasible decisions can be taken
-        return 1 == sum(model.Decision[ess, vac] for ess, vac in
-                        product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
+        if model.Recharge == 1:
+            return 1 == sum(model.Decision_with_EV[ess, vac] for ess, vac in
+                            product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
+        else:
+            return 1 == sum(model.Decision_without_EV[ess] for ess in model.Feasible_ESS_Decisions)
 
     model.const_integer = Constraint(rule=combinatorics)
 
@@ -72,16 +76,18 @@ class Model:
     model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
 
     def ess_chargepower(model):
-        return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
-                                         product(model.Feasible_ESS_Decisions,
-                                                 model.Feasible_VAC_Decisions)) * (model.ESS_Capacity * 3600) / (
-                           100 * model.dT)
+        if model.Recharge == 1:
+            return model.P_ESS_OUTPUT == sum(model.Decision_with_EV[ess, vac] * ess for ess, vac in
+                                             product(model.Feasible_ESS_Decisions,
+                                                     model.Feasible_VAC_Decisions)) * (model.ESS_Capacity * 3600) / (100 * model.dT)
+        else:
+            return model.P_ESS_OUTPUT == sum(model.Decision_without_EV[ess] * ess for ess in (model.Feasible_ESS_Decisions) * (model.ESS_Capacity * 3600) / (100 * model.dT))
 
     model.const_esschargepw = Constraint(rule=ess_chargepower)
 
     def vac_chargepower(model):
         if model.Recharge == 1:
-            return model.P_VAC_OUTPUT == sum(model.Decision[ess, vac] * vac for ess, vac in
+            return model.P_VAC_OUTPUT == sum(model.Decision_with_EV[ess, vac] * vac for ess, vac in
                                              product(model.Feasible_ESS_Decisions,
                                                      model.Feasible_VAC_Decisions)) * (model.VAC_Capacity * 3600) / (
                                100 * model.dT)
@@ -113,7 +119,7 @@ class Model:
                 expected_future_cost_of_this_decision = model.Behavior_Model[(1, 1)] * valueOf_home + model.Behavior_Model[
                     (1, 0)] * valueOf_away
 
-                future_cost += model.Decision[
+                future_cost += model.Decision_with_EV[
                                    p_ess, p_vac] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
             return model.P_PV_single - model.P_PV_OUTPUT + future_cost
@@ -139,8 +145,8 @@ class Model:
                 expected_future_cost_of_this_decision = model.Behavior_Model[(0, 1)] * valueOf_home + model.Behavior_Model[
                     (0, 0)] * valueOf_away
 
-                future_cost += model.Decision[
-                                   p_ess, vacSoC] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
+                future_cost += model.Decision_without_EV[
+                                   p_ess] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
             return model.P_PV_single - model.P_PV_OUTPUT + future_cost
 
