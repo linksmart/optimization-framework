@@ -40,8 +40,10 @@ class Model:
     #######################################      Outputs       #######################################################
 
     # Combined decision
-    model.Decision_with_EV = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
-    model.Decision_without_EV = Var(model.Feasible_ESS_Decisions, within=Binary)
+    if model.Recharge == 1:
+        model.Decision_with_EV = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
+    else:
+        model.Decision_without_EV = Var(model.Feasible_ESS_Decisions, within=Binary)
 
     model.P_ESS_OUTPUT = Var(within=Reals)
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
