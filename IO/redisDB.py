@@ -15,6 +15,12 @@ class RedisDB:
 
     def __init__(self):
         self.redis_db = redis.StrictRedis(host="redis_S4G", port=6379, db=0)
+        self.disable_persistence()
+
+    def disable_persistence(self):
+        value = self.redis_db.config_get("save")
+        if len(value) > 0:
+            self.redis_db.config_set("save", "")
 
     def get(self, key, default=None):
         value = self.redis_db.get(name=key)

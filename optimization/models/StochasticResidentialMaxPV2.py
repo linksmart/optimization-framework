@@ -106,7 +106,7 @@ class Model:
             for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):
                 essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
                 vacSoC = model.final_ev_soc # # Transition between EV SOC states are deterministic when the car is at home now
-                print("v "+str(vacSoC))
+
                 valueOf_home = model.Value[(essSoC, vacSoC, 1)]
                 valueOf_away = model.Value[(essSoC, vacSoC, 0)]
 

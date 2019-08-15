@@ -244,7 +244,7 @@ class OptControllerStochasticCombination(ControllerBase):
                     final_ev_soc = ini_vac_soc - data_dict[None]["Unit_Consumption_Assumption"][None]
                     if final_ev_soc < data_dict[None]["VAC_States_Min"][None]:
                         final_ev_soc = data_dict[None]["VAC_States_Min"][None]
-                    self.logger.debug("final ev soc = "+str(final_ev_soc))
+
                     data_dict[None]["final_ev_soc"] = {None: final_ev_soc}
 
                     # Creating an optimization instance with the referenced model
@@ -252,7 +252,7 @@ class OptControllerStochasticCombination(ControllerBase):
                         #self.logger.debug("Creating an optimization instance")
                         #self.logger.debug("input data: " + str(data_dict))
                         instance = self.my_class.model.create_instance(data_dict)
-                        instance.pprint()
+                        #instance.pprint()
                     except Exception as e:
                         self.logger.error("Error creating instance")
                         self.logger.error(e)
