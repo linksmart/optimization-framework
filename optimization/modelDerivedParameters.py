@@ -14,7 +14,7 @@ class ModelDerivedParameters:
         base, derived = [], []
         if model_name == "CarParkModel" or model_name == "CarParkModel2":
             base, derived = ModelDerivedParameters.car_park_model()
-        if model_name == "StochasticResidentialMaxPV":
+        if model_name == "StochasticResidentialMaxPV" or model_name == "StochasticResidentialMaxPV2":
             base, derived = ModelDerivedParameters.car_park_model()
         return base, derived
 
@@ -23,5 +23,5 @@ class ModelDerivedParameters:
         base = []
         derived = ['Value', 'Initial_ESS_SoC', 'Initial_VAC_SoC', 'Number_of_Parked_Cars', 'VAC_Capacity',
                    'Behavior_Model', 'VAC_SoC_Value', 'Feasible_ESS_Decisions', 'Feasible_VAC_Decisions', 'Value_Index',
-                   'Behavior_Model_Index', 'Timestep', "VAC_States_Min", "Recharge"]
+                   'Behavior_Model_Index', 'Timestep', "VAC_States_Min", "Recharge", "final_ev_soc"]
         return base, derived
