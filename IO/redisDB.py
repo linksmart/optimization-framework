@@ -21,6 +21,7 @@ class RedisDB:
         value = self.redis_db.config_get("save")
         if len(value) > 0:
             self.redis_db.config_set("save", "")
+            logger.debug("Redis persistence disabled")
 
     def get(self, key, default=None):
         value = self.redis_db.get(name=key)

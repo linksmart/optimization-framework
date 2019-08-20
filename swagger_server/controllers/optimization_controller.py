@@ -392,7 +392,7 @@ def framework_stop(id):  # noqa: E501
             flag = redis_db.get("run:" + id)
             logger.debug("Flag in stop: " + str(flag))
 
-            if flag is None:
+            if flag is "stopped" or None: # TODO: is none necessary?
                 logger.debug("System stopped succesfully")
                 message = "System stopped succesfully"
             elif "stopping" in flag:
