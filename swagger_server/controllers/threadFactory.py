@@ -10,9 +10,6 @@ from optimization.ModelException import MissingKeysException
 from optimization.controllerDiscrete import OptControllerDiscrete
 from optimization.controllerMpc import OptControllerMPC
 from optimization.controllerStochastic import OptControllerStochastic
-from optimization.controllerStochasticCombined import OptControllerStochasticCombination
-from optimization.controllerStochasticSerial import OptControllerStochasticSerial
-from optimization.controllerStochasticSingleEV import OptControllerStochasticSingleEV
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 from utils_intern.messageLogger import MessageLogger
@@ -169,7 +166,7 @@ class ThreadFactory:
                                              self.horizon_in_steps,
                                              self.dT_in_seconds, self.optimization_type)
         elif self.optimization_type == "stochastic":
-            self.opt = OptControllerStochasticCombination(self.id, self.solver_name, self.model_path,
+            self.opt = OptControllerStochastic(self.id, self.solver_name, self.model_path,
                                                           self.control_frequency, self.repetition, output_config,
                                                           input_config_parser, config, self.horizon_in_steps,
                                                           self.dT_in_seconds, self.optimization_type, self.single_ev)

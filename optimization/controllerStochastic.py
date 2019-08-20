@@ -29,7 +29,8 @@ pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 class OptControllerStochastic(ControllerBase):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
-                 config, horizon_in_steps, dT_in_seconds, optimization_type):
+                 config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
+        self.single_ev = single_ev
 
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
@@ -48,12 +49,9 @@ class OptControllerStochastic(ControllerBase):
             ev_park = self.input.inputPreprocess.ev_park
             max_number_of_cars = ev_park.get_num_of_cars()
 
-            behaviour_model = self.input.inputPreprocess.simulator(time_resolution=self.dT_in_seconds,
-                                                                 horizon=self.horizon_in_steps,
-                                                                 max_number_of_cars=max_number_of_cars)
-
             ess_soc_states = self.input.inputPreprocess.ess_soc_states
             vac_soc_states = self.input.inputPreprocess.vac_soc_states
+            position_states = [0, 1]
 
             domain_range = (ev_park.total_charging_stations_power * self.dT_in_seconds) / (
                 ev_park.get_vac_capacity() * 3600) * 100
@@ -78,13 +76,52 @@ class OptControllerStochastic(ControllerBase):
             vac_domain_min = vac_steps * math.floor(vac_domain_min / vac_steps)
             vac_domain_max = vac_steps * math.floor(vac_domain_max / vac_steps)
 
-            self.logger.info("vac domain : "+str(vac_domain_min)+ " "+ str(vac_domain_max)+ " " + str(vac_steps))
+            #self.logger.debug("vac domain : "+str(vac_domain_min)+ " "+ str(vac_domain_max)+ " " + str(vac_steps))
 
             ess_decision_domain = np.arange(ess_domain_min, ess_domain_max, ess_steps).tolist()
             vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
             vac_decision_domain_n = np.arange(vac_domain_min, vac_domain_max, vac_steps)
 
             T = self.horizon_in_steps
+
+            if self.single_ev:
+                behaviour_model = self.input.inputPreprocess.simulator(time_resolution=self.dT_in_seconds,
+                                                                       horizon=self.horizon_in_steps,
+                                                                       single_ev=True)
+                # Initialize empty lookup tables
+                keylistforValue = [(t, s_ess, s_vac, s_pos) for t, s_ess, s_vac, s_pos in
+                                   product(list(range(0, T + 1)), ess_soc_states, vac_soc_states, position_states)]
+                keylistforDecisions = [(t, s_ess, s_vac, s_pos) for t, s_ess, s_vac, s_pos in
+                                       product(list(range(0, T)), ess_soc_states, vac_soc_states, position_states)]
+
+                Value = dict.fromkeys(keylistforValue)
+                Decision = dict.fromkeys(keylistforDecisions)
+
+                for t, s_ess, s_vac, s_pos in product(range(0, T), ess_soc_states, vac_soc_states, position_states):
+                    Decision[t, s_ess, s_vac, s_pos] = {'PV': None, 'Grid': None, 'ESS': None, 'VAC': None}
+                    Value[t, s_ess, s_vac, s_pos] = None
+
+                for s_ess, s_vac, s_pos in product(ess_soc_states, vac_soc_states, position_states):
+                    Value[T, s_ess, s_vac, s_pos] = 5.0
+            else:
+                behaviour_model = self.input.inputPreprocess.simulator(time_resolution=self.dT_in_seconds,
+                                                                       horizon=self.horizon_in_steps,
+                                                                       max_number_of_cars=max_number_of_cars)
+                # Initialize empty lookup tables
+                keylistforValue = [(t, s_ess, s_vac) for t, s_ess, s_vac in
+                                   product(list(range(0, T + 1)), ess_soc_states, vac_soc_states)]
+                keylistforDecisions = [(t, s_ess, s_vac) for t, s_ess, s_vac in
+                                       product(list(range(0, T)), ess_soc_states, vac_soc_states)]
+
+                Value = dict.fromkeys(keylistforValue)
+                Decision = dict.fromkeys(keylistforDecisions)
+
+                for t, s_ess, s_vac in product(range(0, T), ess_soc_states, vac_soc_states):
+                    Decision[t, s_ess, s_vac] = {'PV': None, 'Grid': None, 'ESS': None, 'VAC': None}
+                    Value[t, s_ess, s_vac] = None
+
+                for s_ess, s_vac in product(ess_soc_states, vac_soc_states):
+                    Value[T, s_ess, s_vac] = 1.0
 
 
             # self.logger.debug("Value "+str(Value))
@@ -116,58 +153,104 @@ class OptControllerStochastic(ControllerBase):
                 instance_id = 0
                 instance_info = {}
 
-                value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
-                               t == timestep + 1]
+                if self.single_ev:
+                    value_index = [(s_ess, s_vac, s_pos) for t, s_ess, s_vac, s_pos in Value.keys() if
+                                   t == timestep + 1]
+
+                    value = {v: Value[timestep + 1, v[0], v[1], v[2]] for v in value_index}
+
+                    bm_idx = [(pos, next_pos) for t, pos, next_pos in behaviour_model.keys() if
+                              t == timestep]
+
+                    bm = {v: behaviour_model[timestep, v[0], v[1]] for v in bm_idx}
+
+                    ess_vac_product = product(ess_soc_states, vac_soc_states, position_states)
+                else:
+                    value_index = [(s_ess, s_vac) for t, s_ess, s_vac in Value.keys() if
+                                   t == timestep + 1]
+
+                    value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
+
+                    bm_idx = behaviour_model[timestep].keys()
+
+                    bm = behaviour_model[timestep]
+
+                    ess_vac_product = product(ess_soc_states, vac_soc_states)
+
                 data_dict[None]["Value_Index"] = {None: value_index}
-
-                value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
                 data_dict[None]["Value"] = value
-                # self.logger.debug("value "+str(value))
-
-                # * Updated
-                bm_idx = behaviour_model[timestep].keys()
-                bm = behaviour_model[timestep]
-
                 data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
                 data_dict[None]["Behavior_Model"] = bm
 
                 data_dict[None]["Timestep"] = {None: timestep}
 
-                ess_vac_product = product(ess_soc_states, vac_soc_states)
-                for ini_ess_soc, ini_vac_soc in ess_vac_product:
-                    #self.logger.info("Timestep :#"+str(timestep)+" : "+str(ini_ess_soc)+ ", " +str(ini_vac_soc))
+                for combination in ess_vac_product:
                     feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
-                    for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
-                        compare_value = ini_ess_soc - p_ESS
-                        # self.logger.debug("min_value "+str(min_value))
-                        # self.logger.debug("max_value " + str(max_value))
-                        if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
-                            feasible_Pess.append(p_ESS)
-                    #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
 
-                    feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
-                    # When decided charging with p_VAC
-                    if vac_decision_domain[0] <= max_vac_soc_states - ini_vac_soc:
-                        # if the final vac_SoC is within the specified domain
-                        index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
-                        feasible_Pvac = vac_decision_domain[0:index + 1]
-                    #self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+                    if self.single_ev:
+                        recharge_value = int(data_dict[None]["Recharge"][None])
+                        ini_ess_soc, ini_vac_soc, position = combination
+
+                        for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
+                            compare_value = ini_ess_soc - p_ESS
+                            # self.logger.debug("min_value "+str(min_value))
+                            # self.logger.debug("max_value " + str(max_value))
+                            if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
+                                feasible_Pess.append(p_ESS)
+                        #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+
+                        feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
+                        if recharge_value == 1:
+                            # When decided charging with p_VAC
+                            if vac_decision_domain[0] <= max_vac_soc_states - ini_vac_soc:
+                                # if the final vac_SoC is within the specified domain
+                                index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
+                                feasible_Pvac = vac_decision_domain[0:index + 1]
+                        else:
+                            feasible_Pvac.append(0)
+                        # self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+
+                    else:
+                        ini_ess_soc, ini_vac_soc = combination
+
+                        for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
+                            compare_value = ini_ess_soc - p_ESS
+                            # self.logger.debug("min_value "+str(min_value))
+                            # self.logger.debug("max_value " + str(max_value))
+                            if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
+                                feasible_Pess.append(p_ESS)
+                        #self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+
+                        feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
+                        # When decided charging with p_VAC
+                        if vac_decision_domain[0] <= max_vac_soc_states - ini_vac_soc:
+                            # if the final vac_SoC is within the specified domain
+                            index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
+                            feasible_Pvac = vac_decision_domain[0:index + 1]
+
+                        # self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
 
                     data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
                     data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
 
                     data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
-                    # self.logger.debug("ini_ess_soc "+str(ini_ess_soc))
+                    #self.logger.debug("ini_ess_soc "+str(ini_ess_soc))
 
                     data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
-                    # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
+                    #self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
 
+                    final_ev_soc = ini_vac_soc - data_dict[None]["Unit_Consumption_Assumption"][None]
+                    if final_ev_soc < data_dict[None]["VAC_States_Min"][None]:
+                        final_ev_soc = data_dict[None]["VAC_States_Min"][None]
+
+                    data_dict[None]["final_ev_soc"] = {None: final_ev_soc}
 
                     # Creating an optimization instance with the referenced model
                     try:
                         #self.logger.debug("Creating an optimization instance")
-                        instance = self.my_class.model.create_instance(data_dict)
                         #self.logger.debug("input data: " + str(data_dict))
+                        instance = self.my_class.model.create_instance(data_dict)
+                        #instance.pprint()
                     except Exception as e:
                         self.logger.error("Error creating instance")
                         self.logger.error(e)
@@ -177,7 +260,7 @@ class OptControllerStochastic(ControllerBase):
                     # * Queue the optimization instance
 
                     try:
-                        # self.logger.info(instance.pprint())
+                        #self.logger.info(instance.pprint())
                         action_handle = solver_manager.queue(instance, opt=optsolver)
                         #self.logger.debug("Solver queue created " + str(action_handle))
                         #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
@@ -186,7 +269,10 @@ class OptControllerStochastic(ControllerBase):
                         #self.logger.debug("Action handle map: " + str(action_handle_map))
                         # start_time = time.time()
                         # self.logger.debug("Optimization starting time: " + str(start_time))
-                        inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc, instance)
+                        if self.single_ev:
+                            inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc, position=position, instance=instance)
+                        else:
+                            inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc, instance=instance)
 
                         #instance_info.append(inst)
                         instance_info[instance_id] = inst
@@ -212,6 +298,7 @@ class OptControllerStochastic(ControllerBase):
                         #result = inst.result
                         ini_ess_soc = inst.ini_ess_soc
                         ini_vac_soc = inst.ini_vac_soc
+                        position = inst.position
                         instance = inst.instance
 
                         if (result.solver.status == SolverStatus.ok) and (
@@ -237,19 +324,19 @@ class OptControllerStochastic(ControllerBase):
                                         #self.logger.debug("Identified variables " + str(var_list))
                                         my_dict[str(v)] = var_list
                                     except Exception as e:
-                                        self.logger.error(e)
+                                        self.logger.error("error reading result "+str(e))
 
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['Grid'] = \
-                                    my_dict["P_GRID_OUTPUT"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['PV'] = \
-                                    my_dict["P_PV_OUTPUT"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['ESS'] = \
-                                    my_dict["P_ESS_OUTPUT"][0]
-                                Decision[timestep, ini_ess_soc, ini_vac_soc]['VAC'] = \
-                                    my_dict["P_VAC_OUTPUT"][0]
+                                if self.single_ev:
+                                    combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+                                else:
+                                    combined_key = (timestep, ini_ess_soc, ini_vac_soc)
 
-                                Value[timestep, ini_ess_soc, ini_vac_soc] = \
-                                    my_dict["P_PV_OUTPUT"][0]
+                                Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
+                                Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
+                                Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
+                                Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+
+                                Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
 
                                 #self.logger.info("Done".center(80, "#"))
                                 #self.logger.info("Timestep :#"+str(timestep)+" : "+str(ini_ess_soc)+", "+str(ini_vac_soc))
@@ -257,7 +344,7 @@ class OptControllerStochastic(ControllerBase):
 
                                 # self.output.publish_data(self.id, my_dict)
                             except Exception as e:
-                                self.logger.error(e)
+                                self.logger.error("error setting decision or value "+str(e))
                         elif result.solver.termination_condition == TerminationCondition.infeasible:
                             # do something about it? or exit?
                             self.logger.info("Termination condition is infeasible")
@@ -274,10 +361,17 @@ class OptControllerStochastic(ControllerBase):
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
 
-            p_pv = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['PV']
-            p_grid = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['Grid']
-            p_ess = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['ESS']
-            p_vac = Decision[0, initial_ess_soc_value, initial_vac_soc_value]['VAC']
+            if self.single_ev:
+                recharge_value = int(data_dict[None]["Recharge"][None])
+                result_key = (0, initial_ess_soc_value, initial_vac_soc_value, recharge_value)
+            else:
+                result_key = (0, initial_ess_soc_value, initial_vac_soc_value)
+
+            p_pv = Decision[result_key]['PV']
+            p_grid = Decision[result_key]['Grid']
+            p_ess = Decision[result_key]['ESS']
+            p_vac = Decision[result_key]['VAC']
+
             p_ev = {}
 
             self.logger.debug("Dynamic programming calculations")
