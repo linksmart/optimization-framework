@@ -13,7 +13,6 @@ from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
 import time
 
-
 from IO.inputController import InputController
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB

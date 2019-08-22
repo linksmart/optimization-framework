@@ -1,3 +1,4 @@
+import getpass
 import subprocess
 
 from utils_intern.messageLogger import MessageLogger
@@ -80,6 +81,8 @@ def setup():
 
     clear_redis(logger)
     copy_models()
+    copy_env_varibles()
+    #logger.debug("env = "+str(os.environ))
     zmqHost = config.get("IO", "zmq.host")
     pubPort = config.get("IO", "zmq.pub.port")
     subPort = config.get("IO", "zmq.sub.port")
@@ -105,6 +108,16 @@ def clear_redis(logger):
     redisDB.reset()
     redisDB.set("time", time.time())
 
+def copy_env_varibles():
+    with open("/usr/src/app/utils_intern/env_var.txt", "r") as f:
+        rows = f.readlines()
+        for row in rows:
+            if len(row) > 0:
+                row = row.replace("\n","")
+                s = row.split("=")
+                if len(s) == 1:
+                    s.append("")
+                os.environ[s[0]] = str(s[1])
 
 if __name__ == "__main__":
     # execute only if run as a script

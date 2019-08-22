@@ -2,7 +2,7 @@
 # Use an official Python runtime as a parent image
 FROM garagon/solvers:amd_v3
 
-#RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
+RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
 
 
 # Set the working directory to usr/src/app
@@ -49,7 +49,7 @@ RUN pip3 install -U pydevd
 RUN pip3 install -U xlrd
 
 
-#USER garagon
+USER garagon
 
 WORKDIR /usr/src/app
 
@@ -67,8 +67,16 @@ COPY logs /usr/src/app/logs
 COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
 
+USER root
 
-#ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
+RUN echo "PATH=$PATH" >> /usr/src/app/utils_intern/env_var.txt
+RUN echo "GUROBI_HOME=$GUROBI_HOME" >> /usr/src/app/utils_intern/env_var.txt
+RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var.txt
+RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
+
+USER garagon
+
+ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
 
 #USER root
 
@@ -78,5 +86,5 @@ COPY stochastic_programming /usr/src/app/stochastic_programming
 #RUN chown -R garagon:ofw /usr/src/app/
 #RUN chmod g+rwx /usr/src/app/ -R
 
-#USER garagon
 
+#USER garagon
