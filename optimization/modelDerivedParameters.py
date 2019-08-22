@@ -14,7 +14,7 @@ class ModelDerivedParameters:
         base, derived = [], []
         if model_name == "CarParkModel" or model_name == "CarParkModel2":
             base, derived = ModelDerivedParameters.car_park_model()
-        if model_name == "StochasticResidentialMaxPV" or model_name == "StochasticResidentialMaxPV2":
+        if model_name in ["StochasticResidentialMaxPV","StochasticResidentialMinGrid","StochasticResidentialMinPBill"]:
             base, derived = ModelDerivedParameters.car_park_model()
         return base, derived
 
