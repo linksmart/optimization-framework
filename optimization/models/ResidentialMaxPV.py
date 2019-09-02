@@ -1,4 +1,5 @@
 from pyomo.core import *
+import pyomo.environ
 class Model:
 	model = AbstractModel()
 	
@@ -12,9 +13,9 @@ class Model:
 	model.dT = Param(within=PositiveIntegers)  # Number of seconds in one time step
 	
 	# model.Price_Forecast=Param(model.T)                             #Electric price forecast
-	model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
 	
-	model.ESS_Min_SoC = Param(within=PositiveReals)  # Minimum SoC of ESSs
+	# definition of the energy storage system
+	model.ESS_Min_SoC = Param(within=NonNegativeReals)  # Minimum SoC of ESSs
 	model.ESS_Max_SoC = Param(within=PositiveReals)  # Maximum SoC of ESSs
 	model.SoC_Value = Param(within=PositiveReals)
 	model.ESS_Capacity = Param(within=PositiveReals)  # Storage Capacity of ESSs
@@ -23,27 +24,27 @@ class Model:
 	model.ESS_Charging_Eff = Param(within=PositiveReals)  # Charging efficiency of ESSs
 	model.ESS_Discharging_Eff = Param(within=PositiveReals)  # Discharging efficiency of ESSs
 	
+	#definition of the grid maximal power
 	model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 	model.Q_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max reactive power export
 	
+	#definition of the PV
+	model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
 	model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
+	
+	#definition of the load
+	model.P_Load = Param(model.T, within=NegativeReals)  # Active power demand
+	
+	
 	################################################################################################
 	
 	##################################       VARIABLES             #################################
 	################################################################################################
-	
-	model.P_Grid_R_Output = Var(model.T, within=Reals)  # Active power exchange with grid at R phase
-	model.P_Grid_S_Output = Var(model.T, within=Reals)  # Active power exchange with grid at S phase
-	model.P_Grid_T_Output = Var(model.T, within=Reals)  # Active power exchange with grid at S phase
+
 	model.P_Grid_Output = Var(model.T, within=Reals)
-	model.Q_Grid_R_Output = Var(model.T, within=Reals)  # Reactive power exchange with grid at R phase
-	model.Q_Grid_S_Output = Var(model.T, within=Reals)  # Reactive power exchange with grid at S phase
-	model.Q_Grid_T_Output = Var(model.T, within=Reals)  # Reactive power exchange with grid at T phase
-	model.Q_Grid_Output = Var(model.T, within=Reals)
-	
+	#model.P_Grid_Output = Var(model.T, within=Reals, bounds=(-model.P_Grid_Max_Export_Power, 0))
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
-	model.P_ESS_Output = Var(model.T, within=Reals, bounds=(
-	    -model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
+	model.P_ESS_Output = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	
 	################################################################################################
@@ -51,27 +52,19 @@ class Model:
 	###########################################################################
 	#######                         CONSTRAINTS                         #######
 	
-	# PV constraints
+	#rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
-	    return model.P_PV_Output[t] <= model.P_PV[t]
-	
-	# Import/Export constraints
-	def con_rule_grid_P(model, t):
-	    return model.P_Grid_Output[t] == model.P_Grid_R_Output[t] + model.P_Grid_S_Output[t] + model.P_Grid_T_Output[t]
-	
-	def con_rule_grid_P_inv(model, t):
-	    return model.P_Grid_Output[t] >= -model.P_Grid_Max_Export_Power
-	
-	def con_rule_grid_Q(model, t):
-	    return model.Q_Grid_Output[t] == model.Q_Grid_R_Output[t] + model.Q_Grid_S_Output[t] + model.Q_Grid_T_Output[t]
-	
-	def con_rule_grid_Q_inv(model, t):
-	    return model.Q_Grid_Output[t] >= -model.Q_Grid_Max_Export_Power
+	    return model.P_PV_Output[t]  <= model.P_PV[t]
+
+	#rule for setting the maximum export power to the grid
+	def con_rule_grid_output_power(model, t):
+		return model.P_Grid_Output[t] >= -model.P_Grid_Max_Export_Power
 	
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
 	    return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / model.ESS_Capacity / 3600
 	
+	#initialization of the first SoC value to the value entered through the API
 	def con_rule_iniSoC(model):
 		if model.SoC_Value > model.ESS_Max_SoC:
 			model.SoC_Value = model.ESS_Max_SoC
@@ -81,24 +74,21 @@ class Model:
 			return model.SoC_ESS[0] == model.SoC_Value
 		else:
 			return model.SoC_ESS[0] == model.SoC_Value
-
+	
+	#Definition of the energy balance in the system
+	def con_rule_energy_balance(model,t):
+	    return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 	
 	# Generation-feed in balance
-	def con_rule_generation_feedin(model, t):
-	    return model.P_Grid_Output[t] * model.P_Grid_Output[t] + model.Q_Grid_Output[t] * model.Q_Grid_Output[t] == (
-	            model.P_PV_Output[t] + model.P_ESS_Output[t]) * (model.P_PV_Output[t] + model.P_ESS_Output[t])
+	#def con_rule_generation_feedin(model, t):
+	    #return model.P_Grid_Output[t] * model.P_Grid_Output[t] + model.Q_Grid_Output[t] * model.Q_Grid_Output[t] == (model.P_PV_Output[t] + model.P_ESS_Output[t]) * (model.P_PV_Output[t] + model.P_ESS_Output[t])
 	
-	model.con_pv_pmax = Constraint(model.T, rule=con_rule_pv_potential)
-	
-	model.con_grid_P = Constraint(model.T, rule=con_rule_grid_P)
-	model.con_grid_inv_P = Constraint(model.T, rule=con_rule_grid_P_inv)
-	model.con_grid_Q = Constraint(model.T, rule=con_rule_grid_Q)
-	model.con_grid_inv_Q = Constraint(model.T, rule=con_rule_grid_Q_inv)
-	
+	model.con_pv_max = Constraint(model.T, rule = con_rule_pv_potential)
+	model.conn_grid_output_max = Constraint(model.T, rule = con_rule_grid_output_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
+	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	
-	model.con_gen_feedin = Constraint(model.T, rule=con_rule_generation_feedin)
 	
 	###########################################################################
 	#######                         OBJECTIVE                           #######
