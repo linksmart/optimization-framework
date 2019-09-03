@@ -39,7 +39,7 @@ class Model:
 	model.GlobalTargetWeight = Param(within=NonNegativeReals)
 	model.LocalTargetWeight = Param(within=NonNegativeReals)
 
-	model.DSO_Command = Param(model.T, within=Reals)  # TODO: define domain
+	model.ESS_Control = Param(model.T, within=Reals)  # TODO: define domain
 	
 	
 	################################################################################################
@@ -87,7 +87,7 @@ class Model:
 	    return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 
 	def con_rule_deviation(model, t):
-		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Command[t]
+		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Control[t]
 
 	model.con_pv_max = Constraint(model.T, rule = con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule = con_rule_grid_output_power)

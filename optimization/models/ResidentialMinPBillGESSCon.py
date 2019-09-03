@@ -35,10 +35,14 @@ class Model:
 	#definition of the load
 	model.P_Load = Param(model.T, within=NegativeReals)  # Active power demand
 	model.Price_Forecast = Param(model.T, within=Reals)
-	
-	
+
+	model.GlobalTargetWeight = Param(within=NonNegativeReals)
+	model.LocalTargetWeight = Param(within=NonNegativeReals)
+
+	model.ESS_Control = Param(model.T, within=Reals)  # TODO: define domain
+
 	################################################################################################
-	
+
 	##################################       VARIABLES             #################################
 	################################################################################################
 
@@ -48,6 +52,7 @@ class Model:
 	model.P_ESS_Output = Var(model.T, within=Reals,
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
+	model.Deviation = Var(model.T, within=Reals)
 
 	################################################################################################
 
@@ -81,21 +86,21 @@ class Model:
 	def con_rule_energy_balance(model, t):
 		return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 
-	# Generation-feed in balance
-	# def con_rule_generation_feedin(model, t):
-	# return model.P_Grid_Output[t] * model.P_Grid_Output[t] + model.Q_Grid_Output[t] * model.Q_Grid_Output[t] == (model.P_PV_Output[t] + model.P_ESS_Output[t]) * (model.P_PV_Output[t] + model.P_ESS_Output[t])
+	def con_rule_deviation(model, t):
+		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Control[t]
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
+	model.con_deviation = Constraint(model.T, rule=con_rule_deviation)
 	
 	
 	###########################################################################
 	#######                         OBJECTIVE                           #######
 	###########################################################################
 	def obj_rule(model):
-	    return sum(model.Price_Forecast[t] * model.P_Grid_Output[t] for t in model.T)
+	    return sum(model.LocalTargetWeight * model.Price_Forecast[t] * model.P_Grid_Output[t] + model.GlobalTargetWeight * model.Deviation * model.Deviation for t in model.T)
 	
 	model.obj = Objective(rule=obj_rule, sense=minimize)

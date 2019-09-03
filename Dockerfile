@@ -76,7 +76,7 @@ RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_v
 
 #USER garagon
 
-ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
+#ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
 
 #USER root
 

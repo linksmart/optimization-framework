@@ -40,12 +40,12 @@ services:
  #     context: ""
  #     dockerfile: docker/Bonmin/Dockerfile
  #   image: garagon/bonmin:V0.1
-  mosquitto:
-    image: pascaldevink/rpi-mosquitto
+  # mosquitto:
+  #  image: pascaldevink/rpi-mosquitto
     #image: openenergy/rpi-mosquitto
-    ports:
-      - "1883:1883"
-    container_name: "mosquito_S4G"
+  #  ports:
+  #    - "1883:1883"
+  #  container_name: "mosquito_S4G"
   #zeromq:
    # image: zeromq/zeromq
     #ports:

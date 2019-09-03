@@ -41,7 +41,7 @@ class Model:
     model.GlobalTargetWeight = Param(within=Reals)
     model.LocalTargetWeight = Param(within=Reals)
 
-    model.DSO_Command = Param(model.T, within=Reals) #TODO: define domain
+    model.ESS_Control = Param(model.T, within=Reals) #TODO: define domain
 
     #######################################      Outputs       #######################################################
 
@@ -53,7 +53,7 @@ class Model:
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
     model.P_GRID_OUTPUT = Var(within=Reals)
     model.P_PV_single = Var(within=NonNegativeReals)
-    model.DSO_Command_single = Var(within=Reals)
+    model.ESS_Control_single = Var(within=Reals)
 
     """
     def __init__(model, value, behaviorModel):
@@ -76,9 +76,9 @@ class Model:
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 
     def rule_iniDSO(model):
-        for j in model.DSO_Command:
+        for j in model.ESS_Control:
             if j == model.Timestep:
-                return model.DSO_Command_single == model.DSO_Command[j]
+                return model.ESS_Control_single == model.ESS_Control[j]
 
     model.con_ess_IniDSO = Constraint(rule=rule_iniDSO)
 
@@ -132,8 +132,8 @@ class Model:
                                                         model.Behavior_Model[
                                                             (1, 0)] * valueOf_away
 
-                immediate_cost = model.GlobalTargetWeight * (model.DSO_Command_single - powerFromEss) * \
-                                 (model.DSO_Command_single - powerFromEss)
+                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
+                                 (model.ESS_Control_single - powerFromEss)
 
                 future_cost += model.Decision[p_ess, p_vac]*(immediate_cost+expected_future_cost) # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
@@ -162,8 +162,8 @@ class Model:
                                                         model.Behavior_Model[
                                                             (0, 0)] * valueOf_away
 
-                immediate_cost = model.GlobalTargetWeight * (model.DSO_Command_single - powerFromEss) * \
-                                 (model.DSO_Command_single - powerFromEss)
+                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
+                                 (model.ESS_Control_single - powerFromEss)
 
                 future_cost += model.Decision[p_ess, p_vac] * (
                             immediate_cost + expected_future_cost)  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
