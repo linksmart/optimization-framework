@@ -47,6 +47,7 @@ class Model:
 	model.P_ESS_Output = Var(model.T, within=Reals,
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
+	model.U = Var(model.T, within=Reals)
 
 	################################################################################################
 
@@ -63,7 +64,7 @@ class Model:
 
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
-		return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / model.ESS_Capacity / 3600
+		return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / (model.ESS_Capacity * 3600)
 
 	# initialization of the first SoC value to the value entered through the API
 	def con_rule_iniSoC(model):
@@ -80,6 +81,12 @@ class Model:
 	def con_rule_energy_balance(model, t):
 		return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 
+	def con_rule_linearization_1(model, t):
+		return model.U[t] <= model.P_Grid_Output[t]
+
+	def con_rule_linearization_2(model, t):
+		return model.U[t] >= -model.P_Grid_Output[t]
+
 	# Generation-feed in balance
 	# def con_rule_generation_feedin(model, t):
 	# return model.P_Grid_Output[t] * model.P_Grid_Output[t] + model.Q_Grid_Output[t] * model.Q_Grid_Output[t] == (model.P_PV_Output[t] + model.P_ESS_Output[t]) * (model.P_PV_Output[t] + model.P_ESS_Output[t])
@@ -89,12 +96,14 @@ class Model:
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
+	model.con_linear_1 = Constraint(model.T, rule=con_rule_linearization_1)
+	model.con_linear_2 = Constraint(model.T, rule=con_rule_linearization_2)
 	
 	
 	###########################################################################
 	#######                         OBJECTIVE                           #######
 	###########################################################################
 	def obj_rule(model):
-	    return sum(model.P_Grid_Output[t] * model.P_Grid_Output[t] for t in model.T)
+	    return sum(model.U[t] for t in model.T)
 	
 	model.obj = Objective(rule=obj_rule, sense=minimize)

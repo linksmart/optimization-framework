@@ -34,7 +34,7 @@ class Model:
 	model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
 	
 	#definition of the load
-	model.P_Load = Param(model.T, within=NegativeReals)  # Active power demand
+	model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 
 	model.GlobalTargetWeight = Param(within=NonNegativeReals)
 	model.LocalTargetWeight = Param(within=NonNegativeReals)

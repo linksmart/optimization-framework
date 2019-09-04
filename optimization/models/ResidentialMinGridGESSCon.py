@@ -33,7 +33,7 @@ class Model:
 	model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
 	
 	#definition of the load
-	model.P_Load = Param(model.T, within=NegativeReals)  # Active power demand
+	model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 
 	model.GlobalTargetWeight = Param(within=NonNegativeReals)
 	model.LocalTargetWeight = Param(within=NonNegativeReals)
@@ -52,6 +52,7 @@ class Model:
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.Deviation = Var(model.T, within=Reals)
+	model.U = Var(model.T, within=Reals)
 
 	################################################################################################
 
@@ -88,18 +89,26 @@ class Model:
 	def con_rule_deviation(model, t):
 		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Control[t]
 
+	def con_rule_linearization_1(model, t):
+		return model.U[t] <= model.P_Grid_Output[t]
+
+	def con_rule_linearization_2(model, t):
+		return model.U[t] >= -model.P_Grid_Output[t]
+
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	model.con_deviation = Constraint(model.T, rule=con_rule_deviation)
+	model.con_linear_1 = Constraint(model.T, rule=con_rule_linearization_1)
+	model.con_linear_2 = Constraint(model.T, rule=con_rule_linearization_2)
 	
 	
 	###########################################################################
 	#######                         OBJECTIVE                           #######
 	###########################################################################
 	def obj_rule(model):
-	    return sum(model.LocalTargetWeight * model.P_Grid_Output[t] * model.P_Grid_Output[t] + model.GlobalTargetWeight * model.Deviation * model.Deviation for t in model.T)
+	    return sum(model.LocalTargetWeight * model.U[t] + model.GlobalTargetWeight * model.Deviation * model.Deviation for t in model.T)
 	
 	model.obj = Objective(rule=obj_rule, sense=minimize)

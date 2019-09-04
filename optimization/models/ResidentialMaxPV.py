@@ -23,6 +23,8 @@ class Model:
 	model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
 	model.ESS_Charging_Eff = Param(within=PositiveReals)  # Charging efficiency of ESSs
 	model.ESS_Discharging_Eff = Param(within=PositiveReals)  # Discharging efficiency of ESSs
+
+	model.Fronius_Max_Power = Param(within=PositiveReals)
 	
 	#definition of the grid maximal power
 	model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
@@ -33,7 +35,7 @@ class Model:
 	model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
 	
 	#definition of the load
-	model.P_Load = Param(model.T, within=NegativeReals)  # Active power demand
+	model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 	
 	
 	################################################################################################
@@ -46,7 +48,7 @@ class Model:
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
-	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Discharge_Power, model.ESS_Max_Charge_Power))
+	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
 	
 	################################################################################################
 	

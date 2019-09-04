@@ -51,6 +51,7 @@ class Model:
 
     model.P_PV_single = Var(within=NonNegativeReals)
     model.P_Load_single = Var(within=NonNegativeReals)
+    model.U = Var(within=Reals)
 
 
     def combinatorics(model):
@@ -98,9 +99,20 @@ class Model:
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
     def home_demandmeeting(model):
-        return model.P_Load_single + model.P_VAC_OUTPUT + model.P_ESS_OUTPUT == model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+        return model.P_Load_single + model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     model.const_demand = Constraint(rule=home_demandmeeting)
+
+    def con_rule_linearization_1(model):
+        return model.U <= model.P_GRID_OUTPUT
+
+    model.con_linear_1 = Constraint(rule=con_rule_linearization_1)
+
+
+    def con_rule_linearization_2(model):
+        return model.U >= -model.P_GRID_OUTPUT
+
+    model.con_linear_2 = Constraint(rule=con_rule_linearization_2)
 
     def objrule1(model):
 
@@ -123,7 +135,7 @@ class Model:
                 future_cost += model.Decision[
                                    p_ess, p_vac] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
-            return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+            return model.U + future_cost
 
         elif model.Recharge == 0:
             # If vac is charged with one of the feasible decision 'p_ev'
@@ -150,7 +162,7 @@ class Model:
                 future_cost += model.Decision[
                                    p_ess, p_vac] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
 
-                return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+                return model.U + future_cost
 
 
     model.obj = Objective(rule=objrule1, sense=minimize)

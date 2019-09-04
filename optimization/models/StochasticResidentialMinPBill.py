@@ -107,7 +107,7 @@ class Model:
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
     def home_demandmeeting(model):
-        return model.P_Load_single + model.P_VAC_OUTPUT + model.P_ESS_OUTPUT == model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+        return model.P_Load_single + model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     model.const_demand = Constraint(rule=home_demandmeeting)
 

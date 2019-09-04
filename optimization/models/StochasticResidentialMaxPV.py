@@ -18,6 +18,7 @@ class Model:
     model.Value = Param(model.Value_Index, mutable=True, within=Reals)
 
     model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
+    model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 
     model.Initial_ESS_SoC = Param(within=Reals, default=0)
     model.Initial_VAC_SoC = Param(within=Reals, default=0.0)
@@ -48,6 +49,7 @@ class Model:
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
     model.P_GRID_OUTPUT = Var(within=Reals)
     model.P_PV_single = Var(within=NonNegativeReals)
+    model.P_Load_single = Var(within=NonNegativeReals)
 
     """
     def __init__(model, value, behaviorModel):
@@ -68,6 +70,13 @@ class Model:
                 return model.P_PV_single == model.P_PV[j]
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
+
+    def rule_iniLoad(model):
+        for j in model.P_Load:
+            if j == model.Timestep:
+                return model.P_Load_single == model.P_Load[j]
+
+    model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
 
     def con_rule_pv_potential(model):
         return model.P_PV_OUTPUT <= model.P_PV_single
@@ -94,7 +103,7 @@ class Model:
 
     def home_demandmeeting(model):
         # Power demand must be met anyway
-        return model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+        return model.P_Load_single + model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     model.const_demand = Constraint(rule=home_demandmeeting)
 
