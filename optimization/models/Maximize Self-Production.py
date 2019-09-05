@@ -48,6 +48,7 @@ class Model:
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.U = Var(model.T, within=Reals)
+	model.initial_soc_value = Var(within=NonNegativeReals, bounds=(0, 1), initialize=0.5)
 
 	################################################################################################
 
@@ -66,16 +67,17 @@ class Model:
 	def con_rule_socBalance(model, t):
 		return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / (model.ESS_Capacity * 3600)
 
+	def con_rule_iniSoC_previous(model):
+		return model.initial_soc_value == model.SoC_Value / 100
+
 	# initialization of the first SoC value to the value entered through the API
 	def con_rule_iniSoC(model):
-		if model.SoC_Value > model.ESS_Max_SoC:
-			model.SoC_Value = model.ESS_Max_SoC
-			return model.SoC_ESS[0] == model.SoC_Value
-		elif model.SoC_Value < model.ESS_Min_SoC:
-			model.SoC_Value = model.ESS_Min_SoC
-			return model.SoC_ESS[0] == model.SoC_Value
+		if value(model.initial_soc_value) > model.ESS_Max_SoC:
+			return model.SoC_ESS[0] == model.ESS_Max_SoC
+		elif value(model.initial_soc_value) < model.ESS_Min_SoC:
+			return model.SoC_ESS[0] == model.ESS_Min_SoC
 		else:
-			return model.SoC_ESS[0] == model.SoC_Value
+			return model.SoC_ESS[0] == model.initial_soc_value
 
 	# Definition of the energy balance in the system
 	def con_rule_energy_balance(model, t):
@@ -94,6 +96,7 @@ class Model:
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
+	model.con_ess_Inisoc_previous = Constraint(rule=con_rule_iniSoC_previous)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	model.con_linear_1 = Constraint(model.T, rule=con_rule_linearization_1)

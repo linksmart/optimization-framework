@@ -23,8 +23,6 @@ class Model:
 	model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
 	model.ESS_Charging_Eff = Param(within=PositiveReals)  # Charging efficiency of ESSs
 	model.ESS_Discharging_Eff = Param(within=PositiveReals)  # Discharging efficiency of ESSs
-
-	model.Fronius_Max_Power = Param(within=PositiveReals)
 	
 	#definition of the grid maximal power
 	model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
@@ -48,8 +46,8 @@ class Model:
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
-	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
-	
+	model.initial_soc_value = Var(within=NonNegativeReals, bounds=(0, 1), initialize=0.5)
+
 	################################################################################################
 	
 	###########################################################################
@@ -63,28 +61,27 @@ class Model:
 	def con_rule_grid_output_power(model, t):
 		return model.P_Grid_Output[t] >= -model.P_Grid_Max_Export_Power
 
-	def con_rule_fronius_power(model,t):
-		return model.P_PV_Output[t] + model.P_ESS_Output[t] == model.P_Fronius[t]
 	
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
 	    return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / model.ESS_Capacity / 3600
 	
-	#initialization of the first SoC value to the value entered through the API
+	def con_rule_iniSoC_previous(model):
+		return model.initial_soc_value == model.SoC_Value / 100
+
+	# initialization of the first SoC value to the value entered through the API
 	def con_rule_iniSoC(model):
-		if model.SoC_Value > model.ESS_Max_SoC:
-			model.SoC_Value = model.ESS_Max_SoC
-			return model.SoC_ESS[0] == model.SoC_Value
-		elif model.SoC_Value < model.ESS_Min_SoC:
-			model.SoC_Value = model.ESS_Min_SoC
-			return model.SoC_ESS[0] == model.SoC_Value
+		if value(model.initial_soc_value) > model.ESS_Max_SoC:
+			return model.SoC_ESS[0] == model.ESS_Max_SoC
+		elif value(model.initial_soc_value) < model.ESS_Min_SoC:
+			return model.SoC_ESS[0] == model.ESS_Min_SoC
 		else:
-			return model.SoC_ESS[0] == model.SoC_Value
+			return model.SoC_ESS[0] == model.initial_soc_value
 	
 	#Definition of the energy balance in the system
 	def con_rule_energy_balance(model,t):
 	    #return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
-		return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
+		return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 	
 	# Generation-feed in balance
 	#def con_rule_generation_feedin(model, t):
@@ -92,8 +89,8 @@ class Model:
 	
 	model.con_pv_max = Constraint(model.T, rule = con_rule_pv_potential)
 	model.con_grid_output_max = Constraint(model.T, rule = con_rule_grid_output_power)
-	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
+	model.con_ess_Inisoc_previous = Constraint(rule=con_rule_iniSoC_previous)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	

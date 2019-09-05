@@ -23,7 +23,9 @@ class Model:
 	model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
 	model.ESS_Charging_Eff = Param(within=PositiveReals)  # Charging efficiency of ESSs
 	model.ESS_Discharging_Eff = Param(within=PositiveReals)  # Discharging efficiency of ESSs
-	
+
+	model.Fronius_Max_Power = Param(within=PositiveReals)
+
 	#definition of the grid maximal power
 	model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 	model.Q_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max reactive power export
@@ -53,6 +55,7 @@ class Model:
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.Deviation = Var(model.T, within=Reals)
+	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
 	model.initial_soc_value = Var(within=NonNegativeReals, bounds=(0, 1), initialize=0.5)
 	################################################################################################
 
@@ -66,6 +69,9 @@ class Model:
 	# rule for setting the maximum export power to the grid
 	def con_rule_grid_output_power(model, t):
 		return model.P_Grid_Output[t] >= -model.P_Grid_Max_Export_Power
+
+	def con_rule_fronius_power(model, t):
+		return model.P_PV_Output[t] + model.P_ESS_Output[t] == model.P_Fronius[t]
 
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
@@ -86,13 +92,14 @@ class Model:
 
 	# Definition of the energy balance in the system
 	def con_rule_energy_balance(model, t):
-		return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
+		return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
 
 	def con_rule_deviation(model, t):
 		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Control[t]
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)
+	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc_previous = Constraint(rule=con_rule_iniSoC_previous)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
