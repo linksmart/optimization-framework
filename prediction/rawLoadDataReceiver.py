@@ -46,6 +46,7 @@ class RawLoadDataReceiver(DataReceiver):
             data = RawDataReader.format_data(data)
             mod_data = []
             for item in data:
+
                 dt = datetime.datetime.fromtimestamp(item[0]).replace(second=0, microsecond=0)
                 if self.current_minute is None:
                     self.current_minute = dt

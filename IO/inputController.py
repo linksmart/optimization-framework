@@ -222,6 +222,7 @@ class InputController:
         return data_available_for_bucket
 
     def update_data(self, data):
+        self.logger.info("data for update : "+str(data))
         for k,v_new in data.items():
             new_data = {}
             if k in self.optimization_data.keys():

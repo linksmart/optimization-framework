@@ -10,12 +10,13 @@ logger = MessageLogger.get_logger_parent()
 class ModelDerivedParameters:
 
     @staticmethod
-    def get_derived_parameter_mapping(model_name):
+    def get_derived_parameter_mapping(model_name, optimization_type):
         base, derived = [], []
-        if model_name == "CarParkModel" or model_name == "CarParkModel2" or "CarPark" in model_name:
+        if model_name in ["CarParkModel", "StochasticResidentialMaxPV","StochasticResidentialMinGrid", "StochasticResidentialMinPBill"]:
             base, derived = ModelDerivedParameters.car_park_model()
-        if model_name in ["StochasticResidentialMaxPV","StochasticResidentialMinGrid","StochasticResidentialMinPBill"]:
+        elif optimization_type == "stochastic":
             base, derived = ModelDerivedParameters.car_park_model()
+
         return base, derived
 
     @staticmethod

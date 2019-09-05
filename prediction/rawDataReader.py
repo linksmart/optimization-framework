@@ -29,6 +29,13 @@ class RawDataReader:
         return []
 
     @staticmethod
+    def time_conversion(time):
+        if len(str(time)) > 10:
+            new_t = time / (10 ** (len(str(time)) - 10))
+            return new_t
+        else:
+            return time
+    @staticmethod
     def format_data(data=[]):
         new_data = []
         doc = None
@@ -48,6 +55,7 @@ class RawDataReader:
                     n = meas.name
                     v = meas.value
                     t = meas.time
+                    t = RawDataReader.time_conversion(t)
                     cols = [t,v]
                     new_data.append(cols)
                 except Exception as e:

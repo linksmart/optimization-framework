@@ -30,7 +30,10 @@ class BaseDataReceiver(DataReceiver, ABC):
         self.buffer = buffer
         self.dT = dT
         self.base_value_flag = base_value_flag
-        self.detachable = topic_params["detachable"]
+        if "detachable" in topic_params.keys():
+            self.detachable = topic_params["detachable"]
+        else:
+            self.detachable = False
         self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
         self.total_steps_in_day = floor(24 * 60 * 60 / self.dT)
         self.current_day_index = 0
@@ -77,6 +80,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                     u = meas.unit
                     v = meas.value
                     t = meas.time
+                    t = self.time_conversion(t)
                     if not u:
                         u = bu
                     # dont check bn
@@ -169,6 +173,17 @@ class BaseDataReceiver(DataReceiver, ABC):
                                   " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
                 final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
         return final_data, bucket_available, self.last_time
+
+    def time_conversion(self, time):
+        t = str(time)
+        l = len(t)
+        if "." in t:
+            l = t.find(".")
+        if l > 10:
+            new_t = time / (10 ** (l - 10))
+            return new_t
+        else:
+            return time
 
     def time_to_bucket(self, time):
         bucket = floor((time - self.start_of_day) / self.dT)

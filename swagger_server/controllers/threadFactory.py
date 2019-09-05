@@ -116,7 +116,7 @@ class ThreadFactory:
             input_config_mqtt = {}
             self.logger.error(e)
 
-        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name, self.id)
+        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name, self.id, self.optimization_type)
 
         missing_keys = input_config_parser.check_keys_for_completeness()
         if len(missing_keys) > 0:

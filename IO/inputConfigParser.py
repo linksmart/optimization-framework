@@ -17,13 +17,13 @@ from utils_intern.messageLogger import MessageLogger
 
 class InputConfigParser:
 
-    def __init__(self, input_config_file, input_config_mqtt, model_name, id):
+    def __init__(self, input_config_file, input_config_mqtt, model_name, id, optimization_type):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
         self.input_config_file = input_config_file
         self.input_config_mqtt = input_config_mqtt
-        self.base, self.derived = ModelDerivedParameters.get_derived_parameter_mapping(model_name)
+        self.base, self.derived = ModelDerivedParameters.get_derived_parameter_mapping(model_name, optimization_type)
         self.mqtt_params = {}
         self.generic_names = []
         self.generic_file_names = []
@@ -115,7 +115,7 @@ class InputConfigParser:
                             self.add_value_to_data(data, k1, v1)
                         elif isinstance(v1, dict):
                             #data[k + "/" + k1] = v1
-                            data[k1] = v1
+                            data[k1] = self.remove_mqtt_source(v1)
                         else:
                             try:
                                 v1 = float(v1)
@@ -126,6 +126,17 @@ class InputConfigParser:
                             data[k1] = {None: v1}
         #         pprint.pprint(data, indent=4)
         return data
+
+    def remove_mqtt_source(self, v1):
+        if isinstance(v1, dict):
+            if "mqtt" in v1.keys():
+                return {}
+            else:
+                for k2 in v1.keys():
+                    v1[k2] = self.remove_mqtt_source(v1[k2])
+                return v1
+        else:
+            return v1
 
     def add_value_to_data(self, data, k, v):
         try:

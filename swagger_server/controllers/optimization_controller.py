@@ -318,38 +318,49 @@ def framework_start(id, startOFW):  # noqa: E501
 
     available_solvers = ["ipopt", "glpk", "bonmin", "gurobi", "cbc"]
     available_optimizers = ["discrete", "stochastic", "MPC"]
+    response_msg = ""
+    response_code = 200
     if connexion.request.is_json:
         logger.info("Starting the system")
         startOFW = Start.from_dict(connexion.request.get_json())
         models = get_models()
         if startOFW.model_name != "" and startOFW.model_name not in models:
-            return "Model not available. Available models are :" + str(models)
-        if startOFW.solver not in available_solvers:
-            return "Use one of the following solvers :" + str(available_solvers)
-        if startOFW.optimization_type not in available_optimizers:
-            return "Use one of the following optimizer types : " + str(available_optimizers)
-        dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
-        if not os.path.exists(dir):
-            return "Id not existing"
-        redis_db = RedisDB()
-        flag = redis_db.get("run:" + id)
-        if flag is not None and flag == "running":
-            return "System already running"
+            response_msg = "Model not available. Available models are :" + str(models)
+            response_code = 400
+        elif startOFW.solver not in available_solvers:
+            response_msg = "Use one of the following solvers :" + str(available_solvers)
+            response_code = 400
+        elif startOFW.optimization_type not in available_optimizers:
+            response_msg = "Use one of the following optimizer types : " + str(available_optimizers)
+            response_code = 400
         else:
-            try:
-                msg = variable.start(id, startOFW)
-                if msg == 0:
-                    msg_to_send = "System started succesfully"
+            dir = os.path.join(os.getcwd(), "optimization/resources", str(id))
+            if not os.path.exists(dir):
+                response_msg = "Id not existing"
+                response_code = 400
+            else:
+                redis_db = RedisDB()
+                flag = redis_db.get("run:" + id)
+                if flag is not None and flag == "running":
+                    response_msg = "System already running"
                 else:
-                    msg_to_send = "System could not start"
-                return msg_to_send
-            except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
-                logger.error("Error " + str(e))
-                redis_db.set("run:" + id, "stopped")
-                return str(e)
+                    try:
+                        msg = variable.start(id, startOFW)
+                        if msg == 0:
+                            response_msg = "System started succesfully"
+                        else:
+                            response_msg = "System could not start"
+                            response_code = 400
+                    except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
+                        logger.error("Error " + str(e))
+                        redis_db.set("run:" + id, "stopped")
+                        response_msg = str(e)
+                        response_code = 400
     else:
+        response_msg = "Wrong Content-Type"
+        response_code = 400
         logger.error("Wrong Content-Type")
-        return "Wrong Content-Type"
+    return response_msg, response_code
     # return 'System started succesfully'
 
 
@@ -385,6 +396,7 @@ def framework_stop(id):  # noqa: E501
         flag = redis_db.get("run:" + id)
         logger.debug("Flag " + str(flag))
         message = ""
+        code = 200
         if flag is not None and flag == "running":
             logger.debug("System running and trying to stop")
             redis_db.set("run:" + id, "stop")
@@ -409,6 +421,7 @@ def framework_stop(id):  # noqa: E501
                 logger.debug("System stopped succesfully")
             else:
                 message = "Problems while stopping the system"
+                code = 500
         elif flag is not None and flag == "stopped":
             logger.debug("System already stopped")
             message = "System already stopped"
@@ -418,4 +431,5 @@ def framework_stop(id):  # noqa: E501
     except Exception as e:
         logger.error(e)
         message = "Error stoping the system"
-    return message
+        code = 500
+    return message, code
