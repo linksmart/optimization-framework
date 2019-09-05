@@ -67,6 +67,7 @@ COPY logs /usr/src/app/logs
 COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
 
+
 USER root
 
 RUN echo "PATH=$PATH" >> /usr/src/app/utils_intern/env_var.txt
@@ -74,7 +75,7 @@ RUN echo "GUROBI_HOME=$GUROBI_HOME" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
 
-#USER garagon
+#USER root
 
 #ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
 
