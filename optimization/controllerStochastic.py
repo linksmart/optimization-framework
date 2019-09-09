@@ -16,6 +16,8 @@ import math
 import numpy as np
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
+from pyutilib.services import TempfileManager
+TempfileManager.tempdir = "/usr/src/app/logs"
 
 import pyutilib.subprocess.GlobalData
 
@@ -130,8 +132,8 @@ class OptControllerStochastic(ControllerBase):
             #self.logger.debug("ess_soc_states " + str(ess_soc_states))
             #self.logger.debug("vac_soc_states " + str(vac_soc_states))
 
-            time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-            filename = "log-"+str(uuid.uuid1())+"-"+str(time_info)+".json"
+            #time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+            #filename = "log-"+str(uuid.uuid1())+"-"+str(time_info)+".json"
 
             #input_log_filepath = os.path.join("/usr/src/app/logs", "input-"+str(filename))
             #output_log_filepath = os.path.join("/usr/src/app/logs", "output-"+str(filename))
@@ -261,7 +263,7 @@ class OptControllerStochastic(ControllerBase):
 
                     try:
                         #self.logger.info(instance.pprint())
-                        action_handle = solver_manager.queue(instance, opt=optsolver)
+                        action_handle = solver_manager.queue(instance, opt=optsolver, verbose=False)
                         #self.logger.debug("Solver queue created " + str(action_handle))
                         #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         #action_handle_map[action_handle] = str(self.id)
