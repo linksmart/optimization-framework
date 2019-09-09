@@ -22,7 +22,7 @@ RUN apt-get update -y && apt-get install -y \
 RUN pip3 install --upgrade pip
 
 RUN pip3 install -U requests==2.21.0
-RUN pip3 install -U pyomo==5.6.1
+RUN pip3 install -U pyomo==5.7.1
 #RUN pip3 install -U pyomo.extras==2.0
 RUN pip3 install -U gunicorn==19.9.0
 RUN pip3 install -U sh==1.12.14
@@ -48,7 +48,6 @@ RUN pip3 install -U Pyro4
 RUN pip3 install -U pydevd
 RUN pip3 install -U xlrd
 
-RUN pip3 install -U pyomo
 
 USER garagon
 
