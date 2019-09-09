@@ -12,7 +12,7 @@ class ModelDerivedParameters:
     @staticmethod
     def get_derived_parameter_mapping(model_name, optimization_type):
         base, derived = [], []
-        if model_name in ["CarParkModel", "StochasticResidentialMaxPV","StochasticResidentialMinGrid", "StochasticResidentialMinPBill"]:
+        if model_name in ["CarParkModel", "CarParkModelMinGrid", "StochasticResidentialMaxPV","StochasticResidentialMinGrid", "StochasticResidentialMinPBill"]:
             base, derived = ModelDerivedParameters.car_park_model()
         elif optimization_type == "stochastic":
             base, derived = ModelDerivedParameters.car_park_model()
