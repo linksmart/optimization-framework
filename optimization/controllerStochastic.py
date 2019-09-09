@@ -133,12 +133,12 @@ class OptControllerStochastic(ControllerBase):
             time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
             filename = "log-"+str(uuid.uuid1())+"-"+str(time_info)+".json"
 
-            input_log_filepath = os.path.join("/usr/src/app/logs", "input-"+str(filename))
-            output_log_filepath = os.path.join("/usr/src/app/logs", "output-"+str(filename))
-            decision_log_filepath = os.path.join("/usr/src/app/logs", "decision-"+str(filename))
+            #input_log_filepath = os.path.join("/usr/src/app/logs", "input-"+str(filename))
+            #output_log_filepath = os.path.join("/usr/src/app/logs", "output-"+str(filename))
+            #decision_log_filepath = os.path.join("/usr/src/app/logs", "decision-"+str(filename))
 
-            with open(input_log_filepath, "w") as log_file:
-                json.dump(data_dict, log_file, indent=4)
+            #with open(input_log_filepath, "w") as log_file:
+                #json.dump(data_dict, log_file, indent=4)
 
             stochastic_start_time = time.time()
 
@@ -483,13 +483,13 @@ class OptControllerStochastic(ControllerBase):
 
 
 
-            with open(output_log_filepath, "w") as log_file:
-                json.dump(results, log_file, indent=4)
+            #with open(output_log_filepath, "w") as log_file:
+                #json.dump(results, log_file, indent=4)
 
-            jsonDecision = {str(k): v for k, v in Decision.items()}
+            #jsonDecision = {str(k): v for k, v in Decision.items()}
 
-            with open(decision_log_filepath, "w") as log_file:
-                json.dump(jsonDecision, log_file, indent=4)
+            #with open(decision_log_filepath, "w") as log_file:
+                #json.dump(jsonDecision, log_file, indent=4)
 
             count += 1
             if self.repetition > 0 and count >= self.repetition:
