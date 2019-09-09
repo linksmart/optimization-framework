@@ -263,7 +263,7 @@ class OptControllerStochastic(ControllerBase):
 
                     try:
                         #self.logger.info(instance.pprint())
-                        action_handle = solver_manager.queue(instance, opt=optsolver, solver_io=python)
+                        action_handle = solver_manager.queue(instance, opt=optsolver)
                         #self.logger.debug("Solver queue created " + str(action_handle))
                         #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         #action_handle_map[action_handle] = str(self.id)

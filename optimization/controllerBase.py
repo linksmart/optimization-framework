@@ -112,7 +112,7 @@ class ControllerBase(ABC, threading.Thread):
             action_handle_map = {}
 
             #####create a solver
-            optsolver = SolverFactory(self.solver_name)
+            optsolver = SolverFactory(self.solver_name, solver_io=python)
             self.logger.debug("Solver factory: " + str(optsolver))
             # optsolver.options["max_iter"]=5000
             self.logger.info("solver instantiated with " + self.solver_name)
