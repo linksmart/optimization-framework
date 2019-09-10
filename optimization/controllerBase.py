@@ -11,6 +11,9 @@ import os
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
+
+from pyutilib.services import TempfileManager
+TempfileManager.tempdir = "/usr/src/app/logs/pyomo"
 import time
 
 from IO.inputController import InputController
@@ -98,7 +101,8 @@ class ControllerBase(ABC, threading.Thread):
         except Exception as e:
             self.logger.error("error stopping output " + str(e))
 
-        folder = "/usr/src/app/logs"
+        #erasing files from pyomo
+        folder = "/usr/src/app/logs/pyomo"
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
             try:

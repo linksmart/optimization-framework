@@ -16,8 +16,7 @@ import math
 import numpy as np
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
-from pyutilib.services import TempfileManager
-TempfileManager.tempdir = "/usr/src/app/logs"
+
 
 import pyutilib.subprocess.GlobalData
 
