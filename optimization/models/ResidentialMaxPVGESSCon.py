@@ -56,7 +56,7 @@ class Model:
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.Deviation = Var(model.T, within=Reals)
 	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
-	model.initial_soc_value = Var(within=NonNegativeReals, bounds=(0, 1), initialize=0.5)
+
 	################################################################################################
 
 	###########################################################################
@@ -77,17 +77,18 @@ class Model:
 	def con_rule_socBalance(model, t):
 	    return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / model.ESS_Capacity / 3600
 
-	def con_rule_iniSoC_previous(model):
-		return model.initial_soc_value == model.SoC_Value / 100
 
 	# initialization of the first SoC value to the value entered through the API
 	def con_rule_iniSoC(model):
-		if value(model.initial_soc_value) > model.ESS_Max_SoC:
-			return model.SoC_ESS[0] == model.ESS_Max_SoC
-		elif value(model.initial_soc_value) < model.ESS_Min_SoC:
-			return model.SoC_ESS[0] == model.ESS_Min_SoC
+		soc = model.SoC_Value / 100
+		soc_return = 0
+		if soc >= model.ESS_Max_SoC:
+			soc_return = model.ESS_Max_SoC
+		elif soc <= model.ESS_Min_SoC:
+			soc_return = model.ESS_Min_SoC
 		else:
-			return model.SoC_ESS[0] == model.initial_soc_value
+			soc_return = soc
+		return model.SoC_ESS[0] == soc_return
 
 
 	#Definition of the energy balance in the system
@@ -101,7 +102,6 @@ class Model:
 	model.conn_grid_output_max = Constraint(model.T, rule = con_rule_grid_output_power)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
-	model.con_ess_Inisoc_previous = Constraint(rule=con_rule_iniSoC_previous)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	model.con_deviation = Constraint(model.T, rule=con_rule_deviation)
