@@ -38,6 +38,7 @@ class OptControllerStochastic(ControllerBase):
 
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
         while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
+            start_time_total = time.time()
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=True)  # blocking call
 
@@ -509,7 +510,10 @@ class OptControllerStochastic(ControllerBase):
 
             self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
             time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
-            for i in range(self.control_frequency - time_spent):
-                time.sleep(1)
-                if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
-                    break
+            final_time_total = time.time()
+            sleep_time = self.control_frequency - int(final_time_total - start_time_total)
+            if sleep_time > 0:
+                for i in range(sleep_time):
+                    time.sleep(1)
+                    if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
+                        break
