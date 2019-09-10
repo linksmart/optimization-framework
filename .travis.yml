@@ -3,8 +3,9 @@ language: minimal
 
 
 script:
-    if: branch=master
-      - docker-compose -f docker-compose.yml build ofw
+  - if [ $TRAVIS_BRANCH == "master"]; then
+    docker-compose -f docker-compose.yml build ofw;
+    fi
 
 
 before_deploy:
