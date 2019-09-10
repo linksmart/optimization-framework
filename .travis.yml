@@ -3,7 +3,9 @@ language: minimal
 
 
 script:
-    - docker-compose -f docker-compose.yml build ofw
+    if: branch=master
+      - docker-compose -f docker-compose.yml build ofw
+
 
 before_deploy:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin

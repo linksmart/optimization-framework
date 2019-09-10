@@ -352,6 +352,16 @@ class OptControllerStochastic(ControllerBase):
                         else:
                             self.logger.info("Nothing fits")
 
+                # erasing files from pyomo
+                folder = "/usr/src/app/logs/pyomo"
+                for the_file in os.listdir(folder):
+                    file_path = os.path.join(folder, the_file)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                        # elif os.path.isdir(file_path): shutil.rmtree(file_path)
+                    except Exception as e:
+                        logger.error(e)
                 #with open("/usr/src/app/optimization/resources/Decision_p.txt", "w") as f:
                     #f.write(str(Decision))
                 #with open("/usr/src/app/optimization/resources/Value_p.txt", "w") as f:
