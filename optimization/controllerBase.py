@@ -97,6 +97,16 @@ class ControllerBase(ABC, threading.Thread):
                 self.output.Stop()
         except Exception as e:
             self.logger.error("error stopping output " + str(e))
+
+        folder = "/usr/src/app/logs"
+        for the_file in os.listdir(folder):
+            file_path = os.path.join(folder, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                # elif os.path.isdir(file_path): shutil.rmtree(file_path)
+            except Exception as e:
+                logger.error(e)
         self.redisDB.set(self.stop_signal_key, True)
         if self.isAlive():
             self.join(1)
