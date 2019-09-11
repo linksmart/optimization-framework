@@ -264,7 +264,7 @@ class OptControllerStochastic(ControllerBase):
 
                     try:
                         #self.logger.info(instance.pprint())
-                        action_handle = solver_manager.queue(instance, opt=optsolver)#, tee=False, logfile="/usr/src/app/logs/pyomo.log")
+                        action_handle = solver_manager.queue(instance, opt=optsolver, warmstart=False)#,tee=True)#, verbose=False)#, tee=False, logfile="/usr/src/app/logs/pyomo.log")
                         #self.logger.debug("Solver queue created " + str(action_handle))
                         #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         #action_handle_map[action_handle] = str(self.id)
@@ -360,6 +360,11 @@ class OptControllerStochastic(ControllerBase):
                         err = sys.exc_info()[1]
                         self.logger.error(err)
 
+                #solver_manager.queue.clear()
+                del instance_info
+
+
+
                 # erasing files from pyomo
                 folder = "/usr/src/app/logs/pyomo"
                 for the_file in os.listdir(folder):
@@ -390,6 +395,13 @@ class OptControllerStochastic(ControllerBase):
             p_grid = Decision[result_key]['Grid']
             p_ess = Decision[result_key]['ESS']
             p_vac = Decision[result_key]['VAC']
+            del Decision
+            del Value
+            del value
+            del value_index
+            del bm_idx
+            del bm
+            del ess_vac_product
 
             p_ev = {}
 
@@ -408,7 +420,7 @@ class OptControllerStochastic(ControllerBase):
             dT = data_dict[None]["dT"][None]
             ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
             ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
-
+            del data_dict
             connections = ev_park.max_charge_power_calculator(dT)
 
             # Calculation of the feasible charging power at the commercial station
