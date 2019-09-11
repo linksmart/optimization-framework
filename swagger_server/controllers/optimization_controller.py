@@ -91,8 +91,8 @@ class CommandController:
             self.optimization_type = dict_object["optimization_type"]
             self.single_ev = dict_object["single_ev"]
 
-        self.start_name_servers()
-        self.start_pryo_mip_server(self.optimization_type)
+        #self.start_name_servers()
+        #self.start_pryo_mip_server(self.optimization_type)
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
                                self.repetition, self.solver, id, self.optimization_type, self.single_ev))
@@ -138,8 +138,8 @@ class CommandController:
         if self.factory[id]:
             IDStatusManager.persist_id(id, False, None, self.redisDB)
             self.factory[id].stopOptControllerThread()
-            self.stop_pyro_servers()
-            self.stop_name_servers()
+            #self.stop_pyro_servers()
+            #self.stop_name_servers()
             self.set_isRunning(id, False)
             message = "System stopped succesfully"
             self.redisDB.set("run:" + id, "stopped")

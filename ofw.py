@@ -17,6 +17,7 @@ import shutil
 import time
 
 import swagger_server.wsgi as webserver
+from swagger_server.controllers.optimization_controller import CommandController
 
 from IO.ZMQClient import ForwarderDevice
 from config.configUpdater import ConfigUpdater
@@ -43,9 +44,12 @@ def main():
     logger.debug("###################################")
     logger.info("OFW started")
     logger.debug("###################################")
-
+    logger.debug("Starting name server and dispatch server")
+    CommandController().start_name_servers()
+    CommandController().start_pryo_mip_server("stochastic")
     logger.info("Starting webserver")
     webserver.main()
+
 
     # while True:
 

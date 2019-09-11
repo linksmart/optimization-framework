@@ -71,16 +71,17 @@ class Model:
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
 	    return model.SoC_ESS[t + 1] == model.SoC_ESS[t] - model.P_ESS_Output[t] * model.dT / model.ESS_Capacity / 3600
-	
+
 	def con_rule_iniSoC(model):
-		if model.SoC_Value > model.ESS_Max_SoC:
-			model.SoC_Value = model.ESS_Max_SoC
-			return model.SoC_ESS[0] == model.SoC_Value
-		elif model.SoC_Value < model.ESS_Min_SoC:
-			model.SoC_Value = model.ESS_Min_SoC
-			return model.SoC_ESS[0] == model.SoC_Value
+		soc = model.SoC_Value / 100
+		soc_return = 0
+		if soc >= model.ESS_Max_SoC:
+			soc_return = model.ESS_Max_SoC
+		elif soc <= model.ESS_Min_SoC:
+			soc_return = model.ESS_Min_SoC
 		else:
-			return model.SoC_ESS[0] == model.SoC_Value
+			soc_return = soc
+		return model.SoC_ESS[0] == soc_return
 
 	
 	# Generation-feed in balance

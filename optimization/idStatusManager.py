@@ -63,14 +63,14 @@ class IDStatusManager:
                         a = s.replace("\n", "")
                         if "repetition\": -9" in a:
                             stopped_ids.append(s)
-                        elif redisDB.get_start_time() > float(a[a.find("\"ztarttime\": ") + 13:-1]):
+                        elif float(redisDB.get_start_time()) > float(a[a.find("\"ztarttime\": ") + 13:-1]):
                             old_ids.append(s)
                     for s in old_ids:
                         if s in data:
                             data.remove(s)
                     IDStatusManager.write_file(data)
         except Exception as e:
-            logging.error("error reading ids file " + str(e))
+            logger.error("error reading ids file " + str(e))
         finally:
             redisDB.release_lock(lock_key, "start")
         return old_ids, stopped_ids
@@ -86,7 +86,7 @@ class IDStatusManager:
                     if "repetition\": -9" not in s:
                         num += 1
         except Exception as e:
-            logging.error("error reading ids file " + str(e))
+            logger.error("error reading ids file " + str(e))
         finally:
             redisDB.release_lock(lock_key, "start")
         return num

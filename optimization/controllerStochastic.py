@@ -7,6 +7,7 @@ Created on Fri Mar 16 15:05:36 2018
 
 import json
 import os
+import sys
 import time
 import uuid
 import datetime
@@ -16,6 +17,7 @@ import math
 import numpy as np
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
+
 
 import pyutilib.subprocess.GlobalData
 
@@ -37,6 +39,7 @@ class OptControllerStochastic(ControllerBase):
 
     def optimize(self, action_handle_map, count, optsolver, solver_manager):
         while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
+            start_time_total = time.time()
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=True)  # blocking call
 
@@ -130,15 +133,15 @@ class OptControllerStochastic(ControllerBase):
             #self.logger.debug("ess_soc_states " + str(ess_soc_states))
             #self.logger.debug("vac_soc_states " + str(vac_soc_states))
 
-            time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-            filename = "log-"+str(uuid.uuid1())+"-"+str(time_info)+".json"
+            #time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+            #filename = "log-"+str(uuid.uuid1())+"-"+str(time_info)+".json"
 
-            input_log_filepath = os.path.join("/usr/src/app/logs", "input-"+str(filename))
-            output_log_filepath = os.path.join("/usr/src/app/logs", "output-"+str(filename))
-            decision_log_filepath = os.path.join("/usr/src/app/logs", "decision-"+str(filename))
+            #input_log_filepath = os.path.join("/usr/src/app/logs", "input-"+str(filename))
+            #output_log_filepath = os.path.join("/usr/src/app/logs", "output-"+str(filename))
+            #decision_log_filepath = os.path.join("/usr/src/app/logs", "decision-"+str(filename))
 
-            with open(input_log_filepath, "w") as log_file:
-                json.dump(data_dict, log_file, indent=4)
+            #with open(input_log_filepath, "w") as log_file:
+                #json.dump(data_dict, log_file, indent=4)
 
             stochastic_start_time = time.time()
 
@@ -261,7 +264,7 @@ class OptControllerStochastic(ControllerBase):
 
                     try:
                         #self.logger.info(instance.pprint())
-                        action_handle = solver_manager.queue(instance, opt=optsolver)
+                        action_handle = solver_manager.queue(instance, opt=optsolver)#, tee=False, logfile="/usr/src/app/logs/pyomo.log")
                         #self.logger.debug("Solver queue created " + str(action_handle))
                         #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         #action_handle_map[action_handle] = str(self.id)
@@ -285,72 +288,88 @@ class OptControllerStochastic(ControllerBase):
 
                 # retrieve the solutions
                 for i in range(instance_id):
-                    this_action_handle = solver_manager.wait_any()
-                    result = solver_manager.get_results(this_action_handle)
-                    #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                    solved_name = None
-                    if this_action_handle in action_handle_map.keys():
-                        solved_name = action_handle_map.pop(this_action_handle)
-                    if solved_name:
-                        inst = instance_info[int(solved_name)]
-                        #instance_info[int(solved_name)].addResult(result)
+                    try:
 
-                        #result = inst.result
-                        ini_ess_soc = inst.ini_ess_soc
-                        ini_vac_soc = inst.ini_vac_soc
-                        position = inst.position
-                        instance = inst.instance
 
-                        if (result.solver.status == SolverStatus.ok) and (
-                                result.solver.termination_condition == TerminationCondition.optimal):
-                            # this is feasible and optimal
-                            #self.logger.info("Solver status and termination condition ok")
-                            #self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
-                            #self.logger.debug(result)
-                            instance.solutions.load_from(result)
+                        this_action_handle = solver_manager.wait_any()
+                        result = solver_manager.get_results(this_action_handle)
+                        #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
+                        solved_name = None
+                        if this_action_handle in action_handle_map.keys():
+                            solved_name = action_handle_map.pop(this_action_handle)
+                        if solved_name:
+                            inst = instance_info[int(solved_name)]
+                            #instance_info[int(solved_name)].addResult(result)
 
-                            # * if solved get the values in dict
+                            #result = inst.result
+                            ini_ess_soc = inst.ini_ess_soc
+                            ini_vac_soc = inst.ini_vac_soc
+                            position = inst.position
+                            instance = inst.instance
 
-                            try:
-                                my_dict = {}
-                                for v in instance.component_objects(Var, active=True):
-                                    #self.logger.debug("Variable in the optimization: " + str(v))
-                                    varobject = getattr(instance, str(v))
-                                    var_list = []
-                                    try:
-                                        # Try and add to the dictionary by key ref
-                                        for index in varobject:
-                                            var_list.append(varobject[index].value)
-                                        #self.logger.debug("Identified variables " + str(var_list))
-                                        my_dict[str(v)] = var_list
-                                    except Exception as e:
-                                        self.logger.error("error reading result "+str(e))
+                            if (result.solver.status == SolverStatus.ok) and (
+                                    result.solver.termination_condition == TerminationCondition.optimal):
+                                # this is feasible and optimal
+                                #self.logger.info("Solver status and termination condition ok")
+                                #self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
+                                #self.logger.debug(result)
+                                instance.solutions.load_from(result)
 
-                                if self.single_ev:
-                                    combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
-                                else:
-                                    combined_key = (timestep, ini_ess_soc, ini_vac_soc)
+                                # * if solved get the values in dict
 
-                                Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
-                                Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
-                                Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
-                                Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+                                try:
+                                    my_dict = {}
+                                    for v in instance.component_objects(Var, active=True):
+                                        #self.logger.debug("Variable in the optimization: " + str(v))
+                                        varobject = getattr(instance, str(v))
+                                        var_list = []
+                                        try:
+                                            # Try and add to the dictionary by key ref
+                                            for index in varobject:
+                                                var_list.append(varobject[index].value)
+                                            #self.logger.debug("Identified variables " + str(var_list))
+                                            my_dict[str(v)] = var_list
+                                        except Exception as e:
+                                            self.logger.error("error reading result "+str(e))
 
-                                Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
+                                    if self.single_ev:
+                                        combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+                                    else:
+                                        combined_key = (timestep, ini_ess_soc, ini_vac_soc)
 
-                                #self.logger.info("Done".center(80, "#"))
-                                #self.logger.info("Timestep :#"+str(timestep)+" : "+str(ini_ess_soc)+", "+str(ini_vac_soc))
-                                #self.logger.info("#" * 80)
+                                    Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
+                                    Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
+                                    Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
+                                    Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
 
-                                # self.output.publish_data(self.id, my_dict)
-                            except Exception as e:
-                                self.logger.error("error setting decision or value "+str(e))
-                        elif result.solver.termination_condition == TerminationCondition.infeasible:
-                            # do something about it? or exit?
-                            self.logger.info("Termination condition is infeasible")
-                        else:
-                            self.logger.info("Nothing fits")
+                                    Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
 
+                                    #self.logger.info("Done".center(80, "#"))
+                                    #self.logger.info("Timestep :#"+str(timestep)+" : "+str(ini_ess_soc)+", "+str(ini_vac_soc))
+                                    #self.logger.info("#" * 80)
+
+                                    # self.output.publish_data(self.id, my_dict)
+                                except Exception as e:
+                                    self.logger.error("error setting decision or value "+str(e))
+                            elif result.solver.termination_condition == TerminationCondition.infeasible:
+                                # do something about it? or exit?
+                                self.logger.info("Termination condition is infeasible")
+                            else:
+                                self.logger.info("Nothing fits")
+                    except pyutilib.common.ApplicationError:  # pragma:nocover
+                        err = sys.exc_info()[1]
+                        self.logger.error(err)
+
+                # erasing files from pyomo
+                folder = "/usr/src/app/logs/pyomo"
+                for the_file in os.listdir(folder):
+                    file_path = os.path.join(folder, the_file)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                        # elif os.path.isdir(file_path): shutil.rmtree(file_path)
+                    except Exception as e:
+                        self.logger.error(e)
                 #with open("/usr/src/app/optimization/resources/Decision_p.txt", "w") as f:
                     #f.write(str(Decision))
                 #with open("/usr/src/app/optimization/resources/Value_p.txt", "w") as f:
@@ -483,13 +502,13 @@ class OptControllerStochastic(ControllerBase):
 
 
 
-            with open(output_log_filepath, "w") as log_file:
-                json.dump(results, log_file, indent=4)
+            #with open(output_log_filepath, "w") as log_file:
+                #json.dump(results, log_file, indent=4)
 
-            jsonDecision = {str(k): v for k, v in Decision.items()}
+            #jsonDecision = {str(k): v for k, v in Decision.items()}
 
-            with open(decision_log_filepath, "w") as log_file:
-                json.dump(jsonDecision, log_file, indent=4)
+            #with open(decision_log_filepath, "w") as log_file:
+                #json.dump(jsonDecision, log_file, indent=4)
 
             count += 1
             if self.repetition > 0 and count >= self.repetition:
@@ -498,7 +517,10 @@ class OptControllerStochastic(ControllerBase):
 
             self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
             time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
-            for i in range(self.control_frequency - time_spent):
-                time.sleep(1)
-                if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
-                    break
+            final_time_total = time.time()
+            sleep_time = self.control_frequency - int(final_time_total - start_time_total)
+            if sleep_time > 0:
+                for i in range(sleep_time):
+                    time.sleep(1)
+                    if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
+                        break
