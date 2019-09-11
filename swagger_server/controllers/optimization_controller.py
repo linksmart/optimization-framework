@@ -177,21 +177,34 @@ class CommandController:
 
     def start_name_servers(self):
         logger.debug("Starting name_server and dispatch_server")
-        self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key)
-        self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key)
+        self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key, True)
+        self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key, True)
 
-    def subprocess_server_start(self, command, server_name, redis_key=None):
+    def subprocess_server_start(self, command, server_name, redis_key=None, log_output=False):
         pid = self.redisDB.get(redis_key)
         if pid is None:
             try:
                 logger.debug("Trying to start " + server_name)
-                pid = subprocess.Popen([command], preexec_fn=os.setsid, shell=True).pid
+                process = subprocess.Popen([command], preexec_fn=os.setsid, shell=True, stdout=subprocess.PIPE)
+                pid = process.pid
                 logger.debug(server_name + "  started, pid = " + str(pid))
                 if redis_key is not None:
                     self.redisDB.set(redis_key, pid)
+                if log_output:
+                    threading.Thread(target=self.log_subprocess_output, args=(process,)).start()
             except Exception as e:
                 logger.error(server_name + " already exists error")
         return pid
+
+    def log_subprocess_output(self, process):
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            elif len(output.strip()) > 0:
+                logger.debug("######## "+str(output.strip()))
+        #rc = process.poll()
+        #return rc
 
     def stop_name_servers(self):
         if IDStatusManager.number_of_active_ids(self.redisDB) == 0:
