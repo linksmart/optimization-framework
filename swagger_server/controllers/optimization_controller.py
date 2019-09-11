@@ -186,13 +186,13 @@ class CommandController:
                 self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key, True)
             elif not psutil.pid_exists(int(pid)):
                 logger.debug("Restarting name_server")
-                self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key, True)
+                self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", None, True)
             pid = self.redisDB.get(self.dispatch_server_key)
             if pid is None:
                 self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key, True)
             elif not psutil.pid_exists(int(pid)):
                 logger.debug("Restarting dispatch_server")
-                self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key, True)
+                self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", None, True)
             time.sleep(60)
 
     def subprocess_server_start(self, command, server_name, redis_key=None, log_output=False):
