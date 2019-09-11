@@ -140,6 +140,7 @@ class CommandController:
         if self.factory[id]:
             IDStatusManager.persist_id(id, False, None, self.redisDB)
             self.factory[id].stopOptControllerThread()
+            del self.factory[id]
             #self.stop_pyro_servers()
             #self.stop_name_servers()
             self.set_isRunning(id, False)
@@ -270,7 +271,7 @@ class CommandController:
         if active_pyro_servers < required:
             ###pyro_mip_server
             for i in range(required - active_pyro_servers):
-                pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server")
+                pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server", log_output=True)
                 self.redisDB.set("pyro_mip", active_pyro_servers + i + 1)
                 self.redisDB.set("pyro_mip_pid:" + str(pyro_mip_server_pid), pyro_mip_server_pid)
                 logger.info("started pyro mip server " + str(pyro_mip_server_pid))

@@ -157,6 +157,9 @@ class ControllerBase(ABC, threading.Thread):
                 return_msg = e
         finally:
             # Closing the pyomo servers
+            del solver_manager
+            del action_handle_map
+            del optsolver
             self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))

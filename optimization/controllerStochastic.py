@@ -264,7 +264,7 @@ class OptControllerStochastic(ControllerBase):
 
                     try:
                         #self.logger.info(instance.pprint())
-                        action_handle = solver_manager.queue(instance, opt=optsolver, warmstart=False)#,tee=True)#, verbose=False)#, tee=False, logfile="/usr/src/app/logs/pyomo.log")
+                        action_handle = solver_manager.queue(instance, opt=optsolver, warmstart=False)#, tee=False, logfile="/usr/src/app/logs/pyomo.log")
                         #self.logger.debug("Solver queue created " + str(action_handle))
                         #self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
                         #action_handle_map[action_handle] = str(self.id)
@@ -365,6 +365,7 @@ class OptControllerStochastic(ControllerBase):
 
 
 
+
                 # erasing files from pyomo
                 folder = "/usr/src/app/logs/pyomo"
                 for the_file in os.listdir(folder):
@@ -395,6 +396,7 @@ class OptControllerStochastic(ControllerBase):
             p_grid = Decision[result_key]['Grid']
             p_ess = Decision[result_key]['ESS']
             p_vac = Decision[result_key]['VAC']
+
             del Decision
             del Value
             del value
