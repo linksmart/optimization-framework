@@ -126,7 +126,7 @@ class ControllerBase(ABC, threading.Thread):
             action_handle_map = {}
 
             #####create a solver
-            optsolver = SolverFactory(self.solver_name)#, solver_io=python)
+            optsolver = SolverFactory(self.solver_name) #, solver_io="lp")
             self.logger.debug("Solver factory: " + str(optsolver))
             # optsolver.options["max_iter"]=5000
             self.logger.info("solver instantiated with " + self.solver_name)
@@ -164,11 +164,11 @@ class ControllerBase(ABC, threading.Thread):
             if not self.redisDB.get_bool(self.stop_signal_key) and not self.repetition_completed and not execution_error:
                 self.logger.error("Process interrupted")
                 self.redisDB.set("kill_signal", True)
-            self.logger.debug("Deactivating pyro servers")
+            #self.logger.debug("Deactivating pyro servers")
             # TODO : 'SolverManager_Pyro' object has no attribute 'deactivate'
             # this error was not present before pyomo update
             # solver_manager.deactivate()
-            self.logger.debug("Pyro servers deactivated: " + str(solver_manager))
+            #self.logger.debug("Pyro servers deactivated: " + str(solver_manager))
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
             for key, object in self.output.mqtt.items():
