@@ -402,6 +402,9 @@ class OptControllerStochastic(ControllerBase):
             del bm_idx
             del bm
             del ess_vac_product
+            del ess_decision_domain
+            del vac_decision_domain
+            del vac_decision_domain_n
 
             p_ev = {}
 
