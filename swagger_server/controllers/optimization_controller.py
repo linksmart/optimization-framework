@@ -9,6 +9,8 @@ import os
 import subprocess
 import time
 
+import psutil
+
 from IO.MQTTClient import InvalidMQTTHostException
 
 from IO.redisDB import RedisDB
@@ -177,15 +179,27 @@ class CommandController:
 
     def start_name_servers(self):
         logger.debug("Starting name_server and dispatch_server")
-        self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key, True)
-        self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key, True)
+        while True:
+            pid = self.redisDB.get(self.name_server_key)
+            if pid is None:
+                self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key, True)
+            elif not psutil.pid_exists(int(pid)):
+                logger.debug("Restarting name_server")
+                self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key, True)
+            pid = self.redisDB.get(self.dispatch_server_key)
+            if pid is None:
+                self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key, True)
+            elif not psutil.pid_exists(int(pid)):
+                logger.debug("Restarting dispatch_server")
+                self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key, True)
+            time.sleep(60)
 
     def subprocess_server_start(self, command, server_name, redis_key=None, log_output=False):
         pid = self.redisDB.get(redis_key)
         if pid is None:
             try:
                 logger.debug("Trying to start " + server_name)
-                process = subprocess.Popen([command], preexec_fn=os.setsid, shell=True, stdout=subprocess.PIPE)
+                process = subprocess.Popen([command], preexec_fn=os.setsid, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 pid = process.pid
                 logger.debug(server_name + "  started, pid = " + str(pid))
                 if redis_key is not None:

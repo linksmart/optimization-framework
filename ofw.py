@@ -1,5 +1,6 @@
 import getpass
 import subprocess
+import threading
 
 from utils_intern.messageLogger import MessageLogger
 
@@ -45,7 +46,7 @@ def main():
     logger.info("OFW started")
     logger.debug("###################################")
     logger.debug("Starting name server and dispatch server")
-    CommandController().start_name_servers()
+    threading.Thread(target=CommandController().start_name_servers).start()
     CommandController().start_pryo_mip_server("stochastic")
     logger.info("Starting webserver")
     webserver.main()
@@ -83,7 +84,7 @@ def setup():
     log_level = config.get("IO", "log.level", fallback="DEBUG")
     logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
 
-    clear_redis(logger)
+    redisDB = clear_redis(logger)
     copy_models()
     copy_env_varibles()
     #logger.debug("env = "+str(os.environ))

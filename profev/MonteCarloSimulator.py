@@ -3,6 +3,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+from utils_intern.messageLogger import MessageLogger
+logger = MessageLogger.get_logger_parent()
 
 def monte_carlo_simulation(time_resolution, horizon, repetition, unplugged_mean, unplugged_std, plugged_mean,
                            plugged_std,
@@ -27,7 +29,7 @@ def monte_carlo_simulation(time_resolution, horizon, repetition, unplugged_mean,
     max_number_of_cars      : Number of cars in the fleet
     """
 
-    print("Running monte-carlo model")
+    logger.info("Running monte-carlo model")
 
     start = datetime(2018, 1, 1, 0, 0, 0)
     d_range = pd.date_range(start, periods=horizon, freq=pd.Timedelta(seconds=time_resolution))
@@ -93,7 +95,7 @@ def monte_carlo_simulation(time_resolution, horizon, repetition, unplugged_mean,
     return behaviour_model
 
 
-def markov_model_simulation(time_resolution, horizon, repetition, unplugged_mean, unplugged_std,
+def markov_model_simulation(id, time_resolution, horizon, repetition, unplugged_mean, unplugged_std,
                             plugged_mean, plugged_std):
     """
     Runs a Markov model simulation with given statistical parameters
@@ -114,9 +116,11 @@ def markov_model_simulation(time_resolution, horizon, repetition, unplugged_mean
                    1.0 equals 60 minutes
     max_number_of_cars      : Number of cars in the fleet
     """
+
+    logger.info("Running markov model")
+
     max_number_of_cars = 1
 
-    print("Running markov model")
 
     start = datetime(2018, 1, 1, 0, 0, 0)
     d_range = pd.date_range(start, periods=horizon, freq=pd.Timedelta(seconds=time_resolution))
