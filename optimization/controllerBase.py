@@ -93,11 +93,13 @@ class ControllerBase(ABC, threading.Thread):
         try:
             if self.input:
                 self.input.Stop()
+                del self.input
         except Exception as e:
             self.logger.error("error stopping input " + str(e))
         try:
             if self.output:
                 self.output.Stop()
+                del self.output
         except Exception as e:
             self.logger.error("error stopping output " + str(e))
 

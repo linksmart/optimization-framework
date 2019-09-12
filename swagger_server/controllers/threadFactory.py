@@ -196,8 +196,10 @@ class ThreadFactory:
                 obj.Stop()
             for name, obj in self.non_prediction_threads.items():
                 obj.Stop()
+                del obj
             self.logger.info("Stopping optimization controller thread")
             self.opt.Stop()
+            del self.opt
             self.logger.info("Optimization controller thread stopped")
             del self.logger
             return "Optimization controller thread stopped"
