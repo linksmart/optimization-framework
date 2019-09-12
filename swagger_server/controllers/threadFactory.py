@@ -199,6 +199,7 @@ class ThreadFactory:
             self.logger.info("Stopping optimization controller thread")
             self.opt.Stop()
             self.logger.info("Optimization controller thread stopped")
+            del self.logger
             return "Optimization controller thread stopped"
         except Exception as e:
             self.logger.error(e)

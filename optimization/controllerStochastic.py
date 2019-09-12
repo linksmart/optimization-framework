@@ -149,8 +149,8 @@ class OptControllerStochastic(ControllerBase):
             max_value = 100 * float(data_dict[None]["ESS_Max_SoC"][None])
 
             max_vac_soc_states = max(vac_soc_states)
-
-            for timestep in reversed(range(0, self.horizon_in_steps)):
+            reverse_steps = reversed(range(0, self.horizon_in_steps))
+            for timestep in reverse_steps:
                 self.logger.info("Timestep :#"+str(timestep))
 
                 instance_id = 0
@@ -253,10 +253,15 @@ class OptControllerStochastic(ControllerBase):
                         #self.logger.debug("Creating an optimization instance")
                         #self.logger.debug("input data: " + str(data_dict))
                         instance = self.my_class.model.create_instance(data_dict)
-                        #instance.pprint()
-                    except Exception as e:
+
+                    except pyutilib.common.ApplicationError:  # pragma:nocover
                         self.logger.error("Error creating instance")
-                        self.logger.error(e)
+                        self.logger.error("Pyutilib error")
+                        err = sys.exc_info()[1]
+                        self.logger.error(err)
+                    #except Exception as e:
+                        #self.logger.error("Error creating instance")
+                        #self.logger.error(e)
                     # instance = self.my_class.model.create_instance(self.data_path)
                     #self.logger.info("Instance created with pyomo")
 
@@ -281,8 +286,14 @@ class OptControllerStochastic(ControllerBase):
                         instance_info[instance_id] = inst
 
                         instance_id += 1
-                    except Exception as e:
-                        self.logger.error("exception " + str(e))
+
+                    except pyutilib.common.ApplicationError:  # pragma:nocover
+                        self.logger.error("Error creating queue")
+                        self.logger.error("Pyutilib error")
+                        err = sys.exc_info()[1]
+                        self.logger.error(err)
+                    #except Exception as e:
+                        #self.logger.error("exception " + str(e))
 
                     # * Run the solver
 
@@ -357,6 +368,7 @@ class OptControllerStochastic(ControllerBase):
                             else:
                                 self.logger.info("Nothing fits")
                     except pyutilib.common.ApplicationError:  # pragma:nocover
+                        self.logger.error("Pyutilib error")
                         err = sys.exc_info()[1]
                         self.logger.error(err)
 
@@ -397,6 +409,7 @@ class OptControllerStochastic(ControllerBase):
             p_ess = Decision[result_key]['ESS']
             p_vac = Decision[result_key]['VAC']
 
+            del reverse_steps
             del Decision
             del Value
             del value
@@ -407,6 +420,9 @@ class OptControllerStochastic(ControllerBase):
             del ess_decision_domain
             del vac_decision_domain
             del vac_decision_domain_n
+            del behaviour_model
+            del keylistforDecisions
+            del keylistforValue
 
             p_ev = {}
 
@@ -517,7 +533,9 @@ class OptControllerStochastic(ControllerBase):
 
             self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
-
+            del results
+            del ev_park
+            del results_publish
 
             #with open(output_log_filepath, "w") as log_file:
                 #json.dump(results, log_file, indent=4)

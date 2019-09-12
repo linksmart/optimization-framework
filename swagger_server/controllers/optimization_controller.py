@@ -129,6 +129,7 @@ class CommandController:
             self.set_isRunning(id, False)
             logger.debug("Flag isRunning set to False")
             IDStatusManager.persist_id(id, False, None, self.redisDB)
+            self.factory[id].stopOptControllerThread()
             self.redisDB.set("run:" + id, "stopped")
             logger.error("Command controller start could not be finished")
             # logger.debug("System stopped succesfully")
@@ -141,6 +142,7 @@ class CommandController:
             IDStatusManager.persist_id(id, False, None, self.redisDB)
             self.factory[id].stopOptControllerThread()
             del self.factory[id]
+            del self.statusThread[id]
             #self.stop_pyro_servers()
             #self.stop_name_servers()
             self.set_isRunning(id, False)
@@ -405,6 +407,8 @@ def framework_status():  # noqa: E501
     if len(results) > 0:
         answer_dict["status"] = results
     response = StatusOutput.from_dict(answer_dict)
+    del results
+    del answer_dict
     # logger.debug("response: " + str(response2))
     return response
 
