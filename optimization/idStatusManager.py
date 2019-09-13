@@ -8,6 +8,7 @@ import os
 
 import time
 
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 logger = MessageLogger.get_logger_parent()
 
@@ -92,12 +93,25 @@ class IDStatusManager:
         return num
 
     @staticmethod
+    def number_of_active_ids_redis(redisDB):
+        num = 0
+        keys = redisDB.get_keys_for_pattern(Constants.id_meta + ":*")
+        if keys is not None:
+            for key in keys:
+                value = redisDB.get(key)
+                value = json.loads(value)
+                if value["repetition"] != -9:
+                    num += 1
+        return num
+
+    @staticmethod
     def persist_id(id, start, meta_data, redisDB):
         if not redisDB.get_bool("kill_signal", default=False):
             logger.info("persist id called with "+str(start)+ " for id "+str(id))
             try:
                 if redisDB.get_lock(lock_key, id):
                     if start:
+                        redisDB.set(Constants.id_meta + ":" + id, json.dumps(meta_data))
                         data = json.dumps(meta_data,sort_keys=True,separators=(', ', ': '))+"\n"
                         IDStatusManager.write_file(data)
                     else:
@@ -114,9 +128,10 @@ class IDStatusManager:
                                     line["repetition"] = -9
                                     data[i] = json.dumps(line, sort_keys=True, separators=(', ', ': ')) + "\n"
                                     #data.remove(line)
+                                    redisDB.set(Constants.id_meta + ":" + id, json.dumps(line))
                             IDStatusManager.write_file(data)
             except Exception as e:
-                logging.error("error persisting id " + id + " " + str(start) + " " + str(e))
+                logger.error("error persisting id " + id + " " + str(start) + " " + str(e))
             finally:
                 redisDB.release_lock(lock_key, id)
         else:
@@ -149,19 +164,37 @@ class IDStatusManager:
         return st
 
     @staticmethod
-    def num_of_required_pyro_mip_servers(multi, redisDB):
+    def num_of_required_pyro_mip_servers(redisDB):
         num = 0
         try:
             if redisDB.get_lock(lock_key, "start"):
                 data = IDStatusManager.read_file()
-                num = len(data)
                 for row in data:
                     if "stochastic" in row:
                         j = json.loads(row)
                         if j["optimization_type"] == "stochastic":
-                            num += multi
+                            num += 5
+                        else:
+                            num += 1
+                    else:
+                        num +=1
         except Exception as e:
-            logging.error("error reading ids file " + str(e))
+            logger.error("error reading ids file " + str(e))
         finally:
             redisDB.release_lock(lock_key, "start")
+        return num
+
+    @staticmethod
+    def num_of_required_pyro_mip_servers_redis(redisDB):
+        num = 0
+        keys = redisDB.get_keys_for_pattern(Constants.id_meta + ":*")
+        if keys is not None:
+            for key in keys:
+                value = redisDB.get(key)
+                value = json.loads(value)
+                if value["repetition"] != -9:
+                    if value["optimization_type"] == "stochastic":
+                        num += 5
+                    else:
+                        num += 1
         return num

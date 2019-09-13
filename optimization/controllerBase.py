@@ -176,9 +176,10 @@ class ControllerBase(ABC, threading.Thread):
             #self.logger.debug("Pyro servers deactivated: " + str(solver_manager))
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
-            for key, object in self.output.mqtt.items():
-                object.MQTTExit()
-                self.logger.debug("Client " + key + " is being disconnected")
+            if self.output:
+                for key, object in self.output.mqtt.items():
+                    object.MQTTExit()
+                    self.logger.debug("Client " + key + " is being disconnected")
 
             self.logger.info(return_msg)
             self.redisDB.set(self.finish_status_key, True)

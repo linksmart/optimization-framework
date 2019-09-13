@@ -19,6 +19,7 @@ from swagger_server.controllers.threadFactory import ThreadFactory
 from swagger_server.models.start import Start  # noqa: E501
 from swagger_server.models.status_output import StatusOutput  # noqa: E501
 from optimization.idStatusManager import IDStatusManager
+from utils_intern.constants import Constants
 
 from utils_intern.messageLogger import MessageLogger
 logger = MessageLogger.get_logger_parent()
@@ -41,8 +42,6 @@ class CommandController:
         self.running = {}
         self.redisDB = RedisDB()
         self.lock_key = "id_lock"
-        self.name_server_key = "name_server"
-        self.dispatch_server_key = "dispatch_server"
 
     def set(self, id, object):
         self.factory[id] = object
@@ -120,7 +119,6 @@ class CommandController:
                          "single_ev": self.single_ev,
                          "ztarttime": time.time()}
             self.redisDB.set("run:" + id, "running")
-            self.redisDB.set("id_meta:" + id, json.dumps(meta_data))
             IDStatusManager.persist_id(id, True, meta_data, self.redisDB)
             logger.info("running status " + str(self.running))
             logger.debug("Command controller start finished")
@@ -178,105 +176,7 @@ class CommandController:
             val = json.loads(s)
             id = val["id"]
             self.redisDB.set("run:" + id, "stopped")
-            self.redisDB.set("id_meta:" + id, json.dumps(val))
-
-    def start_name_servers(self):
-        logger.debug("Starting name_server and dispatch_server")
-        while True:
-            pid = self.redisDB.get(self.name_server_key)
-            if pid is None:
-                self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", self.name_server_key, True)
-            elif not psutil.pid_exists(int(pid)):
-                logger.debug("Restarting name_server")
-                self.subprocess_server_start("/usr/local/bin/pyomo_ns", "name server", None, True)
-            pid = self.redisDB.get(self.dispatch_server_key)
-            if pid is None:
-                self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", self.dispatch_server_key, True)
-            elif not psutil.pid_exists(int(pid)):
-                logger.debug("Restarting dispatch_server")
-                self.subprocess_server_start("/usr/local/bin/dispatch_srvr", "dispatch server", None, True)
-            time.sleep(60)
-
-    def subprocess_server_start(self, command, server_name, redis_key=None, log_output=False):
-        pid = self.redisDB.get(redis_key)
-        if pid is None:
-            try:
-                logger.debug("Trying to start " + server_name)
-                process = subprocess.Popen([command], preexec_fn=os.setsid, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                pid = process.pid
-                logger.debug(server_name + "  started, pid = " + str(pid))
-                if redis_key is not None:
-                    self.redisDB.set(redis_key, pid)
-                if log_output:
-                    threading.Thread(target=self.log_subprocess_output, args=(process,)).start()
-            except Exception as e:
-                logger.error(server_name + " already exists error")
-        return pid
-
-    def log_subprocess_output(self, process):
-        while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            elif len(output.strip()) > 0:
-                logger.debug("######## "+str(output.strip()))
-        #rc = process.poll()
-        #return rc
-
-    def stop_name_servers(self):
-        if IDStatusManager.number_of_active_ids(self.redisDB) == 0:
-            pid = self.redisDB.get(self.name_server_key)
-            self.os_proc_stop(pid, "name server", self.name_server_key)
-            pid = self.redisDB.get(self.dispatch_server_key)
-            self.os_proc_stop(pid, "dispatch server", self.dispatch_server_key)
-
-    def os_proc_stop(self, pid, server_name, redis_key=None):
-        if pid is not None:
-            try:
-                os.killpg(os.getpgid(int(pid)), signal.SIGTERM)
-                logger.debug(server_name + " stoped : " + str(pid))
-                if redis_key is not None:
-                    self.redisDB.remove(redis_key)
-            except Exception as e:
-                logger.error(server_name + " kill error " + str(e))
-
-    def stop_pyro_servers(self):
-        logger.info("stop pyro server init")
-        num_of_active_ids = IDStatusManager.number_of_active_ids(self.redisDB)
-        logger.debug("active ids = " + str(num_of_active_ids))
-        count = 0
-        if num_of_active_ids == 0:
-            self.redisDB.set("pyro_mip", 0)
-            keys = self.redisDB.get_keys_for_pattern("pyro_mip_pid:*")
-            if keys is not None:
-                for key in keys:
-                    pid = int(self.redisDB.get(key))
-                    self.os_proc_stop(pid, "mip server " + str(pid), key)
-                    count += 1
-                active_pyro_servers = int(self.redisDB.get("pyro_mip", 0))
-                active_pyro_servers -= count
-                if active_pyro_servers < 0:
-                    active_pyro_servers = 0
-                self.redisDB.set("pyro_mip", active_pyro_servers)
-            else:
-                logger.info("keys is none")
-
-    def start_pryo_mip_server(self, optimization_type):
-        if optimization_type == "stochastic":
-            new = 5
-            old = 1
-        else:
-            new = 1
-            old = 1
-        active_pyro_servers = int(self.redisDB.get("pyro_mip", 0))
-        required = IDStatusManager.num_of_required_pyro_mip_servers(old, self.redisDB) + new
-        if active_pyro_servers < required:
-            ###pyro_mip_server
-            for i in range(required - active_pyro_servers):
-                pyro_mip_server_pid = self.subprocess_server_start("/usr/local/bin/pyro_mip_server", "mip server", log_output=True)
-                self.redisDB.set("pyro_mip", active_pyro_servers + i + 1)
-                self.redisDB.set("pyro_mip_pid:" + str(pyro_mip_server_pid), pyro_mip_server_pid)
-                logger.info("started pyro mip server " + str(pyro_mip_server_pid))
+            self.redisDB.set(Constants.id_meta + ":" + id, json.dumps(val))
 
     def get_status(self):
         status = {}
@@ -294,7 +194,7 @@ class CommandController:
                     status[id]["status"] = "stopping"
                 elif value == "starting":
                     status[id]["status"] = "starting"
-        keys = self.redisDB.get_keys_for_pattern("id_meta:*")
+        keys = self.redisDB.get_keys_for_pattern(Constants.id_meta + ":*")
         if keys is not None:
             for key in keys:
                 value = self.redisDB.get(key)

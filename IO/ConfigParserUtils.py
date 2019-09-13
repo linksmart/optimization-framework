@@ -5,7 +5,7 @@ Created on Feb 12 17:50 2019
 """
 import os
 
-from IO.constants import Constants
+from utils_intern.constants import Constants
 
 from utils_intern.messageLogger import MessageLogger
 logger = MessageLogger.get_logger_parent()

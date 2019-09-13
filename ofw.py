@@ -2,6 +2,7 @@ import getpass
 import subprocess
 import threading
 
+from optimization.pyroServerManagement import PyroServerManagement
 from utils_intern.messageLogger import MessageLogger
 
 """
@@ -18,7 +19,6 @@ import shutil
 import time
 
 import swagger_server.wsgi as webserver
-from swagger_server.controllers.optimization_controller import CommandController
 
 from IO.ZMQClient import ForwarderDevice
 from config.configUpdater import ConfigUpdater
@@ -40,14 +40,14 @@ def parseArgs():
 def main():
     global OPTIONS
 
-    logger = setup()
+    logger, redisDB = setup()
 
     logger.debug("###################################")
     logger.info("OFW started")
     logger.debug("###################################")
     logger.debug("Starting name server and dispatch server")
-    threading.Thread(target=CommandController().start_name_servers).start()
-    CommandController().start_pryo_mip_server("stochastic")
+    threading.Thread(target=PyroServerManagement.start_name_servers, args=(redisDB,)).start()
+    threading.Thread(target=PyroServerManagement.start_pryo_mip_servers, args=(redisDB, 5,)).start()
     logger.info("Starting webserver")
     webserver.main()
 
@@ -93,7 +93,7 @@ def setup():
     subPort = config.get("IO", "zmq.sub.port")
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
-    return logger
+    return logger, redisDB
 
 
 
@@ -112,6 +112,7 @@ def clear_redis(logger):
     redisDB = RedisDB()
     redisDB.reset()
     redisDB.set("time", time.time())
+    return redisDB
 
 def copy_env_varibles():
     with open("/usr/src/app/utils_intern/env_var.txt", "r") as f:
