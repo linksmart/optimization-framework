@@ -8,6 +8,7 @@ import json
 import os
 
 import datetime
+import time
 from math import floor
 
 from IO.inputPreprocess import InputPreprocess
@@ -177,7 +178,7 @@ class InputController:
     def get_data(self, preprocess):
         success = False
         #self.logger.info("sleep for data")
-        #time.sleep(120)
+        #time.sleep(100)
         while not success:
             current_bucket = self.get_current_bucket()
             self.logger.info("Get input data for bucket "+str(current_bucket))

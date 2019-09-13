@@ -181,7 +181,7 @@ class InputConfigParser:
         if name in self.model_variables:
             return self.model_variables[name]["indexing"]
         else:
-            return None
+            return "empty"
 
     def get_params(self, topic):
         return self.mqtt_params[topic]

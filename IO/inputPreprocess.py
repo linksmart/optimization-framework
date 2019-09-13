@@ -217,7 +217,12 @@ class InputPreprocess:
 
         self.logger.info("vac_soc_value = "+str(vac_soc_value))
 
-        soc_value = self.data_dict["SoC_Value"][None]
+        soc_value_key = None
+        for key, value in self.data_dict["SoC_Value"].items():
+            soc_value_key = key
+            break
+
+        soc_value = self.data_dict["SoC_Value"][soc_value_key]
         soc_value = self.round_to_steps(soc_value, ess_min, ess_steps)
 
         self.logger.info("soc_value = "+str(soc_value))
