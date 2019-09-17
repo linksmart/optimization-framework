@@ -8,6 +8,7 @@ import re
 import os
 import subprocess
 import time
+import gc
 
 import psutil
 
@@ -134,6 +135,7 @@ class CommandController:
             return 1
 
     def stop(self, id):
+
         logger.debug("Stop signal received")
         logger.debug("This is the factory object: " + str(self.get(id)))
         if self.factory[id]:
@@ -147,6 +149,7 @@ class CommandController:
             message = "System stopped succesfully"
             self.redisDB.set("run:" + id, "stopped")
             logger.debug(message)
+            gc.collect()
         else:
             message = "No threads found"
             logger.debug(message)

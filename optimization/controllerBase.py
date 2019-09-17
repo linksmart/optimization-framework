@@ -11,6 +11,9 @@ import os
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
 from pyomo.opt.parallel import SolverManagerFactory
+#from pyomo.util.plugin import *
+from pyomo.opt.parallel.manager import *
+import pyomo.solvers.plugins.smanager.pyro
 
 from pyutilib.services import TempfileManager
 TempfileManager.tempdir = "/usr/src/app/logs/pyomo"
@@ -93,6 +96,8 @@ class ControllerBase(ABC, threading.Thread):
         try:
             if self.input:
                 self.input.Stop()
+                self.logger.debug("Deleting input instances")
+                del self.input.inputPreprocess
                 del self.input
         except Exception as e:
             self.logger.error("error stopping input " + str(e))
@@ -104,6 +109,30 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.error("error stopping output " + str(e))
 
         #erasing files from pyomo
+        self.erase_pyomo_files()
+        self.redisDB.set(self.stop_signal_key, True)
+        if self.isAlive():
+            self.join(1)
+
+    def initialize_opt_solver(self):
+        start_time_total = time.time()
+
+        optsolver = SolverFactory(self.solver_name, verbose=False)  # , solver_io="lp")
+        self.logger.debug("Solver factory: " + str(optsolver))
+        # optsolver.options["max_iter"]=5000
+        self.logger.info("solver instantiated with " + self.solver_name)
+        return optsolver
+
+    def initialize_solver_manager(self):
+        ###create a solver manager
+        solver_manager = None
+        solver_manager = SolverManagerFactory('pyro', host='localhost')
+        self.logger.debug("Setting options for the solver_manager")
+        return solver_manager
+        # optsolver.options.pyro_shutdown = True
+
+    def erase_pyomo_files(self):
+        # erasing files from pyomo
         folder = "/usr/src/app/logs/pyomo"
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
@@ -112,29 +141,38 @@ class ControllerBase(ABC, threading.Thread):
                     os.unlink(file_path)
                 # elif os.path.isdir(file_path): shutil.rmtree(file_path)
             except Exception as e:
-                logger.error(e)
-        self.redisDB.set(self.stop_signal_key, True)
-        if self.isAlive():
-            self.join(1)
+                self.logger.error(e)
+
 
     # Start the optimization process and gives back a result
     def run(self):
         self.logger.info("Starting optimization controller")
-        solver_manager = None
+
         return_msg = "success"
         execution_error = False
         try:
             ###maps action handles to instances
-            action_handle_map = {}
+            optsolver = self.initialize_opt_solver()
+            solver_manager = self.initialize_solver_manager()
+            if solver_manager is None:
+                self.logger.error("Failed to create a solver manager")
+            else:
+                self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
+
+            count = 0
+            """action_handle_map = {}
 
             #####create a solver
-            optsolver = SolverFactory(self.solver_name) #, solver_io="lp")
+            optsolver = SolverFactory(self.solver_name, verbose=False) #, solver_io="lp")
             self.logger.debug("Solver factory: " + str(optsolver))
             # optsolver.options["max_iter"]=5000
             self.logger.info("solver instantiated with " + self.solver_name)
 
             ###create a solver manager
-            solver_manager = SolverManagerFactory('pyro')
+            solver_manager = SolverManagerFactory('pyro', host = 'localhost')
+            self.logger.debug("Setting options for the solver_manager")
+
+            #optsolver.options.pyro_shutdown = True
 
             if solver_manager is None:
                 self.logger.error("Failed to create a solver manager")
@@ -142,8 +180,9 @@ class ControllerBase(ABC, threading.Thread):
                 self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
 
             count = 0
-            self.logger.info("This is the id: " + self.id)
-            self.optimize(action_handle_map, count, optsolver, solver_manager)
+            self.logger.info("This is the id: " + self.id)"""
+            #self.optimize(action_handle_map, count, optsolver, solver_manager)
+            self.optimize(count,optsolver,solver_manager)
         except Exception as e:
             execution_error = True
             self.logger.error("error overall "+ str(e))
@@ -159,8 +198,18 @@ class ControllerBase(ABC, threading.Thread):
                 return_msg = e
         finally:
             # Closing the pyomo servers
+            #self.logger.debug("deactivating SolverManagerFactory")
+            """try:
+                optsolver.close()
+                optsolver.deactivate()
+            except Exception as e:
+                self.logger.error(e)
+            try:
+                solver_manager.release_workers()
+            except Exception as e:
+                self.logger.error(e)"""
             del solver_manager
-            del action_handle_map
+            #del action_handle_map
             del optsolver
             self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
             self.logger.info("repetition completed "+ str(self.repetition_completed))
