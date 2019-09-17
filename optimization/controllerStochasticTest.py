@@ -231,15 +231,15 @@ class OptControllerStochastic(ControllerBase):
         action_handle_info = {}
         action_handle_info_list = []
         instance_map = {}
-        action_handle_map_1 = {}
+        action_handle_map = {}
         for instance in instance_list:
             action_handle = solver_manager.queue(instance["instance"], opt=optsolver, keepfiles=False, tee=False,
                                                  load_solutions=False)
-            action_handle_map_1[action_handle] = instance
+            action_handle_map[action_handle] = instance
             action_handles.append(action_handle)
 
         solver_manager.wait_all(action_handles)
-        return (action_handles, action_handle_map_1)
+        return (action_handles, action_handle_map)
 
 
     def get_results(self, timestep, solver_manager, action_handles, action_handle_map_1, Decision, Value):
@@ -362,7 +362,7 @@ class OptControllerStochastic(ControllerBase):
             domain_range = (ev_park.total_charging_stations_power * self.dT_in_seconds) / (
                 ev_park.get_vac_capacity() * 3600) * 100
 
-            vac_soc_states, vac_decision_domain, vac_decision_domain_n = self.calculate_vac_domain(self, domain_range)
+            vac_soc_states, vac_decision_domain, vac_decision_domain_n = self.calculate_vac_domain(domain_range)
 
             ess_soc_states, ess_decision_domain = self.calculate_ess_domain(data_dict, domain_range)
 
@@ -416,9 +416,71 @@ class OptControllerStochastic(ControllerBase):
 
                 # retrieve the solutions
                 try:
-                    action_handles, action_handle_map_1 = self.start_optimizer(optsolver,solver_manager, instance_list)
-                    Decision, Value = self.get_results(timestep, solver_manager, action_handles, action_handle_map_1, Decision, Value)
-                    gc.collect()
+                    action_handles, action_handle_map = self.start_optimizer(optsolver,solver_manager, instance_list)
+                    #Decision, Value = self.get_results(timestep, solver_manager, action_handles, action_handle_map, Decision, Value)
+                    for action_handle in action_handles:
+                        # for inst in instance_info:
+                        # self.logger.debug("num queued " + str(solver_manager.num_queued()))
+                        result = solver_manager.get_results(action_handle)
+
+                        instance_object = action_handle_map[action_handle]
+                        # self.logger.debug("instance object "+str(instance_object))
+                        instance = instance_object["instance"]
+                        ini_ess_soc = instance_object["ess_soc"]  # instance_info[instance].ini_ess_soc
+                        ini_vac_soc = instance_object["vac_soc"]  # instance_info[instance].ini_vac_soc
+                        if self.single_ev:
+                            position = instance_object["position"]  # instance_info[instance].position
+
+                        # self.logger.debug("solver status "+str(result.solver.status))
+                        # self.logger.debug("termination condition " + str(result.solver.termination_condition))
+
+                        if (result.solver.status == SolverStatus.ok) and (
+                                result.solver.termination_condition == TerminationCondition.optimal):
+                            # this is feasible and optimal
+                            # self.logger.info("Solver status and termination condition ok")
+                            # self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
+                            # self.logger.debug(result)
+                            # instance.solutions.load_from(result)
+                            instance.solutions.load_from(result)
+
+                            # * if solved get the values in dict
+
+                            my_dict = {}
+                            for v in instance.component_objects(Var, active=True):
+                                # self.logger.debug("Variable in the optimization: " + str(v))
+                                varobject = getattr(instance, str(v))
+                                var_list = []
+                                try:
+                                    # Try and add to the dictionary by key ref
+                                    for index in varobject:
+                                        var_list.append(varobject[index].value)
+                                    # self.logger.debug("Identified variables " + str(var_list))
+                                    my_dict[str(v)] = var_list
+                                except Exception as e:
+                                    self.logger.error("error reading result " + str(e))
+
+                            if self.single_ev:
+                                combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+                            else:
+                                combined_key = (timestep, ini_ess_soc, ini_vac_soc)
+
+                            Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
+                            Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
+                            Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
+                            Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+
+                            Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
+                            # self.logger.debug("Value "+str(Value))
+                            #return (Decision, Value)
+
+                        elif result.solver.termination_condition == TerminationCondition.infeasible:
+                            # do something about it? or exit?
+                            self.logger.info("Termination condition is infeasible")
+                            #return 1
+                        else:
+                            self.logger.info("Nothing fits")
+                            #return 1
+                    #gc.collect()
                 except Exception as e:
                     self.logger.error(e)
 
@@ -427,15 +489,17 @@ class OptControllerStochastic(ControllerBase):
                 #self.logger.debug("num queued " + str(solver_manager.num_queued()))
 
                 gc.collect()
-                del action_handle_map_1
-                del action_handles
+
+
                 #del instance_info
                 #del instance
-                del instance_list
+
 
                 # erasing files from pyomo
                 self.erase_pyomo_files()
-
+                del action_handle_map
+                del action_handles
+                del instance_list
 
                 #with open("/usr/src/app/optimization/resources/Decision_p.txt", "w") as f:
                     #f.write(str(Decision))
@@ -443,6 +507,7 @@ class OptControllerStochastic(ControllerBase):
                     #f.write(str(Value))
                 #self.logger.info("written to file")
                 #break
+
 
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
