@@ -87,7 +87,7 @@ class InputPreprocess:
         self.logger.info("data_dict : "+str(self.data_dict))
         if "Unit_Consumption_Assumption" in self.data_dict.keys():
             uac = self.data_dict["Unit_Consumption_Assumption"][None]
-            if not (uac >= vac_min and ((uac - vac_min) / vac_step).is_integer()):
+            if not (((uac - vac_min) / vac_step).is_integer()):
                 raise Exception("Unit_Consumption_Assumption should be a valid step of VAC_steps and greater than "
                                 "VAC_min")
         else:
