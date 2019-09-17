@@ -242,13 +242,34 @@ class OptControllerStochastic(ControllerBase):
         return (action_handles, action_handle_map)
 
 
-    def get_results(self, timestep, solver_manager, action_handles, action_handle_map_1, Decision, Value):
+    def get_result_from_optimization(self, instance, result):
+        instance.solutions.load_from(result)
+
+        # * if solved get the values in dict
+
+        my_dict = {}
+        for v in instance.component_objects(Var, active=True):
+            # self.logger.debug("Variable in the optimization: " + str(v))
+            varobject = getattr(instance, str(v))
+            var_list = []
+            try:
+                # Try and add to the dictionary by key ref
+                for index in varobject:
+                    var_list.append(varobject[index].value)
+                # self.logger.debug("Identified variables " + str(var_list))
+                my_dict[str(v)] = var_list
+
+            except Exception as e:
+                self.logger.error("error reading result " + str(e))
+        return my_dict
+
+    def get_results(self, timestep, solver_manager, action_handles, action_handle_map, Decision, Value):
         for action_handle in action_handles:
             # for inst in instance_info:
             # self.logger.debug("num queued " + str(solver_manager.num_queued()))
             result = solver_manager.get_results(action_handle)
 
-            instance_object = action_handle_map_1[action_handle]
+            instance_object = action_handle_map[action_handle]
             # self.logger.debug("instance object "+str(instance_object))
             instance = instance_object["instance"]
             ini_ess_soc = instance_object["ess_soc"]  # instance_info[instance].ini_ess_soc
@@ -266,23 +287,7 @@ class OptControllerStochastic(ControllerBase):
                 # self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
                 # self.logger.debug(result)
                 # instance.solutions.load_from(result)
-                instance.solutions.load_from(result)
-
-                # * if solved get the values in dict
-
-                my_dict = {}
-                for v in instance.component_objects(Var, active=True):
-                    # self.logger.debug("Variable in the optimization: " + str(v))
-                    varobject = getattr(instance, str(v))
-                    var_list = []
-                    try:
-                        # Try and add to the dictionary by key ref
-                        for index in varobject:
-                            var_list.append(varobject[index].value)
-                        # self.logger.debug("Identified variables " + str(var_list))
-                        my_dict[str(v)] = var_list
-                    except Exception as e:
-                        self.logger.error("error reading result " + str(e))
+                my_dict = self.get_result_from_optimization(instance, result)
 
                 if self.single_ev:
                     combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
@@ -397,10 +402,8 @@ class OptControllerStochastic(ControllerBase):
 
             reverse_steps = reversed(range(0, self.horizon_in_steps))
             for timestep in reverse_steps:
+                start_time_timestep = time.time()
                 self.logger.info("Timestep :#"+str(timestep))
-
-                #instance_id = 0
-                #instance_info = {}
 
                 value_index, value,bm_idx, bm, ess_vac_product = self.calculate_internal_values(timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,
                                           position_states)
@@ -412,12 +415,15 @@ class OptControllerStochastic(ControllerBase):
 
                 data_dict[None]["Timestep"] = {None: timestep}
 
+                medium_time_timestep = time.time()
                 instance_list = self.create_instance(data_dict, ess_vac_product, ess_decision_domain, min_value, max_value, vac_decision_domain, vac_decision_domain_n, max_vac_soc_states)
+                final_time_timestep = time.time()
+                medium = medium_time_timestep - start_time_timestep
+                final= final_time_timestep -start_time_timestep
 
                 # retrieve the solutions
                 try:
                     action_handles, action_handle_map = self.start_optimizer(optsolver,solver_manager, instance_list)
-                    #Decision, Value = self.get_results(timestep, solver_manager, action_handles, action_handle_map, Decision, Value)
                     for action_handle in action_handles:
                         # for inst in instance_info:
                         # self.logger.debug("num queued " + str(solver_manager.num_queued()))
@@ -431,33 +437,10 @@ class OptControllerStochastic(ControllerBase):
                         if self.single_ev:
                             position = instance_object["position"]  # instance_info[instance].position
 
-                        # self.logger.debug("solver status "+str(result.solver.status))
-                        # self.logger.debug("termination condition " + str(result.solver.termination_condition))
-
                         if (result.solver.status == SolverStatus.ok) and (
                                 result.solver.termination_condition == TerminationCondition.optimal):
                             # this is feasible and optimal
-                            # self.logger.info("Solver status and termination condition ok")
-                            # self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
-                            # self.logger.debug(result)
-                            # instance.solutions.load_from(result)
-                            instance.solutions.load_from(result)
-
-                            # * if solved get the values in dict
-
-                            my_dict = {}
-                            for v in instance.component_objects(Var, active=True):
-                                # self.logger.debug("Variable in the optimization: " + str(v))
-                                varobject = getattr(instance, str(v))
-                                var_list = []
-                                try:
-                                    # Try and add to the dictionary by key ref
-                                    for index in varobject:
-                                        var_list.append(varobject[index].value)
-                                    # self.logger.debug("Identified variables " + str(var_list))
-                                    my_dict[str(v)] = var_list
-                                except Exception as e:
-                                    self.logger.error("error reading result " + str(e))
+                            my_dict = self.get_result_from_optimization(instance, result)
 
                             if self.single_ev:
                                 combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
@@ -470,17 +453,13 @@ class OptControllerStochastic(ControllerBase):
                             Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
 
                             Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
-                            # self.logger.debug("Value "+str(Value))
-                            #return (Decision, Value)
 
                         elif result.solver.termination_condition == TerminationCondition.infeasible:
                             # do something about it? or exit?
                             self.logger.info("Termination condition is infeasible")
-                            #return 1
                         else:
                             self.logger.info("Nothing fits")
-                            #return 1
-                    #gc.collect()
+
                 except Exception as e:
                     self.logger.error(e)
 
@@ -490,16 +469,12 @@ class OptControllerStochastic(ControllerBase):
 
                 gc.collect()
 
-
-                #del instance_info
-                #del instance
-
-
                 # erasing files from pyomo
                 self.erase_pyomo_files()
-                del action_handle_map
-                del action_handles
-                del instance_list
+
+                final_time_timestep_after_result = time.time()
+                final_after_result = final_time_timestep_after_result - final_time_timestep
+                self.logger.debug("medium time " + str(medium) + " with instances " + str(final)+ " after result "+str(final_after_result))
 
                 #with open("/usr/src/app/optimization/resources/Decision_p.txt", "w") as f:
                     #f.write(str(Decision))
@@ -508,6 +483,10 @@ class OptControllerStochastic(ControllerBase):
                 #self.logger.info("written to file")
                 #break
 
+            del action_handle_map
+            del action_handles
+            del instance_list
+            del my_dict
 
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
@@ -523,8 +502,7 @@ class OptControllerStochastic(ControllerBase):
             p_ess = Decision[result_key]['ESS']
             p_vac = Decision[result_key]['VAC']
 
-            #del optsolver
-            #del solver_manager
+
             del reverse_steps
             del Decision
             del Value
