@@ -153,11 +153,12 @@ class ControllerBase(ABC, threading.Thread):
         try:
             ###maps action handles to instances
             optsolver = self.initialize_opt_solver()
-            solver_manager = self.initialize_solver_manager()
-            if solver_manager is None:
-                self.logger.error("Failed to create a solver manager")
-            else:
-                self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
+
+            #solver_manager = self.initialize_solver_manager()
+            #if solver_manager is None:
+            #    self.logger.error("Failed to create a solver manager")
+            #else:
+            #    self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
 
             count = 0
             """action_handle_map = {}
@@ -182,7 +183,7 @@ class ControllerBase(ABC, threading.Thread):
             count = 0
             self.logger.info("This is the id: " + self.id)"""
             #self.optimize(action_handle_map, count, optsolver, solver_manager)
-            self.optimize(count,optsolver,solver_manager)
+            self.optimize(count, optsolver, None)
         except Exception as e:
             execution_error = True
             self.logger.error("error overall "+ str(e))
@@ -208,7 +209,7 @@ class ControllerBase(ABC, threading.Thread):
                 solver_manager.release_workers()
             except Exception as e:
                 self.logger.error(e)"""
-            del solver_manager
+            #del solver_manager
             #del action_handle_map
             del optsolver
             self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
@@ -235,7 +236,7 @@ class ControllerBase(ABC, threading.Thread):
             return return_msg
 
     @abstractmethod
-    def optimize(self, action_handle_map, count, optsolver, solver_manager):
+    def optimize(self, count, optsolver, solver_manager):
         while not self.redisDB.get_bool(self.stop_signal_key):
             pass
 
