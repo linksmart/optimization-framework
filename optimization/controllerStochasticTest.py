@@ -413,8 +413,8 @@ class OptControllerStochastic(ControllerBase):
                 data_dict[None]["Value_Index"] = {None: value_index}
                 data_dict[None]["Value"] = value
                 data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
+                bm_idx=None
                 data_dict[None]["Behavior_Model"] = bm
-
                 data_dict[None]["Timestep"] = {None: timestep}
 
                 medium_time_timestep = time.time()
@@ -427,13 +427,15 @@ class OptControllerStochastic(ControllerBase):
                 try:
                     action_handles, action_handle_map = self.start_optimizer(optsolver,solver_manager, instance_list)
                     for action_handle in action_handles:
-                        # for inst in instance_info:
+                    #for instance_object in instance_list:
+                        #for inst in instance_info:
                         # self.logger.debug("num queued " + str(solver_manager.num_queued()))
                         result = solver_manager.get_results(action_handle)
 
                         instance_object = action_handle_map[action_handle]
                         # self.logger.debug("instance object "+str(instance_object))
                         instance = instance_object["instance"]
+                        #result=optsolver.solve(instance, tee=False, keepfiles=False, load_solutions=False)
                         ini_ess_soc = instance_object["ess_soc"]  # instance_info[instance].ini_ess_soc
                         ini_vac_soc = instance_object["vac_soc"]  # instance_info[instance].ini_vac_soc
                         if self.single_ev:
@@ -462,6 +464,17 @@ class OptControllerStochastic(ControllerBase):
                         else:
                             self.logger.info("Nothing fits")
 
+                    value_index.clear()
+                    value.clear()
+                    bm.clear()
+                    action_handle_map.clear()
+                    action_handles.clear()
+                    instance_list.clear()
+                    my_dict.clear()
+                    ess_vac_product = None
+
+
+
                 except Exception as e:
                     self.logger.error(e)
 
@@ -485,11 +498,15 @@ class OptControllerStochastic(ControllerBase):
                 #self.logger.info("written to file")
                 #break
 
-            del action_handle_map
-            del action_handles
-            del instance_list
-            del my_dict
 
+            #del action_handle_map
+            #del action_handles
+            #del instance_list
+            #del my_dict
+            behaviour_model.clear()
+            ess_decision_domain = None
+            vac_decision_domain = None
+            vac_decision_domain_n = None
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
 
@@ -504,8 +521,22 @@ class OptControllerStochastic(ControllerBase):
             p_ess = Decision[result_key]['ESS']
             p_vac = Decision[result_key]['VAC']
 
+            """Decision = None
+            Value = None
+            ess_vac_product = None
+            ess_decision_domain = None
+            vac_decision_domain = None
+            vac_decision_domain_n = None
+            behaviour_model = None"""
 
-            del reverse_steps
+            reverse_steps=None
+            Decision.clear()
+            Value.clear()
+
+
+
+
+            """del reverse_steps
             del Decision
             del Value
             del value
@@ -517,7 +548,7 @@ class OptControllerStochastic(ControllerBase):
             del vac_decision_domain
             del vac_decision_domain_n
             del behaviour_model
-            #del keylistforDecisions
+            #del keylistforDecisions"""
 
             gc.collect()
 
@@ -538,7 +569,9 @@ class OptControllerStochastic(ControllerBase):
             dT = data_dict[None]["dT"][None]
             ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
             ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
-            del data_dict
+
+            data_dict.clear()
+            #del data_dict
             connections = ev_park.max_charge_power_calculator(dT)
 
             # Calculation of the feasible charging power at the commercial station
@@ -630,9 +663,11 @@ class OptControllerStochastic(ControllerBase):
 
             self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
-            del results
-            del ev_park
-            del results_publish
+            results.clear()
+            ev_park = None
+            results_publish.clear()
+            #del ev_park
+            #del results_publish
 
             #with open(output_log_filepath, "w") as log_file:
                 #json.dump(results, log_file, indent=4)

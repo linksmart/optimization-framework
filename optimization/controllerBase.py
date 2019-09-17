@@ -117,18 +117,23 @@ class ControllerBase(ABC, threading.Thread):
     def initialize_opt_solver(self):
         start_time_total = time.time()
 
-        optsolver = SolverFactory(self.solver_name, verbose=False)  # , solver_io="lp")
-        self.logger.debug("Solver factory: " + str(optsolver))
+        self.optsolver = SolverFactory(self.solver_name, tee=False, keepfiles=False, verbose=False, load_solutions=False)  # , solver_io="lp")
+        self.optsolver.verbose= False
+        self.optsolver.load_solutions = False
+        self.logger.debug("Solver factory: " + str(self.optsolver))
+        self.optsolver.options.tee=False
+        self.optsolver.options.keepfiles = False
+        self.optsolver.options.load_solutions = False
         # optsolver.options["max_iter"]=5000
         self.logger.info("solver instantiated with " + self.solver_name)
-        return optsolver
+        #return self.optsolver
 
     def initialize_solver_manager(self):
         ###create a solver manager
-        solver_manager = None
-        solver_manager = SolverManagerFactory('pyro', host='localhost')
-        self.logger.debug("Setting options for the solver_manager")
-        return solver_manager
+        self.solver_manager = None
+        self.solver_manager = SolverManagerFactory('pyro', host='localhost')
+        self.logger.debug("Starting the solver_manager")
+        #return self.solver_manager
         # optsolver.options.pyro_shutdown = True
 
     def erase_pyomo_files(self):
@@ -152,12 +157,12 @@ class ControllerBase(ABC, threading.Thread):
         execution_error = False
         try:
             ###maps action handles to instances
-            optsolver = self.initialize_opt_solver()
-            solver_manager = self.initialize_solver_manager()
-            if solver_manager is None:
+            self.initialize_opt_solver()
+            self.initialize_solver_manager()
+            if self.solver_manager is None:
                 self.logger.error("Failed to create a solver manager")
             else:
-                self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
+                self.logger.debug("Solver manager created: " + str(self.solver_manager) + str(type(self.solver_manager)))
 
             count = 0
             """action_handle_map = {}
@@ -182,7 +187,7 @@ class ControllerBase(ABC, threading.Thread):
             count = 0
             self.logger.info("This is the id: " + self.id)"""
             #self.optimize(action_handle_map, count, optsolver, solver_manager)
-            self.optimize(count,optsolver,solver_manager)
+            self.optimize(count,self.optsolver,self.solver_manager)
         except Exception as e:
             execution_error = True
             self.logger.error("error overall "+ str(e))
@@ -208,9 +213,10 @@ class ControllerBase(ABC, threading.Thread):
                 solver_manager.release_workers()
             except Exception as e:
                 self.logger.error(e)"""
-            del solver_manager
+            #
             #del action_handle_map
-            del optsolver
+            self.optsolver = None
+            self.solver_manager = None
             self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
