@@ -119,8 +119,8 @@ class PyroServerManagement:
                 number_of_servers_to_start = required - active_pyro_servers
             if number_of_servers_to_start + active_pyro_servers < base_num_of_servers:
                 number_of_servers_to_start += base_num_of_servers - (active_pyro_servers+number_of_servers_to_start)
-                for i in range(number_of_servers_to_start):
-                    PyroServerManagement.start_pyro_mip_server(active_pyro_servers, i, redisDB)
+            for i in range(number_of_servers_to_start):
+                PyroServerManagement.start_pyro_mip_server(active_pyro_servers, i, redisDB)
             time.sleep(60)
     
     @staticmethod

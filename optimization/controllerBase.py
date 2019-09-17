@@ -157,12 +157,14 @@ class ControllerBase(ABC, threading.Thread):
         execution_error = False
         try:
             ###maps action handles to instances
+
             self.initialize_opt_solver()
             self.initialize_solver_manager()
             if self.solver_manager is None:
                 self.logger.error("Failed to create a solver manager")
             else:
                 self.logger.debug("Solver manager created: " + str(self.solver_manager) + str(type(self.solver_manager)))
+
 
             count = 0
             """action_handle_map = {}
@@ -187,7 +189,9 @@ class ControllerBase(ABC, threading.Thread):
             count = 0
             self.logger.info("This is the id: " + self.id)"""
             #self.optimize(action_handle_map, count, optsolver, solver_manager)
+
             self.optimize(count,self.optsolver,self.solver_manager)
+
         except Exception as e:
             execution_error = True
             self.logger.error("error overall "+ str(e))
@@ -213,7 +217,7 @@ class ControllerBase(ABC, threading.Thread):
                 solver_manager.release_workers()
             except Exception as e:
                 self.logger.error(e)"""
-            #
+
             #del action_handle_map
             self.optsolver = None
             self.solver_manager = None
@@ -241,7 +245,7 @@ class ControllerBase(ABC, threading.Thread):
             return return_msg
 
     @abstractmethod
-    def optimize(self, action_handle_map, count, optsolver, solver_manager):
+    def optimize(self, count, optsolver, solver_manager):
         while not self.redisDB.get_bool(self.stop_signal_key):
             pass
 
