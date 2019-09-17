@@ -139,12 +139,13 @@ class OptControllerStochastic(ControllerBase):
     def create_instance(self, data_dict, ess_vac_product, ess_decision_domain, min_value, max_value, vac_decision_domain, vac_decision_domain_n, max_vac_soc_states):
         instance_list = []
         for combination in ess_vac_product:
-            feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
+
 
             if self.single_ev:
                 recharge_value = int(data_dict[None]["Recharge"][None])
                 ini_ess_soc, ini_vac_soc, position = combination
 
+                feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
                     # self.logger.debug("min_value "+str(min_value))
@@ -167,6 +168,7 @@ class OptControllerStochastic(ControllerBase):
             else:
                 ini_ess_soc, ini_vac_soc = combination
 
+                feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
                     # self.logger.debug("min_value "+str(min_value))
