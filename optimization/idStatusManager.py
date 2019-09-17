@@ -74,7 +74,7 @@ class IDStatusManager:
             logger.error("error reading ids file " + str(e))
         finally:
             redisDB.release_lock(lock_key, "start")
-        return [], stopped_ids
+        return old_ids, stopped_ids
 
     @staticmethod
     def number_of_active_ids(redisDB):
