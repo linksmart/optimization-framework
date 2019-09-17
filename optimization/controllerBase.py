@@ -159,11 +159,11 @@ class ControllerBase(ABC, threading.Thread):
             ###maps action handles to instances
 
             self.initialize_opt_solver()
-            self.initialize_solver_manager()
+            """self.initialize_solver_manager()
             if self.solver_manager is None:
                 self.logger.error("Failed to create a solver manager")
             else:
-                self.logger.debug("Solver manager created: " + str(self.solver_manager) + str(type(self.solver_manager)))
+                self.logger.debug("Solver manager created: " + str(self.solver_manager) + str(type(self.solver_manager)))"""
 
 
             count = 0
@@ -190,7 +190,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.info("This is the id: " + self.id)"""
             #self.optimize(action_handle_map, count, optsolver, solver_manager)
 
-            self.optimize(count,self.optsolver,self.solver_manager)
+            self.optimize(count,self.optsolver,None)
 
         except Exception as e:
             execution_error = True

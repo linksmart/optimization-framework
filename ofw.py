@@ -46,8 +46,8 @@ def main():
     logger.info("OFW started")
     logger.debug("###################################")
     logger.debug("Starting name server and dispatch server")
-    threading.Thread(target=PyroServerManagement.start_name_servers, args=(redisDB,)).start()
-    threading.Thread(target=PyroServerManagement.start_pryo_mip_servers, args=(redisDB, 15,)).start()
+    #threading.Thread(target=PyroServerManagement.start_name_servers, args=(redisDB,)).start()
+    #threading.Thread(target=PyroServerManagement.start_pryo_mip_servers, args=(redisDB, 10,)).start()
     logger.info("Starting webserver")
     webserver.main()
 

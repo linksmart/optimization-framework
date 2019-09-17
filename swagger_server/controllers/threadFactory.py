@@ -9,7 +9,7 @@ from IO.redisDB import RedisDB
 from optimization.ModelException import MissingKeysException
 from optimization.controllerDiscrete import OptControllerDiscrete
 from optimization.controllerMpc import OptControllerMPC
-from optimization.controllerStochasticTest import OptControllerStochastic
+from optimization.controllerStochasticTestSerial import OptControllerStochastic
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
 from utils_intern.messageLogger import MessageLogger
