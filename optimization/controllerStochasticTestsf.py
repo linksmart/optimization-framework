@@ -12,6 +12,7 @@ import threading
 import time
 import uuid
 import datetime
+import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 import math
@@ -352,25 +353,43 @@ class OptControllerStochastic(ControllerBase):
 
                 instance_list = self.create_instance(data_dict, ess_vac_product, ess_decision_domain, min_value, max_value, vac_decision_domain, vac_decision_domain_n, max_vac_soc_states)
                 logger.debug("in")
+
                 # retrieve the solutions
                 try:
-                    futures = []
-                    with ThreadPoolExecutor(max_workers=5) as executor:
+                    futures = {}
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                         for instance_object in instance_list:
-                            futures.append(executor.submit(self.thread_solver, instance_object, optsolver, timestep))
+                            #futures.append(executor.submit(self.thread_solver, self.single_ev, instance_object, optsolver, timestep))
+
+                            futures = {executor.submit(self.thread_solver, self.single_ev, instance_object["instance"], instance_object["ess_soc"],instance_object["vac_soc"], optsolver, timestep)}#: instance_object for instance_object in instance_list}
+                            #time.sleep(0.3)
                         logger.debug("submitted to futures")
-                        for future in futures:
+                        for future in concurrent.futures.as_completed(futures):
+                            instance_to_pyomo = futures[future]
+                            try:
+                                d, v = future.result()
+                                self.logger.debug("v " + str(v))
+                                self.logger.debug("d " + str(d))
+                                Value.update(v)
+                                Decision.update(d)
+                            except Exception as exc:
+                                self.logger.error(str(instance_to_pyomo)+" caused an exception: "+str(exc))
+
+
+                        """for future in futures:
                             while not future.done():
                                 time.sleep(0.01)
                             if future.done():
                                 d, v = future.result()
+                                self.logger.debug("v "+str(v))
+                                self.logger.debug("d "+str(d))
                                 Value.update(v)
-                                Decision.update(d)
+                                Decision.update(d)"""
                     #gc.collect()
                 except Exception as e:
                     self.logger.error(e)
 
-
+                #sys.exit(0)
                 #self.logger.debug("status "+str(solver_manager.get_status(this_action_handle)))
                 #self.logger.debug("num queued " + str(solver_manager.num_queued()))
 
@@ -563,13 +582,20 @@ class OptControllerStochastic(ControllerBase):
                     if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
                         break
 
-    def thread_solver(self, instance_object, optsolver, timestep):
-        instance = instance_object["instance"]
-        result = optsolver.solve(instance)
-        ini_ess_soc = instance_object["ess_soc"]  # instance_info[instance].ini_ess_soc
-        ini_vac_soc = instance_object["vac_soc"]  # instance_info[instance].ini_vac_soc
-        if self.single_ev:
-            position = instance_object["position"]  # instance_info[instance].position
+    def thread_solver(self, single_ev, instance, ini_ess_soc, ini_vac_soc, optsolver, timestep):
+        #self.logger.debug("Thread: single_ev: "+str(single_ev)+"*** instance_object "+str(instance_object)+" instance: "+str(instance_object["instance"]))
+        self.logger.debug("Thread: single_ev: " + str(single_ev) + " instance type: " + str(type(instance))+" ess_soc: "+str(ini_ess_soc)+" vac_soc "+str(ini_vac_soc))
+        #instance = instance_object["instance"]
+        #self.logger.debug("instance in thread: "+str(instance))
+        try:
+            result = optsolver.solve(instance)
+            #self.logger.debug("result "+str(result))
+        except Exception as e:
+            self.logger.error("Thread: "+str(e))
+        #ini_ess_soc = instance_object["ess_soc"]  # instance_info[instance].ini_ess_soc
+        #ini_vac_soc = instance_object["vac_soc"]  # instance_info[instance].ini_vac_soc
+        if single_ev:
+            position = False#instance_object["position"]  # instance_info[instance].position
         # self.logger.debug("solver status "+str(result.solver.status))
         # self.logger.debug("termination condition " + str(result.solver.termination_condition))
         if (result.solver.status == SolverStatus.ok) and (
@@ -593,7 +619,7 @@ class OptControllerStochastic(ControllerBase):
                 except Exception as e:
                     self.logger.error("error reading result " + str(e))
 
-            if self.single_ev:
+            if single_ev:
                 combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
             else:
                 combined_key = (timestep, ini_ess_soc, ini_vac_soc)
@@ -606,13 +632,13 @@ class OptControllerStochastic(ControllerBase):
 
             Value = {combined_key:{}}
             Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
-            # self.logger.debug("Value "+str(Value))
+            self.logger.debug("Value "+str(Value))
             return (Decision, Value)
 
         elif result.solver.termination_condition == TerminationCondition.infeasible:
             # do something about it? or exit?
             self.logger.info("Termination condition is infeasible")
-            # return 1
+            return 1
         else:
             self.logger.info("Nothing fits")
-            # return 1
+            return 1

@@ -109,7 +109,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.error("error stopping output " + str(e))
 
         #erasing files from pyomo
-        self.erase_pyomo_files()
+        #self.erase_pyomo_files()
         self.redisDB.set(self.stop_signal_key, True)
         if self.isAlive():
             self.join(1)
@@ -117,13 +117,13 @@ class ControllerBase(ABC, threading.Thread):
     def initialize_opt_solver(self):
         start_time_total = time.time()
 
-        self.optsolver = SolverFactory(self.solver_name, tee=False, keepfiles=False, verbose=False, load_solutions=False)  # , solver_io="lp")
+        self.optsolver = SolverFactory(self.solver_name)#, tee=False, keepfiles=False, verbose=False, load_solutions=False)  # , solver_io="lp")
         self.optsolver.verbose= False
         self.optsolver.load_solutions = False
         self.logger.debug("Solver factory: " + str(self.optsolver))
-        self.optsolver.options.tee=False
-        self.optsolver.options.keepfiles = False
-        self.optsolver.options.load_solutions = False
+        #self.optsolver.options.tee=False
+        #self.optsolver.options.keepfiles = False
+        #self.optsolver.options.load_solutions = False
         # optsolver.options["max_iter"]=5000
         self.logger.info("solver instantiated with " + self.solver_name)
         #return self.optsolver
