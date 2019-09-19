@@ -109,7 +109,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.error("error stopping output " + str(e))
 
         #erasing files from pyomo
-        self.erase_pyomo_files()
+        #self.erase_pyomo_files()
         self.redisDB.set(self.stop_signal_key, True)
         if self.isAlive():
             self.join(1)
