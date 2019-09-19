@@ -12,8 +12,6 @@ from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 logger = MessageLogger.get_logger_parent()
 
-lock_key = "id_lock"
-
 class IDStatusManager:
 
     @staticmethod
@@ -57,7 +55,7 @@ class IDStatusManager:
         old_ids = []
         stopped_ids = []
         try:
-            if redisDB.get_lock(lock_key, "start"):
+            if redisDB.get_lock(Constants.lock_key, "start"):
                 data = IDStatusManager.read_file()
                 if len(data) > 0:
                     for s in data:
@@ -73,14 +71,14 @@ class IDStatusManager:
         except Exception as e:
             logger.error("error reading ids file " + str(e))
         finally:
-            redisDB.release_lock(lock_key, "start")
+            redisDB.release_lock(Constants.lock_key, "start")
         return old_ids, stopped_ids
 
     @staticmethod
     def number_of_active_ids(redisDB):
         num = 0
         try:
-            if redisDB.get_lock(lock_key, "start"):
+            if redisDB.get_lock(Constants.lock_key, "start"):
                 data = IDStatusManager.read_file()
                 num = 0
                 for s in data:
@@ -89,7 +87,7 @@ class IDStatusManager:
         except Exception as e:
             logger.error("error reading ids file " + str(e))
         finally:
-            redisDB.release_lock(lock_key, "start")
+            redisDB.release_lock(Constants.lock_key, "start")
         return num
 
     @staticmethod
@@ -109,7 +107,7 @@ class IDStatusManager:
         if not redisDB.get_bool("kill_signal", default=False):
             logger.info("persist id called with "+str(start)+ " for id "+str(id))
             try:
-                if redisDB.get_lock(lock_key, id):
+                if redisDB.get_lock(Constants.lock_key, id):
                     if start:
                         redisDB.set(Constants.id_meta + ":" + id, json.dumps(meta_data))
                         data = json.dumps(meta_data,sort_keys=True,separators=(', ', ': '))+"\n"
@@ -133,7 +131,7 @@ class IDStatusManager:
             except Exception as e:
                 logger.error("error persisting id " + id + " " + str(start) + " " + str(e))
             finally:
-                redisDB.release_lock(lock_key, id)
+                redisDB.release_lock(Constants.lock_key, id)
         else:
             logger.info("Since it is a kill signal we do not persist stop data to ids_status")
 
@@ -142,7 +140,7 @@ class IDStatusManager:
         st = time.time()
         if repetition > 0:
             try:
-                if redisDB.get_lock(lock_key, id):
+                if redisDB.get_lock(Constants.lock_key, id):
                     data = IDStatusManager.read_file()
                     if len(data) > 0:
                         line = None
@@ -159,7 +157,7 @@ class IDStatusManager:
             except Exception as e:
                 logger.error("error updating count in file " + str(e))
             finally:
-                redisDB.release_lock(lock_key, id)
+                redisDB.release_lock(Constants.lock_key, id)
         st = int(time.time() - st)
         return st
 
@@ -167,7 +165,7 @@ class IDStatusManager:
     def num_of_required_pyro_mip_servers(redisDB):
         num = 0
         try:
-            if redisDB.get_lock(lock_key, "start"):
+            if redisDB.get_lock(Constants.lock_key, "start"):
                 data = IDStatusManager.read_file()
                 for row in data:
                     if "stochastic" in row:
@@ -181,7 +179,7 @@ class IDStatusManager:
         except Exception as e:
             logger.error("error reading ids file " + str(e))
         finally:
-            redisDB.release_lock(lock_key, "start")
+            redisDB.release_lock(Constants.lock_key, "start")
         return num
 
     @staticmethod
@@ -192,9 +190,10 @@ class IDStatusManager:
             for key in keys:
                 value = redisDB.get(key)
                 value = json.loads(value)
-                if value["repetition"] != -9:
-                    if value["optimization_type"] == "stochastic":
-                        num += 5
-                    else:
-                        num += 1
+                if value is not None and "repetition" in value.keys() and "optimization_type" in value.keys():
+                    if value["repetition"] != -9:
+                        if value["optimization_type"] == "stochastic":
+                            num += 5
+                        else:
+                            num += 1
         return num

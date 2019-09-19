@@ -25,3 +25,7 @@ class Constants:
     dispatch_server_command = "/usr/local/bin/dispatch_srvr -n localhost"
     pyro_mip_server_command = "/usr/local/bin/pyro_mip_server"
     id_meta = "id_meta"
+
+    repetition = "repetition"
+    optimization_type = "optimization_type"
+    lock_key = "id_lock"
