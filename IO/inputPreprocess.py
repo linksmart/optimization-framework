@@ -86,10 +86,10 @@ class InputPreprocess:
     def validate_unit_consumption_assumption(self, vac_min, vac_step):
         self.logger.info("data_dict : "+str(self.data_dict))
         if "Unit_Consumption_Assumption" in self.data_dict.keys():
-            uac = self.data_dict["Unit_Consumption_Assumption"][None]
+            uac = float(self.data_dict["Unit_Consumption_Assumption"][None])
+            self.logger.debug("uac "+str(uac)+ " vac_min "+str(vac_min)+" vac_step "+str(vac_step))
             if not (((uac - vac_min) / vac_step).is_integer()):
-                raise Exception("Unit_Consumption_Assumption should be a valid step of VAC_steps and greater than "
-                                "VAC_min")
+                raise Exception("Unit_Consumption_Assumption should be a valid step of VAC_steps")
         else:
             raise Exception("Unit_Consumption_Assumption missing")
 
@@ -115,6 +115,12 @@ class InputPreprocess:
     def is_charger(self, data):
         if data is not None and isinstance(data, dict):
             if "Max_Charging_Power_kW" in data.keys():
+                return True
+        return False
+
+    def is_ev(self, data):
+        if data is not None and isinstance(data, dict):
+            if "Battery_Capacity_kWh" in data.keys():
                 return True
         return False
 
@@ -151,14 +157,17 @@ class InputPreprocess:
 
     def generate_ev_classes(self):
         evs_list = []
-        evs = self.get_required_keys("ev")
-        for ev in evs:
-            ev_dict = self.data_dict[ev]
-            battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
-            assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
-            ev_no_base = self.remove_key_base(ev)
-            evs_list.append(EV(ev_no_base, battery_capacity))
-        self.remove_used_keys(evs)
+        ev_keys = []
+        for k, v in self.data_dict.items():
+            if self.is_ev(v):
+                ev = k
+                ev_dict = v
+                ev_keys.append(k)
+                battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
+                assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
+                ev_no_base = self.remove_key_base(ev)
+                evs_list.append(EV(ev_no_base, battery_capacity))
+        self.remove_used_keys(ev_keys)
         return evs_list
 
     def process_uncertainty_data(self):
@@ -273,8 +282,8 @@ class InputPreprocess:
         assert max_value, "Max value missing in " + str(state_name)
         assert steps, "Steps value missing in " + str(state_name)
 
-        min_value = int(min_value)
-        max_value = int(max_value)
+        #min_value = int(min_value)
+        #max_value = int(max_value)
 
         return min_value, max_value, steps, np.arange(min_value, max_value + steps, steps).tolist()
 
