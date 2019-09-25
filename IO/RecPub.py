@@ -97,7 +97,7 @@ class Publisher():
             #logger.info("q size " + str(self.q.qsize()))
             if not self.q.empty():
                 try:
-                    logger.debug("Queue size: " + str(self.q.qsize()))
+                    #logger.debug("Queue size: " + str(self.q.qsize()))
                     data = self.q.get()
                     if data is not None:
                         client = self.mqtt_clients[i]
@@ -116,13 +116,13 @@ class Publisher():
             topic = data["topic"]
             data = data["data"]
             mqtt_client.publish(topic=topic, message=data, waitForAck=True, qos=1)
-            logger.debug("Results published on this topic: " + topic)
+            logger.debug("Results published on this topic: " + topic + " "+ str(data))
         except Exception as e:
             logger.error("Error pub data "+str(e))
 
     def exit(self):
         self.stopRequest.set()
-        self.consumer_thread.join()
         for client in self.mqtt_clients:
             if client is not None:
                 client.MQTTExit()
+        self.consumer_thread.join()

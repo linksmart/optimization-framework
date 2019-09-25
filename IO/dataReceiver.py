@@ -16,12 +16,13 @@ from utils_intern.messageLogger import MessageLogger
 
 class DataReceiver(ABC):
 
-    def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None):
+    def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None, prepare_topic_qos=True):
         super().__init__()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
         self.internal = internal
         self.topic_params = topic_params
+        self.prepare_topic_qos = prepare_topic_qos
         self.emptyValue = emptyValue
         self.data = self.emptyValue.copy()
         self.data_update = False
@@ -93,12 +94,19 @@ class DataReceiver(ABC):
         if self.channel == "MQTT":
             topic_qos = []
             host_params = {}
-            for k, v in self.topic_params.items():
-                if k == "topic":
-                    topic_qos.append((v + "/" + self.id,1))
-                elif k == "mqtt.port":
-                    self.port = v
-            self.host = self.config.get("IO", "mqtt.host")
+            if self.prepare_topic_qos:
+                for k, v in self.topic_params.items():
+                    if k == "topic":
+                        topic_qos.append((v + "/" + self.id,1))
+                    elif k == "mqtt.port":
+                        self.port = v
+            elif isinstance(self.topic_params, list):
+                topic_qos = self.topic_params
+                self.port = self.config.get("IO", "mqtt.port")
+            if "sub.mqtt.host" in dict(self.config.items("IO")):
+                self.host = self.config.get("IO", "sub.mqtt.host")
+            if "mqtt.host" in dict(self.config.items("IO")):
+                self.host = self.config.get("IO", "mqtt.host")
             host_params["username"] = self.config.get("IO", "mqtt.username", fallback=None)
             host_params["password"] = self.config.get("IO", "mqtt.password", fallback=None)
             host_params["ca_cert_path"] = self.config.get("IO", "mqtt.ca.cert.path", fallback=None)
@@ -173,8 +181,11 @@ class DataReceiver(ABC):
         new_data = self.data.copy()
         self.data_update = False
         if clearData:
-            self.data = self.emptyValue.copy()
+            self.clear_data()
         return new_data
+
+    def clear_data(self):
+        self.data = self.emptyValue.copy()
 
     def get_data(self, require_updated=0, clearData=False):
         """

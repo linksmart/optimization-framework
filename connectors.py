@@ -13,6 +13,8 @@ import shutil
 from config.configUpdater import ConfigUpdater
 from connector.Connector import Connector
 from connector.apiConnectorFactory import ApiConnectorFactory
+from connector.equationConnector import EquationConnector
+from connector.equationParser import EquationParser
 
 from utils_intern.messageLogger import MessageLogger
 
@@ -29,10 +31,12 @@ if __name__ == '__main__':
     logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
 
     workers = config.getint("IO", "number.of.workers", fallback=2)
-
-    try:
-        connector_list = []
-        for section in config.sections():
+    equation_parser = EquationParser(config)
+    equation_list = equation_parser.read_all_equations()
+    connector_list = []
+    active_sources = []
+    for section in config.sections():
+        try:
             if (section.startswith('HOUSE')):
                 logger.info("House: " + section)
                 rec_url = config.get(section, "con.url", fallback=None)
@@ -45,5 +49,23 @@ if __name__ == '__main__':
                         rec_params = json.loads(rec_params)
                         connector = Connector(rec_params, workers, config, section)
                         connector_list.append(connector)
-    except Exception as e:
-        logger.error(e)
+                        active_sources.append(section)
+        except Exception as e:
+            logger.error(e)
+
+    logger.debug("#########"+str(equation_list))
+    logger.debug("#####"+str(active_sources))
+    for meta_eq in equation_list:
+        try:
+            all_sources_active = True
+            for source in meta_eq["sources"]:
+                logger.debug("### sour "+str(source))
+                if source not in active_sources:
+                    all_sources_active = False
+                    logger.debug("##### all sources not active for eq")
+                    break
+            if all_sources_active:
+                connector = EquationConnector(meta_eq, config)
+                connector_list.append(connector)
+        except Exception as e:
+            logger.error(e)
