@@ -130,8 +130,8 @@ class ControllerBase(ABC, threading.Thread):
 
     def initialize_solver_manager(self):
         ###create a solver manager
-        #self.solver_manager = None
-        self.solver_manager = SolverManagerFactory('pyro', host='localhost')
+        self.solver_manager = None
+        #self.solver_manager = SolverManagerFactory('pyro', host='localhost')
         self.logger.debug("Starting the solver_manager")
         #return self.solver_manager
         # optsolver.options.pyro_shutdown = True
