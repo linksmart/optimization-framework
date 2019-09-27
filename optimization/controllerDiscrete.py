@@ -47,7 +47,9 @@ class OptControllerDiscrete(ControllerBase):
             self.logger.info("Instance created with pyomo")
 
             run_count = 0
-            while True:
+            start_time = time.time()
+            result = optsolver.solve(instance)
+            """while True:
                 try:
                     # self.logger.info(instance.pprint())
                     action_handle = solver_manager.queue(instance, opt=optsolver)
@@ -73,17 +75,18 @@ class OptControllerDiscrete(ControllerBase):
                 if this_action_handle in action_handle_map.keys():
                     self.solved_name = action_handle_map.pop(this_action_handle)
                 else:
-                    self.solved_name = None
+                    self.solved_name = None"""
 
             start_time = time.time() - start_time
             self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
-            if (self.results.solver.status == SolverStatus.ok) and (
-                    self.results.solver.termination_condition == TerminationCondition.optimal):
+            if (result.solver.status == SolverStatus.ok) and (
+                    result.solver.termination_condition == TerminationCondition.optimal):
                 # this is feasible and optimal
                 self.logger.info("Solver status and termination condition ok")
-                self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-                self.logger.debug(self.results)
-                instance.solutions.load_from(self.results)
+                #self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
+                self.logger.debug("Results for id: " + str(self.id))
+                self.logger.debug(result)
+                instance.solutions.load_from(result)
                 try:
                     my_dict = {}
                     for v in instance.component_objects(Var, active=True):
@@ -103,7 +106,7 @@ class OptControllerDiscrete(ControllerBase):
                     self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
                 except Exception as e:
                     self.logger.error(e)
-            elif self.results.solver.termination_condition == TerminationCondition.infeasible:
+            elif result.solver.termination_condition == TerminationCondition.infeasible:
                 # do something about it? or exit?
                 self.logger.info("Termination condition is infeasible")
             else:
