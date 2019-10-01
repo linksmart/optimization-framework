@@ -8,9 +8,12 @@ Created on Fri Mar 16 15:05:36 2018
 import json
 import os
 import sys
+import threading
 import time
 import uuid
 import datetime
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 import math
 import gc
@@ -22,12 +25,15 @@ from pyomo.opt import SolverStatus, TerminationCondition
 
 import pyutilib.subprocess.GlobalData
 
+from IO.redisDB import RedisDB
 from optimization.controllerBase import ControllerBase
 from optimization.idStatusManager import IDStatusManager
 from optimization.instance import Instance
+from optimization.optut import OptUt
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
+ins_dict  = {}
 
 class OptControllerStochastic(ControllerBase):
 
@@ -101,7 +107,7 @@ class OptControllerStochastic(ControllerBase):
 
             value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
 
-            bm_idx = behaviour_model[timestep].keys()
+            bm_idx = list(behaviour_model[timestep].keys())
 
             bm = behaviour_model[timestep]
 
@@ -138,15 +144,13 @@ class OptControllerStochastic(ControllerBase):
 
     def create_instance(self, data_dict, ess_vac_product, ess_decision_domain, min_value, max_value, vac_decision_domain, vac_decision_domain_n, max_vac_soc_states):
         instance_list = []
-        counter = 0
         for combination in ess_vac_product:
-
+            feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
             if self.single_ev:
                 recharge_value = int(data_dict[None]["Recharge"][None])
                 ini_ess_soc, ini_vac_soc, position = combination
 
-                feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
                     # self.logger.debug("min_value "+str(min_value))
@@ -169,7 +173,6 @@ class OptControllerStochastic(ControllerBase):
             else:
                 ini_ess_soc, ini_vac_soc = combination
 
-                feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
                     # self.logger.debug("min_value "+str(min_value))
@@ -191,7 +194,7 @@ class OptControllerStochastic(ControllerBase):
             data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
 
             data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
-            # self.logger.debug("ini_ess_soc "+str(ini_ess_soc))
+            self.logger.debug("ini_ess_soc "+str(ini_ess_soc))
 
             data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
             # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
@@ -206,33 +209,18 @@ class OptControllerStochastic(ControllerBase):
             try:
                 # self.logger.debug("Creating an optimization instance")
                 # self.logger.debug("input data: " + str(data_dict))
-                #time1= time.time()
-                instance = self.my_class.model.create_instance(data_dict)
+                #instance = self.my_class.model.create_instance(data_dict)
+
                 if self.single_ev:
-                    instance_dict = {"instance": instance, "ess_soc": ini_ess_soc, "vac_soc": ini_vac_soc, "position": position}
+                    instance_dict = {"instance": data_dict.copy(), "ess_soc": ini_ess_soc, "vac_soc": ini_vac_soc, "position": position}
                 else:
-                    instance_dict = {"instance": instance, "ess_soc": ini_ess_soc, "vac_soc": ini_vac_soc}
+                    instance_dict = {"instance": data_dict.copy(), "ess_soc": ini_ess_soc, "vac_soc": ini_vac_soc}
                 instance_list.append(instance_dict)
 
-                #time2 = time.time()
-                #counter += time2-time1
-                #self.logger.debug("Time for creating pyomo instance "+str(time2-time1))
-                """if self.single_ev:
-                    inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc, position=position,
-                                    instance=instance)
-                else:
-                    inst = Instance(str(instance_id), ini_ess_soc, ini_vac_soc, instance=instance)
-
-                # instance_info.append(inst)
-                instance_info[instance] = inst
-
-                instance_id += 1"""
             except Exception as e:
                 self.logger.error(e)
 
-        #self.logger.debug("length of instace list "+str(len(instance_list)))
-        #self.logger.debug("Total time for creating instace list " + str(counter))
-        #self.logger.debug("Average time for creating instance list "+ str(counter/len(instance_list)))
+
 
         return instance_list
 
@@ -251,75 +239,6 @@ class OptControllerStochastic(ControllerBase):
         solver_manager.wait_all(action_handles)
         return (action_handles, action_handle_map)
 
-
-    def get_result_from_optimization(self, instance, result):
-        instance.solutions.load_from(result)
-
-        # * if solved get the values in dict
-
-        my_dict = {}
-        for v in instance.component_objects(Var, active=True):
-            # self.logger.debug("Variable in the optimization: " + str(v))
-            varobject = getattr(instance, str(v))
-            var_list = []
-            try:
-                # Try and add to the dictionary by key ref
-                for index in varobject:
-                    var_list.append(varobject[index].value)
-                # self.logger.debug("Identified variables " + str(var_list))
-                my_dict[str(v)] = var_list
-
-            except Exception as e:
-                self.logger.error("error reading result " + str(e))
-        return my_dict
-
-    def get_results(self, timestep, solver_manager, action_handles, action_handle_map, Decision, Value):
-        for action_handle in action_handles:
-            # for inst in instance_info:
-            # self.logger.debug("num queued " + str(solver_manager.num_queued()))
-            result = solver_manager.get_results(action_handle)
-
-            instance_object = action_handle_map[action_handle]
-            # self.logger.debug("instance object "+str(instance_object))
-            instance = instance_object["instance"]
-            ini_ess_soc = instance_object["ess_soc"]  # instance_info[instance].ini_ess_soc
-            ini_vac_soc = instance_object["vac_soc"]  # instance_info[instance].ini_vac_soc
-            if self.single_ev:
-                position = instance_object["position"]  # instance_info[instance].position
-
-            # self.logger.debug("solver status "+str(result.solver.status))
-            # self.logger.debug("termination condition " + str(result.solver.termination_condition))
-
-            if (result.solver.status == SolverStatus.ok) and (
-                    result.solver.termination_condition == TerminationCondition.optimal):
-                # this is feasible and optimal
-                # self.logger.info("Solver status and termination condition ok")
-                # self.logger.debug("Results for " + inst.instance_id + " with id: " + str(self.id))
-                # self.logger.debug(result)
-                # instance.solutions.load_from(result)
-                my_dict = self.get_result_from_optimization(instance, result)
-
-                if self.single_ev:
-                    combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
-                else:
-                    combined_key = (timestep, ini_ess_soc, ini_vac_soc)
-
-                Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
-                Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
-                Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
-                Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
-
-                Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
-                # self.logger.debug("Value "+str(Value))
-                return (Decision, Value)
-
-            elif result.solver.termination_condition == TerminationCondition.infeasible:
-                # do something about it? or exit?
-                self.logger.info("Termination condition is infeasible")
-                return 1
-            else:
-                self.logger.info("Nothing fits")
-                return 1
 
     def calculate_vac_domain(self, domain_range):
         vac_soc_states = self.input.inputPreprocess.vac_soc_states
@@ -356,14 +275,15 @@ class OptControllerStochastic(ControllerBase):
 
     #def optimize(self, action_handle_map, count, optsolver, solver_manager):
     def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
-
-        while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
+    #def optimize(self, count, optsolver, solver_manager):
+        self.logger.debug("##############  testsf")
+        while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
             start_time_total = time.time()
 
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=True)  # blocking call
 
-            if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
+            if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
                 break
 
             ######################################
@@ -386,22 +306,6 @@ class OptControllerStochastic(ControllerBase):
             behaviour_model, Value, Decision = self.get_values(T, ess_soc_states, vac_soc_states,  position_states, max_number_of_cars)
 
 
-            #del keylistforValue
-            # self.logger.debug("Value "+str(Value))
-            #self.logger.debug("ess_decision_domain " + str(ess_decision_domain))
-            #self.logger.debug("vac_decision_domain " + str(vac_decision_domain))
-            #self.logger.debug("ess_soc_states " + str(ess_soc_states))
-            #self.logger.debug("vac_soc_states " + str(vac_soc_states))
-
-            #time_info = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-            #filename = "log-"+str(uuid.uuid1())+"-"+str(time_info)+".json"
-
-            #input_log_filepath = os.path.join("/usr/src/app/logs", "input-"+str(filename))
-            #output_log_filepath = os.path.join("/usr/src/app/logs", "output-"+str(filename))
-            #decision_log_filepath = os.path.join("/usr/src/app/logs", "decision-"+str(filename))
-
-            #with open(input_log_filepath, "w") as log_file:
-                #json.dump(data_dict, log_file, indent=4)
 
             stochastic_start_time = time.time()
 
@@ -412,106 +316,64 @@ class OptControllerStochastic(ControllerBase):
 
             reverse_steps = reversed(range(0, self.horizon_in_steps))
             for timestep in reverse_steps:
-                start_time_timestep = time.time()
                 self.logger.info("Timestep :#"+str(timestep))
+
+                #instance_id = 0
+                #instance_info = {}
 
                 value_index, value,bm_idx, bm, ess_vac_product = self.calculate_internal_values(timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,
                                           position_states)
-
                 data_dict[None]["Value_Index"] = {None: value_index}
                 data_dict[None]["Value"] = value
                 data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
-                #bm_idx=None
                 data_dict[None]["Behavior_Model"] = bm
+
                 data_dict[None]["Timestep"] = {None: timestep}
 
-                medium_time_timestep = time.time()
                 #instance_list = self.create_instance(data_dict, ess_vac_product, ess_decision_domain, min_value, max_value, vac_decision_domain, vac_decision_domain_n, max_vac_soc_states)
 
-
-                instance_list = self.create_instance(data_dict, ess_vac_product, ess_decision_domain, min_value,
-                                                     max_value, vac_decision_domain, vac_decision_domain_n,
-                                                     max_vac_soc_states)
-
-                final_time_timestep = time.time()
-                medium = medium_time_timestep - start_time_timestep
-                final = final_time_timestep - start_time_timestep
                 # retrieve the solutions
                 try:
-                    for instance_object in instance_list:
-                        instance = instance_object["instance"]
-                        #result=optsolver.solve(instance, tee=False, keepfiles=False, load_solutions=False)
-                        ini_ess_soc = instance_object["ess_soc"]  # instance_info[instance].ini_ess_soc
-                        ini_vac_soc = instance_object["vac_soc"]  # instance_info[instance].ini_vac_soc
-                        if self.single_ev:
-                            position = instance_object["position"]  # instance_info[instance].position
-
-                        result = optsolver.solve(instance)
-
-                        if (result.solver.status == SolverStatus.ok) and (
-                                result.solver.termination_condition == TerminationCondition.optimal):
-                            # this is feasible and optimal
-                            my_dict = self.get_result_from_optimization(instance, result)
-
+                    futures = []
+                    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+                        for combination in ess_vac_product:
+                        #for instance_object in instance_list:
                             if self.single_ev:
-                                combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+                                ini_ess_soc, ini_vac_soc, position = combination
+                                futures.append(executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                                               ess_vac_product, ess_decision_domain, min_value, max_value,
+                                      vac_decision_domain, vac_decision_domain_n, max_vac_soc_states,
+                                      timestep, True, solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
                             else:
-                                combined_key = (timestep, ini_ess_soc, ini_vac_soc)
+                                ini_ess_soc, ini_vac_soc = combination
+                                futures.append(
+                                    executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                                    ess_vac_product, ess_decision_domain, min_value, max_value,
+                                                    vac_decision_domain, vac_decision_domain_n, max_vac_soc_states,
+                                                    timestep, False, solver_name, model_path, ini_ess_soc, ini_vac_soc))
 
-                            Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
-                            Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
-                            Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
-                            Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+                        self.logger.debug("submitted to futures")
+                        for future in concurrent.futures.as_completed(futures):
+                            try:
+                                d, v = future.result()
+                                Value.update(v)
+                                Decision.update(d)
+                            except Exception as exc:
+                                self.logger.error("caused an exception: "+str(exc))
 
-                            Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
-
-                        elif result.solver.termination_condition == TerminationCondition.infeasible:
-                            # do something about it? or exit?
-                            self.logger.info("Termination condition is infeasible")
-                        else:
-                            self.logger.info("Nothing fits")
-
-                    value_index.clear()
-                    value.clear()
-                    bm.clear()
-                    instance_list.clear()
-                    my_dict.clear()
-                    ess_vac_product = None
-
-
-
+                    #gc.collect()
                 except Exception as e:
                     self.logger.error(e)
 
-
-                #self.logger.debug("status "+str(solver_manager.get_status(this_action_handle)))
-                #self.logger.debug("num queued " + str(solver_manager.num_queued()))
 
                 gc.collect()
 
                 # erasing files from pyomo
                 self.erase_pyomo_files()
 
-                final_time_timestep_after_result = time.time()
-                final_after_result = final_time_timestep_after_result - final_time_timestep
-                self.logger.debug("medium time " + str(medium) + " with instances " + str(final)+ " after result "+str(final_after_result))
-
-                #with open("/usr/src/app/optimization/resources/Decision_p.txt", "w") as f:
-                    #f.write(str(Decision))
-                #with open("/usr/src/app/optimization/resources/Value_p.txt", "w") as f:
-                    #f.write(str(Value))
-                #self.logger.info("written to file")
-                #break
+                #del instance_list
 
 
-            #del action_handle_map
-            #del action_handles
-            #del instance_list
-            #del my_dict
-            behaviour_model.clear()
-            ess_decision_domain = None
-            vac_decision_domain = None
-            vac_decision_domain_n = None
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
 
@@ -526,22 +388,9 @@ class OptControllerStochastic(ControllerBase):
             p_ess = Decision[result_key]['ESS']
             p_vac = Decision[result_key]['VAC']
 
-            """Decision = None
-            Value = None
-            ess_vac_product = None
-            ess_decision_domain = None
-            vac_decision_domain = None
-            vac_decision_domain_n = None
-            behaviour_model = None"""
-
-            reverse_steps=None
-            Decision.clear()
-            Value.clear()
-
-
-
-
-            """del reverse_steps
+            #del optsolver
+            #del solver_manager
+            del reverse_steps
             del Decision
             del Value
             del value
@@ -553,7 +402,7 @@ class OptControllerStochastic(ControllerBase):
             del vac_decision_domain
             del vac_decision_domain_n
             del behaviour_model
-            #del keylistforDecisions"""
+            #del keylistforDecisions
 
             gc.collect()
 
@@ -574,9 +423,7 @@ class OptControllerStochastic(ControllerBase):
             dT = data_dict[None]["dT"][None]
             ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
             ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
-
-            data_dict.clear()
-            #del data_dict
+            del data_dict
             connections = ev_park.max_charge_power_calculator(dT)
 
             # Calculation of the feasible charging power at the commercial station
@@ -668,11 +515,9 @@ class OptControllerStochastic(ControllerBase):
 
             self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
-            results.clear()
-            ev_park = None
-            results_publish.clear()
-            #del ev_park
-            #del results_publish
+            del results
+            del ev_park
+            del results_publish
 
             #with open(output_log_filepath, "w") as log_file:
                 #json.dump(results, log_file, indent=4)
@@ -681,8 +526,7 @@ class OptControllerStochastic(ControllerBase):
 
             #with open(decision_log_filepath, "w") as log_file:
                 #json.dump(jsonDecision, log_file, indent=4)
-            final_time_total = time.time()
-            self.logger.debug("Total time " + str(int(final_time_total - start_time_total)))
+
             count += 1
             if self.repetition > 0 and count >= self.repetition:
                 self.repetition_completed = True
@@ -690,11 +534,201 @@ class OptControllerStochastic(ControllerBase):
 
             self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
             time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
-
-
+            final_time_total = time.time()
             sleep_time = self.control_frequency - int(final_time_total - start_time_total)
             if sleep_time > 0:
                 for i in range(sleep_time):
                     time.sleep(1)
                     if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
                         break
+    @staticmethod
+    def thread_solver(single_ev, data_dict, ini_ess_soc, ini_vac_soc, solver_name, timestep, absolute_path):
+        v = str(timestep)+"_"+str(ini_ess_soc)+"_"+str(ini_vac_soc)
+        print("in ts "+str(v))
+        print("---- "+str(data_dict[None]["Initial_ESS_SoC"]))
+        result = None
+        instance = None
+        my_dict = {}
+        #redisDB = RedisDB()
+        while True:
+            try:
+                if True: #redisDB.get_lock("opt_lock", v):
+                    optsolver = SolverFactory(solver_name)
+                    spec = importlib.util.spec_from_file_location(absolute_path, absolute_path)
+                    module = spec.loader.load_module(spec.name)
+                    my_class = getattr(module, 'Model')
+                    instance = my_class.model.create_instance(data_dict)
+                    result = optsolver.solve(instance)
+                    if result is None:
+                        print("result is none for " + str(v) + " repeat")
+                    elif (result.solver.status == SolverStatus.ok) and (
+                            result.solver.termination_condition == TerminationCondition.optimal):
+                        instance.solutions.load_from(result)
+
+                        # * if solved get the values in dict
+                        for v1 in instance.component_objects(Var, active=True):
+                            # self.logger.debug("Variable in the optimization: " + str(v))
+                            varobject = getattr(instance, str(v1))
+                            var_list = []
+                            try:
+                                # Try and add to the dictionary by key ref
+                                for index in varobject:
+                                    var_list.append(varobject[index].value)
+                                # self.logger.debug("Identified variables " + str(var_list))
+                                my_dict[str(v1)] = var_list
+                            except Exception as e:
+                                print("error reading result " + str(e))
+                    elif result.solver.termination_condition == TerminationCondition.infeasible:
+                        # do something about it? or exit?
+                        print("Termination condition is infeasible " + v + " repeat")
+                        continue
+                    else:
+                        print("Nothing fits " + v + " repeat")
+                        continue
+            except Exception as e:
+                print("Thread: "+v+ " "+str(e))
+            finally:
+                #redisDB.release_lock("opt_lock", v)
+                pass
+
+            if single_ev:
+                position = False
+                combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+            else:
+                combined_key = (timestep, ini_ess_soc, ini_vac_soc)
+
+            Decision = {combined_key: {}}
+            Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
+            Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
+            Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
+            Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+
+            Value = {combined_key: {}}
+            Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
+            print("Value "+str(Value)+ " Decision "+str(Decision))
+            return (Decision, Value)
+
+    @staticmethod
+    def create_instance_and_solve(data_dict, ess_vac_product, ess_decision_domain, min_value, max_value,
+                                  vac_decision_domain, vac_decision_domain_n, max_vac_soc_states,
+                                  timestep, single_ev, solver_name, absolute_path, ini_ess_soc, ini_vac_soc, position=None):
+        feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
+
+        if single_ev:
+            recharge_value = int(data_dict[None]["Recharge"][None])
+
+            for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
+                compare_value = ini_ess_soc - p_ESS
+                # self.logger.debug("min_value "+str(min_value))
+                # self.logger.debug("max_value " + str(max_value))
+                if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
+                    feasible_Pess.append(p_ESS)
+            # self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+
+            feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
+            if recharge_value == 1:
+                # When decided charging with p_VAC
+                if vac_decision_domain[0] <= max_vac_soc_states - ini_vac_soc:
+                    # if the final vac_SoC is within the specified domain
+                    index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
+                    feasible_Pvac = vac_decision_domain[0:index + 1]
+            else:
+                feasible_Pvac.append(0)
+            # self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+
+        else:
+
+            for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
+                compare_value = ini_ess_soc - p_ESS
+                # self.logger.debug("min_value "+str(min_value))
+                # self.logger.debug("max_value " + str(max_value))
+                if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
+                    feasible_Pess.append(p_ESS)
+            # self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+
+            feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
+            # When decided charging with p_VAC
+            if vac_decision_domain[0] <= max_vac_soc_states - ini_vac_soc:
+                # if the final vac_SoC is within the specified domain
+                index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
+                feasible_Pvac = vac_decision_domain[0:index + 1]
+
+            # self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+
+        data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
+        data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
+
+        data_dict[None]["Initial_ESS_SoC"] = {None: ini_ess_soc}
+
+        data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
+        # self.logger.debug("ini_vac_soc " + str(ini_vac_soc))
+
+        final_ev_soc = ini_vac_soc - data_dict[None]["Unit_Consumption_Assumption"][None]
+        if final_ev_soc < data_dict[None]["VAC_States_Min"][None]:
+            final_ev_soc = data_dict[None]["VAC_States_Min"][None]
+
+        data_dict[None]["final_ev_soc"] = {None: final_ev_soc}
+
+
+        v = str(timestep) + "_" + str(ini_ess_soc) + "_" + str(ini_vac_soc)
+        result = None
+        instance = None
+        my_dict = {}
+        # redisDB = RedisDB()
+        while True:
+            try:
+                if True:  # redisDB.get_lock("opt_lock", v):
+                    optsolver = SolverFactory(solver_name)
+                    spec = importlib.util.spec_from_file_location(absolute_path, absolute_path)
+                    module = spec.loader.load_module(spec.name)
+                    my_class = getattr(module, 'Model')
+                    instance = my_class.model.create_instance(data_dict)
+                    result = optsolver.solve(instance)
+                    if result is None:
+                        print("result is none for " + str(v) + " repeat")
+                    elif (result.solver.status == SolverStatus.ok) and (
+                            result.solver.termination_condition == TerminationCondition.optimal):
+                        instance.solutions.load_from(result)
+
+                        # * if solved get the values in dict
+                        for v1 in instance.component_objects(Var, active=True):
+                            # self.logger.debug("Variable in the optimization: " + str(v))
+                            varobject = getattr(instance, str(v1))
+                            var_list = []
+                            try:
+                                # Try and add to the dictionary by key ref
+                                for index in varobject:
+                                    var_list.append(varobject[index].value)
+                                # self.logger.debug("Identified variables " + str(var_list))
+                                my_dict[str(v1)] = var_list
+                            except Exception as e:
+                                print("error reading result " + str(e))
+                    elif result.solver.termination_condition == TerminationCondition.infeasible:
+                        # do something about it? or exit?
+                        print("Termination condition is infeasible " + v + " repeat")
+                        continue
+                    else:
+                        print("Nothing fits " + v + " repeat")
+                        continue
+            except Exception as e:
+                print("Thread: " + v + " " + str(e))
+            finally:
+                # redisDB.release_lock("opt_lock", v)
+                pass
+
+            if single_ev:
+                position = False
+                combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+            else:
+                combined_key = (timestep, ini_ess_soc, ini_vac_soc)
+
+            Decision = {combined_key: {}}
+            Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
+            Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
+            Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
+            Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+
+            Value = {combined_key: {}}
+            Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
+            #print("Value " + str(Value) + " Decision " + str(Decision))
+            return (Decision, Value)

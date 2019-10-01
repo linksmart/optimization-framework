@@ -95,7 +95,7 @@ def monte_carlo_simulation(time_resolution, horizon, repetition, unplugged_mean,
     return behaviour_model
 
 
-def markov_model_simulation(id, time_resolution, horizon, repetition, unplugged_mean, unplugged_std,
+def markov_model_simulation(time_resolution, horizon, repetition, unplugged_mean, unplugged_std,
                             plugged_mean, plugged_std):
     """
     Runs a Markov model simulation with given statistical parameters

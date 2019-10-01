@@ -112,8 +112,8 @@ class Charger(Model):
         :param so_c: The so_c of this Charger.
         :type so_c: float
         """
-        if so_c is not None and so_c > 100:  # noqa: E501
-            raise ValueError("Invalid value for `so_c`, must be a value less than or equal to `100`")  # noqa: E501
+        if so_c is not None and so_c > 1:  # noqa: E501
+            raise ValueError("Invalid value for `so_c`, must be a value less than or equal to `1`")  # noqa: E501
         if so_c is not None and so_c < 0:  # noqa: E501
             raise ValueError("Invalid value for `so_c`, must be a value greater than or equal to `0`")  # noqa: E501
 
