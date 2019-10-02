@@ -513,13 +513,16 @@ class OptControllerStochastic(ControllerBase):
             vac_decision_domain = None
             vac_decision_domain_n = None
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
+            self.logger.debug("initial_ess_soc_value "+str(initial_ess_soc_value))
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
+            self.logger.debug("initial_vac_soc_value " + str(initial_vac_soc_value))
 
             if self.single_ev:
                 recharge_value = int(data_dict[None]["Recharge"][None])
                 result_key = (0, initial_ess_soc_value, initial_vac_soc_value, recharge_value)
             else:
                 result_key = (0, initial_ess_soc_value, initial_vac_soc_value)
+                self.logger.debug("result_key " + str(result_key))
 
             p_pv = Decision[result_key]['PV']
             p_grid = Decision[result_key]['Grid']
@@ -534,7 +537,7 @@ class OptControllerStochastic(ControllerBase):
             vac_decision_domain_n = None
             behaviour_model = None"""
 
-            reverse_steps=None
+
             Decision.clear()
             Value.clear()
 
@@ -622,7 +625,9 @@ class OptControllerStochastic(ControllerBase):
             """
             self.logger.debug("Implemented actions")
             self.logger.debug("PV generation:" + str(p_pv))
-            self.logger.debug("Import:" + str(p_grid))
+            self.logger.debug("Grid before:" + str(p_grid))
+            p_grid = feasible_ev_charging_power - p_pv - p_ess
+            self.logger.debug("Grid after:" + str(p_grid))
             self.logger.debug("ESS discharge:" + str(p_ess))
             self.logger.debug("Real EV charging" + str(feasible_ev_charging_power))
 
@@ -636,6 +641,8 @@ class OptControllerStochastic(ControllerBase):
             self.logger.debug("Programming execution time: "+str(execution_time))
             self.logger.debug("")
             self.logger.debug("#" * 80)
+
+
 
             results = {
                 "id": self.id,
