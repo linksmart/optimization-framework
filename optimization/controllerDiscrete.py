@@ -28,27 +28,29 @@ class OptControllerDiscrete(ControllerBase):
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
     def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
-        while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
+        while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
             action_handle_map = {}
             start_time_total = time.time()
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=False)  # blocking call
             self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
-            if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
+            if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
                 break
 
             # Creating an optimization instance with the referenced model
             try:
                 self.logger.debug("Creating an optimization instance")
                 instance = self.my_class.model.create_instance(data_dict)
+                self.logger.info("Instance created with pyomo")
+                run_count = 0
+                start_time = time.time()
+                result = optsolver.solve(instance)
             except Exception as e:
                 self.logger.error(e)
             # instance = self.my_class.model.create_instance(self.data_path)
-            self.logger.info("Instance created with pyomo")
 
-            run_count = 0
-            start_time = time.time()
-            result = optsolver.solve(instance)
+
+
             """while True:
                 try:
                     # self.logger.info(instance.pprint())
@@ -124,5 +126,5 @@ class OptControllerDiscrete(ControllerBase):
             if sleep_time > 0:
                 for i in range(sleep_time):
                     time.sleep(1)
-                    if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
+                    if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
                         break

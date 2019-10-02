@@ -335,7 +335,7 @@ class OptControllerStochastic(ControllerBase):
                 # retrieve the solutions
                 try:
                     futures = []
-                    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
+                    with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
                         for combination in ess_vac_product:
                         #for instance_object in instance_list:
                             if self.single_ev:

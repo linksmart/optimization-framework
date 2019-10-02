@@ -159,11 +159,11 @@ class ControllerBase(ABC, threading.Thread):
             ###maps action handles to instances
 
             self.initialize_opt_solver()
-            self.initialize_solver_manager()
+            """self.initialize_solver_manager()
             if self.solver_manager is None:
                 self.logger.error("Failed to create a solver manager")
             else:
-                self.logger.debug("Solver manager created: " + str(self.solver_manager) + str(type(self.solver_manager)))
+                self.logger.debug("Solver manager created: " + str(self.solver_manager) + str(type(self.solver_manager)))"""
 
 
             count = 0
@@ -190,7 +190,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.info("This is the id: " + self.id)"""
             #self.optimize(action_handle_map, count, optsolver, solver_manager)
 
-            self.optimize(count,self.optsolver,self.solver_manager, self.solver_name, self.model_path)
+            self.optimize(count,self.optsolver,None, self.solver_name, self.model_path)
 
         except Exception as e:
             execution_error = True
@@ -220,7 +220,7 @@ class ControllerBase(ABC, threading.Thread):
 
             #del action_handle_map
             self.optsolver = None
-            self.solver_manager = None
+            #self.solver_manager = None
             #self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
