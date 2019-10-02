@@ -2428,7 +2428,7 @@ definitions:
         type: "number"
         format: "float"
         minimum: 0
-        maximum: 100
+        maximum: 1
     example:
       Max_Charging_Power_kW: 7
       Hosted_EV: "ev1"

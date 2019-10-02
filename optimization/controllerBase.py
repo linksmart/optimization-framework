@@ -52,7 +52,7 @@ class ControllerBase(ABC, threading.Thread):
         self.dT_in_seconds = dT_in_seconds
         self.output_config = output_config
         self.input_config_parser = input_config_parser
-        self.stopRequest = threading.Event()
+        self.stopRequest = None#threading.Event()
         self.redisDB = RedisDB()
         self.lock_key = "id_lock"
         self.optimization_type = optimization_type
@@ -190,7 +190,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.info("This is the id: " + self.id)"""
             #self.optimize(action_handle_map, count, optsolver, solver_manager)
 
-            self.optimize(count,self.optsolver,self.solver_manager)
+            self.optimize(count,self.optsolver,self.solver_manager, self.solver_name, self.model_path)
 
         except Exception as e:
             execution_error = True
@@ -221,7 +221,7 @@ class ControllerBase(ABC, threading.Thread):
             #del action_handle_map
             self.optsolver = None
             self.solver_manager = None
-            self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
+            #self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
             self.logger.info("execution error "+str(execution_error))
@@ -245,7 +245,7 @@ class ControllerBase(ABC, threading.Thread):
             return return_msg
 
     @abstractmethod
-    def optimize(self, count, optsolver, solver_manager):
+    def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
         while not self.redisDB.get_bool(self.stop_signal_key):
             pass
 

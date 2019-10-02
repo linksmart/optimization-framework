@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 import math
 import gc
-
 import numpy as np
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
@@ -104,7 +103,7 @@ class OptControllerStochastic(ControllerBase):
 
             value = {v: Value[timestep + 1, v[0], v[1]] for v in value_index}
 
-            bm_idx = behaviour_model[timestep].keys()
+            bm_idx = list(behaviour_model[timestep].keys())
 
             bm = behaviour_model[timestep]
 
@@ -271,7 +270,7 @@ class OptControllerStochastic(ControllerBase):
 
     #def optimize(self, action_handle_map, count, optsolver, solver_manager):
     #def optimize(self, count, optsolver, solver_manager, solver_name):
-    def optimize(self, count, optsolver, solver_manager):
+    def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
         self.logger.debug("##############  testsf")
         while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
             start_time_total = time.time()
@@ -335,6 +334,11 @@ class OptControllerStochastic(ControllerBase):
                     #futures = []
                     #with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                     for instance_object in instance_list:
+                        try:
+                            self.logger.debug(data_dict[None]["Behavior_Model_Index"])
+                            d = dill.dumps(list(data_dict.items()))
+                        except Exception as e:
+                            self.logger.error("dill items fail "+str(e))
                         d, v = self.thread_solver(self.single_ev, instance_object["instance"], instance_object["ess_soc"],
                                                        instance_object["vac_soc"], optsolver, timestep)
                         Value.update(v)

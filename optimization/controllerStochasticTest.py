@@ -347,7 +347,7 @@ class OptControllerStochastic(ControllerBase):
         return (ess_soc_states, ess_decision_domain)
 
     #def optimize(self, action_handle_map, count, optsolver, solver_manager):
-    def optimize(self, count, optsolver, solver_manager):
+    def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
 
         while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
             start_time_total = time.time()
