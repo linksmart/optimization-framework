@@ -727,6 +727,7 @@ definitions:
       repetition: 2
       solver: "ipopt"
       optimization_type: "discrete"
+      single_ev: false
   Path_Definition:
     type: "object"
     required:

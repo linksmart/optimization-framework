@@ -336,23 +336,23 @@ class OptControllerStochastic(ControllerBase):
                 try:
                     futures = []
                     with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
-                        for combination in ess_vac_product:
-                        #for instance_object in instance_list:
-                            if self.single_ev:
+                        if self.single_ev:
+                            for combination in ess_vac_product:
                                 ini_ess_soc, ini_vac_soc, position = combination
-                                futures.append(executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
-                                                               ess_vac_product, ess_decision_domain, min_value, max_value,
-                                      vac_decision_domain, vac_decision_domain_n, max_vac_soc_states,
-                                      timestep, True, solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
-                            else:
+                                futures.append(
+                                    executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                                    ess_decision_domain, min_value, max_value, vac_decision_domain,
+                                                    vac_decision_domain_n, max_vac_soc_states, timestep, True,
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
+                        else:
+                            for combination in ess_vac_product:
                                 ini_ess_soc, ini_vac_soc = combination
                                 futures.append(
                                     executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
-                                                    ess_vac_product, ess_decision_domain, min_value, max_value,
-                                                    vac_decision_domain, vac_decision_domain_n, max_vac_soc_states,
-                                                    timestep, False, solver_name, model_path, ini_ess_soc, ini_vac_soc))
+                                                    ess_decision_domain, min_value, max_value, vac_decision_domain,
+                                                    vac_decision_domain_n, max_vac_soc_states, timestep, False,
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc))
 
-                        self.logger.debug("submitted to futures")
                         for future in concurrent.futures.as_completed(futures):
                             try:
                                 d, v = future.result()
@@ -370,9 +370,6 @@ class OptControllerStochastic(ControllerBase):
 
                 # erasing files from pyomo
                 self.erase_pyomo_files()
-
-                #del instance_list
-
 
             initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
             initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
@@ -609,9 +606,9 @@ class OptControllerStochastic(ControllerBase):
             return (Decision, Value)
 
     @staticmethod
-    def create_instance_and_solve(data_dict, ess_vac_product, ess_decision_domain, min_value, max_value,
-                                  vac_decision_domain, vac_decision_domain_n, max_vac_soc_states,
-                                  timestep, single_ev, solver_name, absolute_path, ini_ess_soc, ini_vac_soc, position=None):
+    def create_instance_and_solve(data_dict, ess_decision_domain, min_value, max_value, vac_decision_domain,
+                                  vac_decision_domain_n, max_vac_soc_states, timestep, single_ev, solver_name,
+                                  absolute_path, ini_ess_soc, ini_vac_soc, position=None):
         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
         if single_ev:
@@ -674,10 +671,9 @@ class OptControllerStochastic(ControllerBase):
         result = None
         instance = None
         my_dict = {}
-        # redisDB = RedisDB()
         while True:
             try:
-                if True:  # redisDB.get_lock("opt_lock", v):
+                if True:
                     optsolver = SolverFactory(solver_name)
                     spec = importlib.util.spec_from_file_location(absolute_path, absolute_path)
                     module = spec.loader.load_module(spec.name)
@@ -712,12 +708,9 @@ class OptControllerStochastic(ControllerBase):
                         continue
             except Exception as e:
                 print("Thread: " + v + " " + str(e))
-            finally:
-                # redisDB.release_lock("opt_lock", v)
-                pass
+
 
             if single_ev:
-                position = False
                 combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
             else:
                 combined_key = (timestep, ini_ess_soc, ini_vac_soc)
@@ -730,5 +723,4 @@ class OptControllerStochastic(ControllerBase):
 
             Value = {combined_key: {}}
             Value[combined_key] = my_dict["P_PV_OUTPUT"][0]
-            #print("Value " + str(Value) + " Decision " + str(Decision))
             return (Decision, Value)
