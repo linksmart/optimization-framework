@@ -26,7 +26,9 @@ class OptControllerMPC(ControllerBase):
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
-    def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
+    def optimize(self, count, solver_name, model_path):
+        optsolver = None
+        solver_manager = None
         while not self.redisDB.get_bool(self.stop_signal_key) and not self.stopRequest.isSet():
             action_handle_map = {}
             self.logger.info("waiting for data")

@@ -53,7 +53,7 @@ USER garagon
 
 WORKDIR /usr/src/app
 
-COPY entry.sh /usr/src/app/
+#COPY entry.sh /usr/src/app/
 COPY ofw.py /usr/src/app/
 COPY optimization /usr/src/app/optimization
 COPY utils /usr/src/app/utils
@@ -75,7 +75,9 @@ RUN echo "GUROBI_HOME=$GUROBI_HOME" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
 
-#USER root
+RUN chown -R garagon /usr/src/app/
+
+USER garagon
 
 #ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
 

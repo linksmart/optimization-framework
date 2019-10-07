@@ -274,7 +274,7 @@ class OptControllerStochastic(ControllerBase):
         return (ess_soc_states, ess_decision_domain)
 
     #def optimize(self, action_handle_map, count, optsolver, solver_manager):
-    def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
+    def optimize(self, count, solver_name, model_path):
     #def optimize(self, count, optsolver, solver_manager):
         self.logger.debug("##############  testsf")
         while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
@@ -316,228 +316,239 @@ class OptControllerStochastic(ControllerBase):
 
             reverse_steps = reversed(range(0, self.horizon_in_steps))
             for timestep in reverse_steps:
-                self.logger.info("Timestep :#"+str(timestep))
 
-                #instance_id = 0
-                #instance_info = {}
+                if self.redisDB.get_bool(self.stop_signal_key):
+                    break
+                else:
+                    self.logger.info("Timestep :#"+str(timestep))
 
-                value_index, value,bm_idx, bm, ess_vac_product = self.calculate_internal_values(timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,
-                                          position_states)
-                data_dict[None]["Value_Index"] = {None: value_index}
-                data_dict[None]["Value"] = value
-                data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
-                data_dict[None]["Behavior_Model"] = bm
+                    #instance_id = 0
+                    #instance_info = {}
 
-                data_dict[None]["Timestep"] = {None: timestep}
+                    value_index, value,bm_idx, bm, ess_vac_product = self.calculate_internal_values(timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,
+                                              position_states)
+                    data_dict[None]["Value_Index"] = {None: value_index}
+                    data_dict[None]["Value"] = value
+                    data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
+                    data_dict[None]["Behavior_Model"] = bm
 
-                #instance_list = self.create_instance(data_dict, ess_vac_product, ess_decision_domain, min_value, max_value, vac_decision_domain, vac_decision_domain_n, max_vac_soc_states)
+                    data_dict[None]["Timestep"] = {None: timestep}
 
-                # retrieve the solutions
-                try:
-                    futures = []
-                    with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
-                        if self.single_ev:
-                            for combination in ess_vac_product:
-                                ini_ess_soc, ini_vac_soc, position = combination
-                                futures.append(
-                                    executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
-                                                    ess_decision_domain, min_value, max_value, vac_decision_domain,
-                                                    vac_decision_domain_n, max_vac_soc_states, timestep, True,
-                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
-                        else:
-                            for combination in ess_vac_product:
-                                ini_ess_soc, ini_vac_soc = combination
-                                futures.append(
-                                    executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
-                                                    ess_decision_domain, min_value, max_value, vac_decision_domain,
-                                                    vac_decision_domain_n, max_vac_soc_states, timestep, False,
-                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc))
+                    #instance_list = self.create_instance(data_dict, ess_vac_product, ess_decision_domain, min_value, max_value, vac_decision_domain, vac_decision_domain_n, max_vac_soc_states)
 
-                        for future in concurrent.futures.as_completed(futures):
-                            try:
-                                d, v = future.result()
-                                Value.update(v)
-                                Decision.update(d)
-                            except Exception as exc:
-                                self.logger.error("caused an exception: "+str(exc))
+                    # retrieve the solutions
+                    try:
+                        futures = []
+                        with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
+                            if self.single_ev:
+                                for combination in ess_vac_product:
+                                    ini_ess_soc, ini_vac_soc, position = combination
+                                    futures.append(
+                                        executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                                        ess_decision_domain, min_value, max_value, vac_decision_domain,
+                                                        vac_decision_domain_n, max_vac_soc_states, timestep, True,
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
+                            else:
+                                for combination in ess_vac_product:
+                                    ini_ess_soc, ini_vac_soc = combination
+                                    futures.append(
+                                        executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                                        ess_decision_domain, min_value, max_value, vac_decision_domain,
+                                                        vac_decision_domain_n, max_vac_soc_states, timestep, False,
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc))
 
-                    #gc.collect()
-                except Exception as e:
-                    self.logger.error(e)
+                            for future in concurrent.futures.as_completed(futures):
+                                try:
+                                    d, v = future.result()
+                                    Value.update(v)
+                                    Decision.update(d)
+                                except Exception as exc:
+                                    self.logger.error("caused an exception: "+str(exc))
 
+                        #gc.collect()
+                    except Exception as e:
+                        self.logger.error(e)
+
+
+                    gc.collect()
+
+                    # erasing files from pyomo
+                    self.erase_pyomo_files()
+
+            if self.redisDB.get_bool(self.stop_signal_key):
+                break
+            else:
+                initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
+                initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
+
+                if self.single_ev:
+                    recharge_value = int(data_dict[None]["Recharge"][None])
+                    result_key = (0, initial_ess_soc_value, initial_vac_soc_value, recharge_value)
+                else:
+                    result_key = (0, initial_ess_soc_value, initial_vac_soc_value)
+
+                p_pv = Decision[result_key]['PV']
+                p_grid = Decision[result_key]['Grid']
+                p_ess = Decision[result_key]['ESS']
+                p_vac = Decision[result_key]['VAC']
+
+                #del optsolver
+                #del solver_manager
+                del reverse_steps
+                del Decision
+                del Value
+                del value
+                del value_index
+                del bm_idx
+                del bm
+                del ess_vac_product
+                del ess_decision_domain
+                del vac_decision_domain
+                del vac_decision_domain_n
+                del behaviour_model
+                #del keylistforDecisions
 
                 gc.collect()
 
-                # erasing files from pyomo
-                self.erase_pyomo_files()
+                p_ev = {}
 
-            initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
-            initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
+                self.logger.debug("Dynamic programming calculations")
+                self.logger.debug("PV generation:" + str(p_pv))
+                self.logger.debug("Import:" + str(p_grid))
+                self.logger.debug("ESS discharge:" + str(p_ess))
+                self.logger.debug("VAC charging" + str(p_vac))
 
-            if self.single_ev:
-                recharge_value = int(data_dict[None]["Recharge"][None])
-                result_key = (0, initial_ess_soc_value, initial_vac_soc_value, recharge_value)
-            else:
-                result_key = (0, initial_ess_soc_value, initial_vac_soc_value)
+                #############################################################################
+                # This section distributes virtual capacity charging power into the cars plugged chargers in the station
 
-            p_pv = Decision[result_key]['PV']
-            p_grid = Decision[result_key]['Grid']
-            p_ess = Decision[result_key]['ESS']
-            p_vac = Decision[result_key]['VAC']
+                # detect which cars are connected to the chargers in the commercial charging station
+                # calculate the maximum feasible charging power input under given SoC
 
-            #del optsolver
-            #del solver_manager
-            del reverse_steps
-            del Decision
-            del Value
-            del value
-            del value_index
-            del bm_idx
-            del bm
-            del ess_vac_product
-            del ess_decision_domain
-            del vac_decision_domain
-            del vac_decision_domain_n
-            del behaviour_model
-            #del keylistforDecisions
+                dT = data_dict[None]["dT"][None]
+                ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
+                ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
+                del data_dict
+                connections = ev_park.max_charge_power_calculator(dT)
 
-            gc.collect()
+                # Calculation of the feasible charging power at the commercial station
+                max_power_for_cars = sum(connections.values())
+                feasible_ev_charging_power = min(max_power_for_cars, p_vac)
+                self.logger.debug("feasible_ev_charging_power" + str(feasible_ev_charging_power))
+                self.logger.debug("max_power_for_cars " + str(max_power_for_cars))
 
-            p_ev = {}
+                for charger, max_charge_power_of_car in connections.items():
+                    if feasible_ev_charging_power == 0:
+                        p_ev[charger] = 0
+                    else:
+                        power_output_of_charger = feasible_ev_charging_power * (
+                                max_charge_power_of_car / max_power_for_cars)
+                        p_ev[charger] = power_output_of_charger
+                    # self.logger.debug("power_output_of_charger "+str(power_output_of_charger)+"in charger "+str(charger) )
+                #############################################################################
 
-            self.logger.debug("Dynamic programming calculations")
-            self.logger.debug("PV generation:" + str(p_pv))
-            self.logger.debug("Import:" + str(p_grid))
-            self.logger.debug("ESS discharge:" + str(p_ess))
-            self.logger.debug("VAC charging" + str(p_vac))
+                #############################################################################
+                # This section decides what to do with the non utilized virtual capacity charging power
+                """
+                # Power leftover: Non implemented part of virtual capacity charging power
+                leftover_vac_charging_power = p_vac - feasible_ev_charging_power
+    
+                # Still leftover is attempted to be charged to the ESS
+                ess_charger_limit = ESS_Max_Charge
+                ess_capacity_limit = ((100 - initial_ess_soc_value) / 100) * (ESS_Capacity / dT)
+                max_ess_charging_power = ess_capacity_limit - p_ess#min(ess_charger_limit, ess_capacity_limit, still_leftover)
+                p_ess = p_ess + max_ess_charging_power
+    
+                # Leftover is attempted to be removed with less import
+                less_import = min(p_grid, leftover_vac_charging_power)
+                p_grid = p_grid - less_import
+    
+                # Some part could be still left
+                still_leftover = leftover_vac_charging_power - less_import
+    
+    
+    
+                # Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
+                final_leftover = still_leftover - max_ess_charging_power
+                p_pv = p_pv - final_leftover
+                """
+                self.logger.debug("Implemented actions")
+                self.logger.debug("PV generation:" + str(p_pv))
+                self.logger.debug("Grid before:" + str(p_grid))
+                p_grid = feasible_ev_charging_power - p_pv - p_ess
+                self.logger.debug("Grid after:" + str(p_grid))
+                self.logger.debug("ESS discharge:" + str(p_ess))
+                self.logger.debug("Real EV charging" + str(feasible_ev_charging_power))
 
-            #############################################################################
-            # This section distributes virtual capacity charging power into the cars plugged chargers in the station
+                stochastic_end_time = time.time()
 
-            # detect which cars are connected to the chargers in the commercial charging station
-            # calculate the maximum feasible charging power input under given SoC
+                self.logger.debug("Time Information".center(80, "#"))
+                self.logger.debug("")
+                self.logger.debug("Start time: "+str(stochastic_start_time))
+                self.logger.debug("End time: "+str(stochastic_end_time))
+                execution_time = stochastic_end_time - stochastic_start_time
+                self.logger.debug("Programming execution time: "+str(execution_time))
+                self.logger.debug("")
+                self.logger.debug("#" * 80)
 
-            dT = data_dict[None]["dT"][None]
-            ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
-            ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
-            del data_dict
-            connections = ev_park.max_charge_power_calculator(dT)
+                results = {
+                    "id": self.id,
+                    "p_pv": p_pv,
+                    "p_grid": p_grid,
+                    "p_ess": p_ess,
+                    "p_vac": p_vac,
+                    "feasible_ev_charging_power": feasible_ev_charging_power,
+                    "p_ev": p_ev,
+                    "execution_time": execution_time
+                }
 
-            # Calculation of the feasible charging power at the commercial station
-            max_power_for_cars = sum(connections.values())
-            feasible_ev_charging_power = min(max_power_for_cars, p_vac)
-            self.logger.debug("feasible_ev_charging_power" + str(feasible_ev_charging_power))
-            self.logger.debug("max_power_for_cars " + str(max_power_for_cars))
+                # update soc
+                ev_park.charge_ev(p_ev, self.dT_in_seconds)
+                #time.sleep(60)
 
-            for charger, max_charge_power_of_car in connections.items():
-                if feasible_ev_charging_power == 0:
-                    p_ev[charger] = 0
-                else:
-                    power_output_of_charger = feasible_ev_charging_power * (
-                            max_charge_power_of_car / max_power_for_cars)
-                    p_ev[charger] = power_output_of_charger
-                # self.logger.debug("power_output_of_charger "+str(power_output_of_charger)+"in charger "+str(charger) )
-            #############################################################################
+                results_publish = {
+                    "p_pv": [p_pv],
+                    "p_grid": [p_grid],
+                    "p_ess": [p_ess],
+                    "p_vac": [p_vac],
+                    "feasible_ev_charging_power": [feasible_ev_charging_power],
+                    "execution_time": [execution_time]
+                }
 
-            #############################################################################
-            # This section decides what to do with the non utilized virtual capacity charging power
-            """
-            # Power leftover: Non implemented part of virtual capacity charging power
-            leftover_vac_charging_power = p_vac - feasible_ev_charging_power
+                for key, value in p_ev.items():
+                    ev_id = ev_park.get_hosted_ev(key)
+                    if ev_id:
+                        results_publish[key+"/p_ev"] = {"bn":"chargers/"+key, "n":ev_id+"/p_ev", "v":[value]}
 
-            # Still leftover is attempted to be charged to the ESS
-            ess_charger_limit = ESS_Max_Charge
-            ess_capacity_limit = ((100 - initial_ess_soc_value) / 100) * (ESS_Capacity / dT)
-            max_ess_charging_power = ess_capacity_limit - p_ess#min(ess_charger_limit, ess_capacity_limit, still_leftover)
-            p_ess = p_ess + max_ess_charging_power
+                self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
-            # Leftover is attempted to be removed with less import
-            less_import = min(p_grid, leftover_vac_charging_power)
-            p_grid = p_grid - less_import
+                del results
+                del ev_park
+                del results_publish
 
-            # Some part could be still left
-            still_leftover = leftover_vac_charging_power - less_import
+                #with open(output_log_filepath, "w") as log_file:
+                    #json.dump(results, log_file, indent=4)
+
+                #jsonDecision = {str(k): v for k, v in Decision.items()}
+
+                #with open(decision_log_filepath, "w") as log_file:
+                    #json.dump(jsonDecision, log_file, indent=4)
+
+                count += 1
+                if self.repetition > 0 and count >= self.repetition:
+                    self.repetition_completed = True
+                    break
+
+                self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
+                time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
+                final_time_total = time.time()
+                sleep_time = self.control_frequency - int(final_time_total - start_time_total)
+                if sleep_time > 0:
+                    for i in range(sleep_time):
+                        time.sleep(1)
+                        if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
+                            break
 
 
-
-            # Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
-            final_leftover = still_leftover - max_ess_charging_power
-            p_pv = p_pv - final_leftover
-            """
-            self.logger.debug("Implemented actions")
-            self.logger.debug("PV generation:" + str(p_pv))
-            self.logger.debug("Import:" + str(p_grid))
-            self.logger.debug("ESS discharge:" + str(p_ess))
-            self.logger.debug("Real EV charging" + str(feasible_ev_charging_power))
-
-            stochastic_end_time = time.time()
-
-            self.logger.debug("Time Information".center(80, "#"))
-            self.logger.debug("")
-            self.logger.debug("Start time: "+str(stochastic_start_time))
-            self.logger.debug("End time: "+str(stochastic_end_time))
-            execution_time = stochastic_end_time - stochastic_start_time
-            self.logger.debug("Programming execution time: "+str(execution_time))
-            self.logger.debug("")
-            self.logger.debug("#" * 80)
-
-            results = {
-                "id": self.id,
-                "p_pv": p_pv,
-                "p_grid": p_grid,
-                "p_ess": p_ess,
-                "p_vac": p_vac,
-                "feasible_ev_charging_power": feasible_ev_charging_power,
-                "p_ev": p_ev,
-                "execution_time": execution_time
-            }
-
-            # update soc
-            ev_park.charge_ev(p_ev, self.dT_in_seconds)
-            #time.sleep(60)
-
-            results_publish = {
-                "p_pv": [p_pv],
-                "p_grid": [p_grid],
-                "p_ess": [p_ess],
-                "p_vac": [p_vac],
-                "feasible_ev_charging_power": [feasible_ev_charging_power],
-                "execution_time": [execution_time]
-            }
-
-            for key, value in p_ev.items():
-                ev_id = ev_park.get_hosted_ev(key)
-                if ev_id:
-                    results_publish[key+"/p_ev"] = {"bn":"chargers/"+key, "n":ev_id+"/p_ev", "v":[value]}
-
-            self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
-
-            del results
-            del ev_park
-            del results_publish
-
-            #with open(output_log_filepath, "w") as log_file:
-                #json.dump(results, log_file, indent=4)
-
-            #jsonDecision = {str(k): v for k, v in Decision.items()}
-
-            #with open(decision_log_filepath, "w") as log_file:
-                #json.dump(jsonDecision, log_file, indent=4)
-
-            count += 1
-            if self.repetition > 0 and count >= self.repetition:
-                self.repetition_completed = True
-                break
-
-            self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
-            time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
-            final_time_total = time.time()
-            sleep_time = self.control_frequency - int(final_time_total - start_time_total)
-            if sleep_time > 0:
-                for i in range(sleep_time):
-                    time.sleep(1)
-                    if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
-                        break
     @staticmethod
     def thread_solver(single_ev, data_dict, ini_ess_soc, ini_vac_soc, solver_name, timestep, absolute_path):
         v = str(timestep)+"_"+str(ini_ess_soc)+"_"+str(ini_vac_soc)

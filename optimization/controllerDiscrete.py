@@ -27,7 +27,7 @@ class OptControllerDiscrete(ControllerBase):
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
-    def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
+    def optimize(self, count, solver_name, model_path):
         while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
             action_handle_map = {}
             start_time_total = time.time()
@@ -37,47 +37,21 @@ class OptControllerDiscrete(ControllerBase):
             if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
                 break
 
+            start_time = time.time()
             # Creating an optimization instance with the referenced model
             try:
+                optsolver = SolverFactory(solver_name)
+                spec = importlib.util.spec_from_file_location(model_path, model_path)
+                module = spec.loader.load_module(spec.name)
+                my_class = getattr(module, 'Model')
                 self.logger.debug("Creating an optimization instance")
-                instance = self.my_class.model.create_instance(data_dict)
+                instance = my_class.model.create_instance(data_dict)
                 self.logger.info("Instance created with pyomo")
-                run_count = 0
-                start_time = time.time()
                 result = optsolver.solve(instance)
+
             except Exception as e:
                 self.logger.error(e)
             # instance = self.my_class.model.create_instance(self.data_path)
-
-
-
-            """while True:
-                try:
-                    # self.logger.info(instance.pprint())
-                    action_handle = solver_manager.queue(instance, opt=optsolver)
-                    self.logger.debug("Solver queue created " + str(action_handle))
-                    self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                    action_handle_map[action_handle] = str(self.id)
-                    self.logger.debug("Action handle map: " + str(action_handle_map))
-                    start_time = time.time()
-                    self.logger.debug("Optimization starting time: " + str(start_time))
-                    break
-                except Exception as e:
-                    self.logger.error("exception " + str(e))
-                    if run_count == 5:
-                        raise e
-                    time.sleep(5)
-                run_count += 1
-
-            ###retrieve the solutions
-            for i in range(1):
-                this_action_handle = solver_manager.wait_any()
-                self.results = solver_manager.get_results(this_action_handle)
-                self.logger.debug("solver queue actions = " + str(solver_manager.num_queued()))
-                if this_action_handle in action_handle_map.keys():
-                    self.solved_name = action_handle_map.pop(this_action_handle)
-                else:
-                    self.solved_name = None"""
 
             start_time = time.time() - start_time
             self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")

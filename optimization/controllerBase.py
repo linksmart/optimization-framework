@@ -64,8 +64,12 @@ class ControllerBase(ABC, threading.Thread):
         self.preprocess = False
         self.input = None
         self.output = None
-
-        try:
+        if "False" in self.redisDB.get("Error mqtt" + self.id):
+            self.output = OutputController(self.id, self.output_config)
+        if "False" in self.redisDB.get("Error mqtt" + self.id):
+            self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
+                                         self.horizon_in_steps, self.dT_in_seconds)
+        """try:
             # dynamic load of a class
             self.logger.info("This is the model path: " + self.model_path)
             module = self.path_import2(self.model_path)
@@ -74,13 +78,9 @@ class ControllerBase(ABC, threading.Thread):
 
         except Exception as e:
             self.logger.error(e)
-            raise InvalidModelException("model is invalid/contains python syntax errors")
+            raise InvalidModelException("model is invalid/contains python syntax errors")"""
 
-        if "False" in self.redisDB.get("Error mqtt" + self.id):
-            self.output = OutputController(self.id, self.output_config)
-        if "False" in self.redisDB.get("Error mqtt" + self.id):
-            self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
-                                         self.horizon_in_steps, self.dT_in_seconds)
+
 
     # Importint a class dynamically
     def path_import2(self, absolute_path):
@@ -89,7 +89,7 @@ class ControllerBase(ABC, threading.Thread):
         return module
 
     def join(self, timeout=None):
-        self.stopRequest.set()
+        #self.stopRequest.set()
         super(ControllerBase, self).join(timeout)
 
     def Stop(self):
@@ -97,20 +97,23 @@ class ControllerBase(ABC, threading.Thread):
             if self.input:
                 self.input.Stop()
                 self.logger.debug("Deleting input instances")
-                del self.input.inputPreprocess
-                del self.input
+                #del self.input.inputPreprocess
+                #del self.input
         except Exception as e:
             self.logger.error("error stopping input " + str(e))
         try:
             if self.output:
                 self.output.Stop()
-                del self.output
+                self.logger.debug("Deleting output instances")
+                #del self.output
         except Exception as e:
             self.logger.error("error stopping output " + str(e))
 
         #erasing files from pyomo
         #self.erase_pyomo_files()
+        self.logger.debug("setting stop_signal_key")
         self.redisDB.set(self.stop_signal_key, True)
+
         if self.isAlive():
             self.join(1)
 
@@ -156,41 +159,10 @@ class ControllerBase(ABC, threading.Thread):
         return_msg = "success"
         execution_error = False
         try:
-            ###maps action handles to instances
-
-            self.initialize_opt_solver()
-            """self.initialize_solver_manager()
-            if self.solver_manager is None:
-                self.logger.error("Failed to create a solver manager")
-            else:
-                self.logger.debug("Solver manager created: " + str(self.solver_manager) + str(type(self.solver_manager)))"""
-
 
             count = 0
-            """action_handle_map = {}
 
-            #####create a solver
-            optsolver = SolverFactory(self.solver_name, verbose=False) #, solver_io="lp")
-            self.logger.debug("Solver factory: " + str(optsolver))
-            # optsolver.options["max_iter"]=5000
-            self.logger.info("solver instantiated with " + self.solver_name)
-
-            ###create a solver manager
-            solver_manager = SolverManagerFactory('pyro', host = 'localhost')
-            self.logger.debug("Setting options for the solver_manager")
-
-            #optsolver.options.pyro_shutdown = True
-
-            if solver_manager is None:
-                self.logger.error("Failed to create a solver manager")
-            else:
-                self.logger.debug("Solver manager created: " + str(solver_manager) + str(type(solver_manager)))
-
-            count = 0
-            self.logger.info("This is the id: " + self.id)"""
-            #self.optimize(action_handle_map, count, optsolver, solver_manager)
-
-            self.optimize(count,self.optsolver,None, self.solver_name, self.model_path)
+            self.optimize(count, self.solver_name, self.model_path)
 
         except Exception as e:
             execution_error = True
@@ -206,22 +178,7 @@ class ControllerBase(ABC, threading.Thread):
             else:
                 return_msg = e
         finally:
-            # Closing the pyomo servers
-            #self.logger.debug("deactivating SolverManagerFactory")
-            """try:
-                optsolver.close()
-                optsolver.deactivate()
-            except Exception as e:
-                self.logger.error(e)
-            try:
-                solver_manager.release_workers()
-            except Exception as e:
-                self.logger.error(e)"""
 
-            #del action_handle_map
-            self.optsolver = None
-            #self.solver_manager = None
-            #self.logger.info("thread stop event "+ str(self.stopRequest.isSet()))
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
             self.logger.info("execution error "+str(execution_error))
