@@ -372,31 +372,28 @@ class OptControllerStochastic(ControllerBase):
                                 except Exception as exc:
                                     self.logger.error("caused an exception: "+str(exc))
 
-                        #gc.collect()
+
                     except Exception as e:
                         self.logger.error(e)
 
-
-                    gc.collect()
+                    value_index.clear()
+                    value.clear()
+                    bm.clear()
+                    ess_vac_product = None
+                    #gc.collect()
 
                     # erasing files from pyomo
-                    #self.erase_pyomo_files()
                     folder = "/usr/src/app/logs/pyomo_"+str(self.id)
                     self.erase_pyomo_files(folder)
-                    """for the_file in os.listdir(folder):
-                        file_path = os.path.join(folder, the_file)
-                        try:
-                            if os.path.isfile(file_path):
-                                os.unlink(file_path)
-                            # elif os.path.isdir(file_path): shutil.rmtree(file_path)
-                        except Exception as e:
-                            self.logger.error(e)"""
+
 
             if self.redisDB.get_bool(self.stop_signal_key):
                 break
             else:
                 initial_ess_soc_value = float(data_dict[None]["SoC_Value"][None])
+                self.logger.debug("initial_ess_soc_value " + str(initial_ess_soc_value))
                 initial_vac_soc_value = float(data_dict[None]["VAC_SoC_Value"][None])
+                self.logger.debug("initial_vac_soc_value " + str(initial_vac_soc_value))
 
                 if self.single_ev:
                     recharge_value = int(data_dict[None]["Recharge"][None])
@@ -409,23 +406,10 @@ class OptControllerStochastic(ControllerBase):
                 p_ess = Decision[result_key]['ESS']
                 p_vac = Decision[result_key]['VAC']
 
-                #del optsolver
-                #del solver_manager
-                del reverse_steps
-                del Decision
-                del Value
-                del value
-                del value_index
-                del bm_idx
-                del bm
-                del ess_vac_product
-                del ess_decision_domain
-                del vac_decision_domain
-                del vac_decision_domain_n
-                del behaviour_model
-                #del keylistforDecisions
+                Decision.clear()
+                Value.clear()
 
-                gc.collect()
+                #gc.collect()
 
                 p_ev = {}
 
@@ -444,7 +428,7 @@ class OptControllerStochastic(ControllerBase):
                 dT = data_dict[None]["dT"][None]
                 ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
                 ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
-                del data_dict
+                data_dict.clear()
                 connections = ev_park.max_charge_power_calculator(dT)
 
                 # Calculation of the feasible charging power at the commercial station
@@ -465,29 +449,7 @@ class OptControllerStochastic(ControllerBase):
 
                 #############################################################################
                 # This section decides what to do with the non utilized virtual capacity charging power
-                """
-                # Power leftover: Non implemented part of virtual capacity charging power
-                leftover_vac_charging_power = p_vac - feasible_ev_charging_power
-    
-                # Still leftover is attempted to be charged to the ESS
-                ess_charger_limit = ESS_Max_Charge
-                ess_capacity_limit = ((100 - initial_ess_soc_value) / 100) * (ESS_Capacity / dT)
-                max_ess_charging_power = ess_capacity_limit - p_ess#min(ess_charger_limit, ess_capacity_limit, still_leftover)
-                p_ess = p_ess + max_ess_charging_power
-    
-                # Leftover is attempted to be removed with less import
-                less_import = min(p_grid, leftover_vac_charging_power)
-                p_grid = p_grid - less_import
-    
-                # Some part could be still left
-                still_leftover = leftover_vac_charging_power - less_import
-    
-    
-    
-                # Final leftover: if the ESS does not allow charging all leftover, final leftover will be compensated by PV curtailment
-                final_leftover = still_leftover - max_ess_charging_power
-                p_pv = p_pv - final_leftover
-                """
+
                 self.logger.debug("Implemented actions")
                 self.logger.debug("PV generation:" + str(p_pv))
                 self.logger.debug("Grid before:" + str(p_grid))
@@ -538,9 +500,9 @@ class OptControllerStochastic(ControllerBase):
 
                 self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
-                del results
-                del ev_park
-                del results_publish
+                results.clear()
+                ev_park = None
+                results_publish.clear()
 
                 #with open(output_log_filepath, "w") as log_file:
                     #json.dump(results, log_file, indent=4)
