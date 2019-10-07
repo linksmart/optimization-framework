@@ -30,6 +30,7 @@ from optimization.controllerBase import ControllerBase
 from optimization.idStatusManager import IDStatusManager
 from optimization.instance import Instance
 from optimization.optut import OptUt
+from pyutilib.services import TempfileManager
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
@@ -40,6 +41,12 @@ class OptControllerStochastic(ControllerBase):
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
         self.single_ev = single_ev
+        pyomo_path = "/usr/src/app/logs/pyomo_"+str(id)
+        if not os.path.exists(pyomo_path):
+            os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
+            os.chmod(pyomo_path, 0o777)
+        TempfileManager.tempdir = pyomo_path
+
 
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
@@ -373,7 +380,16 @@ class OptControllerStochastic(ControllerBase):
                     gc.collect()
 
                     # erasing files from pyomo
-                    self.erase_pyomo_files()
+                    #self.erase_pyomo_files()
+                    folder = "/usr/src/app/logs/pyomo_"+str(self.id)
+                    for the_file in os.listdir(folder):
+                        file_path = os.path.join(folder, the_file)
+                        try:
+                            if os.path.isfile(file_path):
+                                os.unlink(file_path)
+                            # elif os.path.isdir(file_path): shutil.rmtree(file_path)
+                        except Exception as e:
+                            self.logger.error(e)
 
             if self.redisDB.get_bool(self.stop_signal_key):
                 break

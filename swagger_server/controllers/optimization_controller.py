@@ -47,6 +47,9 @@ class CommandController:
     def set(self, id, object):
         self.factory[id] = object
 
+    def get_length_factory(self):
+        return len(self.factory)
+
     def get(self, id):
         return self.factory[id]
 
@@ -93,8 +96,6 @@ class CommandController:
             self.optimization_type = dict_object["optimization_type"]
             self.single_ev = dict_object["single_ev"]
 
-        #self.start_name_servers()
-        #self.start_pryo_mip_server(self.optimization_type)
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
                                self.repetition, self.solver, id, self.optimization_type, self.single_ev))

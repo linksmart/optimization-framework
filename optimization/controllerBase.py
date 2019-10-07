@@ -16,8 +16,9 @@ from pyomo.opt.parallel.manager import *
 import pyomo.solvers.plugins.smanager.pyro
 
 from pyutilib.services import TempfileManager
-TempfileManager.tempdir = "/usr/src/app/logs/pyomo"
+#TempfileManager.tempdir = "/usr/src/app/logs/pyomo"
 import time
+import shutil
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
@@ -41,7 +42,6 @@ class ControllerBase(ABC, threading.Thread):
         super().__init__()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.info("Initializing optimization controller " + id)
-        # Loading variables
         self.id = id
         self.results = ""
         self.model_path = model_path
@@ -185,11 +185,10 @@ class ControllerBase(ABC, threading.Thread):
             if not self.redisDB.get_bool(self.stop_signal_key) and not self.repetition_completed and not execution_error:
                 self.logger.error("Process interrupted")
                 self.redisDB.set("kill_signal", True)
-            #self.logger.debug("Deactivating pyro servers")
-            # TODO : 'SolverManager_Pyro' object has no attribute 'deactivate'
-            # this error was not present before pyomo update
-            # solver_manager.deactivate()
-            #self.logger.debug("Pyro servers deactivated: " + str(solver_manager))
+
+            #erase pyomo folder
+            folder = "/usr/src/app/logs/pyomo_" + str(self.id)
+            shutil.rmtree(folder, ignore_errors=True)
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
             if self.output:
