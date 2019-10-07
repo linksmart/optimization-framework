@@ -8,7 +8,7 @@ import json
 
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
-import time
+import time, os
 
 
 from optimization.controllerBase import ControllerBase
@@ -16,6 +16,7 @@ from optimization.controllerBase import ControllerBase
 import pyutilib.subprocess.GlobalData
 
 from optimization.idStatusManager import IDStatusManager
+from pyutilib.services import TempfileManager
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
@@ -24,6 +25,12 @@ class OptControllerDiscrete(ControllerBase):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
+
+        pyomo_path = "/usr/src/app/logs/pyomo_" + str(id)
+        if not os.path.exists(pyomo_path):
+            os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
+            os.chmod(pyomo_path, 0o777)
+        TempfileManager.tempdir = pyomo_path
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
@@ -87,6 +94,9 @@ class OptControllerDiscrete(ControllerBase):
                 self.logger.info("Termination condition is infeasible")
             else:
                 self.logger.info("Nothing fits")
+
+            folder = "/usr/src/app/logs/pyomo_" + str(self.id)
+            self.erase_pyomo_files(folder)
 
             count += 1
             if self.repetition > 0 and count >= self.repetition:

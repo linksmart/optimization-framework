@@ -382,14 +382,15 @@ class OptControllerStochastic(ControllerBase):
                     # erasing files from pyomo
                     #self.erase_pyomo_files()
                     folder = "/usr/src/app/logs/pyomo_"+str(self.id)
-                    for the_file in os.listdir(folder):
+                    self.erase_pyomo_files(folder)
+                    """for the_file in os.listdir(folder):
                         file_path = os.path.join(folder, the_file)
                         try:
                             if os.path.isfile(file_path):
                                 os.unlink(file_path)
                             # elif os.path.isdir(file_path): shutil.rmtree(file_path)
                         except Exception as e:
-                            self.logger.error(e)
+                            self.logger.error(e)"""
 
             if self.redisDB.get_bool(self.stop_signal_key):
                 break

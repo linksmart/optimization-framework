@@ -139,9 +139,9 @@ class ControllerBase(ABC, threading.Thread):
         #return self.solver_manager
         # optsolver.options.pyro_shutdown = True
 
-    def erase_pyomo_files(self):
+    def erase_pyomo_files(self, folder):
         # erasing files from pyomo
-        folder = "/usr/src/app/logs/pyomo"
+        #folder = "/usr/src/app/logs/pyomo"
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
             try:
