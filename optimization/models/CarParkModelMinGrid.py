@@ -48,7 +48,7 @@ class Model:
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals) # change bounds
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
     model.P_GRID_OUTPUT = Var(within=Reals, initialize=0)
-    model.U = Var(within=Reals)
+    #model.U = Var(within=Reals)
 
     def __init__(model, value, behaviorModel):
         model.Value = value
@@ -94,16 +94,16 @@ class Model:
 
     model.const_demand = Constraint(rule=home_demandmeeting)
 
-    def con_rule_linearization_1(model):
-        return model.U <= model.P_GRID_OUTPUT
+    #def con_rule_linearization_1(model):
+        #return model.U <= model.P_GRID_OUTPUT
 
-    model.con_linear_1 = Constraint(rule=con_rule_linearization_1)
+    #model.con_linear_1 = Constraint(rule=con_rule_linearization_1)
 
 
-    def con_rule_linearization_2(model):
-        return model.U >= -model.P_GRID_OUTPUT
+    #def con_rule_linearization_2(model):
+        #return model.U >= -model.P_GRID_OUTPUT
 
-    model.con_linear_2 = Constraint(rule=con_rule_linearization_2)
+    #model.con_linear_2 = Constraint(rule=con_rule_linearization_2)
 
 
     def objrule1(model):
@@ -137,6 +137,6 @@ class Model:
             # Adding the expected_future cost of taking 'ess and vac' decision when initial condition is combination of 'ini_ess_soc' and 'ini_vac_soc'
             future_cost += model.Decision[ess, vac] * expected_future_cost_of_this_decision
 
-        return model.U + future_cost
+        return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
 
     model.obj = Objective(rule=objrule1, sense=minimize)
