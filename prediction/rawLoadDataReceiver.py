@@ -44,9 +44,10 @@ class RawLoadDataReceiver(DataReceiver):
         try:
             data = json.loads(payload)
             data = RawDataReader.format_data(data)
+            #logger.debug("data raw "+str(data))
+            #logger.debug("current min "+str(self.current_minute))
             mod_data = []
             for item in data:
-
                 dt = datetime.datetime.fromtimestamp(item[0]).replace(second=0, microsecond=0)
                 if self.current_minute is None:
                     self.current_minute = dt

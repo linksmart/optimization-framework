@@ -154,7 +154,7 @@ class DataReceiver(ABC):
         if require_updated == 1 and not self.data:
             require_updated = 0
         while require_updated == 0 and not self.data_update and not self.stop_request:
-            self.logger.debug("wait for data")
+            self.logger.debug("wait for data "+str(self.topics))
             time.sleep(0.5)
         return self.get_and_update_data(clearData)
 

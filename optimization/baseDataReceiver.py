@@ -93,9 +93,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))
-                self.logger.debug("len data before expansion = "+str(len(raw_data)))
                 raw_data = self.expand_and_resample(raw_data, self.dT)
-                self.logger.debug("len data after expansion = " + str(len(raw_data)))
                 if len(raw_data) > 0:
                     bucket = self.time_to_bucket(raw_data[0][0])
                     for row in raw_data:
