@@ -103,9 +103,11 @@ class RawLoadDataReceiver(DataReceiver):
         return time_diff.total_seconds()
 
     def save_to_file_cron(self):
+        self.logger.debug("Started save file cron")
         while True and not self.stop_request:
             self.save_to_file()
-            time.sleep(self.get_sleep_secs(3))
+            time.sleep(self.get_sleep_secs(1))
+            #time.sleep(120)
 
     def load_data(self):
         data = RawDataReader.get_raw_data(self.file_path, self.buffer, self.topic_name)

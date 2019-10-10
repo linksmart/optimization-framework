@@ -88,7 +88,8 @@ class BaseDataReceiver(DataReceiver, ABC):
                         n = self.generic_name
                     try:
                         processed_value = self.preprocess_data(bn, n, v, u)
-                        raw_data.append([t, processed_value])
+                        if processed_value is not None and processed_value is not {}:
+                            raw_data.append([t, processed_value])
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))

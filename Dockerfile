@@ -63,7 +63,7 @@ COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
 COPY config /usr/src/app/config
 COPY profev /usr/src/app/profev
-COPY logs /usr/src/app/logs
+#COPY logs /usr/src/app/logs
 COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
 
@@ -76,18 +76,5 @@ RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var
 RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
 
 RUN chown -R garagon /usr/src/app/
-
 USER garagon
 
-#ENTRYPOINT ["sh","/usr/src/app/entry.sh"]
-
-#USER root
-
-#RUN groupadd ofw
-#RUN usermod -aG ofw garagon
-#RUN newgrp ofw
-#RUN chown -R garagon:ofw /usr/src/app/
-#RUN chmod g+rwx /usr/src/app/ -R
-
-
-#USER garagon
