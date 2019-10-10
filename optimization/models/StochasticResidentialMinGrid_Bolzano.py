@@ -49,6 +49,10 @@ class Model:
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
     model.P_GRID_OUTPUT = Var(within=Reals)
 
+    model.P_Grid_R_Output = Var(within=Reals)  # Active power exchange with grid at R phase
+    model.P_Grid_S_Output = Var(within=Reals)  # Active power exchange with grid at S phase
+    model.P_Grid_T_Output = Var(within=Reals)  # Active power exchange with grid at S phase
+
     model.P_PV_single = Var(within=NonNegativeReals)
     model.P_Load_single = Var(within=NonNegativeReals)
 
@@ -98,10 +102,28 @@ class Model:
 
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
-    def home_demandmeeting(model):
-        return model.P_Load_single + model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+    def home_demandmeeting_R(model):
+        return model.P_Grid_R_Output + (model.P_ESS_OUTPUT/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
 
-    model.const_demand = Constraint(rule=home_demandmeeting)
+    model.const_demand_R = Constraint(rule=home_demandmeeting_R)
+
+    def home_demandmeeting_S(model):
+        return model.P_Grid_S_Output + (model.P_ESS_OUTPUT / 3) + (model.P_PV_OUTPUT / 2) == (model.P_Load_single / 3)
+
+    model.const_demand_S = Constraint(rule=home_demandmeeting_S)
+
+    def home_demandmeeting_T(model):
+        return model.P_Grid_T_Output + (model.P_ESS_OUTPUT / 3)  == (model.P_Load_single / 3)
+
+    model.const_demand_T = Constraint(rule=home_demandmeeting_T)
+
+    def rule_p_power(model):
+        return model.P_GRID_OUTPUT == model.P_Grid_R_Output + model.P_Grid_S_Output + model.P_Grid_T_Output
+
+    #def home_demandmeeting(model):
+        #return model.P_Load_single + model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+
+    #model.const_demand = Constraint(rule=home_demandmeeting)
 
 
     def objrule1(model):
