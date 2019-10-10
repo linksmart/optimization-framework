@@ -27,11 +27,11 @@ class Model:
 	
 	# PV constraints
 	def con_rule_pv_potential(model):
-	    return model.P_PV_Output == model.P_PV_50 + model.P_PV_99
+	    return model.P_PV_Output == (model.P_PV_50 / 1000) + (model.P_PV_99  / 1000)
 	
 	# Import/Export constraints
 	def con_rule_load(model):
-	    return model.Load == model.ASM - model.P_PV_99 + model.Dummy_Chargers
+	    return model.Load == (model.ASM / 1000) - (model.P_PV_99  / 1000) + (model.Dummy_Chargers  / 1000)
 	
 
 	
