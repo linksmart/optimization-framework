@@ -30,7 +30,7 @@ class Model:
 
 	# Import/Export constraints
 	def con_rule_load(model):
-		return model.Load == (model.ASM - model.P_PV_99 + model.Dummy_Chargers) / 1000
+		return model.Load == (model.PCC - model.P_PV_99 + model.Dummy_Chargers) / 1000
 
 	model.con_pv = Constraint(rule=con_rule_pv_potential)
 	model.con_load = Constraint(rule=con_rule_load)

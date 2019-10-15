@@ -16,7 +16,7 @@ from utils_intern.messageLogger import MessageLogger
 
 class DataReceiver(ABC):
 
-    def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None, prepare_topic_qos=True):
+    def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None, prepare_topic_qos=True, sub_pub=False):
         super().__init__()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
@@ -35,6 +35,7 @@ class DataReceiver(ABC):
         self.last_time = 0
         self.id = id
         self.section = section
+        self.sub_pub = sub_pub
         if self.section is None:
             self.section = "IO"
         self.setup()
@@ -54,8 +55,11 @@ class DataReceiver(ABC):
         topic_qos = []
         host_params = {}
         # read from config
-        if "sub.mqtt.host" in dict(self.config.items(self.section)):
-            host = self.config.get(self.section, "sub.mqtt.host")
+        sub_mqtt = "sub.mqtt.host"
+        if self.sub_pub:
+            sub_mqtt = "pub.mqtt.host"
+        if sub_mqtt in dict(self.config.items(self.section)):
+            host = self.config.get(self.section, sub_mqtt)
         else:
             host = self.config.get("IO", "mqtt.host")
         host_params["username"] = self.config.get("IO", "mqtt.username", fallback=None)
@@ -92,6 +96,9 @@ class DataReceiver(ABC):
 
     def get_internal_channel_params(self):
         if self.channel == "MQTT":
+            sub_mqtt = "sub.mqtt.host"
+            if self.sub_pub:
+                sub_mqtt = "pub.mqtt.host"
             topic_qos = []
             host_params = {}
             if self.prepare_topic_qos:
@@ -103,8 +110,8 @@ class DataReceiver(ABC):
             elif isinstance(self.topic_params, list):
                 topic_qos = self.topic_params
                 self.port = self.config.get("IO", "mqtt.port")
-            if "sub.mqtt.host" in dict(self.config.items("IO")):
-                self.host = self.config.get("IO", "sub.mqtt.host")
+            if sub_mqtt in dict(self.config.items("IO")):
+                self.host = self.config.get("IO", sub_mqtt)
             if "mqtt.host" in dict(self.config.items("IO")):
                 self.host = self.config.get("IO", "mqtt.host")
             host_params["username"] = self.config.get("IO", "mqtt.username", fallback=None)
