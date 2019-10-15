@@ -116,7 +116,7 @@ class Publisher():
             topic = data["topic"]
             data = data["data"]
             mqtt_client.publish(topic=topic, message=data, waitForAck=True, qos=1)
-            logger.debug("Results published on this topic: " + topic + " "+ str(data))
+            logger.debug("Results published on this topic: " + topic)# + " "+ str(data))
         except Exception as e:
             logger.error("Error pub data "+str(e))
 
