@@ -1,0 +1,481 @@
+{
+	"info": {
+		"_postman_id": "8450a5ef-786c-4a7f-a1fe-8aa878a06abf",
+		"name": "residential",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "MaxPV",
+			"description": "",
+			"item": [
+				{
+					"name": "Creates a new mqtt data source as input",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \t\"ESS\": {\r\n\t\t\"SoC_Value\":  {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/ChaState\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t\t},\r\n\t\t\"meta\": {\r\n\t\t  \"ESS_Max_SoC\": 1,\r\n\t\t  \"ESS_Max_Discharge_Power\": 2500,\r\n\t\t  \"ESS_Charging_Eff\": 1,\r\n\t\t  \"ESS_Max_Charge_Power\": 2500,\r\n\t\t  \"ESS_Min_SoC\": 0.2,\r\n\t\t  \"ESS_Discharging_Eff\": 0.95,\r\n\t\t  \"ESS_Capacity\": 3600\r\n\t\t}\r\n\t},\r\n\t\"load\": {\r\n\t    \"P_Load\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/W_Load\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t},\r\n\t    \t\"predict\" : true\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"pf_Load\": 1\r\n\t    }\r\n\t},\r\n\t\"photovoltaic\": {\r\n\t    \"P_PV\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/PV_DCW\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"PV_Inv_Max_Power\": 3120,\r\n\t      \"City\": \"Fur\",\r\n\t      \"Country\": \"Denmark\"\r\n\t    }\r\n\t},\r\n  \"grid\": {\r\n    \"meta\": {\r\n      \"Q_Grid_Max_Export_Power\": 6000,\r\n      \"P_Grid_Max_Export_Power\": 6000\r\n    }\r\n  },\r\n  \"horizons\": {\r\n    \"meta\": {\r\n      \"T_SoC\": 25\r\n    }\r\n  },\r\n  \"generic\": {\r\n  \t\"Fronius_Max_Power\" : 5000\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/inputs/mqtt",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"inputs",
+								"mqtt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Creates a new outputs setpoint as ouput",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"ESS\": {\r\n    \"P_ESS_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pesso\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": true\r\n    }\r\n  },\r\n  \"grid\": {\r\n    \"P_Grid_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pgrido\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": false\r\n    }\r\n  },\r\n  \"photovoltaic\": {\r\n    \"P_PV_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"ppvo\"\r\n      },\r\n      \"unit\": \"K\",\r\n      \"horizon_values\": false\r\n    }\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/outputs/mqtt/cbfb08934c39",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"outputs",
+								"mqtt",
+								"cbfb08934c39"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Command for starting the framework",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n \t\"control_frequency\": 60,\r\n    \"horizon_in_steps\": 24,\r\n    \"dT_in_seconds\":3600,\r\n    \"model_name\": \"ResidentialMaxPV\",\r\n    \"repetition\": -1,\r\n    \"optimization_type\":\"discrete\",\r\n    \"solver\": \"cbc\"\r\n }"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/optimization/start/{{id}}",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"optimization",
+								"start",
+								"{{id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "MinPBill",
+			"description": "",
+			"item": [
+				{
+					"name": "Creates a new mqtt data source as input",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \t\"ESS\": {\r\n\t\t\"SoC_Value\":  {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/ChaState\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t\t},\r\n\t\t\"meta\": {\r\n\t\t  \"ESS_Max_SoC\": 1,\r\n\t\t  \"ESS_Max_Discharge_Power\": 2500,\r\n\t\t  \"ESS_Charging_Eff\": 1,\r\n\t\t  \"ESS_Max_Charge_Power\": 2500,\r\n\t\t  \"ESS_Min_SoC\": 0.2,\r\n\t\t  \"ESS_Discharging_Eff\": 0.95,\r\n\t\t  \"ESS_Capacity\": 3600\r\n\t\t}\r\n\t},\r\n\t\"load\": {\r\n\t    \"P_Load\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/W_Load\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t},\r\n\t    \t\"predict\" : true\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"pf_Load\": 1\r\n\t    }\r\n\t},\r\n\t\"photovoltaic\": {\r\n\t    \"P_PV\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/PV_DCW\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"PV_Inv_Max_Power\": 3120,\r\n\t      \"City\": \"Fur\",\r\n\t      \"Country\": \"Denmark\"\r\n\t    }\r\n\t},\r\n  \"grid\": {\r\n    \"meta\": {\r\n      \"Q_Grid_Max_Export_Power\": 6000,\r\n      \"P_Grid_Max_Export_Power\": 6000\r\n    }\r\n  },\r\n  \"horizons\": {\r\n    \"meta\": {\r\n      \"T_SoC\": 25\r\n    }\r\n  },\r\n  \"generic\": {\r\n  \t\"Fronius_Max_Power\" : 5000\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/inputs/mqtt",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"inputs",
+								"mqtt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Creates a new outputs setpoint as ouput",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"ESS\": {\r\n    \"P_ESS_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pesso\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": true\r\n    }\r\n  },\r\n  \"grid\": {\r\n    \"P_Grid_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pgrido\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": false\r\n    }\r\n  },\r\n  \"photovoltaic\": {\r\n    \"P_PV_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"ppvo\"\r\n      },\r\n      \"unit\": \"K\",\r\n      \"horizon_values\": false\r\n    }\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/outputs/mqtt/cbfb08934c39",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"outputs",
+								"mqtt",
+								"cbfb08934c39"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Command for starting the framework",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n \t\"control_frequency\": 60,\r\n    \"horizon_in_steps\": 24,\r\n    \"dT_in_seconds\":3600,\r\n    \"model_name\": \"ResidentialMinPBill\",\r\n    \"repetition\": 1,\r\n    \"optimization_type\":\"discrete\",\r\n    \"solver\": \"cbc\"\r\n }"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/optimization/start/{{id}}",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"optimization",
+								"start",
+								"{{id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "MinGrid",
+			"description": "",
+			"item": [
+				{
+					"name": "Creates a new mqtt data source as input",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \t\"ESS\": {\r\n\t\t\"SoC_Value\":  {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/ChaState\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t\t},\r\n\t\t\"meta\": {\r\n\t\t  \"ESS_Max_SoC\": 1,\r\n\t\t  \"ESS_Max_Discharge_Power\": 2500,\r\n\t\t  \"ESS_Charging_Eff\": 1,\r\n\t\t  \"ESS_Max_Charge_Power\": 2500,\r\n\t\t  \"ESS_Min_SoC\": 0.2,\r\n\t\t  \"ESS_Discharging_Eff\": 0.95,\r\n\t\t  \"ESS_Capacity\": 3600\r\n\t\t}\r\n\t},\r\n\t\"load\": {\r\n\t    \"P_Load\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/W_Load\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t},\r\n\t    \t\"predict\" : true\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"pf_Load\": 1\r\n\t    }\r\n\t},\r\n\t\"photovoltaic\": {\r\n\t    \"P_PV\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/PV_DCW\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"PV_Inv_Max_Power\": 3120,\r\n\t      \"City\": \"Fur\",\r\n\t      \"Country\": \"Denmark\"\r\n\t    }\r\n\t},\r\n  \"grid\": {\r\n    \"meta\": {\r\n      \"Q_Grid_Max_Export_Power\": 6000,\r\n      \"P_Grid_Max_Export_Power\": 6000\r\n    }\r\n  },\r\n  \"horizons\": {\r\n    \"meta\": {\r\n      \"T_SoC\": 25\r\n    }\r\n  },\r\n  \"generic\": {\r\n  \t\"Fronius_Max_Power\" : 5000\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/inputs/mqtt",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"inputs",
+								"mqtt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Creates a new outputs setpoint as ouput",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"ESS\": {\r\n    \"P_ESS_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pesso\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": true\r\n    }\r\n  },\r\n  \"grid\": {\r\n    \"P_Grid_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pgrido\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": false\r\n    }\r\n  },\r\n  \"photovoltaic\": {\r\n    \"P_PV_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"ppvo\"\r\n      },\r\n      \"unit\": \"K\",\r\n      \"horizon_values\": false\r\n    }\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/outputs/mqtt/cbfb08934c39",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"outputs",
+								"mqtt",
+								"cbfb08934c39"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Command for starting the framework",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n \t\"control_frequency\": 60,\r\n    \"horizon_in_steps\": 24,\r\n    \"dT_in_seconds\":3600,\r\n    \"model_name\": \"ResidentialMinGridlinearized\",\r\n    \"repetition\": 1,\r\n    \"optimization_type\":\"discrete\",\r\n    \"solver\": \"cbc\"\r\n }"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/optimization/start/{{id}}",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"optimization",
+								"start",
+								"{{id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "MinGridGesscon",
+			"description": "",
+			"item": [
+				{
+					"name": "Creates a new mqtt data source as input",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \t\"ESS\": {\r\n\t\t\"SoC_Value\":  {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/ChaState\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t\t},\r\n\t\t\"meta\": {\r\n\t\t  \"ESS_Max_SoC\": 1,\r\n\t\t  \"ESS_Max_Discharge_Power\": 2500,\r\n\t\t  \"ESS_Charging_Eff\": 1,\r\n\t\t  \"ESS_Max_Charge_Power\": 2500,\r\n\t\t  \"ESS_Min_SoC\": 0.2,\r\n\t\t  \"ESS_Discharging_Eff\": 0.95,\r\n\t\t  \"ESS_Capacity\": 3600\r\n\t\t}\r\n\t},\r\n\t\"load\": {\r\n\t    \"P_Load\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/W_Load\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t},\r\n\t    \t\"predict\" : true\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"pf_Load\": 1\r\n\t    }\r\n\t},\r\n\t\"photovoltaic\": {\r\n\t    \"P_PV\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/PV_DCW\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"PV_Inv_Max_Power\": 3120,\r\n\t      \"City\": \"Fur\",\r\n\t      \"Country\": \"Denmark\"\r\n\t    }\r\n\t},\r\n  \"grid\": {\r\n    \"meta\": {\r\n      \"Q_Grid_Max_Export_Power\": 6000,\r\n      \"P_Grid_Max_Export_Power\": 6000\r\n    }\r\n  },\r\n  \"horizons\": {\r\n    \"meta\": {\r\n      \"T_SoC\": 25\r\n    }\r\n  },\r\n  \"generic\": {\r\n  \t\"Fronius_Max_Power\" : 5000\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/inputs/mqtt",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"inputs",
+								"mqtt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Creates a new outputs setpoint as ouput",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"ESS\": {\r\n    \"P_ESS_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pesso\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": true\r\n    }\r\n  },\r\n  \"grid\": {\r\n    \"P_Grid_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"pgrido\"\r\n      },\r\n      \"unit\": \"W\",\r\n      \"horizon_values\": false\r\n    }\r\n  },\r\n  \"photovoltaic\": {\r\n    \"P_PV_Output\": {\r\n      \"mqtt\": {\r\n        \"qos\": 1,\r\n        \"host\": \"172.18.0.1\",\r\n        \"topic\": \"ppvo\"\r\n      },\r\n      \"unit\": \"K\",\r\n      \"horizon_values\": false\r\n    }\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/outputs/mqtt/cbfb08934c39",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"outputs",
+								"mqtt",
+								"cbfb08934c39"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Command for starting the framework",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n \t\"control_frequency\": 60,\r\n    \"horizon_in_steps\": 24,\r\n    \"dT_in_seconds\":3600,\r\n    \"model_name\": \"ResidentialMinGridGESSCon\",\r\n    \"repetition\": -1,\r\n    \"optimization_type\":\"discrete\",\r\n    \"solver\": \"cbc\"\r\n }"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/optimization/start/{{id}}",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"optimization",
+								"start",
+								"{{id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Command for stoping the framework",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://{{hostname}}:{{port}}/v1/optimization/stop/{{id}}",
+					"protocol": "http",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"optimization",
+						"stop",
+						"{{id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
