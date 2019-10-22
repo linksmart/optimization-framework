@@ -29,6 +29,7 @@ class PVPrediction(threading.Thread):
         self.config = config
         self.q = Queue(maxsize=0)
         self.generic_name = generic_name
+        self.control_frequency = control_frequency
         raw_pv_data_topic = input_config_parser.get_params(generic_name)
         opt_values = input_config_parser.get_optimization_values()
 
@@ -60,13 +61,19 @@ class PVPrediction(threading.Thread):
 
     def get_pv_data_from_source(self, radiation):
         """PV Data fetch thread. Runs at 23:30 every day"""
-        while True:
+        while not self.stopRequest.is_set():
             try:
                 self.logger.info("Fetching pv data from radiation api")
                 data = radiation.get_data()
                 pv_data = json.loads(data)
                 self.base_data = pv_data
                 self.logger.debug("pv data = "+str(self.base_data))
+                delay = self.get_delay_time(23, 30)
+                while delay > 100 or not self.stopRequest.is_set():
+                    time.sleep(30)
+                    delay -= 30
+                if self.stopRequest.is_set():
+                    break
                 delay = self.get_delay_time(23, 30)
                 time.sleep(delay)
             except Exception as e:
@@ -82,6 +89,7 @@ class PVPrediction(threading.Thread):
 
     def Stop(self):
         self.logger.debug("Stopping pv forecast thread")
+        self.stopRequest.set()
         if self.pv_forecast_pub is not None:
             self.pv_forecast_pub.Stop()
         self.logger.debug("pv prediction thread exit")
@@ -89,12 +97,16 @@ class PVPrediction(threading.Thread):
     def run(self):
         while not self.stopRequest.is_set():
             try:
+                start = time.time()
                 data, bucket_available, self.last_time = self.raw_data.get_current_bucket_data(steps=1)
                 self.logger.debug("pv data in run is "+str(data))
                 value = data[self.generic_name][0]
                 self.logger.debug("base_data = "+str(self.base_data))
                 adjusted_data = self.adjust_data(value)
                 self.q.put(adjusted_data)
+                start = self.control_frequency - (time.time() - start)
+                if start > 0:
+                    time.sleep(start)
             except Exception as e:
                 self.logger.error(str(self.generic_name) + " prediction thread exception " + str(e))
 

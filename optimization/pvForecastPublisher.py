@@ -30,8 +30,6 @@ class PVForecastPublisher(DataPublisher):
             redisDB.set("Error mqtt" + self.id, True)
             self.logger.error(e)
 
-
-
     def get_data(self):
         #  check if new data is available
         if not self.q.empty():

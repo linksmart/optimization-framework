@@ -5,15 +5,8 @@ Created on Fri Mar 16 15:05:36 2018
 @author: garagon
 """
 
-import json
-import os
-import sys
-import threading
 import time
-import uuid
-import datetime
 import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 import math
 import gc
@@ -25,11 +18,9 @@ from pyomo.opt import SolverStatus, TerminationCondition
 
 import pyutilib.subprocess.GlobalData
 
-from IO.redisDB import RedisDB
 from optimization.controllerBase import ControllerBase
 from optimization.idStatusManager import IDStatusManager
-from optimization.instance import Instance
-from optimization.optut import OptUt
+
 from pyutilib.services import TempfileManager
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
@@ -41,6 +32,7 @@ class OptControllerStochastic(ControllerBase):
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
         self.single_ev = single_ev
+        self.number_of_workers = int(config.get("SolverSection", "stochastic.multi.workers", fallback=6))
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
@@ -192,7 +184,7 @@ class OptControllerStochastic(ControllerBase):
         self.logger.debug("##############  testsf")
         while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
             start_time_total = time.time()
-
+            self.logger.debug("number of workers = " + str(self.number_of_workers))
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=True)  # blocking call
 
@@ -247,7 +239,7 @@ class OptControllerStochastic(ControllerBase):
                     # retrieve the solutions
                     try:
                         futures = []
-                        with concurrent.futures.ProcessPoolExecutor(max_workers=6) as executor:
+                        with concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers) as executor:
                             if self.single_ev:
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc, position = combination
@@ -419,14 +411,14 @@ class OptControllerStochastic(ControllerBase):
                     self.repetition_completed = True
                     break
 
-                self.logger.info("Optimization thread going to sleep for " + str(self.control_frequency) + " seconds")
                 time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
                 final_time_total = time.time()
                 sleep_time = self.control_frequency - int(final_time_total - start_time_total)
                 if sleep_time > 0:
+                    self.logger.info("Optimization thread going to sleep for " + str(sleep_time) + " seconds")
                     for i in range(sleep_time):
                         time.sleep(1)
-                        if self.redisDB.get_bool(self.stop_signal_key) or self.stopRequest.isSet():
+                        if self.redisDB.get_bool(self.stop_signal_key): #or self.stopRequest.isSet():
                             break
 
     @staticmethod

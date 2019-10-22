@@ -73,11 +73,14 @@ class EquationConnector(SummationPub):
                     senml_data = self.to_senml(self.meta_eq["name"], result, self.rec.last_time)
                     d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
                     self.q.put(d)
+                    logger.debug("###### added to queue")
 
     def check_bounds(self, result):
-        return ("min" in self.meta_eq.keys() and result >= self.meta_eq["min"]) and \
-               ("max" in self.meta_eq.keys() and result <= self.meta_eq["max"])
-
+        if ("min" in self.meta_eq.keys() and result < self.meta_eq["min"]):
+            return False
+        if ("max" in self.meta_eq.keys() and result > self.meta_eq["max"]):
+            return False
+        return True
 
     def build_input_dict(self, data):
         input = {}

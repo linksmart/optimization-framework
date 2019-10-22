@@ -126,6 +126,7 @@ class InputPreprocess:
 
     def generate_charger_classes(self):
         chargers_list = []
+        update = {}
         for k, v in self.data_dict.items():
             if self.is_charger(v):
                 charger = k
@@ -147,6 +148,9 @@ class InputPreprocess:
                     soc = None
                 assert max_charging_power_kw, "Incorrect input: Max_Charging_Power_kW missing for charger: " + str(charger)
                 chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc, ev_unplugged))
+                v["SoC"] = None
+                update[k] = v
+        self.data_dict.update(update)
         return chargers_list
 
     def exceeded_time_threshold(self, last_time):

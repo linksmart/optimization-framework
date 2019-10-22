@@ -121,6 +121,7 @@ class EVPark:
         return vac_soc_value
 
     def charge_ev(self, p_ev, dT):
+        self.logger.debug("p_ev: "+str(p_ev))
         for key, charger in self.chargers.items():
             if key in p_ev.keys():
                 self.logger.info("charging " + str(charger.__str__()))
@@ -128,6 +129,7 @@ class EVPark:
                 soc = charger.soc
                 if hosted_ev in self.evs.keys() and charger.plugged:
                     new_soc = self.evs[hosted_ev].charge(soc, dT, p_ev[key])
+                    self.logger.debug("new soc = "+str(new_soc))
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("charged " + str(charger.__str__()))
                 elif hosted_ev in self.evs.keys():
