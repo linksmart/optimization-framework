@@ -122,6 +122,7 @@ class EVPark:
 
     def charge_ev(self, p_ev, dT):
         self.logger.debug("p_ev: "+str(p_ev))
+        socs = {}
         for key, charger in self.chargers.items():
             if key in p_ev.keys():
                 self.logger.info("charging " + str(charger.__str__()))
@@ -132,10 +133,12 @@ class EVPark:
                     self.logger.debug("new soc = "+str(new_soc))
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("charged " + str(charger.__str__()))
+                    socs[key] = new_soc
                 elif hosted_ev in self.evs.keys():
                     new_soc = self.evs[hosted_ev].discharge(soc)
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("discharged " + str(charger.__str__()))
+                    socs[key] = new_soc
                 else:
                     self.logger.error("Charger "+charger.charger_id+" does not have hosted ev so cannot calculate soc")
             else:
@@ -146,8 +149,10 @@ class EVPark:
                     new_soc = self.evs[hosted_ev].discharge(soc)
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("discharged " + str(charger.__str__()))
+                    socs[key] = new_soc
                 else:
                     self.logger.error("Charger "+charger.charger_id+" does not have hosted ev so cannot calculate soc")
+        return socs
 
     def single_ev_recharge(self):
         if len(self.chargers) == 1:

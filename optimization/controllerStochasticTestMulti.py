@@ -375,7 +375,7 @@ class OptControllerStochastic(ControllerBase):
                 }
 
                 # update soc
-                ev_park.charge_ev(p_ev, self.dT_in_seconds)
+                socs = ev_park.charge_ev(p_ev, self.dT_in_seconds)
                 #time.sleep(60)
 
                 results_publish = {
@@ -391,6 +391,11 @@ class OptControllerStochastic(ControllerBase):
                     ev_id = ev_park.get_hosted_ev(key)
                     if ev_id:
                         results_publish[key+"/p_ev"] = {"bn":"chargers/"+key, "n":ev_id+"/p_ev", "v":[value]}
+
+                for key, value in socs.items():
+                    ev_id = ev_park.get_hosted_ev(key)
+                    if ev_id:
+                        results_publish[key + "/SoC"] = {"bn": "chargers/" + key, "n": ev_id + "/SoC", "v": [value]}
 
                 self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
