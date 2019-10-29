@@ -130,7 +130,7 @@ class Radiation:
         self.lat = 50.7374
         self.lon = 7.0982
         self.maxPV = maxPV
-        self.maxPV /= 1000  # pv in kW
+        #self.maxPV /= 1000  # pv in kW
         self.dT_in_seconds = dT_in_seconds
 
     def get_data(self):
