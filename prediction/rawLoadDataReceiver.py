@@ -72,10 +72,13 @@ class RawLoadDataReceiver(DataReceiver):
     def save_to_file(self):
         try:
             logger.info("Saving raw data to file "+str(self.file_path))
-            with open(self.file_path, 'a+') as file:
-                for item in self.minute_data:
-                    line = ','.join(map(str, item[:2]))+"\n"
-                    file.writelines(line)
+            old_data = RawDataReader.read_from_file(self.file_path, self.topic_name)
+            for item in self.minute_data:
+                line = ','.join(map(str, item[:2])) + "\n"
+                old_data.append(line)
+            old_data = old_data[-10080:] # 7 days data
+            with open(self.file_path, 'w+') as file:
+                    file.writelines(old_data)
             file.close()
             self.minute_data = []
         except Exception as e:
