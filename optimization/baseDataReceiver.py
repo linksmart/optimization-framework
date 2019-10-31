@@ -21,11 +21,6 @@ class BaseDataReceiver(DataReceiver, ABC):
     def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT, base_value_flag):
         redisDB = RedisDB()
         self.logger = MessageLogger.get_logger(__name__, id)
-        try:
-            super().__init__(internal, topic_params, config, id=id)
-        except Exception as e:
-            redisDB.set("Error mqtt" + self.id, True)
-            self.logger.error(e)
         self.generic_name = generic_name
         self.buffer = buffer
         self.dT = dT
@@ -34,12 +29,21 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.detachable = topic_params["detachable"]
         else:
             self.detachable = False
+        if "reuseable" in topic_params.keys():
+            self.reuseable = topic_params["reuseable"]
+        else:
+            self.reuseable = False
         self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
         self.total_steps_in_day = floor(24 * 60 * 60 / self.dT)
         self.current_day_index = 0
         self.number_of_bucket_days = int(buffer / self.total_steps_in_day)
         self.bucket_index = False
         self.length = 1
+        try:
+            super().__init__(internal, topic_params, config, id=id)
+        except Exception as e:
+            redisDB.set("Error mqtt" + self.id, True)
+            self.logger.error(e)
 
     def on_msg_received(self, payload):
         try:
@@ -126,12 +130,18 @@ class BaseDataReceiver(DataReceiver, ABC):
             final_data = self.iterative_init({}, self.generic_name.split("/"))
         else:
             final_data = {self.generic_name: {}}
-        if not self.detachable and wait_for_data:
-            data = self.get_data(require_updated=0)
+
+        if self.detachable and self.reuseable:
+            data = self.get_data(require_updated=2)
         elif self.detachable:
             data = self.get_data(require_updated=2, clearData=True)
+        elif self.reuseable:
+            data = self.get_data(require_updated=1)
+        elif wait_for_data:
+            data = self.get_data(require_updated=0)
         else:
             data = self.get_data(require_updated=2)
+
         self.logger.debug(str(self.generic_name)+ " data from mqtt is : "+ json.dumps(data, indent=4))
         if steps > self.length:
             steps = self.length

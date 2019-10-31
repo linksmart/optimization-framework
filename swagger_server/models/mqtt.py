@@ -15,7 +15,7 @@ class MQTT(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, host: str=None, topic: str=None, qos: int=None, port: int=None, username: str=None, password: str=None, ca_cert_path: str=None, insecure: bool=None, detachable: bool=None):  # noqa: E501
+    def __init__(self, host: str=None, topic: str=None, qos: int=None, port: int=None, username: str=None, password: str=None, ca_cert_path: str=None, insecure: bool=None, detachable: bool=None, reuseable: bool=None):  # noqa: E501
         """MQTT - a model defined in Swagger
 
         :param host: The host of this MQTT.  # noqa: E501
@@ -36,6 +36,8 @@ class MQTT(Model):
         :type insecure: bool
         :param detachable: The detachable of this MQTT.  # noqa: E501
         :type detachable: bool
+        :param reuseable: The reuseable of this MQTT.  # noqa: E501
+        :type reuseable: bool
         """
         self.swagger_types = {
             'host': str,
@@ -46,7 +48,8 @@ class MQTT(Model):
             'password': str,
             'ca_cert_path': str,
             'insecure': bool,
-            'detachable': bool
+            'detachable': bool,
+            'reuseable': bool
         }
 
         self.attribute_map = {
@@ -58,7 +61,8 @@ class MQTT(Model):
             'password': 'password',
             'ca_cert_path': 'ca_cert_path',
             'insecure': 'insecure',
-            'detachable': 'detachable'
+            'detachable': 'detachable',
+            'reuseable': 'reuseable'
         }
 
         self._host = host
@@ -70,6 +74,7 @@ class MQTT(Model):
         self._ca_cert_path = ca_cert_path
         self._insecure = insecure
         self._detachable = detachable
+        self._reuseable = reuseable
 
     @classmethod
     def from_dict(cls, dikt) -> 'MQTT':
@@ -280,3 +285,24 @@ class MQTT(Model):
         """
 
         self._detachable = detachable
+
+    @property
+    def reuseable(self) -> bool:
+        """Gets the reuseable of this MQTT.
+
+
+        :return: The reuseable of this MQTT.
+        :rtype: bool
+        """
+        return self._reuseable
+
+    @reuseable.setter
+    def reuseable(self, reuseable: bool):
+        """Sets the reuseable of this MQTT.
+
+
+        :param reuseable: The reuseable of this MQTT.
+        :type reuseable: bool
+        """
+
+        self._reuseable = reuseable
