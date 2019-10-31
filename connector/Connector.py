@@ -86,7 +86,7 @@ class Connector:
                     elif not self.active_sources[source]:
                         all_sources_active = False
                         logger.debug("##### house " + str(source) + " not active yet")
-                if all_sources_active:
+                if all_sources_deaclred and all_sources_active:
                     connector = EquationConnector(meta_eq, self.config)
                     self.connector_list.append(connector)
             except Exception as e:
