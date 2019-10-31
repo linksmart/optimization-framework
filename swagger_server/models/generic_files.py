@@ -6,6 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
+from swagger_server.models.meta_generic import MetaGeneric  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -15,15 +16,21 @@ class GenericFiles(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self):  # noqa: E501
+    def __init__(self, meta: MetaGeneric=None):  # noqa: E501
         """GenericFiles - a model defined in Swagger
 
+        :param meta: The meta of this GenericFiles.  # noqa: E501
+        :type meta: MetaGeneric
         """
         self.swagger_types = {
+            'meta': MetaGeneric
         }
 
         self.attribute_map = {
+            'meta': 'meta'
         }
+
+        self._meta = meta
 
     @classmethod
     def from_dict(cls, dikt) -> 'GenericFiles':
@@ -35,3 +42,24 @@ class GenericFiles(Model):
         :rtype: GenericFiles
         """
         return util.deserialize_model(dikt, cls)
+
+    @property
+    def meta(self) -> MetaGeneric:
+        """Gets the meta of this GenericFiles.
+
+
+        :return: The meta of this GenericFiles.
+        :rtype: MetaGeneric
+        """
+        return self._meta
+
+    @meta.setter
+    def meta(self, meta: MetaGeneric):
+        """Sets the meta of this GenericFiles.
+
+
+        :param meta: The meta of this GenericFiles.
+        :type meta: MetaGeneric
+        """
+
+        self._meta = meta

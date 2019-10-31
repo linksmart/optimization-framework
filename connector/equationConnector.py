@@ -59,21 +59,34 @@ class EquationConnector(SummationPub):
             logger.debug("################# data = "+str(data))
             logger.debug("########### variables = "+str(self.variables))
             all_vars_available = True
-            for var in self.variables:
+            for var in self.variables.keys():
                 if var not in data.keys():
                     all_vars_available = False
                     break
             if all_vars_available:
                 self.rec.clear_data()
-                result = data[self.variables[0]]
-                for i in range(1, len(self.variables)):
-                    if self.meta_eq["ops"][i-1] == "+":
-                        result += data[self.variables[i]]
-                    else:
-                        result -= data[self.variables[i]]
-                senml_data = self.to_senml(self.meta_eq["name"], result, self.rec.last_time)
-                d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
-                self.q.put(d)
+                input = self.build_input_dict(data)
+                result = eval(self.meta_eq["eq"], input)
+                if self.meta_eq["dtype"] == "int":
+                    result = int(result)
+                if self.check_bounds(result):
+                    senml_data = self.to_senml(self.meta_eq["name"], result, self.rec.last_time)
+                    d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
+                    self.q.put(d)
+                    logger.debug("###### added to queue")
+
+    def check_bounds(self, result):
+        if ("min" in self.meta_eq.keys() and result < self.meta_eq["min"]):
+            return False
+        if ("max" in self.meta_eq.keys() and result > self.meta_eq["max"]):
+            return False
+        return True
+
+    def build_input_dict(self, data):
+        input = {}
+        for var, rep in self.variables.items():
+            input[rep] = data[var]
+        return input
 
     def to_senml(self, name, value, timestamp):
         meas = senml.SenMLMeasurement()

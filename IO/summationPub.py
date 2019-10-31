@@ -3,6 +3,7 @@ Created on Sep 19 15:45 2019
 
 @author: nishit
 """
+import configparser
 import threading
 from abc import abstractmethod
 from queue import Queue
@@ -40,7 +41,7 @@ class Receiver(DataReceiver):
 
     def __init__(self, internal, topic_params, config, data_formater, id):
         self.data_formater = data_formater
-        super().__init__(internal, topic_params, config, id=id, prepare_topic_qos=False)
+        super().__init__(internal, topic_params, config, id=id, prepare_topic_qos=False, sub_pub=True)
 
     def on_msg_received(self, payload):
         try:

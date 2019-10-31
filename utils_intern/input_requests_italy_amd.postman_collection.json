@@ -1,0 +1,213 @@
+{
+	"info": {
+		"_postman_id": "34f99d3a-dbf6-4120-bfc1-daa5189f9508",
+		"name": "tests Copy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "CarParkMinGrid",
+			"description": "",
+			"item": [
+				{
+					"name": "Creates a new mqtt data source as input",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"ESS\": {\r\n\t\t\"SoC_Value\":  {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/ChaState\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t\t},\r\n\t\t\"meta\": {\r\n\t\t  \"ESS_Max_SoC\": 1,\r\n\t\t  \"ESS_Max_Discharge_Power\": 2.5,\r\n\t\t  \"ESS_Charging_Eff\": 1,\r\n\t\t  \"ESS_Max_Charge_Power\": 2.500,\r\n\t\t  \"ESS_Min_SoC\": 0.2,\r\n\t\t  \"ESS_Discharging_Eff\": 0.95,\r\n\t\t  \"ESS_Capacity\": 3.600\r\n\t\t}\r\n\t},\r\n\t\"load\": {\r\n\t    \"P_Load\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"172.17.0.1\",\r\n\t    \t\t\"topic\": \"con/opt/Load\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t},\r\n\t    \t\"predict\" : true\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"pf_Load\": 1\r\n\t    }\r\n\t},\r\n\t\"photovoltaic\": {\r\n\t    \"P_PV\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"172.17.0.1\",\r\n\t    \t\t\"topic\": \"con/opt/PV\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"PV_Inv_Max_Power\": 150,\r\n\t      \"City\": \"Bolzano\",\r\n\t      \"Country\": \"Italy\"\r\n\t    }\r\n\t},\r\n   \"EV\": {\r\n    \"ev0\": {\r\n      \"Battery_Capacity_kWh\": 18.7\r\n    },\r\n    \"ev1\": {\r\n      \"Battery_Capacity_kWh\": 18.7\r\n    },\r\n    \"ev2\": {\r\n      \"Battery_Capacity_kWh\": 18.7\r\n    },\r\n    \"ev3\": {\r\n      \"Battery_Capacity_kWh\": 18.7\r\n    },\r\n    \"ev4\": {\r\n      \"Battery_Capacity_kWh\": 18.7\r\n    },\r\n    \"meta\": {\r\n      \"Unit_Consumption_Assumption\": 5,\r\n      \"Unit_Drop_Penalty\": 100\r\n    }\r\n  },\r\n  \"chargers\": {\r\n    \"ASM_00000137-1-1\": {\r\n      \"Max_Charging_Power_kW\": 7,\r\n      \"SoC\": {\r\n        \"mqtt\": {\r\n          \"host\": \"10.8.0.50\",\r\n          \"port\": 8883,\r\n          \"topic\": \"EV/Data\",\r\n          \"qos\": 1,\r\n          \"username\": \"fronius-fur\",\r\n          \"password\": \"r>U@U7J8xZ+fu_vq\",\r\n          \"ca_cert_path\": \"/usr/src/app/utils/s4g-ca.crt\",\r\n          \"insecure\": true,\r\n          \"detachable\": true\r\n        },\r\n        \"preprocess\": true\r\n      }\r\n    },\r\n    \"ASM_00000144-1-1\": {\r\n      \"Max_Charging_Power_kW\": 7,\r\n      \"SoC\": {\r\n        \"mqtt\": {\r\n          \"host\": \"10.8.0.50\",\r\n          \"port\": 8883,\r\n          \"topic\": \"EV/Data\",\r\n          \"qos\": 1,\r\n          \"username\": \"fronius-fur\",\r\n          \"password\": \"r>U@U7J8xZ+fu_vq\",\r\n          \"ca_cert_path\": \"/usr/src/app/utils/s4g-ca.crt\",\r\n          \"insecure\": true,\r\n          \"detachable\": true\r\n        },\r\n        \"preprocess\": true\r\n      }\r\n    },\r\n    \"ASM_00000156-1-1\": {\r\n      \"Max_Charging_Power_kW\": 7,\r\n      \"SoC\": {\r\n        \"mqtt\": {\r\n          \"host\": \"10.8.0.50\",\r\n          \"port\": 8883,\r\n          \"topic\": \"EV/Data\",\r\n          \"qos\": 1,\r\n          \"username\": \"fronius-fur\",\r\n          \"password\": \"r>U@U7J8xZ+fu_vq\",\r\n          \"ca_cert_path\": \"/usr/src/app/utils/s4g-ca.crt\",\r\n          \"insecure\": true,\r\n          \"detachable\": true\r\n        },\r\n        \"preprocess\": true\r\n      }\r\n    },\r\n    \"ASM_00000157-1-1\": {\r\n      \"Max_Charging_Power_kW\": 7,\r\n      \"SoC\": {\r\n        \"mqtt\": {\r\n          \"host\": \"10.8.0.50\",\r\n          \"port\": 8883,\r\n          \"topic\": \"EV/Data\",\r\n          \"qos\": 1,\r\n          \"username\": \"fronius-fur\",\r\n          \"password\": \"r>U@U7J8xZ+fu_vq\",\r\n          \"ca_cert_path\": \"/usr/src/app/utils/s4g-ca.crt\",\r\n          \"insecure\": true,\r\n          \"detachable\": true\r\n        },\r\n        \"preprocess\": true\r\n      }\r\n    },\r\n    \"ASM_00000172-1-1\": {\r\n      \"Max_Charging_Power_kW\": 7,\r\n      \"SoC\": {\r\n        \"mqtt\": {\r\n          \"host\": \"10.8.0.50\",\r\n          \"port\": 8883,\r\n          \"topic\": \"EV/Data\",\r\n          \"qos\": 1,\r\n          \"username\": \"fronius-fur\",\r\n          \"password\": \"r>U@U7J8xZ+fu_vq\",\r\n          \"ca_cert_path\": \"/usr/src/app/utils/s4g-ca.crt\",\r\n          \"insecure\": true,\r\n          \"detachable\": true\r\n        },\r\n        \"preprocess\": true\r\n      }\r\n    }\r\n  },\r\n  \"grid\": {\r\n    \"meta\": {\r\n      \"Max_Voltage_Drop\": 1.1,\r\n      \"Min_Voltage_Drop\": 0.9,\r\n      \"P_Grid_Max_Export_Power\": 1000,\r\n      \"Q_Grid_Max_Export_Power\": 1000\r\n    }\r\n  },\r\n  \"uncertainty\": {\r\n    \"ESS_States\": {\r\n      \"Max\": 100,\r\n      \"Min\": 0,\r\n      \"Steps\": 10\r\n    },\r\n    \"Plugged_Time\": {\r\n      \"mean\": 18.76,\r\n      \"std\": 1.3\r\n    },\r\n    \"Unplugged_Time\": {\r\n      \"mean\": 7.32,\r\n      \"std\": 0.78\r\n    },\r\n    \"VAC_States\": {\r\n      \"Max\": 100,\r\n      \"Min\": 0,\r\n      \"Steps\": 5\r\n    },\r\n    \"meta\": {\r\n      \"monte_carlo_repetition\": 10000\r\n    }\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/inputs/mqtt",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"inputs",
+								"mqtt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Command for starting the framework",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n \t\"control_frequency\": 900,\r\n    \"horizon_in_steps\": 96,\r\n    \"dT_in_seconds\":900,\r\n    \"model_name\": \"CarParkModel\",\r\n    \"repetition\": -1,\r\n    \"optimization_type\":\"stochastic\",\r\n    \"solver\": \"gurobi\"\r\n }"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/optimization/start/{{id}}",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"optimization",
+								"start",
+								"{{id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Residential",
+			"description": "",
+			"item": [
+				{
+					"name": "Creates a new mqtt data source as input",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"ESS\": {\r\n\t\t\"SoC_Value\":  {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"10.8.0.60\",\r\n\t    \t\t\"topic\": \"/Fronius/SMX/ChaState\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t\t},\r\n\t\t\"meta\": {\r\n\t\t  \"ESS_Max_SoC\": 1,\r\n\t\t  \"ESS_Max_Discharge_Power\": 2.5,\r\n\t\t  \"ESS_Charging_Eff\": 1,\r\n\t\t  \"ESS_Max_Charge_Power\": 2.500,\r\n\t\t  \"ESS_Min_SoC\": 0.2,\r\n\t\t  \"ESS_Discharging_Eff\": 0.95,\r\n\t\t  \"ESS_Capacity\": 3.600\r\n\t\t}\r\n\t},\r\n\t\"load\": {\r\n\t    \"P_Load\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"172.17.0.1\",\r\n\t    \t\t\"topic\": \"con/opt/Load\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t},\r\n\t    \t\"predict\" : true\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"pf_Load\": 1\r\n\t    }\r\n\t},\r\n\t\"photovoltaic\": {\r\n\t    \"P_PV\": {\r\n\t    \t\"mqtt\": {\r\n\t    \t\t\"host\": \"172.17.0.1\",\r\n\t    \t\t\"topic\": \"con/opt/PV\",\r\n\t    \t\t\"qos\": 1\r\n\t    \t}\r\n\t    },\r\n\t    \"meta\": {\r\n\t      \"PV_Inv_Max_Power\": 150,\r\n\t      \"City\": \"Bolzano\",\r\n\t      \"Country\": \"Italy\"\r\n\t    }\r\n\t},\r\n   \"EV\": {\r\n    \"ev0\": {\r\n      \"Battery_Capacity_kWh\": 18.7\r\n    },\r\n    \"meta\": {\r\n      \"Unit_Consumption_Assumption\": 5,\r\n      \"Unit_Drop_Penalty\": 100\r\n    }\r\n  },\r\n  \"chargers\": {\r\n    \"ASM_00000137-1-1\": {\r\n      \"Max_Charging_Power_kW\": 7,\r\n      \"SoC\": {\r\n        \"mqtt\": {\r\n          \"host\": \"10.8.0.50\",\r\n          \"port\": 8883,\r\n          \"topic\": \"EV/Data\",\r\n          \"qos\": 1,\r\n          \"username\": \"fronius-fur\",\r\n          \"password\": \"r>U@U7J8xZ+fu_vq\",\r\n          \"ca_cert_path\": \"/usr/src/app/utils/s4g-ca.crt\",\r\n          \"insecure\": true,\r\n          \"detachable\": true\r\n        },\r\n        \"preprocess\": true\r\n      }\r\n    }\r\n  },\r\n  \"grid\": {\r\n    \"meta\": {\r\n      \"Max_Voltage_Drop\": 1.1,\r\n      \"Min_Voltage_Drop\": 0.9,\r\n      \"P_Grid_Max_Export_Power\": 1000,\r\n      \"Q_Grid_Max_Export_Power\": 1000\r\n    }\r\n  },\r\n  \"uncertainty\": {\r\n    \"ESS_States\": {\r\n      \"Max\": 100,\r\n      \"Min\": 0,\r\n      \"Steps\": 10\r\n    },\r\n    \"Plugged_Time\": {\r\n      \"mean\": 18.76,\r\n      \"std\": 1.3\r\n    },\r\n    \"Unplugged_Time\": {\r\n      \"mean\": 7.32,\r\n      \"std\": 0.78\r\n    },\r\n    \"VAC_States\": {\r\n      \"Max\": 100,\r\n      \"Min\": 0,\r\n      \"Steps\": 5\r\n    },\r\n    \"meta\": {\r\n      \"monte_carlo_repetition\": 10000\r\n    }\r\n  }\r\n}"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/inputs/mqtt",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"inputs",
+								"mqtt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Command for starting the framework",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n \t\"control_frequency\": 900,\r\n    \"horizon_in_steps\": 96,\r\n    \"dT_in_seconds\":900,\r\n    \"model_name\": \"StochasticResidentialMinGrid\",\r\n    \"repetition\": -1,\r\n    \"optimization_type\":\"stochastic\",\r\n    \"solver\": \"gurobi\"\r\n }"
+						},
+						"url": {
+							"raw": "http://{{hostname}}:{{port}}/v1/optimization/start/{{id}}",
+							"protocol": "http",
+							"host": [
+								"{{hostname}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"optimization",
+								"start",
+								"{{id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Command for stoping the framework",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "http://{{hostname}}:{{port}}/v1/optimization/stop/{{id}}",
+					"protocol": "http",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"v1",
+						"optimization",
+						"stop",
+						"{{id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "aeef8865-43e9-418b-bff5-6c963c2460a2",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "1eb36d14-0512-4248-8b92-d0a899e748ba",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

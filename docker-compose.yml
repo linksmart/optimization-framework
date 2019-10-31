@@ -54,6 +54,7 @@ services:
     build:
       context: ""
       dockerfile: prediction/docker/Dockerfile
+    image: garagon/optimization:amd_training
     depends_on:
       - redis
     volumes:
@@ -68,6 +69,7 @@ services:
     build:
       context: ""
       dockerfile: connector/docker/Dockerfile
+    image: garagon/optimization:amd_connector
     volumes:
       - ../optimization-framework/connector/resources:/usr/src/app/connector/resources
     logging:

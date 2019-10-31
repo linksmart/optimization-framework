@@ -92,6 +92,7 @@ services:
     build:
       context: ""
       dockerfile: mock_data/docker/Dockerfile-mock-arm
+    image: garagon/optimization:arm_mock
     volumes:
       - ../optimization-framework/mock_data/resources:/usr/src/app/mock_data/resources
      # ../docker/App/Dockerfile
@@ -105,6 +106,7 @@ services:
     build:
       context: ""
       dockerfile: prediction/docker/Dockerfile-arm
+    image: garagon/optimization:arm_training
     depends_on:
       - redis
     volumes:
@@ -119,6 +121,7 @@ services:
     build:
       context: ""
       dockerfile: connector/docker/Dockerfile-arm
+    image: garagon/optimization:arm_connector
     volumes:
       - ../optimization-framework/connector/resources/:/usr/src/app/connector/resources
     logging:

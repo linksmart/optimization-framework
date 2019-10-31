@@ -44,9 +44,10 @@ class RawLoadDataReceiver(DataReceiver):
         try:
             data = json.loads(payload)
             data = RawDataReader.format_data(data)
+            #logger.debug("data raw "+str(data))
+            #logger.debug("current min "+str(self.current_minute))
             mod_data = []
             for item in data:
-
                 dt = datetime.datetime.fromtimestamp(item[0]).replace(second=0, microsecond=0)
                 if self.current_minute is None:
                     self.current_minute = dt
@@ -71,10 +72,13 @@ class RawLoadDataReceiver(DataReceiver):
     def save_to_file(self):
         try:
             logger.info("Saving raw data to file "+str(self.file_path))
-            with open(self.file_path, 'a+') as file:
-                for item in self.minute_data:
-                    line = ','.join(map(str, item[:2]))+"\n"
-                    file.writelines(line)
+            old_data = RawDataReader.read_from_file(self.file_path, self.topic_name)
+            for item in self.minute_data:
+                line = ','.join(map(str, item[:2])) + "\n"
+                old_data.append(line)
+            old_data = old_data[-10080:] # 7 days data
+            with open(self.file_path, 'w+') as file:
+                    file.writelines(old_data)
             file.close()
             self.minute_data = []
         except Exception as e:
@@ -103,9 +107,11 @@ class RawLoadDataReceiver(DataReceiver):
         return time_diff.total_seconds()
 
     def save_to_file_cron(self):
+        self.logger.debug("Started save file cron")
         while True and not self.stop_request:
             self.save_to_file()
-            time.sleep(self.get_sleep_secs(3))
+            time.sleep(self.get_sleep_secs(1))
+            #time.sleep(120)
 
     def load_data(self):
         data = RawDataReader.get_raw_data(self.file_path, self.buffer, self.topic_name)

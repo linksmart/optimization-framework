@@ -153,6 +153,7 @@ class ThreadFactory:
                                                                                         self.horizon_in_steps,
                                                                                         self.dT_in_seconds,
                                                                                         non_prediction_name)
+                        self.non_prediction_threads[non_prediction_name].start()
 
         # Initializing constructor of the optimization controller thread
         if self.optimization_type == "MPC":

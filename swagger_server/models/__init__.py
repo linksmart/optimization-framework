@@ -29,6 +29,8 @@ from swagger_server.models.mqtt import MQTT
 from swagger_server.models.mqtt_input_source import MQTTInputSource
 from swagger_server.models.mqtt_output_all import MQTTOutputAll
 from swagger_server.models.meta_ess import MetaESS
+from swagger_server.models.meta_generic import MetaGeneric
+from swagger_server.models.meta_gloabl_control import MetaGloablControl
 from swagger_server.models.meta_grid import MetaGrid
 from swagger_server.models.meta_horizon import MetaHorizon
 from swagger_server.models.meta_load import MetaLoad

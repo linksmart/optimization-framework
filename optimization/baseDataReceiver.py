@@ -88,13 +88,12 @@ class BaseDataReceiver(DataReceiver, ABC):
                         n = self.generic_name
                     try:
                         processed_value = self.preprocess_data(bn, n, v, u)
-                        raw_data.append([t, processed_value])
+                        if processed_value is not None and processed_value is not {}:
+                            raw_data.append([t, processed_value])
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))
-                self.logger.debug("len data before expansion = "+str(len(raw_data)))
                 raw_data = self.expand_and_resample(raw_data, self.dT)
-                self.logger.debug("len data after expansion = " + str(len(raw_data)))
                 if len(raw_data) > 0:
                     bucket = self.time_to_bucket(raw_data[0][0])
                     for row in raw_data:
@@ -138,7 +137,7 @@ class BaseDataReceiver(DataReceiver, ABC):
             steps = self.length
         day = None
         if len(data) >= steps:
-            for i in reversed(range(self.number_of_bucket_days)):
+            for i in reversed(range(self.number_of_bucket_days+1)):
                 key = str(i) + "_" + str(bucket)
                 if key in data.keys():
                     day = str(i)
@@ -242,3 +241,8 @@ class BaseDataReceiver(DataReceiver, ABC):
             return False
         except Exception:
             return False
+
+    def get_current_bucket_data(self, steps, wait_for_data=True, check_bucket_change=True):
+        bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
+        self.logger.debug("current b = "+str(bucket))
+        return self.get_bucket_aligned_data(bucket, steps, wait_for_data, check_bucket_change)

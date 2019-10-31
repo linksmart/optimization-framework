@@ -2,11 +2,11 @@
 
 from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
-
+from swagger_server.models.source import Source  # noqa: F401,E501
+from swagger_server.models.meta_gloabl_control import MetaGloablControl  # noqa: F401,E501
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
-from swagger_server.models.source import Source  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -16,21 +16,26 @@ class GlobalControl(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, ess_control: Source=None):  # noqa: E501
+    def __init__(self, ess_control: Source=None, meta: MetaGloablControl=None):  # noqa: E501
         """GlobalControl - a model defined in Swagger
 
         :param ess_control: The ess_control of this GlobalControl.  # noqa: E501
         :type ess_control: Source
+        :param meta: The meta of this GlobalControl.  # noqa: E501
+        :type meta: MetaGloablControl
         """
         self.swagger_types = {
-            'ess_control': Source
+            'ess_control': Source,
+            'meta': MetaGloablControl
         }
 
         self.attribute_map = {
-            'ess_control': 'ESS_Control'
+            'ess_control': 'ESS_Control',
+            'meta': 'meta'
         }
 
         self._ess_control = ess_control
+        self._meta = meta
 
     @classmethod
     def from_dict(cls, dikt) -> 'GlobalControl':
@@ -65,3 +70,24 @@ class GlobalControl(Model):
             raise ValueError("Invalid value for `ess_control`, must not be `None`")  # noqa: E501
 
         self._ess_control = ess_control
+
+    @property
+    def meta(self) -> MetaGloablControl:
+        """Gets the meta of this GlobalControl.
+
+
+        :return: The meta of this GlobalControl.
+        :rtype: MetaGloablControl
+        """
+        return self._meta
+
+    @meta.setter
+    def meta(self, meta: MetaGloablControl):
+        """Sets the meta of this GlobalControl.
+
+
+        :param meta: The meta of this GlobalControl.
+        :type meta: MetaGloablControl
+        """
+
+        self._meta = meta

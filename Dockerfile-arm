@@ -59,3 +59,4 @@ COPY mock_data /usr/src/app/mock_data
 COPY config /usr/src/app/config
 COPY utils_intern /usr/src/app/utils_intern
 COPY profev /usr/src/app/profev
+COPY stochastic_programming /usr/src/app/stochastic_programming

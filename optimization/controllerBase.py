@@ -40,6 +40,13 @@ class ControllerBase(ABC, threading.Thread):
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
         super().__init__()
+
+        pyomo_path = "/usr/src/app/logs/pyomo_" + str(id)
+        if not os.path.exists(pyomo_path):
+            os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
+            os.chmod(pyomo_path, 0o777)
+        TempfileManager.tempdir = pyomo_path
+
         self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.info("Initializing optimization controller " + id)
         self.id = id
@@ -201,7 +208,7 @@ class ControllerBase(ABC, threading.Thread):
             return return_msg
 
     @abstractmethod
-    def optimize(self, count, optsolver, solver_manager, solver_name, model_path):
+    def optimize(self, count, solver_name, model_path):
         while not self.redisDB.get_bool(self.stop_signal_key):
             pass
 

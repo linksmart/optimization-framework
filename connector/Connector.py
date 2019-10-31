@@ -1,110 +1,94 @@
 """
-Created on Okt 19 11:54 2018
+Created on Okt 29 13:15 2019
 
 @author: nishit
 """
 import json
+import threading
 
 import time
-from senml import senml
 
-from IO.RecPub import RecPub
-
+from connector.apiConnectorFactory import ApiConnectorFactory
+from connector.equationConnector import EquationConnector
+from connector.equationParser import EquationParser
+from connector.parserConnector import ParserConnector
 from utils_intern.messageLogger import MessageLogger
+
 logger = MessageLogger.get_logger_parent()
 
+class Connector:
 
-class Connector(RecPub):
+    def __init__(self, config):
+        self.config = config
+        self.workers = config.getint("IO", "number.of.workers", fallback=2)
+        self.connector_list = []
+        self.active_sources = {}
+        for section in config.sections():
+            if section.startswith('HOUSE'):
+                self.active_sources[section] = False
+                threading.Thread(target=self.start_connector, args=(section,)).start()
+        equation_parser = EquationParser(config)
+        equation_list = equation_parser.read_all_equations()
+        logger.debug("######### Equation list = " + str(equation_list))
+        time.sleep(120)
+        for meta_eq in equation_list:
+            threading.Thread(target=self.start_equation, args=(meta_eq,)).start()
 
-    def __init__(self, receiver_params, publisher_workers, config, house):
-        self.pub_prefix = config.get("IO","pub.topic.prefix") + str(house) + "/"
-        self.key_level = int(config.get(house,"key.level"))
-        self.key_separator = config.get(house,"key.separator", fallback="/")
-        self.data_type = config.get(house, "data.type", fallback="json")
-        self.key_map = dict(config.items("KEYS"))
-        self.house = house
-        self.base = senml.SenMLMeasurement()
-        self.base.name = house + "/"
-        super().__init__(receiver_params, publisher_workers, config, house)
-
-    def data_formater(self, data):
-        if self.data_type == "json":
-            data = json.loads(data)
-        elif self.data_type == "comma_equals":
-            data = self.comma_equals_to_dict(data)
-        self.new_data = {}
-        self.timestamp = int(time.time())
-        if self.key_level == 1:
-            if "Time_Stamp" in data.keys():
-                self.timestamp = data["Time_Stamp"]
-                if "." not in self.timestamp:
-                    if len(self.timestamp) >= 19:
-                        self.timestamp = int(self.timestamp)
-                        self.timestamp /= 1000000000
-                    else:
-                        self.timestamp = int(self.timestamp)
-                else:
-                    self.timestamp = float(self.timestamp)
-        self.level_traverse("", data, 0)
-        return self.new_data.copy()
-
-    def comma_equals_to_dict(self, data):
-        new_data = {}
-        data = data.split(",")
-        for row in data:
-            if len(row) > 0:
-                if "=" in row:
-                    d = row.split("=")
-                    if len(d) == 2:
-                        k = d[0].strip()
-                        v = d[1].strip()
-                        if " " in k:
-                            k = k.split(" ")[-1]
-                        if " " in v:
-                            v = v.split(" ")[0]
-                        try:
-                            v = float(v)
-                            if v.is_integer():
-                                v = int(v)
-                        except Exception as e:
-                            pass
-                        new_data[k] = v
-        return new_data
-
-    def level_traverse(self, key, data, level):
-        if isinstance(data, dict):
-            level += 1
-            for k, v in data.items():
-                if key == "":
-                    extended_key = k
-                else:
-                    extended_key = key+self.key_separator+k
-                self.level_traverse(extended_key, v, level)
-        else:
-            if level == self.key_level:
-                if key in self.key_map.keys():
-                    topic = self.key_map[key]
-                    senml_data = self.to_senml(topic, data, self.timestamp)
-                    topic = self.pub_prefix + str(topic)
-                    self.new_data[topic] = senml_data
-                else:
-                    topic = key
-                    # not adding if key not present in config
-
-
-    def to_senml(self, name, value, timestamp):
-        meas = senml.SenMLMeasurement()
-        meas.name = name
-        if isinstance(value, str):
+    def start_connector(self, section):
+        repeat = 0
+        wait_time = 600
+        while not self.active_sources[section]:
+            if repeat > 0:
+                wait_time *= 2
+                if wait_time > 6*60*60:
+                    wait_time = 6*60*60
+                logger.info("re-trying connection after "+str(wait_time)+" sec for house "+str(section))
+                time.sleep(wait_time)
             try:
-                value = float(value)
-            except Exception:
-                pass
-        meas.value = value
-        meas.time = timestamp
-        doc = senml.SenMLDocument([meas], base=self.base)
-        val = doc.to_json()
-        val = json.dumps(val)
-        return val
+                logger.info("House: " + section)
+                rec_url = self.config.get(section, "con.url", fallback=None)
+                rec_params = self.config.get(section, "con.topic", fallback=None)
+                if rec_url:
+                    connector = ApiConnectorFactory.get_api_connector(section, rec_url, self.config, section)
+                    self.connector_list.append(connector)
+                    self.active_sources[section] = True
+                elif rec_params:
+                    rec_params = json.loads(rec_params)
+                    connector = ParserConnector(rec_params, self.workers, self.config, section)
+                    self.connector_list.append(connector)
+                    self.active_sources[section] = True
+                else:
+                    self.active_sources[section] = False
+            except Exception as e:
+                logger.error(e)
+            repeat += 1
 
-
+    def start_equation(self, meta_eq):
+        repeat = 0
+        wait_time = 60
+        connector_started = False
+        all_sources_deaclred = True
+        while not connector_started and all_sources_deaclred:
+            if repeat > 0:
+                wait_time *= 2
+                if wait_time > 60*60:
+                    wait_time = 60*60
+                logger.info("re-trying connection after "+str(wait_time)+" sec for eq "+str(meta_eq["name"]))
+                time.sleep(wait_time)
+            try:
+                all_sources_active = True
+                for source in meta_eq["sources"]:
+                    logger.debug("### sour " + str(source))
+                    if source not in self.active_sources.keys():
+                        all_sources_deaclred = False
+                        logger.debug("##### house "+str(source)+" data not declared in config")
+                        break
+                    elif not self.active_sources[source]:
+                        all_sources_active = False
+                        logger.debug("##### house " + str(source) + " not active yet")
+                if all_sources_active:
+                    connector = EquationConnector(meta_eq, self.config)
+                    self.connector_list.append(connector)
+            except Exception as e:
+                logger.error(e)
+            repeat += 1

@@ -26,11 +26,6 @@ class OptControllerDiscrete(ControllerBase):
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
 
-        pyomo_path = "/usr/src/app/logs/pyomo_" + str(id)
-        if not os.path.exists(pyomo_path):
-            os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
-            os.chmod(pyomo_path, 0o777)
-        TempfileManager.tempdir = pyomo_path
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
@@ -62,7 +57,7 @@ class OptControllerDiscrete(ControllerBase):
 
             start_time = time.time() - start_time
             self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
-            if (result.solver.status == SolverStatus.ok) and (
+            if result and (result.solver.status == SolverStatus.ok) and (
                     result.solver.termination_condition == TerminationCondition.optimal):
                 # this is feasible and optimal
                 self.logger.info("Solver status and termination condition ok")

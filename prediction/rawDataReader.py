@@ -30,11 +30,13 @@ class RawDataReader:
 
     @staticmethod
     def time_conversion(time):
+        time = int(time)
         if len(str(time)) > 10:
             new_t = time / (10 ** (len(str(time)) - 10))
             return new_t
         else:
             return time
+
     @staticmethod
     def format_data(data=[]):
         new_data = []
