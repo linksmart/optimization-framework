@@ -147,15 +147,16 @@ class Model:
 
                 # Expected future value= probability of swiching to home state*value of having home state
                 #                       +probability of swiching to away state*value of having away state
-                expected_future_cost_of_this_decision = model.Behavior_Model[(1, 1)] * valueOf_home + \
+                expected_future_cost = model.Behavior_Model[(1, 1)] * valueOf_home + \
                                                         model.Behavior_Model[
                                                             (1, 0)] * valueOf_away
 
+                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
+                                 (model.ESS_Control_single - powerFromEss)
 
-                future_cost += model.Decision[
-                                   p_ess, p_vac] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
+                future_cost += model.Decision[p_ess, p_vac] * (immediate_cost + expected_future_cost)
 
-            return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+            return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
 
         elif model.Recharge == 0:
             # If vac is charged with one of the feasible decision 'p_ev'
@@ -175,14 +176,15 @@ class Model:
                 # Expected future value= probability of swiching to home state*value of having home state
                 #                       +probability of swiching to away state*value of having away state
 
-                expected_future_cost_of_this_decision = model.Behavior_Model[(0, 1)] * valueOf_home + \
+                expected_future_cost = model.Behavior_Model[(0, 1)] * valueOf_home + \
                                                         model.Behavior_Model[
                                                             (0, 0)] * valueOf_away
+                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
+                                 (model.ESS_Control_single - powerFromEss)
 
-                future_cost += model.Decision[
-                                   p_ess, p_vac] * expected_future_cost_of_this_decision  # Adding the expected_future cost of taking 'p_ess and p_ev' decision when initial condition is combination of 'ini_ess_soc','ini_ev_soc' and home state
+                future_cost += model.Decision[p_ess, p_vac] * (immediate_cost + expected_future_cost)
 
-                return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+            return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
 
 
     model.obj = Objective(rule=objrule1, sense=minimize)
