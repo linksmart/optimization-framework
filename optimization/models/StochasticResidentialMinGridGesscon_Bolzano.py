@@ -139,6 +139,8 @@ class Model:
         if model.Recharge == 1:
             for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):  # If EV is charged with one of the feasible decision 'p_ev'
 
+                powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
+
                 essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
                 vacSoC = p_vac + model.Initial_VAC_SoC  # Transition between EV SOC states are deterministic when the car is at home now
 
@@ -161,6 +163,9 @@ class Model:
         elif model.Recharge == 0:
             # If vac is charged with one of the feasible decision 'p_ev'
             for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):
+
+                powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
+
                 essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
                 #vacSoC = p_vac + model.Initial_VAC_SoC  # # Transition between EV SOC states are deterministic when the car is at home now
                 vacSoC = 0 + model.final_ev_soc
