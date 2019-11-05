@@ -103,10 +103,10 @@ class Model:
 
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
-    def con_rule_fronius_power(model, t):
+    def con_rule_fronius_power(model):
         return model.P_ESS_Output == model.P_Fronius
 
-    model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
+    model.con_fronius_power = Constraint(rule=con_rule_fronius_power)
 
     def home_demandmeeting_R(model):
         return model.P_Grid_R_Output + (model.P_Fronius/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
