@@ -79,7 +79,7 @@ class Model:
     model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
 
     def con_rule_pv_potential(model):
-        return model.P_PV_OUTPUT <= model.P_PV_single
+        return model.P_PV_OUTPUT == model.P_PV_single
 
     model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
 
