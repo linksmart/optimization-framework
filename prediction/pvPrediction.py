@@ -92,6 +92,8 @@ class PVPrediction(threading.Thread):
         self.stopRequest.set()
         if self.pv_forecast_pub is not None:
             self.pv_forecast_pub.Stop()
+        if self.raw_data is not None:
+            self.raw_data.exit()
         self.logger.debug("pv prediction thread exit")
 
     def run(self):
