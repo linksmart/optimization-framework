@@ -104,7 +104,7 @@ class Model:
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
     def con_rule_fronius_power(model):
-        return model.P_ESS_Output == model.P_Fronius
+        return model.P_ESS_OUTPUT == model.P_Fronius
 
     model.con_fronius_power = Constraint(rule=con_rule_fronius_power)
 
