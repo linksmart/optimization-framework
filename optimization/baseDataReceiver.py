@@ -15,6 +15,8 @@ from senml import senml
 from IO.dataReceiver import DataReceiver
 from IO.redisDB import RedisDB
 from utils_intern.messageLogger import MessageLogger
+from utils_intern.timeSeries import TimeSeries
+
 
 class BaseDataReceiver(DataReceiver, ABC):
 
@@ -97,7 +99,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))
-                raw_data = self.expand_and_resample(raw_data, self.dT)
+                raw_data = TimeSeries.expand_and_resample(raw_data, self.dT)
                 if len(raw_data) > 0:
                     bucket = self.time_to_bucket(raw_data[0][0])
                     for row in raw_data:
@@ -202,55 +204,6 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.logger.info("Received data is of older timestamp = "+str(time)+" than start of today = "+str(self.start_of_day))
             bucket = bucket%self.total_steps_in_day
         return bucket
-
-    def expand_and_resample(self, raw_data, dT):
-        if self.expand_data_valid(raw_data):
-            step = float(dT)
-            j = len(raw_data) - 1
-            new_data = []
-            if j > 0:
-                start_time = raw_data[j][0]
-                start_value = raw_data[j][1]
-                new_data.append([start_time, start_value])
-                prev_time = start_time
-                prev_value = start_value
-                required_diff = step
-                j -= 1
-                while j >= 0:
-                    end_time = raw_data[j][0]
-                    end_value = raw_data[j][1]
-                    diff_sec = prev_time - end_time
-                    if diff_sec >= required_diff:
-                        ratio = required_diff / diff_sec
-                        inter_time = prev_time - required_diff
-                        inter_value = prev_value - (prev_value - end_value) * ratio
-                        new_data.append([inter_time, inter_value])
-                        prev_time = inter_time
-                        prev_value = inter_value
-                        required_diff = step
-                    else:
-                        required_diff -= diff_sec
-                        prev_time = end_time
-                        prev_value = end_value
-                        j -= 1
-            else:
-                new_data = raw_data
-            new_data.reverse()
-        else:
-            new_data = raw_data
-        return new_data
-
-    def expand_data_valid(self, raw_data):
-        try:
-            if isinstance(raw_data, list):
-                if len(raw_data) > 0:
-                    sample = raw_data[0]
-                    if len(sample) == 2:
-                        if (isinstance(sample[0], float) or isinstance(sample[0], int)) and (isinstance(sample[1], float) or isinstance(sample[1], int)):
-                            return True
-            return False
-        except Exception:
-            return False
 
     def get_current_bucket_data(self, steps, wait_for_data=True, check_bucket_change=True):
         bucket = self.time_to_bucket(datetime.datetime.now().timestamp())

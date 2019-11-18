@@ -15,6 +15,8 @@ from senml import senml
 from IO.dataPublisher import DataPublisher
 
 from utils_intern.messageLogger import MessageLogger
+from utils_intern.timeSeries import TimeSeries
+
 logger = MessageLogger.get_logger_parent()
 
 class MockGenericDataPublisher(DataPublisher):
@@ -103,7 +105,7 @@ class MockGenericDataPublisher(DataPublisher):
                 time = float(time.replace(",", "."))
                 timed_vals.append([time, val])
             timed_vals.sort(key=lambda x: x[0])
-            timed_vals = self.expand_and_resample(timed_vals, self.delta_time)
+            timed_vals = TimeSeries.expand_and_resample(timed_vals, self.delta_time)
             return timed_vals
         else:
             vals = []
@@ -149,37 +151,3 @@ class MockGenericDataPublisher(DataPublisher):
             return [round(random.uniform(self.rand_min, self.rand_max), 6) for _ in range(self.length)]
         else:
             return [random.randrange(self.rand_min, self.rand_max+1) for _ in range(self.length)]
-
-    def expand_and_resample(self, raw_data, dT):
-        step = float(dT)
-        j = len(raw_data) - 1
-        new_data = []
-        if j > 0:
-            start_time = raw_data[j][0]
-            start_value = raw_data[j][1]
-            new_data.append([start_time, start_value])
-            prev_time = start_time
-            prev_value = start_value
-            required_diff = step
-            j -= 1
-            while j >= 0:
-                end_time = raw_data[j][0]
-                end_value = raw_data[j][1]
-                diff_sec = prev_time - end_time
-                if diff_sec >= required_diff:
-                    ratio = required_diff / diff_sec
-                    inter_time = prev_time - required_diff
-                    inter_value = prev_value - (prev_value - end_value) * ratio
-                    new_data.append([inter_time, inter_value])
-                    prev_time = inter_time
-                    prev_value = inter_value
-                    required_diff = step
-                else:
-                    required_diff -= diff_sec
-                    prev_time = end_time
-                    prev_value = end_value
-                    j -= 1
-        else:
-            new_data = raw_data
-        new_data.reverse()
-        return new_data

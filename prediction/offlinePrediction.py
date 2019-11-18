@@ -9,6 +9,8 @@ from prediction.offlineProcessingData import OfflineProcessingData
 from prediction.rawDataReader import RawDataReader
 
 from utils_intern.messageLogger import MessageLogger
+from utils_intern.timeSeries import TimeSeries
+
 logger = MessageLogger.get_logger_parent()
 
 
@@ -42,7 +44,7 @@ class OfflinePrediction:
             #data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
             data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
             logger.debug("len data = " + str(len(data)))
-            data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
+            data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
             logger.debug("len resample data = " + str(len(data)))
             true_data = data
             if len(data) >= self.num_timesteps:

@@ -8,6 +8,7 @@ import threading
 
 import time
 from abc import ABC, abstractmethod
+from configparser import RawConfigParser
 from random import randrange
 
 from IO.MQTTClient import MQTTClient
@@ -25,7 +26,7 @@ class DataPublisher(ABC,threading.Thread):
         self.id = id
         self.logger.debug("id = " + str(self.id))
         if internal:
-            self.channel = config.get("IO", "channel")
+            self.channel = config.get("IO", "channel", fallback=self.channel)
         if topic_params is None:
             self.topic_params = {}
         else:

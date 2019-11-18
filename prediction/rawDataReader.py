@@ -82,3 +82,27 @@ class RawDataReader:
         if len(data) > data_length:
             data = data[-data_length:]
         return RawDataReader.format_data(data)
+
+    @staticmethod
+    def get_raw_data_by_time(file_path, topic_name, start_time, end_time):
+        logger.debug("start time "+str(start_time)+" end time "+str(end_time))
+        flag = False
+        new_data = []
+        if start_time < end_time:
+            data = RawDataReader.read_from_file(file_path, topic_name)
+            start_time = int(start_time)
+            end_time = int(end_time)
+            for row in data:
+                try:
+                    col = row.replace('\n', '').strip().split(",")
+                    t = float(col[0])
+                    v = float(col[1])
+                    if not flag and start_time <= t:
+                        flag = True
+                    if flag and end_time < t:
+                        break
+                    if flag:
+                        new_data.append([t,v])
+                except Exception as e:
+                    logger.error("Exception in formating line " + str(row) + " " + str(e))
+        return new_data

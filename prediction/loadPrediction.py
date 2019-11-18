@@ -10,7 +10,7 @@ from shutil import copyfile
 from IO.redisDB import RedisDB
 from prediction.processingData import ProcessingData
 from utils_intern.messageLogger import MessageLogger
-
+from utils_intern.timeSeries import TimeSeries
 
 """
 Creates a thread for prediction and a thread for training
@@ -49,7 +49,10 @@ class LoadPrediction:
         self.model_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_"+str(topic_name)+".h5")
         self.model_file_container_temp = os.path.join("/usr/src/app", "prediction/resources", "model_temp_"+str(topic_name)+".h5")
         self.model_file_container_train = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_train_"+str(topic_name)+".h5")
-
+        self.prediction_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id,
+                                                    "prediction_data_" + str(topic_name) + ".csv")
+        self.error_result_file_path = os.path.join("/usr/src/app", "prediction/resources", self.id,
+                                                    "error_data_" + str(topic_name) + ".csv")
         self.processingData = ProcessingData()
 
         self.load_forecast_pub = None
@@ -75,6 +78,15 @@ class LoadPrediction:
                                                            self.horizon_in_steps, self.dT_in_seconds)
             self.load_forecast_pub.start()
 
+            from prediction.errorReporting import ErrorReporting
+            error_topic_params = config.get("IO", "error.topic")
+            error_topic_params = json.loads(error_topic_params)
+            error_topic_params["topic"] = error_topic_params["topic"] + self.topic_name
+            self.error_reporting = ErrorReporting(config, id, topic_name, dT_in_seconds, control_frequency,
+                                                  horizon_in_steps, self.prediction_data_file_container,
+                                                  self.raw_data_file_container, error_topic_params,
+                                                  self.error_result_file_path)
+
             self.startPrediction()
         else:
             self.startTraining()
@@ -90,7 +102,9 @@ class LoadPrediction:
         self.prediction_thread = Prediction(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                             self.hidden_size, self.batch_size, self.num_epochs,
                                             self.raw_data, self.processingData, self.model_file_container_temp,
-                                            self.model_file_container, self.q, self.topic_name, self.id, self.dT_in_seconds, self.output_size, self.logger)
+                                            self.model_file_container, self.q, self.topic_name, self.id,
+                                            self.dT_in_seconds, self.output_size, self.logger,
+                                            self.prediction_data_file_container)
         self.prediction_thread.start()
 
 
@@ -212,7 +226,8 @@ class Prediction(threading.Thread):
     - predict for next horizon points (eg. 24 predictions)
     """
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
-                 model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds, output_size, log):
+                 model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds, output_size, log,
+                 prediction_data_file_container):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -234,13 +249,14 @@ class Prediction(threading.Thread):
         self.id = id
         self.output_size = output_size
         self.logger = log
+        self.prediction_data_file_container = prediction_data_file_container
 
     def run(self):
         while not self.stopRequest.is_set():
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 self.logger.debug("len data = " + str(len(data)))
-                data = self.processingData.expand_and_resample(data, self.dT_in_seconds)
+                data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
                 self.logger.debug("len resample data = " + str(len(data)))
                 true_data = data
                 if len(data) > 0:
@@ -261,12 +277,14 @@ class Prediction(threading.Thread):
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
+                            self.save_predictions_to_file(data)
                         except Exception as e:
                             self.logger.error(str(e))
                     else:
                         self.logger.info("prediction model is none, extending the known values")
                         test_predictions = self.processingData.get_regression_values(true_data, self.num_timesteps, self.output_size + 1, self.dT_in_seconds)
                         self.q.put(test_predictions)
+
                     self.logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))
                     st = time.time() - st
                     ss = self.control_frequency - st
@@ -277,6 +295,26 @@ class Prediction(threading.Thread):
                     time.sleep(1)
             except Exception as e:
                 self.logger.error(str(self.topic_name) + " prediction thread exception " + str(e))
+
+    def save_predictions_to_file(self, predictions):
+        if len(predictions) > 0:
+            try:
+                result = predictions.items()
+                result = sorted(result)
+                start_time = float(result[0][0].timestamp())
+                data = []
+                for i in range(self.horizon_in_steps):
+                    value = result[i][1]
+                    if value >= 0:
+                        value = 0
+                    data.append(str(value))
+                values = ",".join(data)
+                values = str(start_time) + "," + values + "\n"
+                self.logger.info("Saving prediction data to file "+str(self.prediction_data_file_container))
+                with open(self.prediction_data_file_container, 'a+') as file:
+                        file.writelines(values)
+            except Exception as e:
+                self.logger.error("failed to save_predictions_to_file "+ str(e))
 
     def Stop(self):
         self.logger.info("start prediction thread exit")

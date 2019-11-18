@@ -13,6 +13,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import MinMaxScaler
 
 from utils_intern.messageLogger import MessageLogger
+from utils_intern.timeSeries import TimeSeries
+
 logger = MessageLogger.get_logger_parent()
 
 
@@ -20,40 +22,6 @@ class ProcessingData:
 
     def __init__(self):
         self.new_df = None
-
-    def expand_and_resample(self, raw_data, dT):
-        step = float(dT)
-        j = len(raw_data) - 1
-        new_data = []
-        if j > 0:
-            start_time = raw_data[j][0]
-            start_value = raw_data[j][1]
-            new_data.append([start_time, start_value])
-            prev_time = start_time
-            prev_value = start_value
-            required_diff = step
-            j -= 1
-            while j >= 0:
-                end_time = raw_data[j][0]
-                end_value = raw_data[j][1]
-                diff_sec = prev_time - end_time
-                if diff_sec >= required_diff:
-                    ratio = required_diff / diff_sec
-                    inter_time = prev_time - required_diff
-                    inter_value = prev_value - (prev_value - end_value) * ratio
-                    new_data.append([inter_time, inter_value])
-                    prev_time = inter_time
-                    prev_value = inter_value
-                    required_diff = step
-                else:
-                    required_diff -= diff_sec
-                    prev_time = end_time
-                    prev_value = end_value
-                    j -= 1
-        else:
-            new_data = raw_data
-        new_data.reverse()
-        return new_data
 
     def preprocess_data_predict(self, raw_data, num_timesteps, output_size):
         # Loading Data
@@ -148,7 +116,7 @@ class ProcessingData:
             merged = False
             min_length = num_timesteps + output_size
             for block in blocks:
-                resampled_block = self.expand_and_resample(block, dT)
+                resampled_block = TimeSeries.expand_and_resample(block, dT)
                 if len(resampled_block) > 0:
                     resampled_blocks.append(resampled_block)
                     logger.info("block size = "+str(len(resampled_block)))
@@ -175,7 +143,7 @@ class ProcessingData:
                         break
                 logger.info(new_block)
                 if merged:
-                    new_block = self.expand_and_resample(new_block, dT)
+                    new_block = TimeSeries.expand_and_resample(new_block, dT)
                     logger.info(new_block)
                     logger.info("length of merged blocks after expand = "+str(len(new_block)))
                 new_blocks = [new_block]
