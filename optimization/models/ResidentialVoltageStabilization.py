@@ -61,6 +61,7 @@ class Model:
     model.voltage_calculated_R = Var(model.T, within=NonNegativeReals)
     model.voltage_calculated_S = Var(model.T, within=NonNegativeReals)
     model.voltage_calculated_T = Var(model.T, within=NonNegativeReals)
+    model.P_Fronius_Pct = Var(model.T, within=NonNegativeReals)
 
     ################################################################################################
 
@@ -102,14 +103,20 @@ class Model:
     def con_rule_energy_balance(model, t):
         return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
 
+    def con_rule_output_ess_power(model, t):
+        if model.P_ESS_Output[t] < 0:
+            return model.P_Fronius_Pct[t] == 0
+        else:
+            return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]
+
 
     model.con_pv_pmax = Constraint(model.T, rule=con_rule_pv_potential)
     model.con_voltage = Constraint(model.T, rule=con_rule_voltage)
     model.con_grid_inv_P = Constraint(model.T, rule=con_rule_grid_output_power)
     model.con_system_P = Constraint(model.T, rule=con_rule_energy_balance)
-
     model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
     model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
+    model.con_percentage = Constraint(model.T, rule=con_rule_output_ess_power)
 
     ###########################################################################
     #######                         OBJECTIVE                           #######

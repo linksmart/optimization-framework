@@ -56,6 +56,7 @@ class Model:
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.Deviation = Var(model.T, within=Reals)
 	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
+	model.P_Fronius_Pct = Var(model.T, within=NonNegativeReals)
 
 	################################################################################################
 
@@ -64,7 +65,7 @@ class Model:
 
 	#rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
-	    return model.P_PV_Output[t]  == model.P_PV[t]
+	    return model.P_PV_Output[t]  <= model.P_PV[t]
 
 	#rule for setting the maximum export power to the grid
 	def con_rule_grid_output_power(model, t):
@@ -98,6 +99,12 @@ class Model:
 	def con_rule_deviation(model, t):
 		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Control[t]
 
+	def con_rule_output_ess_power(model, t):
+		if model.P_ESS_Output[t] < 0:
+			return model.P_Fronius_Pct[t] == 0
+		else:
+			return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]
+
 	model.con_pv_max = Constraint(model.T, rule = con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule = con_rule_grid_output_power)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
@@ -105,6 +112,7 @@ class Model:
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	model.con_deviation = Constraint(model.T, rule=con_rule_deviation)
+	model.con_percentage = Constraint(model.T, rule=con_rule_output_ess_power)
 
 	###########################################################################
 	#######                         OBJECTIVE                           #######

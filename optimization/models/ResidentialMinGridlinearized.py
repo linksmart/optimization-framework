@@ -51,6 +51,7 @@ class Model:
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.U = Var(model.T, within=Reals)
 	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
+	model.P_Fronius_Pct = Var(model.T, within=NonNegativeReals)
 
 	################################################################################################
 
@@ -96,9 +97,11 @@ class Model:
 	def con_rule_linearization_2(model, t):
 		return model.U[t] >= -model.P_Grid_Output[t]
 
-	# Generation-feed in balance
-	# def con_rule_generation_feedin(model, t):
-	# return model.P_Grid_Output[t] * model.P_Grid_Output[t] + model.Q_Grid_Output[t] * model.Q_Grid_Output[t] == (model.P_PV_Output[t] + model.P_ESS_Output[t]) * (model.P_PV_Output[t] + model.P_ESS_Output[t])
+	def con_rule_output_ess_power(model, t):
+		if model.P_ESS_Output[t] < 0:
+			return model.P_Fronius_Pct[t] == 0
+		else:
+			return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)
@@ -108,6 +111,7 @@ class Model:
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	model.con_linear_1 = Constraint(model.T, rule=con_rule_linearization_1)
 	model.con_linear_2 = Constraint(model.T, rule=con_rule_linearization_2)
+	model.con_percentage = Constraint(model.T, rule=con_rule_output_ess_power)
 	
 	
 	###########################################################################
