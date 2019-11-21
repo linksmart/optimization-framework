@@ -1,5 +1,8 @@
 from pyomo.core import *
 import pyomo.environ
+from pyomo.core.kernel import value
+
+
 class Model:
 	model = AbstractModel()
 
@@ -46,9 +49,9 @@ class Model:
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals,
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
-	model.P_Fronius_Pct = Var(model.T, within=NonNegativeReals)
+	model.P_Fronius_Pct = Var(model.T,  within=NonNegativeReals)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
-	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
+	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power),initialize=0)
 
 	################################################################################################
 
@@ -88,11 +91,12 @@ class Model:
 		# return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 		return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
 
-	def con_rule_output_ess_power(model, t):
-		if model.P_ESS_Output[t] < 0:
-			return model.P_Fronius_Pct[t] == 0
+	def con_rule_output_ess_power(model,t):
+
+		if value(model.P_Fronius[t]) > 0:
+			return model.P_Fronius_Pct[t] == (100 / model.Fronius_Max_Power) * model.P_Fronius[t]
 		else:
-			return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]
+			return model.P_Fronius_Pct[t] == 0
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.con_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)

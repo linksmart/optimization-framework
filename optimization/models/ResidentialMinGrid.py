@@ -92,10 +92,15 @@ class Model:
 		return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
 
 	def con_rule_output_ess_power(model, t):
-		if model.P_ESS_Output[t] < 0:
-			return model.P_Fronius_Pct[t] == 0
+		fronius = model.P_Fronius[t]
+		fronius_return = 0
+		if fronius < 0:
+			fronius_return = 0
+			#return model.P_Fronius_Pct[t] == 0
 		else:
-			return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]
+			fronius_return = (100 / model.ESS_Max_Charge_Power) * fronius
+			#return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]
+		return model.P_Fronius_Pct[t] == fronius_return
 
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)

@@ -100,7 +100,7 @@ class Model:
 		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Control[t]
 
 	def con_rule_output_ess_power(model, t):
-		if model.P_ESS_Output[t] < 0:
+		if model.P_Fronius[t] < 0:
 			return model.P_Fronius_Pct[t] == 0
 		else:
 			return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]

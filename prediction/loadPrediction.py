@@ -86,6 +86,7 @@ class LoadPrediction:
                                                   horizon_in_steps, self.prediction_data_file_container,
                                                   self.raw_data_file_container, error_topic_params,
                                                   self.error_result_file_path)
+            self.error_reporting.start()
 
             self.startPrediction()
         else:
@@ -110,15 +111,19 @@ class LoadPrediction:
 
     def Stop(self):
         self.logger.info("start load controller thread exit")
-        if self.prediction_thread:
-            self.prediction_thread.Stop()
-        if self.training_thread:
-            self.training_thread.Stop()
-        if self.load_forecast_pub:
-            self.logger.info("Stopping load forecast thread")
-            self.load_forecast_pub.Stop()
-        if self.raw_data:
-            self.raw_data.exit()
+        if self.predictionFlag:
+            if self.prediction_thread:
+                self.prediction_thread.Stop()
+            if self.load_forecast_pub:
+                self.logger.info("Stopping load forecast thread")
+                self.load_forecast_pub.Stop()
+            if self.error_reporting:
+                self.error_reporting.Stop()
+            if self.raw_data:
+                self.raw_data.exit()
+        else:
+            if self.training_thread:
+                self.training_thread.Stop()
         self.logger.info("load controller thread exited")
 
 

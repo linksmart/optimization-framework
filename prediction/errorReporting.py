@@ -66,7 +66,7 @@ class ErrorReporting(DataPublisher):
     def save_to_file(self, rmse, mae, time):
         try:
             with open(self.error_result_file_path, "a+") as f:
-                line = str(time)+","+str(rmse)+","+str(mae)+","+"\n"
+                line = str(time)+","+str(rmse)+","+str(mae)+"\n"
                 f.writelines(line)
         except Exception as e:
             self.logger.error("error adding to file "+str(self.error_result_file_path)+ " "+ str(e))
