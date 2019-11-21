@@ -53,7 +53,7 @@ class Model:
 	
 	# PV constraints
 	def con_rule_pv_potential(model, t):
-	    return model.P_PV_Output[t] <= model.P_PV[t]
+	    return model.P_PV_Output[t] == model.P_PV[t]
 	
 	# Import/Export constraints
 	def con_rule_grid_P(model, t):

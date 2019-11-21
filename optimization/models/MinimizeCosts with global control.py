@@ -57,7 +57,7 @@ class Model:
 
 	# rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
-		return model.P_PV_Output[t] <= model.P_PV[t]
+		return model.P_PV_Output[t] == model.P_PV[t]
 
 	# rule for setting the maximum export power to the grid
 	def con_rule_grid_output_power(model, t):

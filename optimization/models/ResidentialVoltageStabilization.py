@@ -69,7 +69,7 @@ class Model:
 
     # rule to limit the PV ouput to value of the PV forecast
     def con_rule_pv_potential(model, t):
-        return model.P_PV_Output[t] <= model.P_PV[t]
+        return model.P_PV_Output[t] == model.P_PV[t]
 
     # voltage
     def con_rule_voltage(model, t):
