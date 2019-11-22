@@ -1,6 +1,5 @@
 from pyomo.core import *
 import pyomo.environ
-from pyomo.core.kernel import value
 
 
 class Model:
@@ -19,7 +18,7 @@ class Model:
 	# definition of the energy storage system
 	model.ESS_Min_SoC = Param(within=NonNegativeReals)  # Minimum SoC of ESSs
 	model.ESS_Max_SoC = Param(within=PositiveReals)  # Maximum SoC of ESSs
-	model.SoC_Value = Param(within=PositiveReals)
+	model.SoC_Value = Param(within=NonNegativeReals)
 	model.ESS_Capacity = Param(within=PositiveReals)  # Storage Capacity of ESSs
 	model.ESS_Max_Charge_Power = Param(within=PositiveReals)  # Max Charge Power of ESSs
 	model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
@@ -49,8 +48,9 @@ class Model:
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals,
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
-	model.P_Fronius_Pct = Var(model.T,  within=Reals)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
+
+
 	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power), initialize=0)
 	model.P_Fronius_Pct = Var(model.T,  within=Reals, initialize=0)
 	model.P_Fronius_Pct_Output = Var(model.T,  within=Reals, initialize=0)
@@ -92,6 +92,7 @@ class Model:
 	def con_rule_energy_balance(model, t):
 		# return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 		return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
+
 
 	def con_rule_output_ess_power(model,t):
 		return model.P_Fronius_Pct[t] == (100 / model.Fronius_Max_Power) * model.P_Fronius[t]

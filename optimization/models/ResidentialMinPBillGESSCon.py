@@ -17,7 +17,7 @@ class Model:
 	# definition of the energy storage system
 	model.ESS_Min_SoC = Param(within=NonNegativeReals)  # Minimum SoC of ESSs
 	model.ESS_Max_SoC = Param(within=PositiveReals)  # Maximum SoC of ESSs
-	model.SoC_Value = Param(within=PositiveReals)
+	model.SoC_Value = Param(within=NonNegativeReals)
 	model.ESS_Capacity = Param(within=PositiveReals)  # Storage Capacity of ESSs
 	model.ESS_Max_Charge_Power = Param(within=PositiveReals)  # Max Charge Power of ESSs
 	model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
@@ -55,8 +55,10 @@ class Model:
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.Deviation = Var(model.T, within=Reals)
-	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power))
-	model.P_Fronius_Pct = Var(model.T, within=NonNegativeReals)
+
+	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power), initialize=0)
+	model.P_Fronius_Pct = Var(model.T,  within=Reals, initialize=0)
+	model.P_Fronius_Pct_Output = Var(model.T,  within=Reals, initialize=0)
 
 	################################################################################################
 
@@ -98,11 +100,14 @@ class Model:
 	def con_rule_deviation(model, t):
 		return model.Deviation[t] == model.P_ESS_Output[t] - model.ESS_Control[t]
 
-	def con_rule_output_ess_power(model, t):
-		if model.P_Fronius[t] < 0:
-			return model.P_Fronius_Pct[t] == 0
-		else:
-			return model.P_Fronius_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_Fronius[t]
+	def con_rule_output_ess_power(model,t):
+		return model.P_Fronius_Pct[t] == (100 / model.Fronius_Max_Power) * model.P_Fronius[t]
+
+	def con_rule_is_positive(model,t):
+		return model.P_Fronius_Pct[t] >= 0
+
+	def con_rule_limiting_pct(model,t):
+		return model.is_positive[t]*model.P_Fronius_Pct[t] == model.P_Fronius_Pct_Output[t]
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.conn_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)
@@ -112,8 +117,9 @@ class Model:
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
 	model.con_deviation = Constraint(model.T, rule=con_rule_deviation)
 	model.con_percentage = Constraint(model.T, rule=con_rule_output_ess_power)
-	
-	
+	model.is_positive = Expression(model.T, rule=con_rule_is_positive)
+	model.con_limiting_pct = Constraint(model.T, rule=con_rule_limiting_pct)
+
 	###########################################################################
 	#######                         OBJECTIVE                           #######
 	###########################################################################
