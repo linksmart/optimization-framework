@@ -3,6 +3,7 @@ import datetime
 import json
 from math import floor, ceil
 
+import os
 import requests
 
 from IO.locationData import LocationData
@@ -22,95 +23,133 @@ logger = MessageLogger.get_logger_parent()
 # W10   = Wind speed at 10m (m/s)
 
 class RadiationData:
-    def __init__(self, date=datetime.datetime.now(), pv_output=0.0, beam_irradiance=0.0,
-                 diffuse_irradiance=0.0, reflected_irradiance=0.0, sun_elevation=0.0, air_temp=0.0,
-                 wind_speed=0.0):
-        self.date = datetime.datetime(datetime.datetime.now().year, date.month, date.day, date.hour, 0) + \
-                    datetime.timedelta(hours=1)
+    def __init__(self, date=datetime.datetime.now(), pv_output=0.0):
+        self.date = datetime.datetime(date.year, date.month, date.day, date.hour, 0)
         self.pv_output = pv_output
-        self.beam_irradiance = beam_irradiance
-        self.diffuse_irradiance = diffuse_irradiance
-        self.reflected_irradiance = reflected_irradiance
-        self.sun_elevation = sun_elevation
-        self.air_temp = air_temp
-        self.wind_speed = wind_speed
 
     def default(self):
         return self.__dict__
 
     def __repr__(self):
-        return self.date.strftime("%c") + " " + str(self.pv_output) + " " + str(self.beam_irradiance) + " " + \
-               str(self.diffuse_irradiance) + " " + str(self.reflected_irradiance) + " " + str(self.sun_elevation) + \
-               " " + str(self.air_temp) + " " + str(self.wind_speed)
-
-
-class SolarRadiation:
-    """
-    Radiation Service that collects data and grep the next 48h
-    """
-    @staticmethod
-    def get_rad(lat, lon, maxPV, dT):
-        rad_data = []
-        logger.info("coord "+str(lat)+ ", "+ str(lon))
-        if lat is not None and lon is not None:
-            rad = requests.get("http://re.jrc.ec.europa.eu/pvgis5/seriescalc.php?lat=" +
-                               "{:.3f}".format(float(lat)) + "&lon=" + "{:.3f}".format(float(lon)) + "&raddatabase=" +
-                               "PVGIS-CMSAF&usehorizon=1&startyear=2016&endyear=2016&mountingplace=free&" +
-                               "optimalinclination=0&optimalangles=1&hourlyoptimalangles=1&PVcalculation=1&" +
-                               "pvtechchoice=crystSi&peakpower=" + str(maxPV) + "&loss=14&components=1")
-            red_arr = str(rad.content).split("\\n")
-            for x in range(11):
-                del red_arr[0]
-            now_file = datetime.datetime.now()
-            now = datetime.datetime(2000, now_file.month, now_file.day, now_file.hour, now_file.minute)
-            for x in range(0, red_arr.__len__()):
-                w = red_arr[x][:-2].split(",")
-                if w.__len__() != 9:
-                    break
-                date_file = datetime.datetime.strptime(w[0], "%Y%m%d:%H%M%S")
-                date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
-                if now <= date - datetime.timedelta(hours=-1) <= (now + datetime.timedelta(hours=48)):
-                    rad_data.append(RadiationData(date, w[1], w[2], w[3], w[4], w[5], w[6], w[7]))
-            we = sorted(rad_data, key=lambda w: w.date)
-            data = SolarRadiation.extract_data(we)
-            data = TimeSeries.expand_and_resample(data, dT)
-            return data
-
-    @staticmethod
-    def extract_data(rad):
-        data = []
-        for i in range(0, len(rad) - 1):
-            date = rad[i].date
-            timestamp = date.timestamp()
-            pv_output = float(rad[i].pv_output)
-            data.append([timestamp, pv_output])
-        return data
+        return self.date.strftime("%c") + " " + str(self.pv_output)
 
 class Radiation:
 
     def __init__(self, config, maxPV, dT_in_seconds, location):
         self.data = {}
-        self.location = location
+        self.city = location["city"]
+        self.country = location["country"]
         self.location_data = LocationData(config)
         self.location_found = False
         self.lat = 50.7374
         self.lon = 7.0982
-        self.maxPV = maxPV
-        #self.maxPV /= 1000  # pv in kW
+        self.maxPV = maxPV # pv in kW
         self.dT_in_seconds = dT_in_seconds
+        pv_data_base_path = config.get("IO", "pv.data.base.path")
+        self.pv_data_path = os.path.join("/usr/src/app/", pv_data_base_path,
+                                         "pv_data_" + str(self.city.casefold()) + "_" + str(self.country.casefold()) + ".txt")
 
     def get_data(self):
-        self.update_location_info()
-        data = SolarRadiation.get_rad(self.lat, self.lon, self.maxPV, self.dT_in_seconds)
+        pv_data = self.read_data_from_file()
+        if pv_data is None:
+            self.update_location_info()
+            data = self.get_rad_for_year()
+            pv_data = self.extract_pv_data(data)
+            self.save_data_to_file(pv_data)
+        else:
+            logger.debug("pv data found in file")
+        data = self.format_data(pv_data)
         jsm = json.dumps(data, default=str)
         return jsm
 
     def update_location_info(self):
         if not self.location_found:
-            lat, lon = self.location_data.get_city_coordinate(self.location["city"], self.location["country"])
+            lat, lon = self.location_data.get_city_coordinate(self.city, self.country)
             if lat is not None and lon is not None:
                 self.lat = lat
                 self.lon = lon
                 self.location_found = True
             else:
                 logger.error("Error getting location info, setting to bonn, germany")
+
+    def get_rad_for_year(self):
+        logger.debug("Querying pv data from api")
+        rad_data = []
+        logger.info("coord " + str(self.lat) + ", " + str(self.lon))
+        if self.lat is not None and self.lon is not None:
+            rad = requests.get("http://re.jrc.ec.europa.eu/pvgis5/seriescalc.php?lat=" +
+                               "{:.3f}".format(float(self.lat)) + "&lon=" + "{:.3f}".format(float(self.lon)) + "&raddatabase=" +
+                               "PVGIS-CMSAF&usehorizon=1&startyear=2016&endyear=2016&mountingplace=free&" +
+                               "optimalinclination=0&optimalangles=1&hourlyoptimalangles=1&PVcalculation=1&" +
+                               "pvtechchoice=crystSi&peakpower=1&loss=14&components=1")
+            red_arr = str(rad.content).split("\\n")
+            for x in range(11):
+                del red_arr[0]
+            for x in range(0, red_arr.__len__()):
+                w = red_arr[x][:-2].split(",")
+                if w.__len__() != 9:
+                    break
+                date_file = datetime.datetime.strptime(w[0], "%Y%m%d:%H%M%S")
+                date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
+                rad_data.append(RadiationData(date, w[1]))
+            we = sorted(rad_data, key=lambda w: w.date)
+            return we
+        return rad_data
+
+    def extract_pv_data(self, data):
+        pv_data = []
+        for i in range(0, len(data) - 1):
+            pv_output = float(data[i].pv_output)
+            pv_data.append(pv_output)
+        return pv_data
+
+    def save_data_to_file(self, pv_data):
+        if len(pv_data) > 0:
+            try:
+                with open(self.pv_data_path, "w+") as f:
+                    pv_data = [str(i)+"\n" for i in pv_data]
+                    f.writelines(pv_data)
+            except Exception as e:
+                logger.error("Error saving pv data to file "+str(self.pv_data_path)+" , "+str(e))
+
+    def read_data_from_file(self):
+        try:
+            if os.path.exists(self.pv_data_path):
+                with open(self.pv_data_path, "r") as f:
+                    data = f.readlines()
+                    return data
+            else:
+                logger.debug("pv data file not found "+self.pv_data_path)
+        except Exception as e:
+            logger.error("Error reading pv data to file " + str(self.pv_data_path) + " , " + str(e))
+        return None
+
+    def adjust_data_for_max_PV(self, data):
+        return [float(i) * self.maxPV for i in data]
+
+    def get_row_by_time(self):
+        start_date = datetime.datetime.now().replace(year=2016, month=1, day=1, hour=0, minute=0, second=0,
+                                                     microsecond=0)
+        current_date = datetime.datetime.now().replace(year=2016, minute=0, second=0, microsecond=0)
+        total_seconds = (current_date - start_date).total_seconds()
+        total_hrs = int(total_seconds / 3600)
+        return total_hrs, current_date.timestamp()
+
+    def filter_next_48_hrs(self, data):
+        index, timestamp = self.get_row_by_time()
+        filtered_data = data[index:index+48]
+        return filtered_data, timestamp
+
+    def append_timestamp(self, data, timestamp):
+        new_data = []
+        for row in data:
+            timestamp += 3600
+            new_data.append([timestamp, row])
+        return new_data
+
+    def format_data(self, raw_data):
+        data, start_time = self.filter_next_48_hrs(raw_data)
+        data = self.adjust_data_for_max_PV(data)
+        data = self.append_timestamp(data, start_time)
+        data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
+        return data
