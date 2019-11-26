@@ -80,7 +80,6 @@ class BaseDataReceiver(DataReceiver, ABC):
             raw_data = []
             doc.measurements = sorted(doc.measurements, key=lambda x: x.time)
             if len(doc.measurements) > 0:
-                self.length = len(doc.measurements)
                 for meas in doc.measurements:
                     n = meas.name
                     u = meas.unit
@@ -100,6 +99,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("data: " + str(data))
                 raw_data = TimeSeries.expand_and_resample(raw_data, self.dT)
+                self.length = len(raw_data)
                 if len(raw_data) > 0:
                     bucket = self.time_to_bucket(raw_data[0][0])
                     for row in raw_data:

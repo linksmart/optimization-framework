@@ -58,6 +58,7 @@ class Radiation:
             self.save_data_to_file(pv_data)
         else:
             logger.debug("pv data found in file")
+            print("pv data found in file "+str(self.pv_data_path))
         data = self.format_data(pv_data)
         jsm = json.dumps(data, default=str)
         return jsm
@@ -98,7 +99,7 @@ class Radiation:
 
     def extract_pv_data(self, data):
         pv_data = []
-        for i in range(0, len(data) - 1):
+        for i in range(len(data)):
             pv_output = float(data[i].pv_output)
             pv_data.append(pv_output)
         return pv_data
@@ -137,7 +138,11 @@ class Radiation:
 
     def filter_next_48_hrs(self, data):
         index, timestamp = self.get_row_by_time()
-        filtered_data = data[index:index+48]
+        range = 48
+        carry = range - (len(data) - index)
+        if carry < 0:
+            carry = 0
+        filtered_data = data[index:index + range] + data[:carry]
         return filtered_data, timestamp
 
     def append_timestamp(self, data, timestamp):

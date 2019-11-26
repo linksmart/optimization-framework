@@ -310,7 +310,7 @@ class Prediction(threading.Thread):
                 data = []
                 for i in range(self.horizon_in_steps):
                     value = result[i][1]
-                    if value >= 0:
+                    if value < 0:
                         value = 0
                     data.append(str(value))
                 values = ",".join(data)

@@ -60,8 +60,7 @@ class LoadForecastPublisher(DataPublisher):
         list = list[-self.horizon_in_steps:]
         for i in range(self.horizon_in_steps):
             value = list[i][1]
-            if value >= 0:
-                #value = -0.000001
+            if value < 0:
                 value = 0
             meas.append(self.get_senml_meas(value, list[i][0]))
         doc = senml.SenMLDocument(meas)

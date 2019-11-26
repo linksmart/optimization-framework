@@ -121,7 +121,7 @@ class OutputController:
             if isinstance(value, dict):
                 bn, n, val = self.get_names(value)
             else:
-                bn, n, val = None, None, value
+                bn, n, val = None, key, value
             if bn:
                 base = senml.SenMLMeasurement()
                 base.name = bn
