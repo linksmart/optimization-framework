@@ -43,7 +43,7 @@ class ErrorReporting(DataPublisher):
             self.logger.debug("error cal results = "+str(results))
             if len(results) > 0:
                 self.save_to_file(results)
-                PredictionDataManager.del_predictions_from_file(results.keys(), self.prediction_data_file_container,
+                PredictionDataManager.del_predictions_from_file(list(results.keys()), self.prediction_data_file_container,
                                                                 self.topic_name)
                 return self.to_senml(results)
             else:

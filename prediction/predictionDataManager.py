@@ -106,13 +106,13 @@ class PredictionDataManager:
                 index = []
                 for i, line in enumerate(old_data):
                     start_time = float(line.split(",")[0])
-                    if str(start_time) in start_times:
+                    if start_time in start_times:
                         index.append(i)
                 shift = 0
                 for i in index:
                     old_data.pop(i+shift)
                     shift -=1
-                old_data = old_data[-4320:]  # 3 days data, assuming 1 prediction every min
+                old_data = old_data[-5600:]  # 4 days data, assuming 1 prediction every min
                 logger.info("Saving prediction data to file " + str(prediction_data_file_container))
                 with open(prediction_data_file_container, 'w+') as file:
                     file.writelines(old_data)
