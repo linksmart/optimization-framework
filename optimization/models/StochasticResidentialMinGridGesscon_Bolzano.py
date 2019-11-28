@@ -39,6 +39,11 @@ class Model:
     model.Timestep = Param(within=NonNegativeIntegers)
     model.final_ev_soc = Param(within=Reals, default=0.0)
 
+    model.GlobalTargetWeight = Param(within=Reals)
+    model.LocalTargetWeight = Param(within=Reals)
+
+    model.ESS_Control = Param(model.T, within=Reals) #TODO: define domain
+
     #######################################      Outputs       #######################################################
 
     # Combined decision
@@ -55,6 +60,7 @@ class Model:
     model.P_Grid_T_Output = Var(within=Reals)  # Active power exchange with grid at S phase
 
     model.P_PV_single = Var(within=NonNegativeReals)
+    model.ESS_Control_single = Var(within=Reals)
     model.P_Load_single = Var(within=NonNegativeReals)
 
 
@@ -79,6 +85,13 @@ class Model:
                 return model.P_Load_single == model.P_Load[j]
 
     model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
+
+    def rule_iniDSO(model):
+        for j in model.ESS_Control:
+            if j == model.Timestep:
+                return model.ESS_Control_single == model.ESS_Control[j]
+
+    model.con_ess_IniDSO = Constraint(rule=rule_iniDSO)
 
     def con_rule_pv_potential(model):
         return model.P_PV_OUTPUT == model.P_PV_single

@@ -77,6 +77,31 @@ class RawLoadDataReceiver(DataReceiver):
                 line = ','.join(map(str, item[:2])) + "\n"
                 old_data.append(line)
             old_data = old_data[-10080:] # 7 days data
+            update_data = []
+            for i, line in enumerate(old_data):
+                c = line.count(",")
+                if c == 2:
+                    s = line.split(",")
+                    m = s[1]
+                    mv = m[:-12]
+                    mt = m[-12:]
+                    l1 = [float(s[0]), float(mv)]
+                    l1 = ','.join(map(str, l1[:2])) + "\n"
+                    l2 = [float(mt), float(s[2].replace("\n",""))]
+                    l2 = ','.join(map(str, l2[:2])) + "\n"
+                    update_data.append([i, l1, l2])
+                elif c != 1:
+                    update_data.append([i, None, None])
+            shift = 0
+            for d in update_data:
+                if d[1] is not None and d[2] is not None:
+                    old_data.pop(d[0] + shift)
+                    old_data.insert(d[0] + shift, d[1])
+                    old_data.insert(d[0] + shift + 1, d[2])
+                    shift += 1
+                else:
+                    old_data.pop(d[0] + shift)
+                    shift -= 1
             with open(self.file_path, 'w+') as file:
                     file.writelines(old_data)
             file.close()
@@ -111,7 +136,6 @@ class RawLoadDataReceiver(DataReceiver):
         while True and not self.stop_request:
             self.save_to_file()
             time.sleep(self.get_sleep_secs(1))
-            #time.sleep(120)
 
     def load_data(self):
         data = RawDataReader.get_raw_data(self.file_path, self.buffer, self.topic_name)

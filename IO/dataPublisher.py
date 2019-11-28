@@ -49,6 +49,8 @@ class DataPublisher(ABC,threading.Thread):
                 self.host = self.config.get("IO", "pub.mqtt.host")
             else:
                 self.host = self.config.get("IO", "mqtt.host")
+            if "host" in self.topic_params.keys():
+                self.host = self.topic_params["host"]
             self.port = self.config.get("IO", "mqtt.port")
             if "mqtt.port" in self.topic_params.keys():
                 self.port = self.topic_params["mqtt.port"]
