@@ -13,6 +13,7 @@ import numpy as np
 from senml import senml
 
 from IO.dataPublisher import DataPublisher
+from prediction.predictionDataManager import PredictionDataManager
 from prediction.rawDataReader import RawDataReader
 from utils_intern.messageLogger import MessageLogger
 from utils_intern.timeSeries import TimeSeries
@@ -37,19 +38,26 @@ class ErrorReporting(DataPublisher):
 
     def get_data(self):
         try:
-            rmse, mae, time = self.compare_data(time_delay=0)
-            if rmse is not None and mae is not None and time is not None:
-                self.save_to_file(rmse, mae, time)
-                return self.to_senml(rmse, mae, time)
+            results = self.compare_data(time_delay=0)
+            self.logger.debug("len of error cal results = "+str(len(results)))
+            self.logger.debug("error cal results = "+str(results))
+            if len(results) > 0:
+                self.save_to_file(results)
+                PredictionDataManager.del_predictions_from_file(results.keys(), self.prediction_data_file_container,
+                                                                self.topic_name)
+                return self.to_senml(results)
             else:
                 return None
         except Exception as e:
             self.logger.error("error computing error report data " + str(e))
 
-    def to_senml(self, rmse, mae, time):
+    def to_senml(self, results):
         meas = []
-        meas.append(self.get_senml_meas(rmse, time, "rmse"))
-        meas.append(self.get_senml_meas(mae, time, "mae"))
+        for time, errors in results.items():
+            rmse = errors["rmse"]
+            mae = errors["mae"]
+            meas.append(self.get_senml_meas(rmse, time, "rmse"))
+            meas.append(self.get_senml_meas(mae, time, "mae"))
         doc = senml.SenMLDocument(meas)
         val = doc.to_json()
         return json.dumps(val)
@@ -63,42 +71,28 @@ class ErrorReporting(DataPublisher):
         meas.name = name
         return meas
 
-    def save_to_file(self, rmse, mae, time):
+    def save_to_file(self, results):
         try:
-            with open(self.error_result_file_path, "a+") as f:
+            new_data = []
+            for time, errors in results.items():
+                rmse = errors["rmse"]
+                mae = errors["mae"]
                 line = str(time)+","+str(rmse)+","+str(mae)+"\n"
-                f.writelines(line)
+                new_data.append(line)
+            with open(self.error_result_file_path, "a+") as f:
+                f.writelines(new_data)
+            self.logger.error("saved error cal to file " + str(self.error_result_file_path))
         except Exception as e:
             self.logger.error("error adding to file "+str(self.error_result_file_path)+ " "+ str(e))
 
-    def get_predicted_data(self, timestamp):
-        start_time, values = self.read_predictions(timestamp)
+    def format_predicted_data(self, start_time, values):
         if start_time is not None and values is not None:
             t = start_time
             new_data = []
             for v in values:
                 new_data.append([t,float(v)])
                 t += self.dT_in_seconds
-            return start_time, self.convert_time_to_date(new_data)
-        return None, None
-
-    def read_predictions(self, timestamp):
-        if os.path.exists(self.prediction_data_file_container):
-            line = None
-            with open(self.prediction_data_file_container, "r") as f:
-                data = f.readlines()
-                for row in data:
-                    start_time = float(row.split(",")[0])
-                    if start_time < timestamp:
-                        continue
-                    else:
-                        line = row
-                        break
-            if line:
-                values = line.split(",")
-                start_time = float(values[0])
-                values = values[1:]
-                return start_time, values
+            return self.convert_time_to_date(new_data)
         return None, None
 
     def read_raw_data(self, start_time):
@@ -121,34 +115,39 @@ class ErrorReporting(DataPublisher):
     def compare_data(self, time_delay):
         timestamp = self.get_timestamp() - time_delay
         self.logger.debug("start_time "+str(timestamp))
-        start_time, predicted_data = self.get_predicted_data(timestamp)
-        if start_time is not None and predicted_data is not None:
-            self.logger.debug("start_time " + str(start_time))
-            actual_data = self.read_raw_data(start_time)
-            if actual_data is not None:
-                self.logger.debug("length "+str(len(actual_data))+" "+str(len(predicted_data)))
-                if len(actual_data) == len(predicted_data):
-                    if len(actual_data) > 0:
-                        timestamp_matches = True
-                        actual = []
-                        predicted = []
-                        for i in range(len(actual_data)):
-                            at = actual_data[i][0]
-                            pt = predicted_data[i][0]
-                            if at != pt:
-                                self.logger.error(str(at.timestamp()) + " != " + str(pt.timestamp()) + " diff = " + str((at - pt)))
-                                timestamp_matches = False
-                                break
-                            else:
-                                actual.append(actual_data[i][0])
-                                predicted.append(predicted_data[i][0])
-                        if timestamp_matches:
-                            actual = np.asarray(actual)
-                            predicted = np.asarray(predicted)
-                            rmse = self.rmse(actual, predicted)
-                            mae = self.mae(actual, predicted)
-                            return rmse, mae, start_time
-        return None, None, None
+        results = {}
+        predicitons = PredictionDataManager.get_predictions_before_timestamp(self.prediction_data_file_container,
+                                                                             self.topic_name, timestamp)
+        self.logger.debug("count of predictions = "+str(len(predicitons)))
+        for start_time, prediction in predicitons.items():
+            predicted_data = self.format_predicted_data(start_time, prediction)
+            if start_time is not None and predicted_data is not None:
+                self.logger.debug("start_time " + str(start_time))
+                actual_data = self.read_raw_data(start_time)
+                if actual_data is not None:
+                    self.logger.debug("length "+str(len(actual_data))+" "+str(len(predicted_data)))
+                    if len(actual_data) == len(predicted_data):
+                        if len(actual_data) > 0:
+                            timestamp_matches = True
+                            actual = []
+                            predicted = []
+                            for i in range(len(actual_data)):
+                                at = actual_data[i][0]
+                                pt = predicted_data[i][0]
+                                if at != pt:
+                                    self.logger.error(str(at.timestamp()) + " != " + str(pt.timestamp()) + " diff = " + str((at - pt)))
+                                    timestamp_matches = False
+                                    break
+                                else:
+                                    actual.append(float(actual_data[i][1]))
+                                    predicted.append(float(predicted_data[i][1]))
+                            if timestamp_matches:
+                                actual = np.asarray(actual)
+                                predicted = np.asarray(predicted)
+                                rmse = self.rmse(actual, predicted)
+                                mae = self.mae(actual, predicted)
+                                results[start_time] = {"rmse":rmse, "mae":mae}
+        return results
 
     def get_timestamp(self):
         current_time = datetime.datetime.now()

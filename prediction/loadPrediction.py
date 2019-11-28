@@ -8,6 +8,7 @@ import os
 from shutil import copyfile
 
 from IO.redisDB import RedisDB
+from prediction.predictionDataManager import PredictionDataManager
 from prediction.processingData import ProcessingData
 from utils_intern.messageLogger import MessageLogger
 from utils_intern.timeSeries import TimeSeries
@@ -255,6 +256,9 @@ class Prediction(threading.Thread):
         self.output_size = output_size
         self.logger = log
         self.prediction_data_file_container = prediction_data_file_container
+        self.old_predictions = []
+        self.prediction_save_thread = threading.Thread(target=self.save_to_file_cron)
+        self.prediction_save_thread.start()
 
     def run(self):
         while not self.stopRequest.is_set():
@@ -282,7 +286,7 @@ class Prediction(threading.Thread):
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
-                            self.save_predictions_to_file(data)
+                            self.old_predictions.append(data)
                         except Exception as e:
                             self.logger.error(str(e))
                     else:
@@ -301,25 +305,23 @@ class Prediction(threading.Thread):
             except Exception as e:
                 self.logger.error(str(self.topic_name) + " prediction thread exception " + str(e))
 
-    def save_predictions_to_file(self, predictions):
-        if len(predictions) > 0:
-            try:
-                result = predictions.items()
-                result = sorted(result)
-                start_time = float(result[0][0].timestamp())
-                data = []
-                for i in range(self.horizon_in_steps):
-                    value = result[i][1]
-                    if value < 0:
-                        value = 0
-                    data.append(str(value))
-                values = ",".join(data)
-                values = str(start_time) + "," + values + "\n"
-                self.logger.info("Saving prediction data to file "+str(self.prediction_data_file_container))
-                with open(self.prediction_data_file_container, 'a+') as file:
-                        file.writelines(values)
-            except Exception as e:
-                self.logger.error("failed to save_predictions_to_file "+ str(e))
+    def save_to_file_cron(self):
+        self.logger.debug("Started save file cron")
+        while True and not self.stopRequest.is_set():
+            self.old_predictions = PredictionDataManager.save_predictions_to_file(self.old_predictions,
+                                                                                  self.horizon_in_steps,
+                                                                                  self.prediction_data_file_container,
+                                                                                  self.topic_name)
+            time.sleep(self.get_sleep_secs(1))
+
+    def get_sleep_secs(self, repeat_hour):
+        current_time = datetime.datetime.now()
+        current_hour = current_time.hour
+        hr_diff = repeat_hour - current_hour%repeat_hour
+        next_time = current_time + datetime.timedelta(hours=hr_diff)
+        next_time = next_time.replace(minute=0, second=0, microsecond=0)
+        time_diff = next_time - current_time
+        return time_diff.total_seconds()
 
     def Stop(self):
         self.logger.info("start prediction thread exit")
