@@ -47,7 +47,8 @@ class Model:
 	# model.P_Grid_Output = Var(model.T, within=Reals, bounds=(-model.P_Grid_Max_Export_Power, 0))
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals,
-							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
+							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power),initialize=0)  # ,initialize=iniSoC)
+	model.P_ESS_Output_Pct = Var(model.T, within=Reals, initialize=0)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power),
 						  initialize=0)
@@ -93,6 +94,9 @@ class Model:
 	def con_rule_energy_balance(model, t):
 		return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
 
+	def con_rule_output_ess_power_pct(model,t):
+		return model.P_ESS_Output_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_ESS_Output[t]
+
 	def con_rule_output_ess_power(model,t):
 		return model.P_Fronius_Pct[t] == (100 / model.Fronius_Max_Power) * model.P_Fronius[t]
 
@@ -108,6 +112,7 @@ class Model:
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
+	model.con_ess_percentage = Constraint(model.T, rule=con_rule_output_ess_power_pct)
 	model.con_percentage = Constraint(model.T, rule=con_rule_output_ess_power)
 	model.is_positive = Expression(model.T, rule=con_rule_is_positive)
 	model.con_limiting_pct = Constraint(model.T, rule=con_rule_limiting_pct)
