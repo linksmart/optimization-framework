@@ -363,15 +363,25 @@ class OptControllerStochastic(ControllerBase):
                 self.logger.debug("")
                 self.logger.debug("#" * 80)
 
+                p_fronius_pct_output = 0
+                if "Fronius_Max_Power" in data_dict[None].keys():
+                    p_fronius_max_power = data_dict[None]["Fronius_Max_Power"]
+                    p_fronius_pct_output = p_ess * 100 / p_fronius_max_power
+                    if p_fronius_pct_output < 0:
+                        p_fronius_pct_output = 0
+                    elif p_fronius_pct_output > 100:
+                        p_fronius_pct_output = 100
+
                 results = {
                     "id": self.id,
-                    "p_pv": p_pv,
-                    "p_grid": p_grid,
-                    "p_ess": p_ess,
-                    "p_vac": p_vac,
+                    "P_PV_Output": p_pv,
+                    "P_Grid_Output": p_grid,
+                    "P_ESS_Output": p_ess,
+                    "P_VAC_Output": p_vac,
                     "feasible_ev_charging_power": feasible_ev_charging_power,
                     "p_ev": p_ev,
-                    "execution_time": execution_time
+                    "execution_time": execution_time,
+                    "P_Fronius_Pct_Output": p_fronius_pct_output
                 }
 
                 # update soc
@@ -379,12 +389,13 @@ class OptControllerStochastic(ControllerBase):
                 #time.sleep(60)
 
                 results_publish = {
-                    "p_pv": [p_pv],
-                    "p_grid": [p_grid],
-                    "p_ess": [p_ess],
-                    "p_vac": [p_vac],
+                    "P_PV_Output": [p_pv],
+                    "P_Grid_Output": [p_grid],
+                    "P_ESS_Output": [p_ess],
+                    "P_VAC_Output": [p_vac],
                     "feasible_ev_charging_power": [feasible_ev_charging_power],
-                    "execution_time": [execution_time]
+                    "execution_time": [execution_time],
+                    "P_Fronius_Pct_Output": p_fronius_pct_output
                 }
 
                 for key, value in p_ev.items():
