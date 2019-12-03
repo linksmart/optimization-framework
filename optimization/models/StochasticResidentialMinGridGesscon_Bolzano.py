@@ -44,12 +44,14 @@ class Model:
 
     model.ESS_Control = Param(model.T, within=Reals) #TODO: define domain
 
+    model.Fronius_Max_Power = Param(within=PositiveReals)
+
     #######################################      Outputs       #######################################################
 
     # Combined decision
     model.Decision = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary)
 
-    model.P_Fronius = Var(within=Reals)
+    model.P_Fronius = Var(within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power),initialize=0)
     model.P_ESS_OUTPUT = Var(within=Reals)
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
@@ -62,6 +64,8 @@ class Model:
     model.P_PV_single = Var(within=NonNegativeReals)
     model.ESS_Control_single = Var(within=Reals)
     model.P_Load_single = Var(within=NonNegativeReals)
+    model.P_Fronius_Pct = Var(model.T, within=Reals, initialize=0)
+    model.P_Fronius_Pct_Output = Var(within=Reals, initialize=0)
 
 
 
@@ -144,6 +148,19 @@ class Model:
         #return model.P_Load_single + model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     #model.const_demand = Constraint(rule=home_demandmeeting)
+
+    def con_rule_output_ess_power(model):
+        return model.P_Fronius_Pct == (100 / model.Fronius_Max_Power) * model.P_Fronius
+    model.con_percentage = Constraint(rule=con_rule_output_ess_power)
+
+    def con_rule_is_positive(model):
+        return model.P_Fronius_Pct >= 0
+
+    model.is_positive = Expression(rule=con_rule_is_positive)
+
+    def con_rule_limiting_pct(model):
+        return model.is_positive * model.P_Fronius_Pct == model.P_Fronius_Pct_Output
+    model.con_limiting_pct = Constraint(rule=con_rule_limiting_pct)
 
 
     def objrule1(model):
