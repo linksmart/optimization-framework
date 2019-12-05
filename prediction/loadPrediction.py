@@ -18,7 +18,8 @@ Creates a thread for prediction and a thread for training
 """
 class LoadPrediction:
 
-    def __init__(self, config, control_frequency, horizon_in_steps, topic_name, topic_param, dT_in_seconds, id, predictionFlag):
+    def __init__(self, config, control_frequency, horizon_in_steps, topic_name, topic_param, dT_in_seconds, id,
+                 predictionFlag, output_config):
         self.logger = MessageLogger.get_logger(__name__, id)
         
         self.predictionFlag = predictionFlag
@@ -27,6 +28,7 @@ class LoadPrediction:
         self.control_frequency = control_frequency  # determines minute or hourly etc
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
+        self.output_config = output_config
         # removing this and keeping constant input size
         """
         self.num_timesteps = horizon_in_steps + 1
@@ -86,7 +88,7 @@ class LoadPrediction:
             self.error_reporting = ErrorReporting(config, id, topic_name, dT_in_seconds, control_frequency,
                                                   horizon_in_steps, self.prediction_data_file_container,
                                                   self.raw_data_file_container, error_topic_params,
-                                                  self.error_result_file_path)
+                                                  self.error_result_file_path, self.output_config)
             self.error_reporting.start()
 
             self.startPrediction()

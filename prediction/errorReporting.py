@@ -12,6 +12,7 @@ import os
 import numpy as np
 from senml import senml
 
+from IO.ConfigParserUtils import ConfigParserUtils
 from IO.dataPublisher import DataPublisher
 from prediction.predictionDataManager import PredictionDataManager
 from prediction.rawDataReader import RawDataReader
@@ -22,7 +23,8 @@ from utils_intern.timeSeries import TimeSeries
 class ErrorReporting(DataPublisher):
 
     def __init__(self, config, id, topic_name, dT_in_seconds, control_frequency, horizon_in_steps,
-                 prediction_data_file_container, raw_data_file_container, topic_params, error_result_file_path):
+                 prediction_data_file_container, raw_data_file_container, topic_params, error_result_file_path,
+                 output_config):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -34,7 +36,20 @@ class ErrorReporting(DataPublisher):
         self.id = id
         self.prediction_data_file_container = prediction_data_file_container
         self.error_result_file_path = error_result_file_path
-        super().__init__(True, topic_params, config, control_frequency, id)
+        self.output_config = output_config
+        self.topic_params = topic_params
+        if self.update_topic_params():
+            super().__init__(False, self.topic_params, config, control_frequency, id)
+        else:
+            super().__init__(True, self.topic_params, config, control_frequency, id)
+
+    def update_topic_params(self):
+        mqtt_params = ConfigParserUtils.extract_mqtt_params_output(self.output_config, "error_calculation", True)
+        if self.topic_name in mqtt_params.keys():
+            self.topic_params = mqtt_params[self.topic_name]
+            self.logger.debug("Error_Calculation topic param updated - "+str(self.topic_params))
+            return True
+        return False
 
     def get_data(self):
         try:

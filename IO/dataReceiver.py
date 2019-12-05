@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 
 from random import randrange
 
+from IO.ConfigParserUtils import ConfigParserUtils
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
 from utils_intern.messageLogger import MessageLogger
@@ -53,7 +54,6 @@ class DataReceiver(ABC):
 
     def get_external_channel_params(self):
         topic_qos = []
-        host_params = {}
         # read from config
         sub_mqtt = "sub.mqtt.host"
         if self.sub_pub:
@@ -62,35 +62,10 @@ class DataReceiver(ABC):
             host = self.config.get(self.section, sub_mqtt)
         else:
             host = self.config.get("IO", "mqtt.host")
-        host_params["username"] = self.config.get("IO", "mqtt.username", fallback=None)
-        host_params["password"] = self.config.get("IO", "mqtt.password", fallback=None)
-        host_params["ca_cert_path"] = self.config.get("IO", "mqtt.ca.cert.path", fallback=None)
-        host_params["insecure_flag"] = bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False))
-        if "mqtt.username" in dict(self.config.items(self.section)):
-            host_params["username"] = self.config.get(self.section, "mqtt.username", fallback=None)
-        if "mqtt.password" in dict(self.config.items(self.section)):
-            host_params["password"] = self.config.get(self.section, "mqtt.password", fallback=None)
-        if "mqtt.ca.cert.path" in dict(self.config.items(self.section)):
-            host_params["ca_cert_path"] = self.config.get(self.section, "mqtt.ca.cert.path", fallback=None)
-        if "mqtt.insecure.flag" in dict(self.config.items(self.section)):
-            host_params["insecure_flag"] = bool(self.config.get(self.section, "mqtt.insecure.flag", fallback=False))
-        qos = 1
-        if self.topic_params:
-            topic = self.topic_params["topic"]
-            if "host" in self.topic_params.keys():
-                host = self.topic_params["host"]
-            if "qos" in self.topic_params.keys():
-                qos = self.topic_params["qos"]
-            if "mqtt.port" in self.topic_params.keys():
-                self.port = self.topic_params["mqtt.port"]
-            if "username" in self.topic_params.keys():
-                host_params["username"] = self.topic_params["username"]
-            if "password" in self.topic_params.keys():
-                host_params["password"] = self.topic_params["password"]
-            if "ca_cert_path" in self.topic_params.keys():
-                host_params["ca_cert_path"] = self.topic_params["ca_cert_path"]
-            if "insecure" in self.topic_params.keys():
-                host_params["insecure_flag"] = self.topic_params["insecure"]
+
+        host, host_params, qos, topic, self.port = ConfigParserUtils.extract_host_params(host, self.port, self.topic_params,
+                                                                    self.config, self.section)
+        if topic:
             topic_qos.append((topic, qos))
         return topic_qos, host, host_params
 

@@ -8,9 +8,9 @@ import threading
 
 import time
 from abc import ABC, abstractmethod
-from configparser import RawConfigParser
 from random import randrange
 
+from IO.ConfigParserUtils import ConfigParserUtils
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
 from utils_intern.messageLogger import MessageLogger
@@ -49,21 +49,18 @@ class DataPublisher(ABC,threading.Thread):
                 self.host = self.config.get("IO", "pub.mqtt.host")
             else:
                 self.host = self.config.get("IO", "mqtt.host")
-            if "host" in self.topic_params.keys():
-                self.host = self.topic_params["host"]
             self.port = self.config.get("IO", "mqtt.port")
-            if "mqtt.port" in self.topic_params.keys():
-                self.port = self.topic_params["mqtt.port"]
-            if "qos" in self.topic_params.keys():
-                self.qos = int(self.topic_params["qos"])
-            else:
-                self.qos = 1
+
+            self.host, host_params, self.qos, topic, self.port = ConfigParserUtils.extract_host_params(self.host, self.port,
+                                                                                             self.topic_params,
+                                                                                             self.config, None)
+
             self.client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
             self.mqtt = MQTTClient(str(self.host), self.port, self.client_id,
-                                   username=self.config.get("IO", "mqtt.username", fallback=None),
-                                   password=self.config.get("IO", "mqtt.password", fallback=None),
-                                   ca_cert_path=self.config.get("IO", "mqtt.ca.cert.path", fallback=None),
-                                   set_insecure=bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False)),
+                                   username=host_params["username"],
+                                   password=host_params["password"],
+                                   ca_cert_path=host_params["ca_cert_path"],
+                                   set_insecure=host_params["insecure_flag"],
                                    id=self.id)
         except Exception as e:
             self.logger.error(e)

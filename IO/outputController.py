@@ -22,35 +22,11 @@ class OutputController:
         self.mqtt_params = {}
         self.output_mqtt = {}
         self.id = id
-        self.config_parser_utils = ConfigParserUtils()
         self.logger.debug("output_config: " + str(self.output_config) + " " + str(type(self.output_config)))
         if self.output_config is not None:
-            self.extract_mqtt_params()
+            self.mqtt_params = ConfigParserUtils.extract_mqtt_params_output(self.output_config, "error_calculation", False)
+            self.logger.debug("params = " + str(self.mqtt_params))
             self.init_mqtt()
-
-    def extract_mqtt_params(self):
-        self.logger.debug("Output config = " + str(self.output_config))
-        for key, value in self.output_config.items():
-            self.logger.debug("key " + str(key) + " value " + str(value))
-            for key2, value2 in value.items():
-                self.logger.debug("key2 " + str(key2) + " value2 " + str(value2))
-                mqtt = self.config_parser_utils.get_mqtt(value2)
-                unit, horizon_values = self.read_extra_values(value2)
-                if mqtt is not None:
-                    self.mqtt_params[key2] = mqtt.copy()
-                    self.mqtt_params[key2]["unit"] = unit
-                    self.mqtt_params[key2]["horizon_values"] = horizon_values
-        self.logger.debug("params = " + str(self.mqtt_params))
-
-    def read_extra_values(self, value2):
-        unit = None
-        horizon_values = False
-        if isinstance(value2, dict):
-            if "unit" in value2.keys():
-                unit = value2["unit"]
-            if "horizon_values" in value2.keys():
-                horizon_values = value2["horizon_values"]
-        return unit, horizon_values
 
     def init_mqtt(self):
         ###Connection to the mqtt broker

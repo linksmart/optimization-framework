@@ -35,7 +35,6 @@ class InputConfigParser:
         self.preprocess_names = []
         self.event_names = []
         self.set_params = {}
-        self.config_parser_utils = ConfigParserUtils()
         self.extract_mqtt_params()
         self.car_park = None
         self.simulator = None
@@ -65,7 +64,7 @@ class InputConfigParser:
 
     def extract_mqtt_params_level(self, value, base=""):
         for key2, value2 in value.items():
-            mqtt = self.config_parser_utils.get_mqtt(value2)
+            mqtt = ConfigParserUtils.get_mqtt(value2)
             if mqtt is not None:
                 self.read_mqtt_flags(value2, base+key2)
                 self.mqtt_params[base+key2] = mqtt.copy()

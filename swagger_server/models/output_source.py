@@ -10,6 +10,7 @@ from swagger_server.models.ess_output import ESSOutput  # noqa: F401,E501
 from swagger_server.models.generic_output import GenericOutput  # noqa: F401,E501
 from swagger_server.models.grid_output import GridOutput  # noqa: F401,E501
 from swagger_server.models.pv_output import PVOutput  # noqa: F401,E501
+from swagger_server.models.error_cal_output import ErrorCalOutput  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -19,7 +20,7 @@ class OutputSource(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, generic: GenericOutput=None, photovoltaic: PVOutput=None, ess: ESSOutput=None, grid: GridOutput=None):  # noqa: E501
+    def __init__(self, generic: GenericOutput=None, photovoltaic: PVOutput=None, ess: ESSOutput=None, grid: GridOutput=None, error_calculation: ErrorCalOutput=None):  # noqa: E501
         """OutputSource - a model defined in Swagger
 
         :param generic: The generic of this OutputSource.  # noqa: E501
@@ -30,25 +31,30 @@ class OutputSource(Model):
         :type ess: ESSOutput
         :param grid: The grid of this OutputSource.  # noqa: E501
         :type grid: GridOutput
+        :param error_calculation: The error_calculation of this OutputSource.  # noqa: E501
+        :type error_calculation: ErrorCalOutput
         """
         self.swagger_types = {
             'generic': GenericOutput,
             'photovoltaic': PVOutput,
             'ess': ESSOutput,
-            'grid': GridOutput
+            'grid': GridOutput,
+            'error_calculation': ErrorCalOutput
         }
 
         self.attribute_map = {
             'generic': 'generic',
             'photovoltaic': 'photovoltaic',
             'ess': 'ESS',
-            'grid': 'grid'
+            'grid': 'grid',
+            'error_calculation': 'error_calculation'
         }
 
         self._generic = generic
         self._photovoltaic = photovoltaic
         self._ess = ess
         self._grid = grid
+        self._error_calculation = error_calculation
 
     @classmethod
     def from_dict(cls, dikt) -> 'OutputSource':
@@ -144,3 +150,24 @@ class OutputSource(Model):
         """
 
         self._grid = grid
+
+    @property
+    def error_calculation(self) -> ErrorCalOutput:
+        """Gets the error_calculation of this OutputSource.
+
+
+        :return: The error_calculation of this OutputSource.
+        :rtype: ErrorCalOutput
+        """
+        return self._error_calculation
+
+    @error_calculation.setter
+    def error_calculation(self, error_calculation: ErrorCalOutput):
+        """Sets the error_calculation of this OutputSource.
+
+
+        :param error_calculation: The error_calculation of this OutputSource.
+        :type error_calculation: ErrorCalOutput
+        """
+
+        self._error_calculation = error_calculation

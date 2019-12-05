@@ -137,7 +137,7 @@ class ThreadFactory:
                     self.prediction_threads[prediction_name] = LoadPrediction(config, self.control_frequency,
                                                                               self.horizon_in_steps, prediction_name,
                                                                               topic_param, self.dT_in_seconds, self.id,
-                                                                              True)
+                                                                              True, output_config)
                     # self.prediction_threads[prediction_name].start()
 
         self.non_prediction_threads = {}

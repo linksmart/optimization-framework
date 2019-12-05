@@ -44,8 +44,9 @@ class IDStatusManager:
         elif isinstance(data, list):
             d = {}
             for s in data:
-                j = json.loads(s)
-                d[j["id"]] = s
+                if len(s) > 1:
+                    j = json.loads(s)
+                    d[j["id"]] = s
             for k, v in d.items():
                 new_data.append(v)
         return new_data

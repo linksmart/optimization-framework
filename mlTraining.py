@@ -35,7 +35,7 @@ def check_training(config, logger):
                     training_threads[key] = LoadPrediction(config, value["control_frequency"],
                                                            value["horizon_in_steps"],
                                                            prediction_name, value["topic_param"],
-                                                           value["dT_in_seconds"], id, False)
+                                                           value["dT_in_seconds"], id, False, None)
                 elif key in training_threads.keys() and key not in keys:
                     logger.info("stoping training thread for topic " + key)
                     training_threads[key].Stop()

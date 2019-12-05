@@ -1634,6 +1634,8 @@ definitions:
         $ref: "#/definitions/ESS_Output"
       grid:
         $ref: "#/definitions/grid_Output"
+      error_calculation:
+        $ref: "#/definitions/Error_Cal_Output"
     example:
       ESS:
         P_ESS_Output:
@@ -1766,6 +1768,21 @@ definitions:
           unit: "W"
           horizon_values: false
         custom_name_2:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          unit: "W"
+          horizon_values: false
+      error_calculation:
+        P_Load:
+          mqtt:
+            qos: 1
+            host: "hostname"
+            topic: "topic_name"
+          unit: "W"
+          horizon_values: false
+        Q_Load:
           mqtt:
             qos: 1
             host: "hostname"
@@ -1943,6 +1960,25 @@ definitions:
         unit: "W"
         horizon_values: false
       custom_name_2:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        unit: "W"
+        horizon_values: false
+    additionalProperties:
+      $ref: "#/definitions/SourceOutput"
+  Error_Cal_Output:
+    type: "object"
+    example:
+      P_Load:
+        mqtt:
+          qos: 1
+          host: "hostname"
+          topic: "topic_name"
+        unit: "W"
+        horizon_values: false
+      Q_Load:
         mqtt:
           qos: 1
           host: "hostname"
