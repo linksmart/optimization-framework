@@ -274,7 +274,7 @@ class OptControllerStochastic(ControllerBase):
                     bm.clear()
 
                     # erasing files from pyomo
-                    folder = "/usr/src/app/logs/pyomo_"+str(self.id)
+                    folder = "/usr/src/app/logs/pyomo/"+str(self.id)
                     self.erase_pyomo_files(folder)
 
             """

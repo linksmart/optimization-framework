@@ -90,7 +90,7 @@ class OptControllerDiscrete(ControllerBase):
             else:
                 self.logger.info("Nothing fits")
 
-            folder = "/usr/src/app/logs/pyomo_" + str(self.id)
+            folder = "/usr/src/app/logs/pyomo/" + str(self.id)
             self.erase_pyomo_files(folder)
 
             count += 1

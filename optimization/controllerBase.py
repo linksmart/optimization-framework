@@ -41,14 +41,19 @@ class ControllerBase(ABC, threading.Thread):
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
         super().__init__()
 
-        pyomo_path = "/usr/src/app/logs/pyomo_" + str(id)
+        self.logger = MessageLogger.get_logger(__name__, id)
+        self.logger.info("Initializing optimization controller " + id)
+
+        pyomo_path = "/usr/src/app/logs/pyomo/" + str(id)
+        pyomo_path = os.path.abspath(pyomo_path)
+        self.logger.debug("pyomo_path "+str(pyomo_path))
+
         if not os.path.exists(pyomo_path):
             os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
             os.chmod(pyomo_path, 0o777)
         TempfileManager.tempdir = pyomo_path
 
-        self.logger = MessageLogger.get_logger(__name__, id)
-        self.logger.info("Initializing optimization controller " + id)
+
         self.id = id
         self.results = ""
         self.model_path = model_path

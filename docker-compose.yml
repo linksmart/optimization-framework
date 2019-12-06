@@ -55,8 +55,8 @@ services:
       context: ""
       dockerfile: prediction/docker/Dockerfile
     image: garagon/optimization:amd_training
-    depends_on:
-      - redis
+    #depends_on:
+      #- redis
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/prediction/resources
     logging:
