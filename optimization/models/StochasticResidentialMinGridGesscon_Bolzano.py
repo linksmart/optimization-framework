@@ -45,6 +45,7 @@ class Model:
     model.ESS_Control = Param(model.T, within=Reals) #TODO: define domain
 
     model.Fronius_Max_Power = Param(within=PositiveReals)
+    model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 
     #######################################      Outputs       #######################################################
 
@@ -55,7 +56,7 @@ class Model:
     model.P_ESS_OUTPUT = Var(within=Reals)
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
-    model.P_GRID_OUTPUT = Var(within=Reals)
+    model.P_GRID_OUTPUT = Var(within=Reals,bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 
     model.P_Grid_R_Output = Var(within=Reals)  # Active power exchange with grid at R phase
     model.P_Grid_S_Output = Var(within=Reals)  # Active power exchange with grid at S phase

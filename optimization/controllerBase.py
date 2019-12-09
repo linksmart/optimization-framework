@@ -19,6 +19,7 @@ from pyutilib.services import TempfileManager
 #TempfileManager.tempdir = "/usr/src/app/logs/pyomo"
 import time
 import shutil
+import os
 
 from IO.inputController import InputController
 from IO.outputController import OutputController
@@ -49,14 +50,19 @@ class ControllerBase(ABC, threading.Thread):
         self.logger.debug("pyomo_path "+str(pyomo_path))
 
         if not os.path.exists(pyomo_path):
-            os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
-            os.chmod(pyomo_path, 0o777)
+            try:
+                os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
+                os.chmod(pyomo_path, 0o777)
+                os.chmod(pyomo_path, 0o777)
+            except Exception as e:
+                self.logger.error(e)
         TempfileManager.tempdir = pyomo_path
 
 
         self.id = id
         self.results = ""
-        self.model_path = model_path
+
+        self.model_path = os.path.abspath(model_path)
         self.solver_name = solver_name
         self.control_frequency = control_frequency
         self.repetition = repetition
@@ -81,16 +87,7 @@ class ControllerBase(ABC, threading.Thread):
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
                                          self.horizon_in_steps, self.dT_in_seconds)
-        """try:
-            # dynamic load of a class
-            self.logger.info("This is the model path: " + self.model_path)
-            module = self.path_import2(self.model_path)
-            self.logger.info(getattr(module, 'Model'))
-            self.my_class = getattr(module, 'Model')
 
-        except Exception as e:
-            self.logger.error(e)
-            raise InvalidModelException("model is invalid/contains python syntax errors")"""
 
 
 
@@ -152,17 +149,30 @@ class ControllerBase(ABC, threading.Thread):
         # optsolver.options.pyro_shutdown = True
 
     def erase_pyomo_files(self, folder):
+
         # erasing files from pyomo
-        #folder = "/usr/src/app/logs/pyomo"
+        folder = "/usr/src/app/logs/pyomo"
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
             try:
                 if os.path.isfile(file_path):
-                    os.unlink(file_path)
+                   os.unlink(file_path)
+
                 # elif os.path.isdir(file_path): shutil.rmtree(file_path)
             except Exception as e:
                 self.logger.error(e)
 
+    def erase_pyomo_folder(self, folder):
+
+        file_path = os.path.join(folder)
+        try:
+            if os.path.isdir(file_path):
+                shutil.rmtree(file_path, ignore_errors=True)
+            else:
+                self.logger.error("folder not existing: "+str(file_path))
+
+        except Exception as e:
+            self.logger.error(e)
 
     # Start the optimization process and gives back a result
     def run(self):
@@ -199,8 +209,8 @@ class ControllerBase(ABC, threading.Thread):
                 self.redisDB.set("kill_signal", True)
 
             #erase pyomo folder
-            folder = "/usr/src/app/logs/pyomo_" + str(self.id)
-            shutil.rmtree(folder, ignore_errors=True)
+            folder = "/usr/src/app/logs/pyomo/" + str(self.id)
+            self.erase_pyomo_folder(folder)
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
             if self.output:

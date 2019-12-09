@@ -42,6 +42,7 @@ class Model:
     model.LocalTargetWeight = Param(within=Reals)
 
     model.ESS_Control = Param(model.T, within=Reals) #TODO: define domain
+    model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 
     #######################################      Outputs       #######################################################
 
@@ -54,7 +55,7 @@ class Model:
     model.P_ESS_OUTPUT = Var(within=Reals) #change bounds
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals) # change bounds
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
-    model.P_GRID_OUTPUT = Var(within=Reals, initialize=0)
+    model.P_GRID_OUTPUT = Var(within=Reals, initialize=0, bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
     #model.U = Var(within=Reals)
 
     def __init__(model, value, behaviorModel):
@@ -78,7 +79,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]
+                return model.P_PV_single <= model.P_PV[j]
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 

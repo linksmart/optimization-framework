@@ -22,7 +22,7 @@ RUN apt-get update -y && apt-get install -y \
 RUN pip3 install --upgrade pip
 
 RUN pip3 install -U requests==2.21.0
-RUN pip3 install -U pyomo==5.6.6
+
 #RUN pip3 install -U pyomo.extras==2.0
 RUN pip3 install -U gunicorn==19.9.0
 RUN pip3 install -U sh==1.12.14
@@ -38,15 +38,18 @@ RUN pip3 install -U redis==2.10.6
 #RUN pip3 install --upgrade pyomo
 
 RUN pip3 install -U numpy==1.14.3
-RUN pip3 install -U h5py
-RUN pip3 install -U scipy
+RUN pip3 install -U h5py==2.10.0
+RUN pip3 install -U scipy==1.3.3
 RUN pip3 install -U pandas==0.22.0
-RUN pip3 install -U sklearn
+RUN pip3 install -U sklearn==0.0
 
-RUN pip3 install -U Pyro4
+RUN pip3 install -U Pyro4==4.77
 
-RUN pip3 install -U pydevd
-RUN pip3 install -U xlrd
+RUN pip3 install -U pydevd==1.8.0
+
+RUN pip3 install -U pyomo==5.6.7
+RUN pip3 install -U xlrd==1.2.0
+#RUN pip3 install -U pyomo
 
 
 USER garagon

@@ -37,6 +37,7 @@ class Model:
 
     model.dT = Param(within=PositiveIntegers)
     model.Timestep = Param(within=NonNegativeIntegers)
+    model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 
     #######################################      Outputs       #######################################################
 
@@ -47,7 +48,7 @@ class Model:
     model.P_ESS_OUTPUT = Var(within=Reals) #change bounds
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals) # change bounds
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
-    model.P_GRID_OUTPUT = Var(within=Reals, initialize=0)
+    model.P_GRID_OUTPUT = Var(within=Reals, initialize=0, bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 
     def __init__(model, value, behaviorModel):
         model.Value = value

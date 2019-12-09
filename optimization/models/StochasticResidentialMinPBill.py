@@ -39,6 +39,7 @@ class Model:
     model.VAC_States_Min = Param(within=NonNegativeReals) #it should accept 0
     model.Timestep = Param(within=NonNegativeIntegers)
     model.final_ev_soc = Param(within=Reals, default=0.0)
+    model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 
     #######################################      Outputs       #######################################################
 
@@ -48,7 +49,7 @@ class Model:
     model.P_ESS_OUTPUT = Var(within=Reals)
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
-    model.P_GRID_OUTPUT = Var(within=Reals)
+    model.P_GRID_OUTPUT = Var(within=Reals,bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 
     model.P_PV_single = Var(within=NonNegativeReals)
     model.P_Load_single = Var(within=NonNegativeReals)
@@ -65,7 +66,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]
+                return model.P_PV_single <= model.P_PV[j]
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 

@@ -36,7 +36,7 @@ class OptControllerDiscrete(ControllerBase):
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=False)  # blocking call
             self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
-            if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
+            if self.redisDB.get_bool(self.stop_signal_key):
                 break
 
             start_time = time.time()
@@ -47,13 +47,15 @@ class OptControllerDiscrete(ControllerBase):
                 module = spec.loader.load_module(spec.name)
                 my_class = getattr(module, 'Model')
                 self.logger.debug("Creating an optimization instance")
+
+                cnt = 0
                 instance = my_class.model.create_instance(data_dict)
-                self.logger.info("Instance created with pyomo")
-                result = optsolver.solve(instance)
+                self.logger.debug("instance constructed: " + str(instance.is_constructed())+" in count "+str(cnt))
+                result = optsolver.solve(instance, keepfiles=True)
 
             except Exception as e:
                 self.logger.error(e)
-            # instance = self.my_class.model.create_instance(self.data_path)
+
 
             start_time = time.time() - start_time
             self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
@@ -62,8 +64,8 @@ class OptControllerDiscrete(ControllerBase):
                 # this is feasible and optimal
                 self.logger.info("Solver status and termination condition ok")
                 #self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-                self.logger.debug("Results for id: " + str(self.id))
-                self.logger.debug(result)
+                #self.logger.debug("Results for id: " + str(self.id))
+                #self.logger.debug(result)
                 instance.solutions.load_from(result)
                 try:
                     my_dict = {}
@@ -105,5 +107,5 @@ class OptControllerDiscrete(ControllerBase):
             if sleep_time > 0:
                 for i in range(sleep_time):
                     time.sleep(1)
-                    if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
+                    if self.redisDB.get_bool(self.stop_signal_key):
                         break

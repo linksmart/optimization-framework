@@ -43,8 +43,7 @@ class Model:
 	##################################       VARIABLES             #################################
 	################################################################################################
 
-	model.P_Grid_Output = Var(model.T, within=Reals)
-	# model.P_Grid_Output = Var(model.T, within=Reals, bounds=(-model.P_Grid_Max_Export_Power, 0))
+	model.P_Grid_Output = Var(model.T, within=Reals, bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals,
 							 bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
@@ -59,10 +58,6 @@ class Model:
 	# rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
 		return model.P_PV_Output[t] == model.P_PV[t]
-
-	# rule for setting the maximum export power to the grid
-	def con_rule_grid_output_power(model, t):
-		return model.P_Grid_Output[t] >= -model.P_Grid_Max_Export_Power
 
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
@@ -99,7 +94,6 @@ class Model:
 	# return model.P_Grid_Output[t] * model.P_Grid_Output[t] + model.Q_Grid_Output[t] * model.Q_Grid_Output[t] == (model.P_PV_Output[t] + model.P_ESS_Output[t]) * (model.P_PV_Output[t] + model.P_ESS_Output[t])
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
-	model.conn_grid_output_max = Constraint(model.T, rule=con_rule_grid_output_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)

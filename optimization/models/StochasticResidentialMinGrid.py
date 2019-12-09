@@ -39,6 +39,8 @@ class Model:
     model.Timestep = Param(within=NonNegativeIntegers)
     model.final_ev_soc = Param(within=Reals, default=0.0)
 
+    model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
+
     #######################################      Outputs       #######################################################
 
     # Combined decision
@@ -47,7 +49,7 @@ class Model:
     model.P_ESS_OUTPUT = Var(within=Reals)
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals)
     model.P_PV_OUTPUT = Var(within=NonNegativeReals)
-    model.P_GRID_OUTPUT = Var(within=Reals)
+    model.P_GRID_OUTPUT = Var(within=Reals,bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 
     model.P_PV_single = Var(within=NonNegativeReals)
     model.P_Load_single = Var(within=NonNegativeReals)
@@ -76,7 +78,7 @@ class Model:
     model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
 
     def con_rule_pv_potential(model):
-        return model.P_PV_OUTPUT == model.P_PV_single
+        return model.P_PV_OUTPUT <= model.P_PV_single
 
     model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
 

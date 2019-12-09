@@ -322,7 +322,7 @@ class OptControllerStochastic(ControllerBase):
                 dT = data_dict[None]["dT"][None]
                 ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
                 ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
-                data_dict.clear()
+
                 connections = ev_park.max_charge_power_calculator(dT)
 
                 # Calculation of the feasible charging power at the commercial station
@@ -363,14 +363,16 @@ class OptControllerStochastic(ControllerBase):
                 self.logger.debug("")
                 self.logger.debug("#" * 80)
 
-                p_fronius_pct_output = 0
+                p_fronius_pct_output = []
                 if "Fronius_Max_Power" in data_dict[None].keys():
                     p_fronius_max_power = data_dict[None]["Fronius_Max_Power"]
-                    p_fronius_pct_output = p_ess * 100 / p_fronius_max_power
-                    if p_fronius_pct_output < 0:
-                        p_fronius_pct_output = 0
-                    elif p_fronius_pct_output > 100:
-                        p_fronius_pct_output = 100
+                    p_fronius_pct_output_calc = p_ess * 100 / p_fronius_max_power
+                    if p_fronius_pct_output_calc < 0:
+                        p_fronius_pct_output_calc = 0
+                    elif p_fronius_pct_output_calc > 100:
+                        p_fronius_pct_output_calc = 100
+
+                    p_fronius_pct_output.append(p_fronius_pct_output_calc)
 
                 results = {
                     "id": self.id,
@@ -385,8 +387,9 @@ class OptControllerStochastic(ControllerBase):
                 }
 
                 # update soc
+                self.logger.debug("results "+str(results))
                 socs = ev_park.charge_ev(p_ev, self.dT_in_seconds)
-                #time.sleep(60)
+
 
                 results_publish = {
                     "P_PV_Output": [p_pv],
@@ -408,11 +411,13 @@ class OptControllerStochastic(ControllerBase):
                     if ev_id:
                         results_publish[key + "/SoC"] = {"bn": "chargers/" + key, "n": ev_id + "/SoC", "v": [value]}
 
+                self.logger.debug("results_publish "+str(results_publish))
                 self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
 
                 results.clear()
                 ev_park = None
                 results_publish.clear()
+                data_dict.clear()
 
                 #with open(output_log_filepath, "w") as log_file:
                     #json.dump(results, log_file, indent=4)
@@ -427,7 +432,7 @@ class OptControllerStochastic(ControllerBase):
                     self.repetition_completed = True
                     break
 
-                time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
+                #time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
                 final_time_total = time.time()
                 sleep_time = self.control_frequency - int(final_time_total - start_time_total)
                 if sleep_time > 0:
