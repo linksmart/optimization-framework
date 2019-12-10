@@ -119,12 +119,12 @@ class PVPrediction(threading.Thread):
             current_timestamp = datetime.datetime.now().timestamp()
             closest_index = self.find_closest_prev_timestamp(self.base_data, current_timestamp)
             base_value = self.base_data[closest_index][1]
-            if value < 1:
-                value = 1
-            factor = base_value / value
+            #if value < 1:
+                #value = 1
+            factor = base_value - value
             self.logger.debug("closest index = " + str(base_value)+" value = "+ str(value) +" factor = "+str(factor))
             for row in self.base_data:
-                new_value = row[1]*factor
+                new_value = row[1]+factor
                 if new_value < 0:
                     new_value = 0
                 new_data.append([row[0], new_value])
