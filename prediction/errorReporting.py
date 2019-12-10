@@ -96,7 +96,7 @@ class ErrorReporting(DataPublisher):
                 new_data.append(line)
             with open(self.error_result_file_path, "a+") as f:
                 f.writelines(new_data)
-            self.logger.error("saved error cal to file " + str(self.error_result_file_path))
+            self.logger.debug("saved error cal to file " + str(self.error_result_file_path))
         except Exception as e:
             self.logger.error("error adding to file "+str(self.error_result_file_path)+ " "+ str(e))
 

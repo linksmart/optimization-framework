@@ -144,6 +144,7 @@ class Training(threading.Thread):
                  model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, log):
         super().__init__()
         self.control_frequency = control_frequency
+        self.control_frequency = int(self.control_frequency/2)
         self.horizon_in_steps = horizon_in_steps
         self.num_timesteps = num_timesteps
         self.hidden_size = hidden_size

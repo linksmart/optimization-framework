@@ -133,6 +133,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         else:
             final_data = {self.generic_name: {}}
 
+        #TODO: figure out every use case
         if self.detachable and self.reuseable:
             data = self.get_data(require_updated=2)
         elif self.detachable:
@@ -142,7 +143,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         elif wait_for_data:
             data = self.get_data(require_updated=0)
         else:
-            data = self.get_data(require_updated=2)
+            data = self.get_data(require_updated=1)
 
         self.logger.debug(str(self.generic_name)+ " data from mqtt is : "+ json.dumps(data, indent=4))
         if steps > self.length:
@@ -182,7 +183,7 @@ class BaseDataReceiver(DataReceiver, ABC):
             if new_bucket > bucket_requested:
                 self.logger.debug("bucket changed from " + str(bucket_requested) +
                                   " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
-                final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=wait_for_data, check_bucket_change=False)
+                final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
         return final_data, bucket_available, self.last_time
 
     def time_conversion(self, time):

@@ -125,7 +125,7 @@ class Radiation:
         return None
 
     def adjust_data_for_max_PV(self, data):
-        return [float(i) * self.maxPV for i in data]
+        return [float(i) * self.maxPV / 1000 for i in data]
 
     def get_row_by_time(self):
         start_date = datetime.datetime.now().replace(year=2016, month=1, day=1, hour=0, minute=0, second=0,

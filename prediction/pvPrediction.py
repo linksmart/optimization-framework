@@ -30,6 +30,7 @@ class PVPrediction(threading.Thread):
         self.q = Queue(maxsize=0)
         self.generic_name = generic_name
         self.control_frequency = control_frequency
+        self.control_frequency = int(self.control_frequency / 2)
         raw_pv_data_topic = input_config_parser.get_params(generic_name)
         opt_values = input_config_parser.get_optimization_values()
 
@@ -118,10 +119,12 @@ class PVPrediction(threading.Thread):
             current_timestamp = datetime.datetime.now().timestamp()
             closest_index = self.find_closest_prev_timestamp(self.base_data, current_timestamp)
             base_value = self.base_data[closest_index][1]
-            factor = base_value - value
+            if value < 1:
+                value = 1
+            factor = base_value / value
             self.logger.debug("closest index = " + str(base_value)+" value = "+ str(value) +" factor = "+str(factor))
             for row in self.base_data:
-                new_value = row[1]-factor
+                new_value = row[1]*factor
                 if new_value < 0:
                     new_value = 0
                 new_data.append([row[0], new_value])
