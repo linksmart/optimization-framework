@@ -97,7 +97,7 @@ class OutputController:
             if isinstance(value, dict):
                 bn, n, val = self.get_names(value)
             else:
-                bn, n, val = None, key, value
+                bn, n, val = self.mqtt_params[key]["base_name"], key, value
             if bn:
                 base = senml.SenMLMeasurement()
                 base.name = bn
@@ -139,7 +139,7 @@ class OutputController:
                 if isinstance(value, dict):
                     bn, n, val = self.get_names(value)
                 else:
-                    bn, n, val = None, key, value
+                    bn, n, val = self.mqtt_params[key]["base_name"], key, value
                 if bn:
                     n = bn + "/" + n
                 index = 0

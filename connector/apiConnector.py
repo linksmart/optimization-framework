@@ -35,7 +35,7 @@ class ApiConnector:
         self.topic = config.get(house, "url.topic", fallback=None)
         self.topic = self.pub_prefix + self.topic
         self.publish_freq = int(config.get(house, "pub.freq", fallback=600))
-        self.data_thread = threading.Thread(target=self.fetch_data, args=(self.q, 23, 30))
+        self.data_thread = threading.Thread(target=self.fetch_data, args=(self.q, 0, 30))
         self.data_thread.start()
         self.publish_thread = threading.Thread(target=self.publish_data, args=(self.q, self.publish_freq))
         self.publish_thread.start()
@@ -95,7 +95,7 @@ class ApiConnector:
         return requestedTime.timestamp() - date.timestamp()
 
     def fetch_data(self, q, hr, min):
-        """Data fetch thread. Runs at 22:30 every day"""
+        """Data fetch thread. Runs at 00:30 every day"""
         while True:
             try:
                 self.update_url()

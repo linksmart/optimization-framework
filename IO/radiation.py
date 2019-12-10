@@ -57,8 +57,7 @@ class Radiation:
             pv_data = self.extract_pv_data(data)
             self.save_data_to_file(pv_data)
         else:
-            logger.debug("pv data found in file")
-            print("pv data found in file "+str(self.pv_data_path))
+            logger.debug("pv data found in file "+str(self.pv_data_path))
         data = self.format_data(pv_data)
         jsm = json.dumps(data, default=str)
         return jsm
@@ -132,9 +131,10 @@ class Radiation:
         start_date = datetime.datetime.now().replace(year=2016, month=1, day=1, hour=0, minute=0, second=0,
                                                      microsecond=0)
         current_date = datetime.datetime.now().replace(year=2016, minute=0, second=0, microsecond=0)
+        date = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         total_seconds = (current_date - start_date).total_seconds()
         total_hrs = int(total_seconds / 3600)
-        return total_hrs, current_date.timestamp()
+        return total_hrs, date.timestamp()
 
     def filter_next_48_hrs(self, data):
         index, timestamp = self.get_row_by_time()

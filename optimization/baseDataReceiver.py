@@ -201,7 +201,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         if bucket > self.total_steps_in_day:
             bucket = self.total_steps_in_day
         elif bucket < 0:
-            self.logger.info("Received data is of older timestamp = "+str(time)+" than start of today = "+str(self.start_of_day))
+            self.logger.info("Received data is of older timestamp = "+str(time)+" than start of today = "+str(self.start_of_day)+" for "+str(self.generic_name))
             bucket = bucket%self.total_steps_in_day
         return bucket
 

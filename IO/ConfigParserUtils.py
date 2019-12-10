@@ -78,6 +78,8 @@ class ConfigParserUtils:
                 horizon_values = value2["horizon_values"]
             if "base_name" in value2.keys():
                 base_name = value2["base_name"]
+            else:
+                base_name = ""
         return unit, horizon_values, base_name
 
     @staticmethod
