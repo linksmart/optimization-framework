@@ -94,10 +94,7 @@ class OutputController:
             time = current_time
             u = None
             base = None
-            if isinstance(value, dict):
-                bn, n, val = self.get_names(value)
-            else:
-                bn, n, val = self.mqtt_params[key]["base_name"], key, value
+            bn, n, val = self.get_bn_n_val(key, value)
             if bn:
                 base = senml.SenMLMeasurement()
                 base.name = bn
@@ -127,6 +124,17 @@ class OutputController:
         # self.logger.debug("Topic MQTT Senml message: "+str(new_data))
         return new_data
 
+    def get_bn_n_val(self, key, value):
+        if key in self.mqtt_params.keys():
+            bn = self.mqtt_params[key]["base_name"]
+        else:
+            bn = ""
+        if isinstance(value, dict):
+            bn, n, val = self.get_names(value)
+        else:
+            bn, n, val = bn, key, value
+        return bn, n, val
+
     def save_to_redis(self, id, data, time):
         try:
             part_key = "o:" + id + ":"
@@ -136,12 +144,12 @@ class OutputController:
                     self.redisDB.remove(key)
             for key, value in data.items():
                 key = key.replace("~","/")
-                if isinstance(value, dict):
-                    bn, n, val = self.get_names(value)
-                else:
-                    bn, n, val = self.mqtt_params[key]["base_name"], key, value
+                bn, n, val = self.get_bn_n_val(key, value)
                 if bn:
-                    n = bn + "/" + n
+                    if bn[len(bn)-1] == "/":
+                        n = bn + n
+                    else:
+                        n = bn + "/" + n
                 index = 0
                 for v in val:
                     k = part_key + n + ":" + str(index)

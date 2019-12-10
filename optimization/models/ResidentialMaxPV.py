@@ -113,7 +113,7 @@ class Model:
 		return model.PV_copy == model.P_PV[0]
 
 	def con_rule_load(model):
-		return model.Load_copy == model.P_Load[0]
+		return model.Load_copy == model.P_Load[0]/1000
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
