@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
-from swagger_server.models.mqtt import MQTT  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -16,7 +15,7 @@ class SourceOutput(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None, unit: str=None, horizon_values: bool=True):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None, unit: str=None, horizon_values: bool=True, base_name: str=None):  # noqa: E501
         """SourceOutput - a model defined in Swagger
 
         :param mqtt: The mqtt of this SourceOutput.  # noqa: E501
@@ -25,22 +24,27 @@ class SourceOutput(Model):
         :type unit: str
         :param horizon_values: The horizon_values of this SourceOutput.  # noqa: E501
         :type horizon_values: bool
+        :param base_name: The base_name of this SourceOutput.  # noqa: E501
+        :type base_name: str
         """
         self.swagger_types = {
             'mqtt': MQTT,
             'unit': str,
-            'horizon_values': bool
+            'horizon_values': bool,
+            'base_name': str
         }
 
         self.attribute_map = {
             'mqtt': 'mqtt',
             'unit': 'unit',
-            'horizon_values': 'horizon_values'
+            'horizon_values': 'horizon_values',
+            'base_name': 'base_name'
         }
 
         self._mqtt = mqtt
         self._unit = unit
         self._horizon_values = horizon_values
+        self._base_name = base_name
 
     @classmethod
     def from_dict(cls, dikt) -> 'SourceOutput':
@@ -117,3 +121,24 @@ class SourceOutput(Model):
         """
 
         self._horizon_values = horizon_values
+
+    @property
+    def base_name(self) -> str:
+        """Gets the base_name of this SourceOutput.
+
+
+        :return: The base_name of this SourceOutput.
+        :rtype: str
+        """
+        return self._base_name
+
+    @base_name.setter
+    def base_name(self, base_name: str):
+        """Sets the base_name of this SourceOutput.
+
+
+        :param base_name: The base_name of this SourceOutput.
+        :type base_name: str
+        """
+
+        self._base_name = base_name

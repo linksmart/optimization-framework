@@ -88,7 +88,7 @@ class Model:
 
 	# Definition of the energy balance in the system
 	def con_rule_energy_balance(model, t):
-		return model.P_Load[t] == model.P_Fronius[t] + model.P_Grid_Output[t]
+		return model.P_Load[t]/1000 == model.P_Fronius[t] + model.P_Grid_Output[t]
 
 	def con_rule_output_ess_power_pct(model,t):
 		return model.P_ESS_Output_Pct[t] == (100 / model.ESS_Max_Charge_Power) * model.P_ESS_Output[t]

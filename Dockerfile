@@ -47,8 +47,9 @@ RUN pip3 install -U Pyro4==4.77
 
 RUN pip3 install -U pydevd==1.8.0
 
-RUN pip3 install -U pyomo==5.6.7
+
 RUN pip3 install -U xlrd==1.2.0
+RUN pip3 install -U pyomo==5.6.7
 #RUN pip3 install -U pyomo
 
 
