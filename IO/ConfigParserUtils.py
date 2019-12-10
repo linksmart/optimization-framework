@@ -57,11 +57,12 @@ class ConfigParserUtils:
                     for key2, value2 in value.items():
                         logger.debug("key2 " + str(key2) + " value2 " + str(value2))
                         mqtt = ConfigParserUtils.get_mqtt(value2)
-                        unit, horizon_values = ConfigParserUtils.read_extra_values_output(value2)
+                        unit, horizon_values, base_name = ConfigParserUtils.read_extra_values_output(value2)
                         if mqtt is not None:
                             mqtt_params[key2] = mqtt.copy()
                             mqtt_params[key2]["unit"] = unit
                             mqtt_params[key2]["horizon_values"] = horizon_values
+                            mqtt_params[key2]["base_name"] = base_name
             logger.debug("params = " + str(mqtt_params))
         return mqtt_params
 
@@ -69,12 +70,15 @@ class ConfigParserUtils:
     def read_extra_values_output(value2):
         unit = None
         horizon_values = False
+        base_name = False
         if isinstance(value2, dict):
             if "unit" in value2.keys():
                 unit = value2["unit"]
             if "horizon_values" in value2.keys():
                 horizon_values = value2["horizon_values"]
-        return unit, horizon_values
+            if "base_name" in value2.keys():
+                base_name = value2["base_name"]
+        return unit, horizon_values, base_name
 
     @staticmethod
     def extract_host_params(host, port, topic_params, config, section):
