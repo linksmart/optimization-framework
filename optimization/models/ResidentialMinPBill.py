@@ -37,6 +37,7 @@ class Model:
 	#definition of the load
 	model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 	model.Price_Forecast = Param(model.T, within=Reals)
+
 	
 	
 	################################################################################################
@@ -54,6 +55,10 @@ class Model:
 	model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power), initialize=0)
 	model.P_Fronius_Pct = Var(model.T,  within=Reals, initialize=0)
 	model.P_Fronius_Pct_Output = Var(model.T,  within=Reals, initialize=0)
+
+	model.SoC_copy = Var(within=NonNegativeReals)
+	model.PV_copy = Var(within=NonNegativeReals)
+	model.Load_copy = Var(within=Reals)
 
 	################################################################################################
 
@@ -100,6 +105,15 @@ class Model:
 	def con_rule_limiting_pct(model,t):
 		return model.is_positive[t]*model.P_Fronius_Pct[t] == model.P_Fronius_Pct_Output[t]
 
+	def con_rule_soc(model):
+		model.SoC_copy = model.SoC_Value
+
+	def con_rule_pv(model):
+		model.PV_copy = model.P_PV[0]
+
+	def con_rule_load(model):
+		model.Load_copy = model.P_Load[0]
+
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
@@ -109,6 +123,10 @@ class Model:
 	model.con_percentage = Constraint(model.T, rule=con_rule_output_ess_power)
 	model.is_positive = Expression(model.T, rule=con_rule_is_positive)
 	model.con_limiting_pct = Constraint(model.T, rule=con_rule_limiting_pct)
+
+	model.con_soc = Constraint(rule=con_rule_soc)
+	model.con_pv = Constraint(rule=con_rule_pv)
+	model.con_load = Constraint(rule=con_rule_load)
 
 	###########################################################################
 	#######                         OBJECTIVE                           #######
