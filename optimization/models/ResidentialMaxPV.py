@@ -107,13 +107,13 @@ class Model:
 		return model.is_positive[t]*model.P_Fronius_Pct[t] == model.P_Fronius_Pct_Output[t]
 
 	def con_rule_soc(model):
-		model.SoC_copy = model.SoC_Value
+		return model.SoC_copy == model.SoC_Value
 
 	def con_rule_pv(model):
-		model.PV_copy = model.P_PV[0]
+		return model.PV_copy == model.P_PV[0]
 
 	def con_rule_load(model):
-		model.Load_copy = model.P_Load[0]
+		return model.Load_copy == model.P_Load[0]
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
