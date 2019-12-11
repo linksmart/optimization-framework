@@ -37,6 +37,7 @@ class Model:
 
 	# definition of the load
 	model.P_Load = Param(model.T, within=Reals)  # Active power demand
+	#model.P_Grid = Param(model.T, within=Reals)  # Active power demand
 
 	################################################################################################
 
@@ -59,6 +60,7 @@ class Model:
 	model.SoC_copy = Var(within=NonNegativeReals)
 	model.PV_copy = Var(within=NonNegativeReals)
 	model.Load_copy = Var(within=Reals)
+	#model.Grid_copy = Var(within=Reals)
 
 	################################################################################################
 
@@ -67,7 +69,7 @@ class Model:
 
 	# rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
-		return model.P_PV_Output[t] <= model.P_PV[t]
+		return model.P_PV_Output[t] <= model.P_PV[t] / 1000
 
 	def con_rule_fronius_power(model, t):
 		return model.P_PV_Output[t] + model.P_ESS_Output[t] == model.P_Fronius[t]
@@ -110,10 +112,13 @@ class Model:
 		return model.SoC_copy == model.SoC_Value
 
 	def con_rule_pv(model):
-		return model.PV_copy == model.P_PV[0]
+		return model.PV_copy == model.P_PV[0] / 1000
 
 	def con_rule_load(model):
 		return model.Load_copy == model.P_Load[0]/1000
+
+	#def con_rule_grid(model):
+		#return model.Grid_copy == model.P_Grid[0]/1000
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
@@ -128,11 +133,12 @@ class Model:
 	model.con_soc = Constraint(rule=con_rule_soc)
 	model.con_pv = Constraint(rule=con_rule_pv)
 	model.con_load = Constraint(rule=con_rule_load)
+	#model.con_grid = Constraint(rule=con_rule_grid)
 
 	###########################################################################
 	#######                         OBJECTIVE                           #######
 	###########################################################################
 	def obj_rule(model):
-		return sum(model.P_PV[t] - model.P_PV_Output[t] for t in model.T)
+		return sum((model.P_PV[t] / 1000) - model.P_PV_Output[t] for t in model.T)
 
 	model.obj = Objective(rule=obj_rule, sense=minimize)

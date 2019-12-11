@@ -67,7 +67,7 @@ class Model:
 
 	# rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
-		return model.P_PV_Output[t] <= model.P_PV[t]
+		return model.P_PV_Output[t] <= model.P_PV[t] / 1000
 
 	def con_rule_fronius_power(model, t):
 		return model.P_PV_Output[t] + model.P_ESS_Output[t] == model.P_Fronius[t]
@@ -109,7 +109,7 @@ class Model:
 		return  model.SoC_copy == model.SoC_Value
 
 	def con_rule_pv(model):
-		return model.PV_copy == model.P_PV[0]
+		return model.PV_copy == model.P_PV[0] / 1000
 
 	def con_rule_load(model):
 		return model.Load_copy == model.P_Load[0]/1000
