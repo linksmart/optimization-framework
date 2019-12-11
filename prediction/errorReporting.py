@@ -68,12 +68,16 @@ class ErrorReporting(DataPublisher):
 
     def to_senml(self, results):
         meas = []
+        base = None
+        if "base_name" in self.topic_params:
+            base = senml.SenMLMeasurement()
+            base.name = self.topic_params["base_name"]
         for time, errors in results.items():
             rmse = errors["rmse"]
             mae = errors["mae"]
-            meas.append(self.get_senml_meas(rmse, time, "rmse"))
-            meas.append(self.get_senml_meas(mae, time, "mae"))
-        doc = senml.SenMLDocument(meas)
+            meas.append(self.get_senml_meas(rmse, time, self.topic_name+"/rmse"))
+            meas.append(self.get_senml_meas(mae, time, self.topic_name+"/mae"))
+        doc = senml.SenMLDocument(meas, base=base)
         val = doc.to_json()
         return json.dumps(val)
 

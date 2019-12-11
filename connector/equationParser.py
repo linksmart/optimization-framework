@@ -42,6 +42,9 @@ class EquationParser():
                 dtype = rhs_dict["dtype"]
                 if dtype not in self.valid_dtype:
                     dtype = "float"
+            if "base_name" in rhs_dict.keys():
+                base_name = rhs_dict["base_name"]
+                meta_eq["base_name"] = base_name
             meta_eq["dtype"] = dtype
             meta_eq["name"] = lhs
             meta_eq["pub_topic"] = self.pub_prefix + lhs
