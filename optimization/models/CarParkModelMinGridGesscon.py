@@ -79,7 +79,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single <= model.P_PV[j]
+                return model.P_PV_single <= model.P_PV[j]/1000
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 
@@ -115,17 +115,6 @@ class Model:
         return model.P_VAC_OUTPUT + model.P_Load_single == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     model.const_demand = Constraint(rule=home_demandmeeting)
-
-    #def con_rule_linearization_1(model):
-        #return model.U <= model.P_GRID_OUTPUT
-
-    #model.con_linear_1 = Constraint(rule=con_rule_linearization_1)
-
-
-    #def con_rule_linearization_2(model):
-        #return model.U >= -model.P_GRID_OUTPUT
-
-    #model.con_linear_2 = Constraint(rule=con_rule_linearization_2)
 
 
     def objrule1(model):
