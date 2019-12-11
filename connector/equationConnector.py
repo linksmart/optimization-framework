@@ -18,6 +18,11 @@ class EquationConnector(SummationPub):
         self.stopRequest = threading.Event()
         self.meta_eq = meta_eq
         self.variables = self.meta_eq["variables"]
+        if "base_name" in self.meta_eq.keys():
+            self.base = senml.SenMLMeasurement()
+            self.base.name = self.meta_eq["base_name"]
+        else:
+            self.base = None
         super().__init__(meta_eq["topics"], config)
         self.sum_data_thread = threading.Thread(target=self.sum_data)
         self.sum_data_thread.start()
@@ -97,8 +102,8 @@ class EquationConnector(SummationPub):
             except Exception:
                 pass
         meas.value = value
-        meas.time = timestamp
-        doc = senml.SenMLDocument([meas])
+        meas.time = int(timestamp)
+        doc = senml.SenMLDocument([meas], base=self.base)
         val = doc.to_json()
         val = json.dumps(val)
         return val
