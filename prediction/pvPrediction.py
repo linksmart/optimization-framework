@@ -56,7 +56,7 @@ class PVPrediction(threading.Thread):
 
         self.raw_data = GenericDataReceiver(False, raw_pv_data_topic, config, self.generic_name, id, 1, dT_in_seconds)
 
-        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, control_frequency,
+        self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, 60,
                                                    horizon_in_steps, dT_in_seconds, self.q)
         self.pv_forecast_pub.start()
 
@@ -103,10 +103,11 @@ class PVPrediction(threading.Thread):
                 start = time.time()
                 data, bucket_available, self.last_time = self.raw_data.get_current_bucket_data(steps=1)
                 self.logger.debug("pv data in run is "+str(data))
-                value = data[self.generic_name][0]
-                self.logger.debug("base_data = "+str(self.base_data))
-                adjusted_data = self.adjust_data(value)
-                self.q.put(adjusted_data)
+                if len(data) > 0:
+                    value = data[self.generic_name][0]
+                    self.logger.debug("base_data = "+str(self.base_data))
+                    adjusted_data = self.adjust_data(value)
+                    self.q.put(adjusted_data)
                 start = self.control_frequency - (time.time() - start)
                 if start > 0:
                     time.sleep(start)

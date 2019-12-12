@@ -26,6 +26,7 @@ class LoadPrediction:
 
         self.topic_name = topic_name
         self.control_frequency = control_frequency  # determines minute or hourly etc
+        self.control_frequency = int(self.control_frequency/2)
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
         self.output_config = output_config
@@ -77,7 +78,7 @@ class LoadPrediction:
             load_forecast_topic = json.loads(load_forecast_topic)
             load_forecast_topic["topic"] = load_forecast_topic["topic"] + self.topic_name
             self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q,
-                                                           self.control_frequency, self.topic_name, self.id,
+                                                           60, self.topic_name, self.id,
                                                            self.horizon_in_steps, self.dT_in_seconds)
             self.load_forecast_pub.start()
 
@@ -144,7 +145,6 @@ class Training(threading.Thread):
                  model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, log):
         super().__init__()
         self.control_frequency = control_frequency
-        self.control_frequency = int(self.control_frequency/2)
         self.horizon_in_steps = horizon_in_steps
         self.num_timesteps = num_timesteps
         self.hidden_size = hidden_size

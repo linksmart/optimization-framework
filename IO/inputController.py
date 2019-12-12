@@ -156,26 +156,6 @@ class InputController:
             for name in names:
                 mqtt_flags[name] = self.input_config_parser.get_forecast_flag(name)
 
-    def read_input_data_old(self, id, topic, file):
-        """"/ usr / src / app / optimization / resources / 95c38e56d913 / p_load.txt"""
-        data = {}
-        path = os.path.join("/usr/src/app", "optimization/resources", str(id), "file", file)
-        self.logger.debug("Data path: " + str(path))
-        rows = []
-        i = 0
-        try:
-            with open(path, "r") as file:
-                rows = file.readlines()
-        except Exception as e:
-            self.logger.error("Read input file exception: " + str(e))
-        for row in rows:
-            data[i] = float(row)
-            i += 1
-        if len(data) == 0:
-            self.logger.error("Data file empty " + topic)
-        else:
-            self.optimization_data[topic] = data
-
     def read_input_data(self, id, topic, file):
         """"/ usr / src / app / optimization / resources / 95c38e56d913 / p_load.txt"""
         data = {}
@@ -196,29 +176,6 @@ class InputController:
             return {}
         else:
             return {topic: data}
-
-    def get_data_old(self, preprocess):
-        success = False
-        #self.logger.info("sleep for data")
-        #time.sleep(100)
-        while not success:
-            current_bucket = self.get_current_bucket()
-            self.logger.info("Get input data for bucket "+str(current_bucket))
-            success = self.fetch_mqtt_and_file_data(self.prediction_mqtt_flags, self.internal_receiver, [], [], current_bucket)
-            if success:
-                success = self.fetch_mqtt_and_file_data(self.non_prediction_mqtt_flags, self.internal_receiver, [], [], current_bucket)
-            if success:
-                success = self.fetch_mqtt_and_file_data(self.external_mqtt_flags, self.external_data_receiver, [], ["SoC_Value"], current_bucket)
-            if success:
-                success = self.fetch_mqtt_and_file_data(self.preprocess_mqtt_flags, self.external_data_receiver, [],
-                                                        ["SoC_Value"], current_bucket)
-            if success:
-                success = self.fetch_mqtt_and_file_data(self.generic_data_mqtt_flags, self.generic_data_receiver, [], [], current_bucket)
-        if preprocess:
-            complete_optimization_data = self.inputPreprocess.preprocess(self.optimization_data.copy(), self.mqtt_timer)
-        else:
-            complete_optimization_data = self.optimization_data.copy()
-        return {None: complete_optimization_data}
 
     def get_data(self, preprocess):
         success = False
@@ -241,60 +198,45 @@ class InputController:
                                                self.generic_data_receiver, [], [], current_bucket))
             for future in concurrent.futures.as_completed(futures):
                 try:
-                    d = future.result()
-                    self.update_data(d)
+                    success, read_data, mqtt_timer = future.result()
+                    if success:
+                        self.update_data(read_data)
+                        self.mqtt_timer.update(mqtt_timer)
+                    else:
+                        break
                 except Exception as exc:
-                    print("caused an exception: " + str(exc))
-
-    def fetch_mqtt_and_file_data_old(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket):
-        self.logger.debug("mqtt flags " + str(mqtt_flags))
-        self.logger.info("current bucket = "+str(current_bucket))
-        data_available_for_bucket = True
-        if mqtt_flags is not None:
-            for name, mqtt_flag in mqtt_flags.items():
-                if mqtt_flag:
-                    self.logger.debug("mqtt True " + str(name))
-                    if name not in mqtt_exception_list:
-                        data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
-                        self.mqtt_timer[name] = last_time
-                        if not bucket_available:
-                            data_available_for_bucket = False
-                            self.logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
-                            break
-                        data = self.set_indexing(data)
-                        self.update_data(data)
-                        #self.optimization_data.update(data)
-                else:
-                    self.logger.debug("file name: " + str(name))
-                    if name not in file_exception_list:
-                        self.read_input_data(self.id, name, name + ".txt")
-        return data_available_for_bucket
+                    print("input fetch data caused an exception: " + str(exc))
+        if preprocess:
+            complete_optimization_data = self.inputPreprocess.preprocess(self.optimization_data.copy(), self.mqtt_timer)
+        else:
+            complete_optimization_data = self.optimization_data.copy()
+        return {None: complete_optimization_data}
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket):
         self.logger.debug("mqtt flags " + str(mqtt_flags))
         self.logger.info("current bucket = "+str(current_bucket))
         data_available_for_bucket = True
         new_data = {}
+        mqtt_timer = {}
         if mqtt_flags is not None:
             for name, mqtt_flag in mqtt_flags.items():
                 if mqtt_flag:
                     self.logger.debug("mqtt True " + str(name))
                     if name not in mqtt_exception_list:
                         data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
-                        self.mqtt_timer[name] = last_time
+                        mqtt_timer[name] = last_time
                         if not bucket_available:
                             data_available_for_bucket = False
                             self.logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
                             break
                         data = self.set_indexing(data)
                         new_data.update(data)
-                        #self.update_data(data)
-                        #self.optimization_data.update(data)
                 else:
                     self.logger.debug("file name: " + str(name))
                     if name not in file_exception_list:
                         data = self.read_input_data(self.id, name, name + ".txt")
-        return data_available_for_bucket
+                        new_data.update(data)
+        return data_available_for_bucket, new_data, mqtt_timer
 
     def update_data(self, data):
         self.logger.info("data for update : "+str(data))

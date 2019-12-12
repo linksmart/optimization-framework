@@ -109,6 +109,7 @@ class PredictionDataManager:
                     if start_time in start_times:
                         index.append(i)
                 shift = 0
+                logger.debug("count of del predictions "+str(len(index)))
                 for i in index:
                     old_data.pop(i+shift)
                     shift -=1

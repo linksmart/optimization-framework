@@ -104,6 +104,9 @@ class OptControllerDiscrete(ControllerBase):
             time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
             final_time_total = time.time()
             sleep_time = self.control_frequency - int(final_time_total-start_time_total)
+            self.logger.info("Final time " + str(final_time_total) + " start time "+str(start_time_total)+
+                             " run time "+str(int(final_time_total-start_time_total)))
+            self.logger.info("Actual sleep time " + str(sleep_time) + " seconds")
             if sleep_time > 0:
                 for i in range(sleep_time):
                     time.sleep(1)

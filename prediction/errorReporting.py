@@ -53,12 +53,12 @@ class ErrorReporting(DataPublisher):
 
     def get_data(self):
         try:
-            results = self.compare_data(time_delay=0)
+            results, prediction_keys = self.compare_data(time_delay=self.dT_in_seconds*2)
             self.logger.debug("len of error cal results = "+str(len(results)))
             self.logger.debug("error cal results = "+str(results))
             if len(results) > 0:
                 self.save_to_file(results)
-                PredictionDataManager.del_predictions_from_file(list(results.keys()), self.prediction_data_file_container,
+                PredictionDataManager.del_predictions_from_file(prediction_keys, self.prediction_data_file_container,
                                                                 self.topic_name)
                 return self.to_senml(results)
             else:
@@ -166,7 +166,7 @@ class ErrorReporting(DataPublisher):
                                 rmse = self.rmse(actual, predicted)
                                 mae = self.mae(actual, predicted)
                                 results[start_time] = {"rmse":rmse, "mae":mae}
-        return results
+        return results, list(predicitons.keys())
 
     def get_timestamp(self):
         current_time = datetime.datetime.now()
