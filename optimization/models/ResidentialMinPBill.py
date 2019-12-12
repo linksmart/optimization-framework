@@ -37,6 +37,8 @@ class Model:
 	#definition of the load
 	model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 	model.Price_Forecast = Param(model.T, within=Reals)
+	model.P_Load_Input = Param(within=Reals)  # Active power demand
+	model.P_Grid_Input = Param(within=Reals)  # Active power demand
 
 	
 	
@@ -59,6 +61,7 @@ class Model:
 	model.SoC_copy = Var(within=NonNegativeReals)
 	model.PV_copy = Var(within=NonNegativeReals)
 	model.Load_copy = Var(within=Reals)
+	model.Grid_copy = Var(within=Reals)
 
 	################################################################################################
 
@@ -112,7 +115,10 @@ class Model:
 		return model.PV_copy == model.P_PV[0] / 1000
 
 	def con_rule_load(model):
-		return model.Load_copy == model.P_Load[0]/1000
+		return model.Load_copy == model.P_Load_Input / 1000
+
+	def con_rule_grid(model):
+		return model.Grid_copy == model.P_Grid_Input / 1000
 
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
@@ -127,6 +133,7 @@ class Model:
 	model.con_soc = Constraint(rule=con_rule_soc)
 	model.con_pv = Constraint(rule=con_rule_pv)
 	model.con_load = Constraint(rule=con_rule_load)
+	model.con_grid = Constraint(rule=con_rule_grid)
 
 	###########################################################################
 	#######                         OBJECTIVE                           #######
