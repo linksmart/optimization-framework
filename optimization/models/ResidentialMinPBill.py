@@ -62,6 +62,7 @@ class Model:
 	model.PV_copy = Var(within=NonNegativeReals)
 	model.Load_copy = Var(within=Reals)
 	model.Grid_copy = Var(within=Reals)
+	model.Price_copy = Var(within=Reals)
 
 	################################################################################################
 
@@ -120,6 +121,9 @@ class Model:
 	def con_rule_grid(model):
 		return model.Grid_copy == model.P_Grid_Input / 1000
 
+	def con_rule_price(model):
+		return model.Price_copy == model.Price_Forecast[0]
+
 	model.con_pv_max = Constraint(model.T, rule=con_rule_pv_potential)
 	model.con_fronius_power = Constraint(model.T, rule=con_rule_fronius_power)
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
@@ -134,6 +138,7 @@ class Model:
 	model.con_pv = Constraint(rule=con_rule_pv)
 	model.con_load = Constraint(rule=con_rule_load)
 	model.con_grid = Constraint(rule=con_rule_grid)
+	model.con_price = Constraint(rule=con_rule_price)
 
 	###########################################################################
 	#######                         OBJECTIVE                           #######

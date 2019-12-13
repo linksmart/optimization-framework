@@ -374,6 +374,16 @@ class OptControllerStochastic(ControllerBase):
 
                     p_fronius_pct_output.append(p_fronius_pct_output_calc)
 
+                SoC_output = []
+                if "SoC_Value" in data_dict[None].keys():
+                    SoC_Value = data_dict[None]["SoC_Value"][None]
+                    SoC_output.append(SoC_Value)
+
+                GESSCon_Output = []
+                if "ESS_Control" in data_dict[None].keys():
+                    GESSCon_Value = data_dict[None]["ESS_Control"][0]
+                    GESSCon_Output.append(GESSCon_Value)
+
                 results = {
                     "id": self.id,
                     "P_PV_Output": p_pv,
@@ -383,7 +393,9 @@ class OptControllerStochastic(ControllerBase):
                     "feasible_ev_charging_power": feasible_ev_charging_power,
                     "p_ev": p_ev,
                     "execution_time": execution_time,
-                    "P_Fronius_Pct_Output": p_fronius_pct_output
+                    "P_Fronius_Pct_Output": p_fronius_pct_output,
+                    "SoC_copy": SoC_output,
+                    "Global_control": GESSCon_Output
                 }
 
                 # update soc
@@ -398,7 +410,9 @@ class OptControllerStochastic(ControllerBase):
                     "P_VAC_Output": [p_vac],
                     "feasible_ev_charging_power": [feasible_ev_charging_power],
                     "execution_time": [execution_time],
-                    "P_Fronius_Pct_Output": p_fronius_pct_output
+                    "P_Fronius_Pct_Output": p_fronius_pct_output,
+                    "SoC_copy": SoC_output,
+                    "Global_control": GESSCon_Output
                 }
 
                 for key, value in p_ev.items():

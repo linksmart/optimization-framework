@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -e
 
-sudo docker rmi -f $(docker images | grep "^<none>" | awk "{print $3}")
+sudo docker rmi -f $(sudo docker images | grep "^<none>" | awk "{print $3}")
