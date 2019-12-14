@@ -41,8 +41,8 @@ class Model:
 
     model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 
-    model.GlobalTargetWeight = Param(within=Reals, default=1)
-    model.LocalTargetWeight = Param(within=Reals, default=3)
+    model.GlobalTargetWeight = Param(within=Reals)
+    model.LocalTargetWeight = Param(within=Reals)
 
     model.ESS_Control = Param(model.T, within=Reals)  # TODO: define domain
 
@@ -118,6 +118,14 @@ class Model:
 
     model.const_demand = Constraint(rule=home_demandmeeting)
 
+    def con_global_control_max(model):
+        return model.ESS_Control_single - model.P_ESS_OUTPUT <= 5 #model.P_Grid_Max_Export_Power
+    model.con_global_max = Constraint(rule=con_global_control_max)
+
+    def con_global_control_min(model):
+        return model.ESS_Control_single - model.P_ESS_OUTPUT >= -5
+    model.con_global_min = Constraint(rule=con_global_control_min)
+
 
     def objrule1(model):
 
@@ -125,11 +133,15 @@ class Model:
         if model.Recharge == 1:
             for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):  # If EV is charged with one of the feasible decision 'p_ev'
 
+                powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
+
                 essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
                 vacSoC = p_vac + model.Initial_VAC_SoC  # Transition between EV SOC states are deterministic when the car is at home now
 
-                valueOf_home = model.Value[(essSoC, vacSoC, 1)] # Value of having fin_ess_soc,fin_ev_soc and home position in next time interval
-                valueOf_away = model.Value[(essSoC, vacSoC, 0)] # Value of having fin_ess_soc,fin_ev_soc and away position in next time interval
+                valueOf_home = model.Value[(
+                essSoC, vacSoC, 1)]  # Value of having fin_ess_soc,fin_ev_soc and home position in next time interval
+                valueOf_away = model.Value[(
+                essSoC, vacSoC, 0)]  # Value of having fin_ess_soc,fin_ev_soc and away position in next time interval
 
                 # Expected future value= probability of swiching to home state*value of having home state
                 #                       +probability of swiching to away state*value of having away state
@@ -137,8 +149,9 @@ class Model:
                                        model.Behavior_Model[
                                            (1, 0)] * valueOf_away
 
-                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
-                                 (model.ESS_Control_single - powerFromEss)
+                #immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
+                                 #(model.ESS_Control_single - powerFromEss)
+                immediate_cost = 0
 
                 future_cost += model.Decision[p_ess, p_vac] * (immediate_cost + expected_future_cost)
 
@@ -147,17 +160,22 @@ class Model:
         elif model.Recharge == 0:
             # If vac is charged with one of the feasible decision 'p_ev'
             for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):
+                powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
+
                 essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
-                #vacSoC = p_vac + model.Initial_VAC_SoC  # # Transition between EV SOC states are deterministic when the car is at home now
+                # vacSoC = p_vac + model.Initial_VAC_SoC  # # Transition between EV SOC states are deterministic when the car is at home now
                 vacSoC = 0 + model.final_ev_soc
 
                 # Extra penalty for dropping below predefined ev_minSoC limit
-                penalty_for_negative_soc_home = (model.VAC_States_Min - model.final_ev_soc) / 100 * model.Unit_Drop_Penalty * model.VAC_Capacity if model.final_ev_soc < model.VAC_States_Min else 0
+                penalty_for_negative_soc_home = (
+                                                            model.VAC_States_Min - model.final_ev_soc) / 100 * model.Unit_Drop_Penalty * model.VAC_Capacity if model.final_ev_soc < model.VAC_States_Min else 0
                 ## penalty_for_negative_soc_away = (model.VAC_States_Min - model.final_ev_soc) / 100 * model.Unit_Drop_Penalty * model.VAC_Capacity if final_ev_soc < model.VAC_States_Min else 0
                 penalty_for_negative_soc_away = penalty_for_negative_soc_home
 
-                valueOf_home = model.Value[(essSoC, vacSoC, 1)] + penalty_for_negative_soc_home  # Value of having fin_ess_soc,fin_ev_soc and home position in next time interval
-                valueOf_away = model.Value[(essSoC, vacSoC, 0)] + penalty_for_negative_soc_away  # Value of having fin_ess_soc,fin_ev_soc and away position in next time interval
+                valueOf_home = model.Value[(essSoC, vacSoC,
+                                            1)] + penalty_for_negative_soc_home  # Value of having fin_ess_soc,fin_ev_soc and home position in next time interval
+                valueOf_away = model.Value[(essSoC, vacSoC,
+                                            0)] + penalty_for_negative_soc_away  # Value of having fin_ess_soc,fin_ev_soc and away position in next time interval
 
                 # Expected future value= probability of swiching to home state*value of having home state
                 #                       +probability of swiching to away state*value of having away state
@@ -165,10 +183,12 @@ class Model:
                 expected_future_cost = model.Behavior_Model[(0, 1)] * valueOf_home + \
                                        model.Behavior_Model[
                                            (0, 0)] * valueOf_away
-                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
-                                 (model.ESS_Control_single - powerFromEss)
+                #immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
+                                 #(model.ESS_Control_single - powerFromEss)
+                immediate_cost = 0
 
                 future_cost += model.Decision[p_ess, p_vac] * (immediate_cost + expected_future_cost)
+
 
             return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
 
