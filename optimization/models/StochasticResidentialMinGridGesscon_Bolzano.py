@@ -46,6 +46,8 @@ class Model:
 
     model.Fronius_Max_Power = Param(within=PositiveReals)
     model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
+    model.U = Var(within=Reals)
+    model.G = Var(within=Reals)
 
     #######################################      Outputs       #######################################################
 
@@ -65,8 +67,9 @@ class Model:
     model.P_PV_single = Var(within=NonNegativeReals)
     model.ESS_Control_single = Var(within=Reals)
     model.P_Load_single = Var(within=NonNegativeReals)
-    model.P_Fronius_Pct = Var(model.T, within=Reals, initialize=0)
-    model.P_Fronius_Pct_Output = Var(within=Reals, initialize=0)
+    #model.P_Fronius_Pct = Var(model.T, within=Reals, initialize=0)
+    #model.P_Fronius_Pct_Output = Var(within=Reals, initialize=0)
+    model.powerFromEss = Var(within=Reals, initialiaze=0)
 
 
 
@@ -150,18 +153,34 @@ class Model:
 
     #model.const_demand = Constraint(rule=home_demandmeeting)
 
-    def con_rule_output_ess_power(model):
-        return model.P_Fronius_Pct == (100 / model.Fronius_Max_Power) * model.P_Fronius
-    model.con_percentage = Constraint(rule=con_rule_output_ess_power)
+    #def con_rule_output_ess_power(model):
+        #return model.P_Fronius_Pct == (100 / model.Fronius_Max_Power) * model.P_Fronius
+    #model.con_percentage = Constraint(rule=con_rule_output_ess_power)
 
-    def con_rule_is_positive(model):
-        return model.P_Fronius_Pct >= 0
+    #def con_rule_is_positive(model):
+        #return model.P_Fronius_Pct >= 0
 
-    model.is_positive = Expression(rule=con_rule_is_positive)
+    #model.is_positive = Expression(rule=con_rule_is_positive)
 
-    def con_rule_limiting_pct(model):
-        return model.is_positive * model.P_Fronius_Pct == model.P_Fronius_Pct_Output
-    model.con_limiting_pct = Constraint(rule=con_rule_limiting_pct)
+    #def con_rule_limiting_pct(model):
+        #return model.is_positive * model.P_Fronius_Pct == model.P_Fronius_Pct_Output
+    #model.con_limiting_pct = Constraint(rule=con_rule_limiting_pct)
+    
+    def con_rule_linearization_1(model):
+        return model.U <= model.P_GRID_OUTPUT
+    model.con_linear_1 = Constraint(rule=con_rule_linearization_1)
+
+    def con_rule_linearization_2(model):
+        return model.U >= -model.P_GRID_OUTPUT
+    model.con_linear_2 = Constraint(rule=con_rule_linearization_2)
+    
+    def con_rule_linearization_global_1(model):
+        return model.G <= model.ESS_Control_single - model.powerFromEss
+    model.con_linear_global_1 = Constraint(rule=con_rule_linearization_global_1)
+
+    def con_rule_linearization_global_2(model):
+        return model.G >= -model.ESS_Control_single - model.powerFromEss
+    model.con_linear_global_2 = Constraint(rule=con_rule_linearization_global_2)
 
 
     def objrule1(model):
@@ -170,7 +189,7 @@ class Model:
         if model.Recharge == 1:
             for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):  # If EV is charged with one of the feasible decision 'p_ev'
 
-                powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
+                model.powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
 
                 essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
                 vacSoC = p_vac + model.Initial_VAC_SoC  # Transition between EV SOC states are deterministic when the car is at home now
@@ -184,18 +203,20 @@ class Model:
                                                         model.Behavior_Model[
                                                             (1, 0)] * valueOf_away
 
-                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
-                                 (model.ESS_Control_single - powerFromEss)
+                #immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - model.powerFromEss) * \
+                                 #(model.ESS_Control_single - model.powerFromEss)
+                immediate_cost = model.GlobalTargetWeight * model.G
 
                 future_cost += model.Decision[p_ess, p_vac] * (immediate_cost + expected_future_cost)
 
-            return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+            #return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+            return model.LocalTargetWeight * model.U + future_cost
 
         elif model.Recharge == 0:
             # If vac is charged with one of the feasible decision 'p_ev'
             for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions):
 
-                powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
+                model.powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
 
                 essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
                 #vacSoC = p_vac + model.Initial_VAC_SoC  # # Transition between EV SOC states are deterministic when the car is at home now
@@ -215,12 +236,14 @@ class Model:
                 expected_future_cost = model.Behavior_Model[(0, 1)] * valueOf_home + \
                                                         model.Behavior_Model[
                                                             (0, 0)] * valueOf_away
-                immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - powerFromEss) * \
-                                 (model.ESS_Control_single - powerFromEss)
+                #immediate_cost = model.GlobalTargetWeight * (model.ESS_Control_single - model.powerFromEss) * \
+                                 #(model.ESS_Control_single - model.powerFromEss)
+                immediate_cost = model.GlobalTargetWeight * model.G
 
                 future_cost += model.Decision[p_ess, p_vac] * (immediate_cost + expected_future_cost)
 
-            return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+            #return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + future_cost
+            return model.LocalTargetWeight * model.U + future_cost
 
 
     model.obj = Objective(rule=objrule1, sense=minimize)

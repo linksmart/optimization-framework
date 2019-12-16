@@ -374,6 +374,17 @@ class OptControllerStochastic(ControllerBase):
 
                     p_fronius_pct_output.append(p_fronius_pct_output_calc)
 
+                p_ess_output_pct = []
+                if "ESS_Max_Charge_Power" in data_dict[None].keys():
+                    p_ess_max_power = data_dict[None]["ESS_Max_Charge_Power"]
+                    p_ess_output_pct_calc = p_ess * 100 / p_ess_max_power
+                    if p_ess_output_pct_calc < 0:
+                        p_ess_output_pct_calc = 0
+                    elif p_ess_output_pct_calc > 100:
+                        p_ess_output_pct_calc = 100
+
+                    p_ess_output_pct.append(p_ess_output_pct_calc)
+
                 SoC_output = []
                 if "SoC_Value" in data_dict[None].keys():
                     SoC_Value = data_dict[None]["SoC_Value"][None]
@@ -394,6 +405,7 @@ class OptControllerStochastic(ControllerBase):
                     "p_ev": p_ev,
                     "execution_time": execution_time,
                     "P_Fronius_Pct_Output": p_fronius_pct_output,
+                    "P_ESS_Output_Pct": p_ess_output_pct,
                     "SoC_copy": SoC_output,
                     "Global_control": GESSCon_Output
                 }
