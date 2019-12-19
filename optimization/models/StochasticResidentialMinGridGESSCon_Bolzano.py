@@ -46,6 +46,7 @@ class Model:
 
     model.ESS_Control = Param(model.T, within=Reals)  # TODO: define domain
 
+    model.Fronius_Max_Power = Param(within=PositiveReals)
     model.ESS_Max_Charge_Power = Param(within=PositiveReals)  # Max Charge Power of ESSs
     model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
 
@@ -55,10 +56,15 @@ class Model:
     model.Decision = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Binary, initialize=0)
     model.expected_future_cost = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Reals, initialize=0.0)
 
+    model.P_Fronius = Var(within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power), initialize=0)
     model.P_ESS_OUTPUT = Var(within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals, bounds=(0, model.Max_Charging_Power_kW))
     model.P_PV_OUTPUT = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_GRID_OUTPUT = Var(within=Reals,bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
+
+    model.P_Grid_R_Output = Var(within=Reals)  # Active power exchange with grid at R phase
+    model.P_Grid_S_Output = Var(within=Reals)  # Active power exchange with grid at S phase
+    model.P_Grid_T_Output = Var(within=Reals)  # Active power exchange with grid at S phase
 
     model.P_PV_single = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_Load_single = Var(within=NonNegativeReals)
@@ -76,7 +82,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]
+                return model.P_PV_single == model.P_PV[j]/1000
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 
@@ -117,10 +123,30 @@ class Model:
 
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
-    def home_demandmeeting(model):
-        return model.P_Load_single + model.P_VAC_OUTPUT == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
+    def con_rule_fronius_power(model):
+        return model.P_ESS_OUTPUT == model.P_Fronius
 
-    model.const_demand = Constraint(rule=home_demandmeeting)
+    model.con_fronius_power = Constraint(rule=con_rule_fronius_power)
+
+    def home_demandmeeting_R(model):
+        return model.P_Grid_R_Output + (model.P_Fronius/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
+
+    model.const_demand_R = Constraint(rule=home_demandmeeting_R)
+
+    def home_demandmeeting_S(model):
+        return model.P_Grid_S_Output + (model.P_Fronius/3) + (model.P_PV_OUTPUT/2) == (model.P_Load_single/3)
+
+    model.const_demand_S = Constraint(rule=home_demandmeeting_S)
+
+    def home_demandmeeting_T(model):
+        return model.P_Grid_T_Output + (model.P_Fronius/3)  == (model.P_Load_single / 3)
+
+    model.const_demand_T = Constraint(rule=home_demandmeeting_T)
+
+    def rule_p_power(model):
+        return model.P_GRID_OUTPUT == model.P_Grid_R_Output + model.P_Grid_S_Output + model.P_Grid_T_Output
+
+    model.const_demand = Constraint(rule=rule_p_power)
 
     def con_expected_future_value(model, p_ess, p_vac):
         if model.Recharge == 1:

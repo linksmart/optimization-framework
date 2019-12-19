@@ -202,6 +202,7 @@ class InputConfigParser:
         all_keys.extend(self.set_params.keys())
         all_keys.append("dT")
         all_keys.append("T")
+        all_keys.append("Max_Charging_Power_kW")
         self.logger.info("model_variables : "+ str(self.model_variables))
         self.logger.info("all_keys : " + str(all_keys))
         not_available_keys = []
