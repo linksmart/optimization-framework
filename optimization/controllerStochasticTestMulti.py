@@ -615,15 +615,8 @@ class OptControllerStochastic(ControllerBase):
             Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
             Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
             Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
-            #Decision[combined_key]['future_cost'] = my_dict["future_cost"][0]
 
             Value = {combined_key: {}}
-            if "mingrid" in str(absolute_path).lower():
-                Value[combined_key] = my_dict["P_GRID_OUTPUT"][0] * my_dict["P_GRID_OUTPUT"][0] + my_dict["future_cost"][0]
-                #print("future cost "+str(my_dict["future_cost"][0])+" grid output "+str(my_dict["P_GRID_OUTPUT"][0]) + " value "+str(Value[combined_key]))
-                #print("expected_future_cost " +str(my_dict["expected_future_cost"])+ " Decision "+str(my_dict["Decision"]))
-            elif "maxpv" in str(absolute_path).lower():
-                Value[combined_key] = pv - my_dict["P_PV_OUTPUT"][0] + \
-                                      my_dict["future_cost"][0]
-            #Value[combined_key] = my_dict["Value_output"][(ini_ess_soc, ini_vac_soc,position)]
+            Value[combined_key] = instance.obj.expr()
+
             return (Decision, Value)

@@ -205,7 +205,6 @@ class Model:
     model.rule_future_cost = Constraint(rule=con_future_cost)
 
     def objrule1(model):
-
             return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + \
                    +model.GlobalTargetWeight * (model.ESS_Control_single-model.P_ESS_OUTPUT) * \
                    (model.ESS_Control_single-model.P_ESS_OUTPUT) + model.future_cost

@@ -62,9 +62,7 @@ class Model:
 
     model.future_cost = Var(within=Reals)
     model.expected_future_cost = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Reals,initialize=0.0)
-    #model.Set_Number_Park_Cars=Set(initialize=range(model.Number_of_Parked_Cars + 1))
-    #model.expected_future_cost_per_number_cars = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, [0,1,2],
-                                                     #within=Reals,initialize=0.0)
+
 
     def combinatorics(model):
         # only one of the feasible decisions can be taken
@@ -119,7 +117,6 @@ class Model:
         return model.P_VAC_OUTPUT + model.P_Load_single == model.P_ESS_OUTPUT + model.P_PV_OUTPUT + model.P_GRID_OUTPUT
 
     model.const_demand = Constraint(rule=home_demandmeeting)
-
 
     def con_expected_future_value(model, p_ess, p_vac):
         essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
