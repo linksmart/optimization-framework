@@ -37,6 +37,10 @@ class Model:
     model.Timestep = Param(within=NonNegativeIntegers)
     model.Max_Charging_Power_kW = Param(within=NonNegativeReals)
 
+    model.GlobalTargetWeight = Param(within=NonNegativeReals)
+    model.LocalTargetWeight = Param(within=NonNegativeReals)
+
+    model.ESS_Control = Param(model.T, within=Reals)
     model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 
     model.ESS_Max_Charge_Power = Param(within=PositiveReals)  # Max Charge Power of ESSs
@@ -54,6 +58,7 @@ class Model:
 
     model.P_PV_single = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_Load_single = Var(within=NonNegativeReals)
+    model.ESS_Control_single = Var(within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))
 
     model.future_cost = Var(within=Reals)
     model.expected_future_cost = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Reals,initialize=0.0)
@@ -79,6 +84,13 @@ class Model:
                 return model.P_PV_single == model.P_PV[j]/1000
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
+
+    def rule_iniDSO(model):
+        for j in model.ESS_Control:
+            if j == model.Timestep:
+                return model.ESS_Control_single == model.ESS_Control[j]
+
+    model.con_ess_IniDSO = Constraint(rule=rule_iniDSO)
 
     def con_rule_pv_potential(model):
         return model.P_PV_OUTPUT <= model.P_PV_single
@@ -138,7 +150,9 @@ class Model:
 
     def objrule1(model):
 
-            return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + model.future_cost
+            return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + \
+                   +model.GlobalTargetWeight * (model.ESS_Control_single-model.P_ESS_OUTPUT) * \
+                   (model.ESS_Control_single-model.P_ESS_OUTPUT) + model.future_cost
 
     model.obj = Objective(rule=objrule1, sense=minimize)
 

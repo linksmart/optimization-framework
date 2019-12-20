@@ -42,6 +42,12 @@ class Model:
     model.ESS_Max_Charge_Power = Param(within=PositiveReals)  # Max Charge Power of ESSs
     model.ESS_Max_Discharge_Power = Param(within=PositiveReals)  # Max Discharge Power of ESSs
 
+    model.GlobalTargetWeight = Param(within=NonNegativeReals)
+    model.LocalTargetWeight = Param(within=NonNegativeReals)
+
+    model.Price_Forecast = Param(model.T, within=Reals)
+    model.ESS_Control = Param(model.T, within=Reals)
+
     #######################################      Outputs       #######################################################
 
     # Combined decision
@@ -54,6 +60,8 @@ class Model:
 
     model.P_PV_single = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_Load_single = Var(within=NonNegativeReals)
+    model.Price_single = Var(within=Reals)
+    model.ESS_Control_single = Var(within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))
 
     model.future_cost = Var(within=Reals)
     model.expected_future_cost = Var(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions, within=Reals,initialize=0.0)
@@ -76,9 +84,23 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]/1000
+                return model.P_PV_single == model.P_PV[j]
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
+
+    def rule_iniPrice(model):
+        for j in model.Price_Forecast:
+            if j == model.Timestep:
+                return model.Price_single == model.Price_Forecast[j]
+
+    model.con_ess_IniPrice = Constraint(rule=rule_iniPrice)
+
+    def rule_iniDSO(model):
+        for j in model.ESS_Control:
+            if j == model.Timestep:
+                return model.ESS_Control_single == model.ESS_Control[j]
+
+    model.con_ess_IniDSO = Constraint(rule=rule_iniDSO)
 
     def con_rule_pv_potential(model):
         return model.P_PV_OUTPUT <= model.P_PV_single
@@ -138,7 +160,9 @@ class Model:
 
     def objrule1(model):
 
-            return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + model.future_cost
+            return  model.LocalTargetWeight * (model.Price_single * model.P_GRID_OUTPUT) * (model.Price_single * model.P_GRID_OUTPUT) + \
+                   +model.GlobalTargetWeight * (model.ESS_Control_single-model.P_ESS_OUTPUT) * \
+                   (model.ESS_Control_single-model.P_ESS_OUTPUT) + model.future_cost
 
     model.obj = Objective(rule=objrule1, sense=minimize)
 
