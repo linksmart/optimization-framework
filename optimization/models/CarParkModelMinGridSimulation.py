@@ -76,7 +76,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]/1000
+                return model.P_PV_single == model.P_PV[j]
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 

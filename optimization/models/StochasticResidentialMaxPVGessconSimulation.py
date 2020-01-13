@@ -180,8 +180,9 @@ class Model:
 
     def objrule1(model):
 
-            return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + \
-                   +model.GlobalTargetWeight * (model.ESS_Control_single-model.P_ESS_OUTPUT) * \
-                   (model.ESS_Control_single-model.P_ESS_OUTPUT) + model.future_cost
+        return model.LocalTargetWeight * (model.P_PV_single - model.P_PV_OUTPUT) * \
+               (model.P_PV_single - model.P_PV_OUTPUT) + \
+               +model.GlobalTargetWeight * (model.ESS_Control_single - model.P_ESS_OUTPUT) * \
+               (model.ESS_Control_single - model.P_ESS_OUTPUT) + model.future_cost
 
     model.obj = Objective(rule=objrule1, sense=minimize)
