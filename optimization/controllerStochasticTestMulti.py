@@ -181,7 +181,7 @@ class OptControllerStochastic(ControllerBase):
         return (ess_soc_states, ess_decision_domain)
 
     def optimize(self, count, solver_name, model_path):
-        self.logger.debug("##############  testsf")
+        #self.logger.debug("##############  testsf")
         while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
             start_time_total = time.time()
             self.logger.debug("number of workers = " + str(self.number_of_workers))
@@ -539,7 +539,10 @@ class OptControllerStochastic(ControllerBase):
 
         pv = data_dict[None]["P_PV"][timestep]
         load = data_dict[None]["P_Load"][timestep]
-        gesscon = data_dict[None]["ESS_Control"][timestep]
+        if "ESS_Control" in data_dict[None].keys():
+            gesscon = data_dict[None]["ESS_Control"][timestep]
+        else:
+            gesscon = None
 
 
         v = str(timestep) + "_" + str(ini_ess_soc) + "_" + str(ini_vac_soc)+" load "+str(load)+" pv "+str(pv)+\
@@ -582,16 +585,6 @@ class OptControllerStochastic(ControllerBase):
                                     my_dict[str(v1)] = var_list
                             except Exception as e:
                                 print("error reading result " + str(e))
-
-                        #my_dict_param["Value"] = instance.Value.value
-                        """for v2 in instance.component_objects(Param, active=True):
-                            # self.logger.debug("Variable in the optimization: " + str(v))
-
-                            if str(v2) == "Value":
-                                print("param name " + str(v2))
-                                paramobject = getattr(instance, str(v2))
-                                #print(" value "+str(paramobject.extract_values()))
-                                my_dict_param[str(v2)]=paramobject.extract_values()"""
 
 
                     elif result.solver.termination_condition == TerminationCondition.infeasible:

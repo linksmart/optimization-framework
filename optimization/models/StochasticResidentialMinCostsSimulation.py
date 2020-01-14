@@ -18,6 +18,7 @@ class Model:
     model.Value = Param(model.Value_Index, mutable=True, within=Reals)
 
     model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
+    model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
     model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 
     model.Initial_ESS_SoC = Param(within=Reals, default=0)
