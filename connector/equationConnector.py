@@ -79,6 +79,26 @@ class EquationConnector(SummationPub):
                     d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
                     self.q.put(d)
                     logger.debug("###### added to queue")
+                else:
+                    bound = self.get_bound(result)
+                    if not bound == None:
+                        senml_data = self.to_senml(self.meta_eq["name"], bound, self.rec.last_time)
+                        d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
+                        self.q.put(d)
+                        logger.debug("###### added to queue with bound")
+
+
+
+    def get_bound(self, result):
+        if ("min" in self.meta_eq.keys() and result < self.meta_eq["min"]):
+            return self.meta_eq["min"]
+        else:
+            None
+        if ("max" in self.meta_eq.keys() and result > self.meta_eq["max"]):
+            return self.meta_eq["max"]
+        else:
+            None
+
 
     def check_bounds(self, result):
         if ("min" in self.meta_eq.keys() and result < self.meta_eq["min"]):

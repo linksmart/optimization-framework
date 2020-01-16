@@ -17,7 +17,7 @@ class Model:
 
     model.Value = Param(model.Value_Index,  within=Reals)
 
-    model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
+    model.P_PV = Param(model.T, within=Reals)  # PV PMPP forecast
     model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
     model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 
@@ -83,7 +83,7 @@ class Model:
     def rule_iniLoad(model):
         for j in model.P_Load:
             if j == model.Timestep:
-                return model.P_Load_single == model.P_Load[j]
+                return model.P_Load_single == model.P_Load[j]/1000
 
     model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
 
@@ -126,7 +126,7 @@ class Model:
     model.const_demand_S = Constraint(rule=home_demandmeeting_S)
 
     def home_demandmeeting_T(model):
-        return model.P_Grid_T_Output + (model.P_Fronius/3)  == (model.P_Load_single / 3)
+        return model.P_Grid_T_Output + (model.P_Fronius/3) == (model.P_Load_single/3)
 
     model.const_demand_T = Constraint(rule=home_demandmeeting_T)
 

@@ -72,6 +72,7 @@ COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
 
 
+
 USER root
 
 RUN echo "PATH=$PATH" >> /usr/src/app/utils_intern/env_var.txt

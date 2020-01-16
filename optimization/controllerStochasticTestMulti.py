@@ -187,6 +187,7 @@ class OptControllerStochastic(ControllerBase):
             self.logger.debug("number of workers = " + str(self.number_of_workers))
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=True)  # blocking call
+            self.logger.debug("data_dict after waiting data "+str(data_dict))
 
             if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
                 break
@@ -220,6 +221,7 @@ class OptControllerStochastic(ControllerBase):
             max_vac_soc_states = max(vac_soc_states)
 
             reverse_steps = reversed(range(0, self.horizon_in_steps))
+            self.logger.debug("Entering to timesteps")
             for timestep in reverse_steps:
 
                 if self.redisDB.get_bool(self.stop_signal_key):

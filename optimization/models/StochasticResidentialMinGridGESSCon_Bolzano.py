@@ -89,7 +89,7 @@ class Model:
     def rule_iniLoad(model):
         for j in model.P_Load:
             if j == model.Timestep:
-                return model.P_Load_single == model.P_Load[j]
+                return model.P_Load_single == model.P_Load[j]/1000
 
     model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
 
