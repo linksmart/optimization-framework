@@ -228,8 +228,6 @@ class InputPreprocess:
         vac_soc_value = self.ev_park.calculate_vac_soc_value(vac_soc_value_override=VAC_SoC_Value_override)
         vac_soc_value = self.round_to_steps(vac_soc_value, vac_min, vac_steps)
 
-        self.logger.info("vac_soc_value = "+str(vac_soc_value))
-
         soc_value_key = None
         for key, value in self.data_dict["SoC_Value"].items():
             soc_value_key = key
@@ -238,10 +236,18 @@ class InputPreprocess:
         soc_value = self.data_dict["SoC_Value"][soc_value_key]
         soc_value = self.round_to_steps(soc_value, ess_min, ess_steps)
 
-        self.logger.info("soc_value = "+str(soc_value))
+        if vac_soc_value < vac_min:
+            vac_soc_value = vac_min
+
+        if soc_value < ess_min:
+            soc_value = ess_min
+
+        self.logger.info("vac_soc_value = " + str(vac_soc_value))
+        self.logger.info("soc_value = " + str(soc_value))
 
         self.data_dict["SoC_Value"] = {None: soc_value}
         self.data_dict["VAC_SoC_Value"] = {None: vac_soc_value}
+
         self.data_dict["VAC_States_Min"] = {None: vac_min}
         self.data_dict["Value"] = "null"
         self.data_dict["Initial_ESS_SoC"] = "null"
