@@ -14,8 +14,10 @@ from senml import senml
 
 from IO.dataReceiver import DataReceiver
 from IO.radiation import Radiation
+from IO.redisDB import RedisDB
 from optimization.genericDataReceiver import GenericDataReceiver
 from optimization.pvForecastPublisher import PVForecastPublisher
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 
@@ -31,6 +33,8 @@ class PVPrediction(threading.Thread):
         self.generic_name = generic_name
         self.control_frequency = control_frequency
         self.control_frequency = int(self.control_frequency / 2)
+        self.id = id
+        self.redisDB = RedisDB()
         raw_pv_data_topic = input_config_parser.get_params(generic_name)
         opt_values = input_config_parser.get_optimization_values()
 
@@ -99,6 +103,9 @@ class PVPrediction(threading.Thread):
 
     def run(self):
         while not self.stopRequest.is_set():
+            if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
+                time.sleep(30)
+                continue
             try:
                 start = time.time()
                 data, bucket_available, self.last_time = self.raw_data.get_current_bucket_data(steps=1)

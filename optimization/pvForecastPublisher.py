@@ -10,6 +10,7 @@ from senml import senml
 
 from IO.dataPublisher import DataPublisher
 from IO.redisDB import RedisDB
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 
@@ -23,15 +24,18 @@ class PVForecastPublisher(DataPublisher):
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
         self.topic = "P_PV"
+        self.redisDB = RedisDB()
+        self.id = id
         try:
             super().__init__(True, internal_topic_params, config, control_frequency, id)
         except Exception as e:
-            redisDB = RedisDB()
-            redisDB.set("Error mqtt" + self.id, True)
+            self.redisDB.set("Error mqtt" + self.id, True)
             self.logger.error(e)
 
     def get_data(self):
         #  check if new data is available
+        if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
+            return None
         if not self.q.empty():
             try:
                 new_data = self.q.get_nowait()

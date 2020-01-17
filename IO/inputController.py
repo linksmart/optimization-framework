@@ -17,6 +17,7 @@ from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.baseValueDataReceiver import BaseValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
 from optimization.genericEventDataReceiver import GenericEventDataReceiver
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 
@@ -177,7 +178,8 @@ class InputController:
         else:
             return {topic: data}
 
-    def get_data(self, preprocess):
+    def get_data(self, preprocess, redisDB):
+        redisDB.set(Constants.get_data_flow_key(self.id), True)
         success = False
         # self.logger.info("sleep for data")
         # time.sleep(100)
@@ -210,6 +212,7 @@ class InputController:
             complete_optimization_data = self.inputPreprocess.preprocess(self.optimization_data.copy(), self.mqtt_timer)
         else:
             complete_optimization_data = self.optimization_data.copy()
+        redisDB.set(Constants.get_data_flow_key(self.id), False)
         return {None: complete_optimization_data}
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket):

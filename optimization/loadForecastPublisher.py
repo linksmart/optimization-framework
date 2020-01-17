@@ -11,6 +11,7 @@ from senml import senml
 
 from IO.dataPublisher import DataPublisher
 from IO.redisDB import RedisDB
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 
@@ -26,15 +27,18 @@ class LoadForecastPublisher(DataPublisher):
         self.topic = topic
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
+        self.id = id
+        self.redisDB = RedisDB()
         try:
             super().__init__(True, internal_topic_params, config, publish_frequency, id)
         except Exception as e:
-            redisDB = RedisDB()
-            redisDB.set("Error mqtt" + self.id, True)
+            self.redisDB.set("Error mqtt" + self.id, True)
             self.logger.error(e)
 
     def get_data(self):
         try:
+            if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
+                return None
             #  check if new data is available
             if not self.q.empty():
                 try:

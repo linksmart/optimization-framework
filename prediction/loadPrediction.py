@@ -10,6 +10,7 @@ from shutil import copyfile
 from IO.redisDB import RedisDB
 from prediction.predictionDataManager import PredictionDataManager
 from prediction.processingData import ProcessingData
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 from utils_intern.timeSeries import TimeSeries
 
@@ -250,6 +251,7 @@ class Prediction(threading.Thread):
         self.model_file_container_temp = model_file_container_temp
         self.model_file_container = model_file_container
         self.q = q
+        self.redisDB = RedisDB()
         self.stopRequest = threading.Event()
         from prediction.Models import Models
         self.models = Models(self.num_timesteps, self.hidden_size, self.batch_size, self.model_file_container,
@@ -265,6 +267,9 @@ class Prediction(threading.Thread):
 
     def run(self):
         while not self.stopRequest.is_set():
+            if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
+                time.sleep(30)
+                continue
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 self.logger.debug("len data = " + str(len(data)))
