@@ -221,6 +221,7 @@ class OptControllerStochastic(ControllerBase):
             max_vac_soc_states = max(vac_soc_states)
 
             reverse_steps = reversed(range(0, self.horizon_in_steps))
+            loop_fail = False
             self.logger.debug("Entering to timesteps")
             for timestep in reverse_steps:
 
@@ -263,12 +264,13 @@ class OptControllerStochastic(ControllerBase):
                             for future in concurrent.futures.as_completed(futures):
                                 try:
                                     d, v = future.result()
+                                    if d is None and v is None:
+                                        loop_fail = True
+                                        break
                                     Value.update(v)
                                     Decision.update(d)
                                 except Exception as exc:
                                     self.logger.error("caused an exception: "+str(exc))
-
-
                     except Exception as e:
                         self.logger.error(e)
 
@@ -279,6 +281,12 @@ class OptControllerStochastic(ControllerBase):
                     # erasing files from pyomo
                     folder = "/usr/src/app/logs/pyomo/"+str(self.id)
                     self.erase_pyomo_files(folder)
+
+                    if loop_fail:
+                        break
+
+            if loop_fail:
+                continue
 
             """
             with open("/usr/src/app/optimization/resources/Value_p.txt", "w") as f:
@@ -556,8 +564,10 @@ class OptControllerStochastic(ControllerBase):
         my_dict = {}
         my_dict_param={}
         ctr = 0
-        while True:
+        repeat_count = 2
+        while ctr < repeat_count:
             try:
+                ctr += 1
                 optsolver = SolverFactory(solver_name)
                 spec = importlib.util.spec_from_file_location(absolute_path, absolute_path)
                 module = spec.loader.load_module(spec.name)
@@ -566,6 +576,7 @@ class OptControllerStochastic(ControllerBase):
                 result = optsolver.solve(instance)
                 if result is None:
                     logger.debug("result is none for " + str(v) + " repeat")
+                    continue
                 elif (result.solver.status == SolverStatus.ok) and (
                         result.solver.termination_condition == TerminationCondition.optimal):
                     instance.solutions.load_from(result)
@@ -612,3 +623,7 @@ class OptControllerStochastic(ControllerBase):
             Value[combined_key] = instance.obj.expr()
 
             return (Decision, Value)
+
+        if ctr >= repeat_count:
+            return (None, None)
+
