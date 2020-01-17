@@ -598,6 +598,23 @@ class OptControllerStochastic(ControllerBase):
                                 my_dict[str(v1)] = var_list
                         except Exception as e:
                             print("error reading result " + str(e))
+
+                    if single_ev:
+                        combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+                    else:
+                        combined_key = (timestep, ini_ess_soc, ini_vac_soc)
+
+                    Decision = {combined_key: {}}
+                    if len(my_dict) >= 4:
+                        Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
+                        Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
+                        Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
+                        Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+
+                    Value = {combined_key: {}}
+                    Value[combined_key] = instance.obj.expr()
+
+                    return (Decision, Value)
                 elif result.solver.termination_condition == TerminationCondition.infeasible:
                     # do something about it? or exit?
                     print("Termination condition is infeasible " + v + " repeat")
@@ -608,22 +625,6 @@ class OptControllerStochastic(ControllerBase):
             except Exception as e:
                 print("Thread: " + v + " " + str(e))
 
-            if single_ev:
-                combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
-            else:
-                combined_key = (timestep, ini_ess_soc, ini_vac_soc)
 
-            Decision = {combined_key: {}}
-            Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
-            Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
-            Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
-            Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
-
-            Value = {combined_key: {}}
-            Value[combined_key] = instance.obj.expr()
-
-            return (Decision, Value)
-
-        if ctr >= repeat_count:
-            return (None, None)
+        return (None, None)
 
