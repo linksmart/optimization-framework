@@ -250,7 +250,7 @@ class OptControllerStochastic(ControllerBase):
                                         executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, self.logger, position))
                             else:
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc = combination
@@ -258,7 +258,7 @@ class OptControllerStochastic(ControllerBase):
                                         executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, self.logger))
 
                             for future in concurrent.futures.as_completed(futures):
                                 try:
@@ -481,7 +481,7 @@ class OptControllerStochastic(ControllerBase):
     @staticmethod
     def create_instance_and_solve(data_dict, ess_decision_domain, min_value, max_value, vac_decision_domain,
                                   vac_decision_domain_n, max_vac_soc_states, max_power_charging_station, timestep, single_ev, solver_name,
-                                  absolute_path, ini_ess_soc, ini_vac_soc, position=None):
+                                  absolute_path, ini_ess_soc, ini_vac_soc, logger, position=None):
         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
         if single_ev:
@@ -504,7 +504,7 @@ class OptControllerStochastic(ControllerBase):
                     feasible_Pvac = vac_decision_domain[0:index + 1]
             else:
                 feasible_Pvac.append(0)
-            #print("feasible p_ESS " + str(feasible_Pess)+" feasible p_VAC " + str(feasible_Pvac))
+            #logger.debug("feasible p_ESS " + str(feasible_Pess)+" feasible p_VAC " + str(feasible_Pvac))
 
         else:
 
@@ -535,7 +535,7 @@ class OptControllerStochastic(ControllerBase):
 
         if final_ev_soc < data_dict[None]["VAC_States_Min"][None]:
             final_ev_soc = data_dict[None]["VAC_States_Min"][None]
-        #print("Max_Charging_Power_kW "+str(max_power_charging_station))
+        #logger.debug("Max_Charging_Power_kW "+str(max_power_charging_station))
 
         data_dict[None]["final_ev_soc"] = {None: final_ev_soc}
 
@@ -555,50 +555,47 @@ class OptControllerStochastic(ControllerBase):
         instance = None
         my_dict = {}
         my_dict_param={}
+        ctr = 0
         while True:
             try:
-                if True:
-                    optsolver = SolverFactory(solver_name)
-                    spec = importlib.util.spec_from_file_location(absolute_path, absolute_path)
-                    module = spec.loader.load_module(spec.name)
-                    my_class = getattr(module, 'Model')
-                    instance = my_class.model.create_instance(data_dict)
-                    result = optsolver.solve(instance)
-                    if result is None:
-                        print("result is none for " + str(v) + " repeat")
-                    elif (result.solver.status == SolverStatus.ok) and (
-                            result.solver.termination_condition == TerminationCondition.optimal):
-                        instance.solutions.load_from(result)
+                optsolver = SolverFactory(solver_name)
+                spec = importlib.util.spec_from_file_location(absolute_path, absolute_path)
+                module = spec.loader.load_module(spec.name)
+                my_class = getattr(module, 'Model')
+                instance = my_class.model.create_instance(data_dict)
+                result = optsolver.solve(instance)
+                if result is None:
+                    logger.debug("result is none for " + str(v) + " repeat")
+                elif (result.solver.status == SolverStatus.ok) and (
+                        result.solver.termination_condition == TerminationCondition.optimal):
+                    instance.solutions.load_from(result)
 
-                        # * if solved get the values in dict
-                        for v1 in instance.component_objects(Var, active=True):
-                            # self.logger.debug("Variable in the optimization: " + str(v))
-                            varobject = getattr(instance, str(v1))
-                            var_list = []
-                            try:
-                                # Try and add to the dictionary by key ref
-                                if str(v1) == "Value_output":
-                                    #print("Value_output " +str(varobject.get_values()))
-                                    my_dict[str(v1)] = varobject.get_values()
-                                else:
-                                    for index in varobject:
-                                        var_list.append(varobject[index].value)
-                                    # self.logger.debug("Identified variables " + str(var_list))
-                                    my_dict[str(v1)] = var_list
-                            except Exception as e:
-                                print("error reading result " + str(e))
-
-
-                    elif result.solver.termination_condition == TerminationCondition.infeasible:
-                        # do something about it? or exit?
-                        print("Termination condition is infeasible " + v + " repeat")
-                        continue
-                    else:
-                        print("Nothing fits " + v + " repeat")
-                        continue
+                    # * if solved get the values in dict
+                    for v1 in instance.component_objects(Var, active=True):
+                        # self.logger.debug("Variable in the optimization: " + str(v))
+                        varobject = getattr(instance, str(v1))
+                        var_list = []
+                        try:
+                            # Try and add to the dictionary by key ref
+                            if str(v1) == "Value_output":
+                                #print("Value_output " +str(varobject.get_values()))
+                                my_dict[str(v1)] = varobject.get_values()
+                            else:
+                                for index in varobject:
+                                    var_list.append(varobject[index].value)
+                                # self.logger.debug("Identified variables " + str(var_list))
+                                my_dict[str(v1)] = var_list
+                        except Exception as e:
+                            print("error reading result " + str(e))
+                elif result.solver.termination_condition == TerminationCondition.infeasible:
+                    # do something about it? or exit?
+                    logger.debug("Termination condition is infeasible " + v + " repeat")
+                    continue
+                else:
+                    logger.debug("Nothing fits " + v + " repeat")
+                    continue
             except Exception as e:
-                print("Thread: " + v + " " + str(e))
-
+                logger.error("Thread: " + v + " " + str(e))
 
             if single_ev:
                 combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)

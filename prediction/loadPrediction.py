@@ -78,7 +78,7 @@ class LoadPrediction:
             load_forecast_topic = json.loads(load_forecast_topic)
             load_forecast_topic["topic"] = load_forecast_topic["topic"] + self.topic_name
             self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q,
-                                                           60, self.topic_name, self.id,
+                                                           control_frequency, self.topic_name, self.id,
                                                            self.horizon_in_steps, self.dT_in_seconds)
             self.load_forecast_pub.start()
 
