@@ -251,7 +251,7 @@ class OptControllerStochastic(ControllerBase):
                                         executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, self.logger, position))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
                             else:
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc = combination
@@ -259,7 +259,7 @@ class OptControllerStochastic(ControllerBase):
                                         executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, self.logger))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc))
 
                             for future in concurrent.futures.as_completed(futures):
                                 try:
@@ -489,7 +489,7 @@ class OptControllerStochastic(ControllerBase):
     @staticmethod
     def create_instance_and_solve(data_dict, ess_decision_domain, min_value, max_value, vac_decision_domain,
                                   vac_decision_domain_n, max_vac_soc_states, max_power_charging_station, timestep, single_ev, solver_name,
-                                  absolute_path, ini_ess_soc, ini_vac_soc, logger, position=None):
+                                  absolute_path, ini_ess_soc, ini_vac_soc, position=None):
         feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
         if single_ev:
@@ -575,7 +575,7 @@ class OptControllerStochastic(ControllerBase):
                 instance = my_class.model.create_instance(data_dict)
                 result = optsolver.solve(instance)
                 if result is None:
-                    logger.debug("result is none for " + str(v) + " repeat")
+                    print("result is none for " + str(v) + " repeat")
                     continue
                 elif (result.solver.status == SolverStatus.ok) and (
                         result.solver.termination_condition == TerminationCondition.optimal):
@@ -600,13 +600,13 @@ class OptControllerStochastic(ControllerBase):
                             print("error reading result " + str(e))
                 elif result.solver.termination_condition == TerminationCondition.infeasible:
                     # do something about it? or exit?
-                    logger.debug("Termination condition is infeasible " + v + " repeat")
+                    print("Termination condition is infeasible " + v + " repeat")
                     continue
                 else:
-                    logger.debug("Nothing fits " + v + " repeat")
+                    print("Nothing fits " + v + " repeat")
                     continue
             except Exception as e:
-                logger.error("Thread: " + v + " " + str(e))
+                print("Thread: " + v + " " + str(e))
 
             if single_ev:
                 combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)

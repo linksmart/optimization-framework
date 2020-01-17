@@ -44,13 +44,13 @@ class PVPrediction(threading.Thread):
 
         location = {"city":city,"country":country}
 
-        maxPV = float(opt_values["PV_Inv_Max_Power"][None])
+        self.maxPV = float(opt_values["PV_Inv_Max_Power"][None])
         pv_forecast_topic = config.get("IO", "forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
         pv_forecast_topic["topic"] = pv_forecast_topic["topic"] + self.generic_name
         self.base_data = {}
 
-        radiation = Radiation(config, maxPV, dT_in_seconds, location)
+        radiation = Radiation(config, self.maxPV, dT_in_seconds, location)
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation,))
         self.pv_thread.start()
 
@@ -128,6 +128,8 @@ class PVPrediction(threading.Thread):
                 new_value = row[1]+factor
                 if new_value < 0:
                     new_value = 0
+                if new_value > self.maxPV:
+                    new_value = self.maxPV
                 new_data.append([row[0], new_value])
             self.logger.debug("new_data = "+str(new_data))
             return new_data
