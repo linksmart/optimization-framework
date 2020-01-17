@@ -135,8 +135,8 @@ class PVPrediction(threading.Thread):
                 new_value = row[1]+factor
                 if new_value < 0:
                     new_value = 0
-                if new_value > self.maxPV:
-                    new_value = self.maxPV
+                if new_value > self.maxPV*1000:
+                    new_value = self.maxPV*1000
                 new_data.append([row[0], new_value])
             self.logger.debug("new_data = "+str(new_data))
             return new_data

@@ -186,7 +186,7 @@ class OptControllerStochastic(ControllerBase):
             start_time_total = time.time()
             self.logger.debug("number of workers = " + str(self.number_of_workers))
             self.logger.info("waiting for data")
-            data_dict = self.input.get_data(preprocess=True)  # blocking call
+            data_dict = self.input.get_data(preprocess=True, redisDB=self.redisDB)  # blocking call
             self.logger.debug("data_dict after waiting data "+str(data_dict))
 
             if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
@@ -312,6 +312,10 @@ class OptControllerStochastic(ControllerBase):
                 p_grid = Decision[result_key]['Grid']
                 p_ess = Decision[result_key]['ESS']
                 p_vac = Decision[result_key]['VAC']
+                if "P_Load" in data_dict[None].keys():
+                    p_load = data_dict[None]["P_Load"][0] / 1000
+                else:
+                    p_load = 0
 
                 Decision.clear()
                 Value.clear()
@@ -357,8 +361,9 @@ class OptControllerStochastic(ControllerBase):
 
                 self.logger.debug("Implemented actions")
                 self.logger.debug("PV generation:" + str(p_pv))
+                self.logger.debug("Load:" + str(p_load))
                 self.logger.debug("Grid before:" + str(p_grid))
-                p_grid = feasible_ev_charging_power - p_pv - p_ess
+                p_grid = feasible_ev_charging_power - p_pv - p_ess + p_load
                 self.logger.debug("Grid after:" + str(p_grid))
                 self.logger.debug("ESS discharge:" + str(p_ess))
                 self.logger.debug("Real EV charging" + str(feasible_ev_charging_power))

@@ -61,7 +61,7 @@ class Model:
     model.P_Grid_S_Output = Var(within=Reals)  # Active power exchange with grid at S phase
     model.P_Grid_T_Output = Var(within=Reals)  # Active power exchange with grid at S phase
 
-    model.P_PV_single = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
+    #model.P_PV_single = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_Load_single = Var(within=NonNegativeReals)
 
     model.future_cost = Var(within=Reals)
@@ -76,7 +76,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]/1000
+                return model.P_PV_OUTPUT == model.P_PV[j]/1000
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 
@@ -86,11 +86,6 @@ class Model:
                 return model.P_Load_single == model.P_Load[j]/1000
 
     model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
-
-    def con_rule_pv_potential(model):
-        return model.P_PV_OUTPUT == model.P_PV_single
-
-    model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
 
     def ess_chargepower(model):
         return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
