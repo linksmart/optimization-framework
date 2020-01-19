@@ -153,8 +153,6 @@ class OptControllerStochastic(ControllerBase):
         vac_domain_min = vac_soc_states[0]
         vac_domain_max = domain_range + vac_steps
 
-        # ess_domain_min = ess_steps * round(ess_domain_min / ess_steps)
-        # ess_domain_max = ess_steps * round(ess_domain_max / ess_steps)
         vac_domain_min = vac_steps * math.floor(vac_domain_min / vac_steps)
         vac_domain_max = vac_steps * math.floor(vac_domain_max / vac_steps)
 
@@ -169,8 +167,8 @@ class OptControllerStochastic(ControllerBase):
         ess_min_power = data_dict[None]["ESS_Max_Discharge_Power"][None]
         ess_capacity = data_dict[None]["ESS_Capacity"][None]
         # self.logger.debug("ess_capacity: "+str(ess_capacity)+" ess_min_power: "+str(ess_min_power)+ " ess_max_power: "+str(ess_max_power))
-        ess_domain_range_max = math.floor((ess_max_power / ess_capacity) * 100)
-        ess_domain_range_min = math.floor((ess_min_power / ess_capacity) * 100)
+        ess_domain_range_max = math.floor(((ess_max_power * self.dT_in_seconds) / (ess_capacity * 3600)) * 100)
+        ess_domain_range_min = math.floor(((ess_min_power * self.dT_in_seconds) / (ess_capacity * 3600)) * 100)
 
         ess_steps = self.input.inputPreprocess.ess_steps
         ess_domain_min = - (math.floor(ess_domain_range_min / ess_steps) * ess_steps)
@@ -266,6 +264,7 @@ class OptControllerStochastic(ControllerBase):
                                     d, v = future.result()
                                     if d is None and v is None:
                                         loop_fail = True
+                                        self.logger.error("Optimization calculation was not possible. Process will be repeated")
                                         break
                                     Value.update(v)
                                     Decision.update(d)
@@ -283,9 +282,11 @@ class OptControllerStochastic(ControllerBase):
                     self.erase_pyomo_files(folder)
 
                     if loop_fail:
+                        self.logger.error("ERROR: Optimization calculation was not possible. Process will be repeated")
                         break
 
             if loop_fail:
+                self.logger.error("Optimization will be repeated")
                 continue
 
             """
@@ -360,13 +361,14 @@ class OptControllerStochastic(ControllerBase):
                 # This section decides what to do with the non utilized virtual capacity charging power
 
                 self.logger.debug("Implemented actions")
-                self.logger.debug("PV generation:" + str(p_pv))
-                self.logger.debug("Load:" + str(p_load))
-                self.logger.debug("Grid before:" + str(p_grid))
-                p_grid = feasible_ev_charging_power - p_pv - p_ess + p_load
-                self.logger.debug("Grid after:" + str(p_grid))
-                self.logger.debug("ESS discharge:" + str(p_ess))
-                self.logger.debug("Real EV charging" + str(feasible_ev_charging_power))
+                self.logger.debug("PV generation: " + str(p_pv))
+                self.logger.debug("Load: " + str(p_load))
+                self.logger.debug("Grid before: " + str(p_grid))
+                if not self.single_ev:
+                    p_grid = feasible_ev_charging_power - p_pv - p_ess + p_load
+                self.logger.debug("Grid after: " + str(p_grid))
+                self.logger.debug("ESS discharge: " + str(p_ess))
+                self.logger.debug("Real EV charging " + str(feasible_ev_charging_power))
 
                 stochastic_end_time = time.time()
 

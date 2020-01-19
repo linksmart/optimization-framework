@@ -17,7 +17,7 @@ class Model:
 
     model.Value = Param(model.Value_Index,  within=Reals)
 
-    model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
+    model.P_PV = Param(model.T, within=Reals)  # PV PMPP forecast
     model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
     model.P_Load = Param(model.T, within=NonNegativeReals)  # Active power demand
 
@@ -66,7 +66,6 @@ class Model:
     model.P_Grid_S_Output = Var(within=Reals)  # Active power exchange with grid at S phase
     model.P_Grid_T_Output = Var(within=Reals)  # Active power exchange with grid at S phase
 
-    model.P_PV_single = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_Load_single = Var(within=NonNegativeReals)
     model.ESS_Control_single = Var(within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))
 
@@ -82,7 +81,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]/1000
+                return model.P_PV_OUTPUT == model.P_PV[j]/1000
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 
@@ -100,15 +99,8 @@ class Model:
 
     model.con_ess_IniDSO = Constraint(rule=rule_iniDSO)
 
-    def con_rule_pv_potential(model):
-        return model.P_PV_OUTPUT == model.P_PV_single
-
-    model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
-
     def ess_chargepower(model):
-        return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
-                                         product(model.Feasible_ESS_Decisions,
-                                         model.Feasible_VAC_Decisions)) * (model.ESS_Capacity * 3600) / (100 * model.dT)
+        return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions)) * (model.ESS_Capacity * 3600) / (100 * model.dT)
 
     model.const_esschargepw = Constraint(rule=ess_chargepower)
 
@@ -124,22 +116,22 @@ class Model:
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
     def con_rule_fronius_power(model):
-        return model.P_ESS_OUTPUT == model.P_Fronius
+        return model.P_Fronius == model.P_ESS_OUTPUT + 0
 
     model.con_fronius_power = Constraint(rule=con_rule_fronius_power)
 
     def home_demandmeeting_R(model):
-        return model.P_Grid_R_Output + (model.P_Fronius/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
+        return model.P_Grid_R_Output + (model.P_ESS_OUTPUT/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
 
     model.const_demand_R = Constraint(rule=home_demandmeeting_R)
 
     def home_demandmeeting_S(model):
-        return model.P_Grid_S_Output + (model.P_Fronius/3) + (model.P_PV_OUTPUT/2) == (model.P_Load_single/3)
+        return model.P_Grid_S_Output + (model.P_ESS_OUTPUT/3) + (model.P_PV_OUTPUT/2) == (model.P_Load_single/3)
 
     model.const_demand_S = Constraint(rule=home_demandmeeting_S)
 
     def home_demandmeeting_T(model):
-        return model.P_Grid_T_Output + (model.P_Fronius/3)  == (model.P_Load_single / 3)
+        return model.P_Grid_T_Output + (model.P_ESS_OUTPUT/3) == (model.P_Load_single/3)
 
     model.const_demand_T = Constraint(rule=home_demandmeeting_T)
 
@@ -166,11 +158,7 @@ class Model:
             #                       +probability of swiching to away state*value of having away state
             return model.expected_future_cost[p_ess,p_vac] == model.Behavior_Model[(1, 1)] * valueOf_home + \
                                    model.Behavior_Model[(1, 0)] * valueOf_away
-            # print("value home "+str(valueOf_home)+" value away "+str(valueOf_away)+" future cost "+str(expected_future_cost) )
 
-            # immediate_cost = model.GlobalTargetWeight * model.G
-
-            # future_cost += model.Decision[p_ess, p_vac] * (immediate_cost + expected_future_cost)
         elif model.Recharge == 0:
         # If vac is charged with one of the feasible decision 'p_ev'
             #model.powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
@@ -199,14 +187,12 @@ class Model:
     model.con_expected_future_value = Constraint(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions,rule=con_expected_future_value)
 
     def con_future_cost(model):
-        return model.future_cost == sum(model.Decision[p_ess, p_vac] * model.expected_future_cost[p_ess, p_vac]
-                                        for p_ess, p_vac in
-                                        product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
+        return model.future_cost == sum(model.Decision[p_ess, p_vac] * model.expected_future_cost[p_ess, p_vac] for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
     model.rule_future_cost = Constraint(rule=con_future_cost)
 
     def objrule1(model):
-            return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + \
-                   +model.GlobalTargetWeight * (model.ESS_Control_single-model.P_ESS_OUTPUT) * \
-                   (model.ESS_Control_single-model.P_ESS_OUTPUT) + model.future_cost
+        return model.LocalTargetWeight * model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + \
+               +model.GlobalTargetWeight * (model.ESS_Control_single - model.P_ESS_OUTPUT) * \
+               (model.ESS_Control_single - model.P_ESS_OUTPUT) + model.future_cost
 
     model.obj = Objective(rule=objrule1, sense=minimize)

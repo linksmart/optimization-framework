@@ -16,7 +16,7 @@ class Model:
 
     model.Value = Param(model.Value_Index, within=Reals)
 
-    model.P_PV = Param(model.T, within=NonNegativeReals)  # PV PMPP forecast
+    model.P_PV = Param(model.T, within=Reals)  # PV PMPP forecast
     model.PV_Inv_Max_Power = Param(within=PositiveReals)  # PV inverter capacity
     model.P_Load = Param(model.T, within=NonNegativeReals)
 
@@ -56,7 +56,6 @@ class Model:
     model.P_PV_OUTPUT = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_GRID_OUTPUT = Var(within=Reals,bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 
-    model.P_PV_single = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
     model.P_Load_single = Var(within=NonNegativeReals)
     model.ESS_Control_single = Var(within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))
 
@@ -81,7 +80,7 @@ class Model:
     def rule_iniPV(model):
         for j in model.P_PV:
             if j == model.Timestep:
-                return model.P_PV_single == model.P_PV[j]/1000
+                return model.P_PV_OUTPUT == model.P_PV[j]/1000
 
     model.con_ess_IniPV = Constraint(rule=rule_iniPV)
 
@@ -91,11 +90,6 @@ class Model:
                 return model.ESS_Control_single == model.ESS_Control[j]
 
     model.con_ess_IniDSO = Constraint(rule=rule_iniDSO)
-
-    def con_rule_pv_potential(model):
-        return model.P_PV_OUTPUT == model.P_PV_single
-
-    model.con_pv_pmax = Constraint(rule=con_rule_pv_potential)
 
     def ess_chargepower(model):
         return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in

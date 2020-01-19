@@ -88,9 +88,7 @@ class Model:
     model.con_ess_IniLoad = Constraint(rule=rule_iniLoad)
 
     def ess_chargepower(model):
-        return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in
-                                         product(model.Feasible_ESS_Decisions,
-                                         model.Feasible_VAC_Decisions)) * (model.ESS_Capacity * 3600) / (100 * model.dT)
+        return model.P_ESS_OUTPUT == sum(model.Decision[ess, vac] * ess for ess, vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions)) * (model.ESS_Capacity * 3600) / (100 * model.dT)
 
     model.const_esschargepw = Constraint(rule=ess_chargepower)
 
@@ -106,22 +104,22 @@ class Model:
     model.const_evchargepw = Constraint(rule=vac_chargepower)
 
     def con_rule_fronius_power(model):
-        return model.P_ESS_OUTPUT == model.P_Fronius
+        return model.P_Fronius == model.P_ESS_OUTPUT + 0
 
     model.con_fronius_power = Constraint(rule=con_rule_fronius_power)
 
     def home_demandmeeting_R(model):
-        return model.P_Grid_R_Output + (model.P_Fronius/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
+        return model.P_Grid_R_Output + (model.P_ESS_OUTPUT/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
 
     model.const_demand_R = Constraint(rule=home_demandmeeting_R)
 
     def home_demandmeeting_S(model):
-        return model.P_Grid_S_Output + (model.P_Fronius/3) + (model.P_PV_OUTPUT/2) == (model.P_Load_single/3)
+        return model.P_Grid_S_Output + (model.P_ESS_OUTPUT/3) + (model.P_PV_OUTPUT/2) == (model.P_Load_single/3)
 
     model.const_demand_S = Constraint(rule=home_demandmeeting_S)
 
     def home_demandmeeting_T(model):
-        return model.P_Grid_T_Output + (model.P_Fronius/3) == (model.P_Load_single/3)
+        return model.P_Grid_T_Output + (model.P_ESS_OUTPUT/3) == (model.P_Load_single/3)
 
     model.const_demand_T = Constraint(rule=home_demandmeeting_T)
 
@@ -177,12 +175,10 @@ class Model:
     model.con_expected_future_value = Constraint(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions,rule=con_expected_future_value)
 
     def con_future_cost(model):
-        return model.future_cost == sum(model.Decision[p_ess, p_vac] * model.expected_future_cost[p_ess, p_vac]
-                                        for p_ess, p_vac in
-                                        product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
+        return model.future_cost == sum(model.Decision[p_ess, p_vac] * model.expected_future_cost[p_ess, p_vac] for p_ess, p_vac in product(model.Feasible_ESS_Decisions, model.Feasible_VAC_Decisions))
     model.rule_future_cost = Constraint(rule=con_future_cost)
 
     def objrule1(model):
-            return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + model.future_cost
+        return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + model.future_cost
 
     model.obj = Objective(rule=objrule1, sense=minimize)
