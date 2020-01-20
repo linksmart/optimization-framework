@@ -59,7 +59,7 @@ class Model:
 	model.P_Fronius_Pct_Output = Var(model.T,  within=Reals, initialize=0)
 
 	model.SoC_copy = Var(within=NonNegativeReals)
-	model.PV_copy = Var(within=NonNegativeReals)
+	model.PV_copy = Var(within=Reals)
 	model.Load_copy = Var(within=Reals)
 	model.Grid_copy = Var(within=Reals)
 	model.Price_copy = Var(within=Reals)
