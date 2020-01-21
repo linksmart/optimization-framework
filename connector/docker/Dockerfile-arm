@@ -1,6 +1,5 @@
-
 # Use an official Python runtime as a parent image
-FROM garagon/solvers:arm_resin
+FROM garagon/solvers:arm_resin_basis
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
@@ -18,13 +17,12 @@ RUN apt-get update -y && apt-get install -y \
 
 RUN pip3 install --upgrade pip
 
+RUN pip3 install -U requests==2.21.0
+RUN pip3 install -U paho-mqtt==1.4.0
+RUN pip3 install -U pyzmq==18.0.1
+RUN pip3 install -U senml==0.1.0
+RUN pip3 install -U redis==2.10.6
 
-RUN pip3 install -U paho-mqtt
-RUN pip3 install -U pyzmq
-
-RUN pip3 install -U senml
-RUN pip3 install -U redis
-RUN pip3 install -U requests
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

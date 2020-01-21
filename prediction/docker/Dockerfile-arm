@@ -1,8 +1,6 @@
 
 # Use an official Python runtime as a parent image
-#FROM garagon/solvers:arm_resin
 FROM garagon/solvers:arm_resin_basis
-#FROM resin/raspberry-pi-python:latest
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
