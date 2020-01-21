@@ -1,6 +1,6 @@
 
 # Use an official Python runtime as a parent image
-FROM garagon/solvers:arm_resin_v2
+FROM garagon/solvers:arm_resin_v3
 
 #FROM resin/raspberry-pi-python:latest
 
@@ -38,12 +38,13 @@ RUN pip3 install -U connexion==2.2.0
 RUN pip3 install -U paho-mqtt==1.4.0
 RUN pip3 install -U pyzmq==18.0.1
 RUN pip3 install -U psutil==5.6.1
-RUN pip3 install -U tensorflow
-# ==1.8.0
+RUN pip3 install -U tensorflow==1.8.0
 RUN pip3 install -U keras==2.1.6
 RUN pip3 install -U senml==0.1.0
 RUN pip3 install -U redis==2.10.6
-RUN pip3 install -U Pyro4
+RUN pip3 install -U Pyro4==4.77
+RUN pip3 install -U numpy==1.14.3
+
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

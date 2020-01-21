@@ -29,7 +29,7 @@ class OptControllerMPC(ControllerBase):
     def optimize(self, count, solver_name, model_path):
         while not self.redisDB.get_bool(self.stop_signal_key): # and not self.stopRequest.isSet():
             self.logger.info("waiting for data")
-            data_dict = self.input.get_data(preprocess=False)  # blocking call
+            data_dict = self.input.get_data(preprocess=False, redisDB=self.redisDB)  # blocking call
             self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
             if self.redisDB.get_bool(self.stop_signal_key): # or self.stopRequest.isSet():
                 break

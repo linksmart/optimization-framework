@@ -1,7 +1,7 @@
 
 # Use an official Python runtime as a parent image
-FROM garagon/solvers:arm_resin
-
+#FROM garagon/solvers:arm_resin
+FROM garagon/solvers:arm_resin_basis
 #FROM resin/raspberry-pi-python:latest
 
 # Set the working directory to usr/src/app
@@ -24,15 +24,11 @@ RUN apt-get update -y && apt-get install -y \
     libhdf5-serial-dev python3-scipy python3-h5py python3-numpy libatlas-dev python3-setuptools python3-pandas python3-sklearn
 
 
-#RUN pip3 install setuptools
-#RUN apt-get install libhdf5-serial-dev
-#RUN apt-get install python3-pandas==0.22.0
-#RUN apt-get install python3-sklearn
-#RUN apt-get install python3-h5py
 RUN pip3 install -U tensorflow==1.8.0
 RUN pip3 install -U keras==2.1.6
-RUN pip3 install -U redis
-RUN pip3 install -U senml
+RUN pip3 install -U senml==0.1.0
+RUN pip3 install -U redis==2.10.6
+RUN pip3 install -U numpy==1.14.3
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app
