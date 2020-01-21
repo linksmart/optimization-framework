@@ -10,6 +10,7 @@ import datetime
 import time
 from math import floor
 
+import os
 from senml import senml
 
 from IO.dataReceiver import DataReceiver
@@ -27,6 +28,12 @@ class BaseDataReceiver(DataReceiver, ABC):
         self.buffer = buffer
         self.dT = dT
         self.base_value_flag = base_value_flag
+
+        persist_real_data_path = config.get("IO","persist.real.data.path",
+                                                 fallback="optimization/resources")
+        persist_real_data_path = os.path.join("/usr/src/app", persist_real_data_path, id, "real")
+        self.persist_real_data_file = os.path.join(persist_real_data_path, generic_name+".txt")
+
         if "detachable" in topic_params.keys():
             self.detachable = topic_params["detachable"]
         else:
@@ -35,28 +42,70 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.reuseable = topic_params["reuseable"]
         else:
             self.reuseable = False
+        if self.reuseable and not os.path.exists(persist_real_data_path):
+            os.makedirs(persist_real_data_path)
+
         self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
         self.total_steps_in_day = floor(24 * 60 * 60 / self.dT)
         self.current_day_index = 0
         self.number_of_bucket_days = int(buffer / self.total_steps_in_day)
         self.bucket_index = False
         self.length = 1
+
         try:
             super().__init__(internal, topic_params, config, id=id)
         except Exception as e:
             redisDB.set("Error mqtt" + self.id, True)
             self.logger.error(e)
 
+        if self.reuseable:
+            formated_data = self.read_data()
+            if formated_data is not None and len(formated_data) > 0:
+                self.length = len(formated_data)
+                self.data.update(formated_data)
+                self.data_update = True
+                self.last_time = time.time()
+
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
             senml_data = json.loads(payload)
             formated_data = self.add_formated_data(senml_data)
+            if self.reuseable:
+                self.save_data(formated_data)
             self.data.update(formated_data)
             self.data_update = True
             self.last_time = time.time()
         except Exception as e:
             self.logger.error(e)
+
+    def save_data(self, formated_data):
+        keys = list(formated_data.keys())
+        sorted(keys)
+        values = [formated_data[key] for key in keys]
+        with open(self.persist_real_data_file, "w") as f:
+            value = "\n".join(map(str, values))
+            f.writelines(value)
+            self.logger.debug("saved real reuseable data to file "+self.persist_real_data_file)
+
+    def read_data(self):
+        if os.path.exists(self.persist_real_data_file):
+            with open(self.persist_real_data_file, "r") as f:
+                data = f.readlines()
+                formated_data = {}
+                bucket = 0
+                for row in data:
+                    bucket_key = str(self.current_day_index) + "_" + str(bucket)
+                    formated_data[bucket_key] = float(row)
+                    bucket += 1
+                    if bucket >= self.total_steps_in_day:
+                        bucket = 0
+                        self.current_day_index += 1
+                        if self.current_day_index >= self.number_of_bucket_days:
+                            self.current_day_index = 0
+                return formated_data
+        return None
+
 
     def add_formated_data(self, json_data):
         doc = None
