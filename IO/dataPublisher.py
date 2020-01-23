@@ -101,6 +101,8 @@ class DataPublisher(ABC,threading.Thread):
                 data = self.get_data()
             if data:
                 self.data_publish(data, topic)
+            else:
+                self.logger.warning("No data present")
             time.sleep(self.publish_frequency)
 
     def data_publish(self, data, topic=None):
