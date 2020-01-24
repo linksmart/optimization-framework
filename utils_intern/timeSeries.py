@@ -9,6 +9,7 @@ class TimeSeries:
     @staticmethod
     def expand_and_resample(raw_data, dT):
         if TimeSeries.valid_time_series(raw_data):
+            raw_data = TimeSeries.append_next_dT_value(raw_data, dT)
             step = float(dT)
             j = len(raw_data) - 1
             new_data = []
@@ -43,6 +44,35 @@ class TimeSeries:
         else:
             new_data = raw_data
         return new_data
+
+    @staticmethod
+    def append_next_dT_value(raw_data, dT):
+        if len(raw_data) > 1:
+            new_data = []
+            new_data.extend(raw_data)
+            start_time = raw_data[0][0]
+            end_time = raw_data[-1][0]
+            time_diff = end_time - start_time
+            time_diff = time_diff + time_diff/(len(raw_data)-1)
+            changed_time_data = TimeSeries.increment_time(raw_data, time_diff)
+            i = 0
+            dt_diff = 0
+            while dt_diff < dT and i < len(changed_time_data):
+                dt_diff = changed_time_data[i][0] - end_time
+                new_data.append(changed_time_data[i])
+                i += 1
+            return new_data
+        return raw_data
+
+    @staticmethod
+    def increment_time(raw_data, time_diff):
+        if len(raw_data) > 0:
+            new_data = []
+            for t, v in raw_data:
+                new_data.append([t+time_diff,v])
+            return new_data
+        return raw_data
+
 
     @staticmethod
     def valid_time_series(raw_data):
