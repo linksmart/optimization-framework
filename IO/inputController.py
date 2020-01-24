@@ -186,28 +186,31 @@ class InputController:
         while not success:
             current_bucket = self.get_current_bucket()
             self.logger.info("Get input data for bucket " + str(current_bucket))
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = []
-                futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
-                                               self.internal_receiver, [], [], current_bucket))
-                futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.non_prediction_mqtt_flags,
-                                               self.internal_receiver, [], [], current_bucket))
-                futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,
-                                               self.external_data_receiver, [], ["SoC_Value"], current_bucket))
-                futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.preprocess_mqtt_flags,
-                                               self.external_data_receiver, [], ["SoC_Value"], current_bucket))
-                futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
-                                               self.generic_data_receiver, [], [], current_bucket))
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    success, read_data, mqtt_timer = future.result()
-                    if success:
-                        self.update_data(read_data)
-                        self.mqtt_timer.update(mqtt_timer)
-                    else:
-                        break
-                except Exception as exc:
-                    print("input fetch data caused an exception: " + str(exc))
+            try:
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    futures = []
+                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
+                                                   self.internal_receiver, [], [], current_bucket))
+                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.non_prediction_mqtt_flags,
+                                                   self.internal_receiver, [], [], current_bucket))
+                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,
+                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket))
+                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.preprocess_mqtt_flags,
+                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket))
+                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
+                                                   self.generic_data_receiver, [], [], current_bucket))
+                for future in concurrent.futures.as_completed(futures,timeout=90):
+                    try:
+                        success, read_data, mqtt_timer = future.result()
+                        if success:
+                            self.update_data(read_data)
+                            self.mqtt_timer.update(mqtt_timer)
+                        else:
+                            break
+                    except Exception as exc:
+                        print("input fetch data caused an exception: " + str(exc))
+            except Exception as e:
+                self.logger.error("Error occured while getting data for bucket "+str(current_bucket)+". "+str(e))
         if preprocess:
             complete_optimization_data = self.inputPreprocess.preprocess(self.optimization_data.copy(), self.mqtt_timer)
         else:
