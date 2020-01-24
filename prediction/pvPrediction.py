@@ -33,6 +33,7 @@ class PVPrediction(threading.Thread):
         self.generic_name = generic_name
         self.control_frequency = control_frequency
         self.control_frequency = int(self.control_frequency / 2)
+        self.control_frequency = 60
         self.id = id
         self.redisDB = RedisDB()
         raw_pv_data_topic = input_config_parser.get_params(generic_name)
@@ -102,10 +103,14 @@ class PVPrediction(threading.Thread):
         self.logger.debug("pv prediction thread exit")
 
     def run(self):
+        self.logger.debug("Running pv prediction")
         while not self.stopRequest.is_set():
+            self.logger.debug("before entering pv prediction "+ str(self.redisDB.get_bool(Constants.get_data_flow_key(self.id))))
             if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
+                self.logger.debug("pv prediction waiting for data flow to start")
                 time.sleep(30)
                 continue
+            self.logger.debug("pv prediction data flow true")
             try:
                 start = time.time()
                 data, bucket_available, self.last_time = self.raw_data.get_current_bucket_data(steps=1)

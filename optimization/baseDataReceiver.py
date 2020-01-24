@@ -69,9 +69,9 @@ class BaseDataReceiver(DataReceiver, ABC):
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-            self.logger.debug("payload "+str(payload))
+            #self.logger.debug("data received "+str(payload))
             senml_data = json.loads(payload)
-            self.logger.debug("senml_data "+str(senml_data))
+            #self.logger.debug("senml_data "+str(senml_data))
             formated_data = self.add_formated_data(senml_data)
             if self.reuseable:
                 self.save_data(formated_data)
