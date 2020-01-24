@@ -1,13 +1,35 @@
 
 # Use an official Python runtime as a parent image
-FROM garagon/ipopt:V0.2
+#FROM garagon/ipopt:V0.2
+
+FROM python:3.6.8-stretch
+# Switch to root for install
+USER root
+
+
+RUN apt-get update -y && apt-get install -y \
+    wget \
+    ca-certificates \
+	gcc \
+	g++ \
+	patch \
+	gfortran \
+	subversion \
+	build-essential \
+	--no-install-recommends \
+	&& rm -rf /var/lib/apt/lists/*
+
+###### "First apt-get install finished"
+RUN apt-get update -y && apt-get install -y git-core curl zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev software-properties-common libffi-dev
+
+
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy the current directory contents into the container usr/src/app
-COPY requirements.txt /usr/src/app/
+#COPY requirements.txt /usr/src/app/
 
 # #new addition
 RUN apt-get autoclean
@@ -21,19 +43,19 @@ RUN pip3 install --upgrade pip
 RUN apt-get update -y && apt-get install -y \
     libhdf5-serial-dev libatlas-dev python3-setuptools
 
-
 #RUN pip3 install setuptools
 #RUN apt-get install libhdf5-serial-dev
 RUN pip3 install -U numpy==1.14.3
-RUN pip3 install -U h5py
-RUN pip3 install -U scipy
+RUN pip3 install -U h5py==2.10.0
+RUN pip3 install -U scipy==1.3.3
 RUN pip3 install -U pandas==0.22.0
-RUN pip3 install -U sklearn
+RUN pip3 install -U sklearn==0.0
 
 RUN pip3 install -U tensorflow==1.8.0
 RUN pip3 install -U keras==2.1.6
-RUN pip3 install -U redis
-RUN pip3 install -U senml
+RUN pip3 install -U redis==2.10.6
+RUN pip3 install -U senml==0.1.0
+RUN pip3 install -U numpy==1.14.3
 
 WORKDIR /usr/src/app
 

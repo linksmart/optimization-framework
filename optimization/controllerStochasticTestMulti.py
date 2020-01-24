@@ -33,6 +33,7 @@ class OptControllerStochastic(ControllerBase):
                  config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
         self.single_ev = single_ev
         self.number_of_workers = int(config.get("SolverSection", "stochastic.multi.workers", fallback=6))
+        self.stochastic_timeout = config.getint("SolverSection", "stochastic.timeout.sec", fallback=60)
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
@@ -259,7 +260,7 @@ class OptControllerStochastic(ControllerBase):
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc))
 
-                            for future in concurrent.futures.as_completed(futures, timeout=60):
+                            for future in concurrent.futures.as_completed(futures, timeout=self.stochastic_timeout):
                                 try:
                                     d, v = future.result()
                                     if d is None and v is None:

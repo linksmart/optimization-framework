@@ -105,9 +105,9 @@ class PVPrediction(threading.Thread):
     def run(self):
         self.logger.debug("Running pv prediction")
         while not self.stopRequest.is_set():
-            self.logger.debug("before entering pv prediction "+ str(self.redisDB.get_bool(Constants.get_data_flow_key(self.id))))
+            #self.logger.debug("before entering pv prediction "+ str(self.redisDB.get_bool(Constants.get_data_flow_key(self.id))))
             if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
-                self.logger.debug("pv prediction waiting for data flow to start")
+                #self.logger.debug("pv prediction waiting for data flow to start")
                 time.sleep(30)
                 continue
             self.logger.debug("pv prediction data flow true")

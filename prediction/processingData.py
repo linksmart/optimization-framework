@@ -154,7 +154,7 @@ class ProcessingData:
         else:
             return [], False
 
-    def preprocess_data_train(self, blocks, num_timesteps, output_size):
+    def preprocess_data_train(self, blocks, num_timesteps, output_size, sp):
         x_list = []
         y_list = []
         look_back = num_timesteps
@@ -226,7 +226,7 @@ class ProcessingData:
         return Xtrain, Xtest, Ytrain, Ytest
         # logger.debug(str(Xtrain.shape) + " " + str(Xtest.shape) + " " + str(Ytrain.shape) + " " + str(Ytest.shape))
         """
-        sp = 250
+        logger.debug("fixing data size upper limit to " + str(sp))
         Xtrain, Ytrain = Xtrain[-sp:], Ytrain[-sp:]
         # TODO: check the capacity of RPi to operate with more data size
         return Xtrain, Ytrain

@@ -5,8 +5,10 @@
 # Based on Ubuntu
 ###################################################################################################
 # Set the base image to Ubuntu
-#FROM ubuntu:16.04
-FROM python:3.6.4-jessie
+
+#FROM python:3.6.4-jessie
+# Switch to root for install
+FROM python:3.6.8-stretch
 # Switch to root for install
 USER root
 
@@ -23,12 +25,12 @@ RUN apt-get update -y && apt-get install -y \
 	--no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
+###### "First apt-get install finished"
+RUN apt-get update -y && apt-get install -y git-core curl zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev software-properties-common libffi-dev
+
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
-
-# Copy the current directory contents into the container usr/src/app
-COPY connector/docker/requirements-arm.txt /usr/src/app/
 
 # #new addition
 RUN apt-get autoclean
@@ -40,12 +42,12 @@ RUN apt-get update -y && apt-get install -y \
 RUN pip3 install --upgrade pip
 
 
-RUN pip3 install -U paho-mqtt
-RUN pip3 install -U pyzmq
+RUN pip3 install -U paho-mqtt==1.4.0
+RUN pip3 install -U pyzmq==18.0.1
 
-RUN pip3 install -U senml
-RUN pip3 install -U redis
-RUN pip3 install -U requests
+RUN pip3 install -U senml==0.1.0
+RUN pip3 install -U redis==2.10.6
+RUN pip3 install -U requests==2.21.0
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

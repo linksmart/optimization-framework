@@ -45,7 +45,7 @@ class LoadPrediction:
         if self.output_size < 1:
             self.output_size = 1
         self.id = id
-
+        
         dir_data = os.path.join("/usr/src/app", "prediction/resources", self.id)
         if not os.path.exists(dir_data):
             os.makedirs(dir_data)
@@ -58,7 +58,8 @@ class LoadPrediction:
                                                     "prediction_data_" + str(topic_name) + ".csv")
         self.error_result_file_path = os.path.join("/usr/src/app", "prediction/resources", self.id,
                                                     "error_data_" + str(topic_name) + ".csv")
-        self.processingData = ProcessingData()
+        self.processingData = \
+            ()
 
         self.load_forecast_pub = None
         self.prediction_thread = None
@@ -95,13 +96,16 @@ class LoadPrediction:
 
             self.startPrediction()
         else:
+            self.max_training_samples = config.getint("IO", "max.training.samples", fallback=250)
+            self.logger.debug("max_training_samples "+str(self.max_training_samples))
             self.startTraining()
 
     def startTraining(self):
         self.training_thread = Training(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
-                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, self.output_size, self.logger)
+                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, 
+                                        self.output_size, self.max_training_samples, self.logger)
         self.training_thread.start()
 
     def startPrediction(self):
@@ -143,7 +147,7 @@ class Training(threading.Thread):
     """
 
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
-                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, log):
+                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, max_training_samples, log):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -165,6 +169,7 @@ class Training(threading.Thread):
         self.id = id
         self.dT_in_seconds = dT_in_seconds
         self.output_size = output_size
+        self.max_training_samples = max_training_samples
         self.logger = log
 
     def run(self):
@@ -183,7 +188,8 @@ class Training(threading.Thread):
                     if self.sufficient_data_available(data):
                         self.trained = True
                         self.logger.info("start training")
-                        Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps, self.output_size)
+                        Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps,
+                                                                                   self.output_size, self.max_training_samples)
                         self.logger.info("pre proc done")
                         try:
                             if self.redisDB.get_lock(self.training_lock_key, self.id+"_"+self.topic_name):
