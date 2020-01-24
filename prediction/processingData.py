@@ -51,6 +51,8 @@ class ProcessingData:
         look_back = num_timesteps
         num_features = 1
         nb_samples = data.shape[0] - num_timesteps
+        if nb_samples <= 0:
+            logger.error("nb samples is "+str(nb_samples))
         x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
         # y_train_reshaped = np.zeros((nb_samples, output_size))
         logger.info("data dim = "+str(data.shape))
@@ -75,7 +77,7 @@ class ProcessingData:
 
     def append_mock_data(self, data, num_timesteps, dT):
         l = len(data)
-        diff = num_timesteps - l
+        diff = num_timesteps - l + 1
         if l == 0:
             earliest_timestamp = time.time()
         else:
@@ -83,7 +85,7 @@ class ProcessingData:
         new_data = data
         for i in range(diff):
             earliest_timestamp -= dT
-            new_data.insert(0, [earliest_timestamp, - 0.000001])
+            new_data.insert(0, [earliest_timestamp, 0.000001])
         return new_data
 
     def break_series_into_countinous_blocks(self, raw_data, dT, horizon_steps):

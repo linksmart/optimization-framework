@@ -279,7 +279,7 @@ class Prediction(threading.Thread):
                 if len(data) > 0:
                     data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
                     self.logger.debug("len appended data = " + str(len(data)))
-                if len(data) >= self.num_timesteps:
+                if len(data) > self.num_timesteps:
                     st = time.time()
                     test_predictions = []
                     model, model_temp, temp_flag, graph = self.models.get_model(self.id+"_"+self.topic_name)
