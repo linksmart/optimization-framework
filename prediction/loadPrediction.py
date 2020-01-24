@@ -105,7 +105,7 @@ class LoadPrediction:
         self.training_thread.start()
 
     def startPrediction(self):
-        self.prediction_thread = Prediction(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
+        self.prediction_thread = Prediction(60, self.horizon_in_steps, self.num_timesteps,
                                             self.hidden_size, self.batch_size, self.num_epochs,
                                             self.raw_data, self.processingData, self.model_file_container_temp,
                                             self.model_file_container, self.q, self.topic_name, self.id,

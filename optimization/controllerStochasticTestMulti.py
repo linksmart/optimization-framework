@@ -572,7 +572,7 @@ class OptControllerStochastic(ControllerBase):
         else:
             gesscon = None
 
-        print("gesscon "+str(gesscon))
+        #print("gesscon "+str(gesscon))
         v = str(timestep) + "_" + str(ini_ess_soc) + "_" + str(ini_vac_soc)+" load "+str(load)+" pv "+str(pv)+\
             " gesscon "+str(gesscon) + " feasible_Pvac "+str(feasible_Pvac) + " feasible_Pess "+str(feasible_Pess)+\
             " Behavior "+str(data_dict[None]["Behavior_Model"])

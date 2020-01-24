@@ -36,17 +36,21 @@ class PVForecastPublisher(DataPublisher):
         #  check if new data is available
         if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
             return None
+        self.logger.debug("Getting PV data from Queue")
         if not self.q.empty():
             try:
                 new_data = self.q.get_nowait()
+                self.logger.debug("new data "+str(new_data))
                 self.q.task_done()
                 self.pv_data = new_data
                 self.logger.debug("extract pv data")
                 data = self.extract_horizon_data()
                 return data
             except Exception:
-                self.logger.debug("Queue empty")
-        return None
+                self.logger.error("Queue empty")
+        else:
+            self.logger.debug("PV Qqueue empty")
+            return None
 
     def extract_horizon_data(self):
         meas = []
