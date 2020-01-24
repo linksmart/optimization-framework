@@ -259,7 +259,7 @@ class OptControllerStochastic(ControllerBase):
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc))
 
-                            for future in concurrent.futures.as_completed(futures, timeout=90):
+                            for future in concurrent.futures.as_completed(futures, timeout=60):
                                 try:
                                     d, v = future.result()
                                     if d is None and v is None:
@@ -273,6 +273,7 @@ class OptControllerStochastic(ControllerBase):
                                     loop_fail = True
                     except Exception as e:
                         self.logger.error(e)
+                        loop_fail = True
 
                     value_index.clear()
                     value.clear()

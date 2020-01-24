@@ -69,7 +69,9 @@ class BaseDataReceiver(DataReceiver, ABC):
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+            self.logger.debug("payload "+str(payload))
             senml_data = json.loads(payload)
+            self.logger.debug("senml_data "+str(senml_data))
             formated_data = self.add_formated_data(senml_data)
             if self.reuseable:
                 self.save_data(formated_data)
@@ -119,6 +121,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                 doc = senml.SenMLDocument([meas])
             except Exception as e:
                 pass
+
         if doc:
             base_data = doc.base
             bn, bu = None, None
@@ -146,7 +149,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                             raw_data.append([t, processed_value])
                     except Exception as e:
                         self.logger.error("error " + str(e) + "  n = " + str(n))
-                #self.logger.debug("data: " + str(data))
+                #self.logger.debug("raw data: " + str(raw_data))
                 raw_data = TimeSeries.expand_and_resample(raw_data, self.dT)
                 self.length = len(raw_data)
                 if len(raw_data) > 0:
