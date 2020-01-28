@@ -58,8 +58,7 @@ class LoadPrediction:
                                                     "prediction_data_" + str(topic_name) + ".csv")
         self.error_result_file_path = os.path.join("/usr/src/app", "prediction/resources", self.id,
                                                     "error_data_" + str(topic_name) + ".csv")
-        self.processingData = \
-            ()
+        self.processingData = ProcessingData()
 
         self.load_forecast_pub = None
         self.prediction_thread = None
