@@ -130,6 +130,19 @@ services:
         max-size: "10m"
         max-file: "10"
     command: ["python3", "-u", "connectors.py"]
+  monitor:
+    build:
+      context: ""
+      dockerfile: monitor/docker/Dockerfile-arm
+    image: garagon/optimization:arm_monitor
+    volumes:
+      - ../optimization-framework/monitor/resources:/usr/src/app/monitor/resources
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    command: ["python3", "-u", "monitor.py"]
 
 volumes:
   volume-glpsol:

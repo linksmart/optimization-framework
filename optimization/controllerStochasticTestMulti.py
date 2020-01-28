@@ -474,6 +474,7 @@ class OptControllerStochastic(ControllerBase):
 
                     self.logger.debug("results_publish "+str(results_publish))
                     self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
+                    self.monitor.optimization_finished(self.control_frequency)
 
                     results.clear()
                     ev_park = None

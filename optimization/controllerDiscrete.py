@@ -84,6 +84,7 @@ class OptControllerDiscrete(ControllerBase):
                             # my_dict = {**my_dict, **{v: list}}
 
                     self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
+                    self.monitor.optimization_finished(self.control_frequency)
                 except Exception as e:
                     self.logger.error(e)
             elif result.solver.termination_condition == TerminationCondition.infeasible:

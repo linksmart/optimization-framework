@@ -55,7 +55,7 @@ WORKDIR /usr/src/app
 
 COPY utils /usr/src/app/utils
 COPY IO /usr/src/app/IO
-COPY connector /usr/src/app/connector
-COPY connectors.py /usr/src/app/connectors.py
+COPY monitor /usr/src/app/monitor
+COPY monitor.py /usr/src/app/monitor.py
 COPY config /usr/src/app/config
 COPY utils_intern /usr/src/app/utils_intern

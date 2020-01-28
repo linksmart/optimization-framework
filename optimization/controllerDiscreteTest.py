@@ -55,6 +55,7 @@ class OptControllerDiscrete(ControllerBase):
                         try:
                             my_dict = future.result()
                             self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
+                            self.monitor.optimization_finished(self.control_frequency)
                         except Exception as exc:
                             self.logger.error("caused an exception: "+str(exc))
 

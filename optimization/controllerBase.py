@@ -22,6 +22,7 @@ import shutil
 import os
 
 from IO.inputController import InputController
+from IO.monitorPub import MonitorPub
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
 from optimization.ModelException import InvalidModelException
@@ -87,9 +88,7 @@ class ControllerBase(ABC, threading.Thread):
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
                                          self.horizon_in_steps, self.dT_in_seconds)
-
-
-
+        self.monitor = MonitorPub(config, id)
 
     # Importint a class dynamically
     def path_import2(self, absolute_path):
@@ -200,7 +199,6 @@ class ControllerBase(ABC, threading.Thread):
             else:
                 return_msg = e
         finally:
-
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
             self.logger.info("execution error "+str(execution_error))
@@ -220,6 +218,7 @@ class ControllerBase(ABC, threading.Thread):
 
             self.logger.info(return_msg)
             self.redisDB.set(self.finish_status_key, True)
+            #self.monitor.optimization_finished(-9)
             return return_msg
 
     @abstractmethod

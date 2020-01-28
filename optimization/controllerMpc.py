@@ -79,6 +79,7 @@ class OptControllerMPC(ControllerBase):
                         self.output.publish_data(self.id, my_dict, self.dT_in_seconds)
                     else:
                         self.logger.debug("model.stop_system true")
+                    self.monitor.optimization_finished(self.control_frequency)
                 except Exception as e:
                     self.logger.error(e)
             elif self.results.solver.termination_condition == TerminationCondition.infeasible:
