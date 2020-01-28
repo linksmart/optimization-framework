@@ -66,7 +66,12 @@ class MQTTClient:
         self.logger.info(str(args))
 
     def on_message(self,client, userdata, message):
-        self.callback_function(message.payload.decode())
+        msg = message.payload.decode()
+        try:
+            msg = msg.replace("\'", "\"")
+        except Exception:
+            pass
+        self.callback_function(msg)
 
 
     def sendResults(self, topic, data, qos):

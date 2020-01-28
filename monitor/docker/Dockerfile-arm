@@ -1,0 +1,36 @@
+# Use an official Python runtime as a parent image
+FROM garagon/solvers:arm_resin_basis
+
+# Set the working directory to usr/src/app
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+# Copy the current directory contents into the container usr/src/app
+COPY connector/docker/requirements-arm.txt /usr/src/app/
+
+RUN apt-get autoclean
+RUN apt-get clean
+
+RUN apt-get update -y && apt-get install -y \
+	gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools
+
+
+RUN pip3 install --upgrade pip
+
+RUN pip3 install -U requests==2.21.0
+RUN pip3 install -U paho-mqtt==1.4.0
+RUN pip3 install -U pyzmq==18.0.1
+RUN pip3 install -U senml==0.1.0
+RUN pip3 install -U redis==2.10.6
+
+
+# Set the working directory to usr/src/app
+#RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+COPY utils /usr/src/app/utils
+COPY IO /usr/src/app/IO
+COPY connector /usr/src/app/connector
+COPY connectors.py /usr/src/app/connectors.py
+COPY config /usr/src/app/config
+COPY utils_intern /usr/src/app/utils_intern
