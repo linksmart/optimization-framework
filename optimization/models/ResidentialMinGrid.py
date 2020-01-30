@@ -135,6 +135,6 @@ class Model:
 	#######                         OBJECTIVE                           #######
 	###########################################################################
 	def obj_rule(model):
-	    return sum(model.P_Grid_Output[t] * model.P_Grid_Output[t] for t in model.T)
+		return sum(model.P_Grid_Output[t] * model.P_Grid_Output[t] for t in model.T)
 	
 	model.obj = Objective(rule=obj_rule, sense=minimize)

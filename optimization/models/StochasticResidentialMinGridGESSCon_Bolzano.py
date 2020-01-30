@@ -121,7 +121,7 @@ class Model:
     model.con_fronius_power = Constraint(rule=con_rule_fronius_power)
 
     def home_demandmeeting_R(model):
-        return model.P_Grid_R_Output + (model.P_ESS_OUTPUT/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
+        return model.P_Grid_R_Output + (model.P_ESS_OUTPUT/3) + (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
 
     model.const_demand_R = Constraint(rule=home_demandmeeting_R)
 

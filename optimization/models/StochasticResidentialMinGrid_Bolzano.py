@@ -39,7 +39,8 @@ class Model:
     model.final_ev_soc = Param(within=Reals, default=0.0)
     model.Max_Charging_Power_kW = Param(within=NonNegativeReals)
 
-    model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
+    model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power import
+    model.Q_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
 
     model.Fronius_Max_Power = Param(within=PositiveReals)
     model.ESS_Max_Charge_Power = Param(within=PositiveReals)  # Max Charge Power of ESSs
@@ -55,7 +56,7 @@ class Model:
     model.P_ESS_OUTPUT = Var(within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))
     model.P_VAC_OUTPUT = Var(within=NonNegativeReals, bounds=(0, model.Max_Charging_Power_kW))
     model.P_PV_OUTPUT = Var(within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))
-    model.P_GRID_OUTPUT = Var(within=Reals,bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
+    model.P_GRID_OUTPUT = Var(within=Reals, bounds=(-model.Q_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 
     model.P_Grid_R_Output = Var(within=Reals)  # Active power exchange with grid at R phase
     model.P_Grid_S_Output = Var(within=Reals)  # Active power exchange with grid at S phase
@@ -65,6 +66,7 @@ class Model:
     model.P_Load_single = Var(within=NonNegativeReals)
 
     model.future_cost = Var(within=Reals)
+
 
     def combinatorics(model):
         # only one of the feasible decisions can be taken
