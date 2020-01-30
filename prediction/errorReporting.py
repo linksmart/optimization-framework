@@ -18,7 +18,7 @@ from prediction.predictionDataManager import PredictionDataManager
 from prediction.rawDataReader import RawDataReader
 from utils_intern.messageLogger import MessageLogger
 from utils_intern.timeSeries import TimeSeries
-
+from math import floor
 
 class ErrorReporting(DataPublisher):
 
@@ -50,6 +50,12 @@ class ErrorReporting(DataPublisher):
             self.logger.debug("Error_Calculation topic param updated - "+str(self.topic_params))
             return True
         return False
+
+    def get_start_of_the_day(self, timestamp):
+        return datetime.datetime.fromtimestamp(timestamp).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+
+    def time_to_bucket(self, time, start_of_day):
+        return floor((time - start_of_day) / self.dT_in_seconds)%self.horizon_in_steps
 
     def get_data(self):
         try:
@@ -106,20 +112,28 @@ class ErrorReporting(DataPublisher):
 
     def format_predicted_data(self, start_time, values):
         if start_time is not None and values is not None:
-            t = start_time
-            new_data = []
+            start_of_day = self.get_start_of_the_day(start_time)
+            bucket = self.time_to_bucket(start_time, start_of_day)
+            new_data = {}
             for v in values:
-                new_data.append([t,float(v)])
-                t += self.dT_in_seconds
-            return self.convert_time_to_date(new_data)
-        return None, None
+                new_data[bucket] = float(v)
+                bucket += 1
+                if bucket >= self.horizon_in_steps:
+                    bucket = bucket%self.horizon_in_steps
+            return new_data
+        return None
 
     def read_raw_data(self, start_time):
+        start_of_day = self.get_start_of_the_day(start_time)
         end_time = start_time + self.dT_in_seconds*self.horizon_in_steps
         data = self.raw_data.get_raw_data_by_time(self.raw_data_file_container, self.topic_name, start_time, end_time)
         data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
         data = data[:-1]
-        return self.convert_time_to_date(data)
+        new_data = {}
+        for t, v in data:
+            bucket = self.time_to_bucket(t, start_of_day)
+            new_data[bucket] = v
+        return new_data
 
     def convert_time_to_date(self, data):
         new_data = []
@@ -144,28 +158,20 @@ class ErrorReporting(DataPublisher):
                 self.logger.debug("start_time " + str(start_time))
                 actual_data = self.read_raw_data(start_time)
                 if actual_data is not None:
-                    self.logger.debug("length "+str(len(actual_data))+" "+str(len(predicted_data)))
                     if len(actual_data) == len(predicted_data):
                         if len(actual_data) > 0:
-                            timestamp_matches = True
                             actual = []
                             predicted = []
-                            for i in range(len(actual_data)):
-                                at = actual_data[i][0]
-                                pt = predicted_data[i][0]
-                                if at != pt:
-                                    self.logger.error(str(at.timestamp()) + " != " + str(pt.timestamp()) + " diff = " + str((at - pt)))
-                                    timestamp_matches = False
-                                    break
-                                else:
-                                    actual.append(float(actual_data[i][1]))
-                                    predicted.append(float(predicted_data[i][1]))
-                            if timestamp_matches:
-                                actual = np.asarray(actual)
-                                predicted = np.asarray(predicted)
-                                rmse = self.rmse(actual, predicted)
-                                mae = self.mae(actual, predicted)
-                                results[start_time] = {"rmse":rmse, "mae":mae}
+                            for key in actual_data.keys():
+                                actual.append(float(actual_data[key]))
+                                predicted.append(float(predicted_data[key]))
+                            actual = np.asarray(actual)
+                            predicted = np.asarray(predicted)
+                            rmse = self.rmse(actual, predicted)
+                            mae = self.mae(actual, predicted)
+                            results[start_time] = {"rmse":rmse, "mae":mae}
+                    else:
+                        self.logger.debug("length mismatch actual = " + str(len(actual_data)) + " predicted = " + str(len(predicted_data)))
         return results, list(predicitons.keys())
 
     def get_timestamp(self):
