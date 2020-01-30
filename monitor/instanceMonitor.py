@@ -7,6 +7,7 @@ import json
 import threading
 import time
 import subprocess
+import os
 
 from monitor.status import Status
 from utils_intern.messageLogger import MessageLogger
@@ -18,18 +19,43 @@ class InstanceMonitor:
         self.logger = MessageLogger.get_logger(__name__, None)
         self.config = config
         self.topic_params = json.loads(config.get("IO", "monitor.mqtt.topic"))
-        self.allowed_delay_count = config.getint("IO", "allowed.delay.count", fallback=3)
         self.check_frequency = config.getint("IO", "monitor.frequency.sec", fallback=60)
+        self.allowed_delay_count = config.getfloat("IO", "allowed.delay.count", fallback=2)
+        docker_typ = config.get("IO", "docker.typ")
         self.docker_file_names = self.get_docker_file_names()
         self.status = Status(False, self.topic_params, config)
+        if docker_typ == "ofw":
+            self.start_profev(docker_typ)
+        elif docker_typ == "connector":
+            self.start_connector(docker_typ)
         self.check_status_thread = threading.Thread(target=self.check_status)
         self.check_status_thread.start()
 
     def get_docker_file_names(self):
         docker_file_name = {}
         for key, value in self.config.items("Docker_File"):
-            docker_file_name[key] = value
+            docker_file_name[key] = os.path.join("/usr/src/app/monitor/resources/docker-compose/", value)
         return docker_file_name
+
+    def start_profev(self, docker_typ):
+        flag = self.execute_command("docker-compose -f " + self.docker_file_names[docker_typ] + " up -d",
+                                    docker_typ, "running", False)
+
+        if not flag:
+            self.logger.error(
+                "cannot start service " + str(docker_typ) + " because no docker-compose file name in config")
+        else:
+            self.logger.info("OFW started")
+
+    def start_connector(self, docker_typ):
+        flag = self.execute_command("docker-compose -f " + self.docker_file_names[docker_typ] + " up -d",
+                                    docker_typ, "running", False)
+
+        if not flag:
+            self.logger.error(
+                "cannot start service " + str(docker_typ) + " because no docker-compose file name in config")
+        else:
+            self.logger.info("Connector started")
 
     def check_status(self):
         while True:
@@ -56,11 +82,11 @@ class InstanceMonitor:
         service_name = self.get_service_name(instance_id)
         flag = False
         if service_name in self.docker_file_names.keys():
-            flag = self.execute_command("sudo docker-compose -f " + self.docker_file_names[service_name] + " down",
-                                        service_name, "stopped", True)
+            flag = self.execute_command("docker-compose -f " + self.docker_file_names[service_name] + " down",
+                                        service_name, "stopped", False)
             if flag:
                 time.sleep(60)
-                flag = self.execute_command("sudo docker-compose -f " + self.docker_file_names[service_name] + " up -d",
+                flag = self.execute_command("docker-compose -f " + self.docker_file_names[service_name] + " up -d",
                                             service_name, "started", False)
         if not flag:
             self.logger.error(
@@ -73,7 +99,8 @@ class InstanceMonitor:
             pid = process.pid
             self.logger.info(service_name + " " + msg + " , pid = " + str(pid))
             if log_output:
-                threading.Thread(target=InstanceMonitor.log_subprocess_output, args=(process,)).start()
+                self.logger.debug("Logging thread started")
+                #threading.Thread(target=InstanceMonitor.log_subprocess_output, args=(process,)).start()
             return True
         except Exception as e:
             self.logger.error("error running the command " + str(command) + " " + str(e))
