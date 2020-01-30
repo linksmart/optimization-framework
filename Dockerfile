@@ -80,6 +80,6 @@ RUN echo "GUROBI_HOME=$GUROBI_HOME" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
 
-#RUN chown -R garagon /usr/src/app/
-#USER garagon
+RUN chown -R garagon /usr/src/app/
+USER garagon
 

@@ -38,6 +38,9 @@ def parseArgs():
 
 
 def main():
+    signal.signal(signal.SIGTERM, signal_handler)
+    #signal.signal(signal.SIGKILL, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
     global OPTIONS
 
     logger, redisDB = setup()
@@ -60,6 +63,7 @@ def main():
 
 def signal_handler(sig, frame):
     print('You pressed Ctrl+C!')
+    print(sig)
     if zmqForwarder:
         print("stopping zmq forwarder")
         zmqForwarder.Stop()
@@ -69,10 +73,10 @@ zmqForwarder = None
 
 # Register the signal to the handler
 signal.signal(signal.SIGTERM, signal_handler)
-
+#signal.signal(signal.SIGKILL, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
 
 def setup():
-    signal.signal(signal.SIGINT, signal_handler)
 
     config_path = "/usr/src/app/optimization/resources/ConfigFile.properties"
     config_path_default = "/usr/src/app/config/ConfigFile.properties"

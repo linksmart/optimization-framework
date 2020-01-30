@@ -52,7 +52,7 @@ class LoadPrediction:
 
         self.raw_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id, "raw_data_"+str(topic_name)+".csv")
         self.model_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_"+str(topic_name)+".h5")
-        self.model_file_container_temp = os.path.join("/usr/src/app", "prediction/resources", "model_temp_"+str(topic_name)+".h5")
+        self.model_file_container_temp = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_temp_"+str(topic_name)+".h5")
         self.model_file_container_train = os.path.join("/usr/src/app", "prediction/resources", self.id, "model_train_"+str(topic_name)+".h5")
         self.prediction_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id,
                                                     "prediction_data_" + str(topic_name) + ".csv")
@@ -104,7 +104,8 @@ class LoadPrediction:
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
                                         self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, 
-                                        self.output_size, self.max_training_samples, self.logger)
+                                        self.output_size, self.max_training_samples, self.model_file_container_temp,
+                                        self.logger)
         self.training_thread.start()
 
     def startPrediction(self):
@@ -146,7 +147,8 @@ class Training(threading.Thread):
     """
 
     def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
-                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, max_training_samples, log):
+                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, max_training_samples,
+                 model_file_container_temp, log):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -157,6 +159,7 @@ class Training(threading.Thread):
         self.min_training_size = num_timesteps + output_size + 5
         self.model_file_container = model_file_container
         self.model_file_container_train = model_file_container_train
+        self.model_file_container_temp = model_file_container_temp
         self.today = datetime.datetime.now().day
         self.processingData = processingData
         self.trained = False
@@ -197,6 +200,7 @@ class Training(threading.Thread):
                                 trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
                                                  self.num_timesteps, self.output_size, self.model_file_container_train)
                                 copyfile(self.model_file_container_train, self.model_file_container)
+                                copyfile(self.model_file_container_train, self.model_file_container_temp)
                                 self.logger.info("trained successfully")
                         except Exception as e:
                             self.trained = False
@@ -291,6 +295,7 @@ class Prediction(threading.Thread):
                     if temp_flag:
                         self.logger.debug("temp flag true")
                         model = model_temp
+                    predicted_flag = False
                     if model is not None:
                         try:
                             Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
@@ -300,9 +305,12 @@ class Prediction(threading.Thread):
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
                             self.old_predictions.append(data)
+                            predicted_flag = True
                         except Exception as e:
-                            self.logger.error(str(e))
-                    else:
+                            predicted_flag = False
+                            self.models.remove_saved_model(temp_flag)
+                            self.logger.error("exception when prediction using model : "+str(e))
+                    if not predicted_flag:
                         self.logger.info("prediction model is none, extending the known values")
                         test_predictions = self.processingData.get_regression_values(true_data, self.num_timesteps, self.output_size + 1, self.dT_in_seconds)
                         self.q.put(test_predictions)

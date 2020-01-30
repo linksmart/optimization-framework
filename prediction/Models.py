@@ -49,26 +49,29 @@ class Models:
         temp = False
         if os.path.exists(self.model_weights_path):
             last_updated = os.path.getmtime(self.model_weights_path)
-            logger.debug(self.model_weights_path + " file exists")
+            #logger.debug(self.model_weights_path + " file exists")
         else:
             last_updated = None
-            logger.debug(self.model_weights_path + " file does not exist")
+            #logger.debug(self.model_weights_path + " file does not exist")
         if self.model and (
                 self.last_loaded is not None and last_updated is not None and last_updated <= self.last_loaded):
             logger.info(str(id_topic) + "model present in memory ")
             return self.model, self.model_temp, temp, self.graph
-        model, graph = self.load_saved_model(self.model_weights_path, load_timeout=60)
+        model, graph = self.load_saved_model(self.model_weights_path, load_timeout=30)
+        logger.debug("model is none "+str(model is None))
         if model:
             self.model = model
             self.graph = graph
             return model, self.model_temp, temp, graph
         else:
             """try temp model"""
-            if self.model_temp:
+            if self.model_temp is not None:
                 logger.info(str(id_topic) + "temp model present in memory")
                 temp = True
                 return model, self.model_temp, temp, self.graph
-            model_temp, graph = self.load_saved_model(self.model_weights_path_temp, load_timeout=60)
+            else:
+                logger.debug("temp model not present in memory")
+            model_temp, graph = self.load_saved_model(self.model_weights_path_temp, load_timeout=30)
             if model_temp:
                 temp = True
                 self.model_temp = model_temp
@@ -77,7 +80,7 @@ class Models:
             else:
                 return self.model, self.model_temp, temp, self.graph
 
-    @timeoutable((None, False), timeout_param='load_timeout')
+    @timeoutable((None, None), timeout_param='load_timeout')
     def load_saved_model(self, path):
         try:
             # os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'
@@ -87,6 +90,7 @@ class Models:
             from keras import backend as K
             import tensorflow as tf
             model, graph = None, None
+            logger.debug("trying to load model from path "+str(path))
             if os.path.exists(path):
                 logger.info("Loading model from disk from path = " + str(path))
                 K.clear_session()
@@ -98,7 +102,22 @@ class Models:
                 graph = tf.get_default_graph()
                 self.last_loaded = time.time()
                 logger.info("Loaded model from disk")
+            else:
+                logger.info(str(path) + " file does not exist")
             return model, graph
         except Exception as e:
             logger.error("Exception loading model " + str(e))
             return None, None
+
+    def remove_saved_model(self, temp):
+        path = None
+        if not temp:
+            path = self.model_weights_path
+        elif temp:
+            path = self.model_weights_path_temp
+        if os.path.exists(path):
+            os.remove(path)
+            self.model = None
+            self.graph = None
+            self.model_temp = None
+            self.last_loaded = None
