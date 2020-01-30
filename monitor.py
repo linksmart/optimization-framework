@@ -10,8 +10,6 @@ from monitor.instanceMonitor import InstanceMonitor
 
 from utils_intern.messageLogger import MessageLogger
 
-connector_status = {}
-
 if __name__ == '__main__':
     config = None
     config_path = "/usr/src/app/monitor/resources/monitorConfig.properties"
