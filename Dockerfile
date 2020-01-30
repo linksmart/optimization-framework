@@ -51,7 +51,7 @@ RUN pip3 install -U pydevd==1.8.0
 RUN pip3 install -U xlrd==1.2.0
 RUN pip3 install -U pyomo==5.6.7
 #RUN pip3 install -U pyomo
-
+RUN pip3 install -U stopit==1.1.2
 
 USER garagon
 
@@ -80,6 +80,6 @@ RUN echo "GUROBI_HOME=$GUROBI_HOME" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
 
-RUN chown -R garagon /usr/src/app/
-USER garagon
+#RUN chown -R garagon /usr/src/app/
+#USER garagon
 

@@ -10,6 +10,8 @@ import sys
 
 import time
 
+from stopit import threading_timeoutable as timeoutable  #doctest: +SKIP
+
 """
 os.environ['PYTHONHASHSEED'] = '0'
 np.random.seed(42)
@@ -18,6 +20,7 @@ rn.seed(12345)
 tf.set_random_seed(1234)
 """
 from utils_intern.messageLogger import MessageLogger
+
 logger = MessageLogger.get_logger_parent()
 
 
@@ -37,11 +40,11 @@ class Models:
 
     def get_model(self, id_topic):
         """
-        manages which model to load
-        If model.h5 present in disk
-	    then present then use model.h5
-	    else load model_temp.h5 from disk (temp pre-trained model)
-	    """
+            manages which model to load
+            If model.h5 present in disk
+            then present then use model.h5
+            else load model_temp.h5 from disk (temp pre-trained model)
+        """
         logger.debug("get model method")
         temp = False
         if os.path.exists(self.model_weights_path):
@@ -54,7 +57,7 @@ class Models:
                 self.last_loaded is not None and last_updated is not None and last_updated <= self.last_loaded):
             logger.info(str(id_topic) + "model present in memory ")
             return self.model, self.model_temp, temp, self.graph
-        model, graph = self.load_saved_model(self.model_weights_path)
+        model, graph = self.load_saved_model(self.model_weights_path, load_timeout=60)
         if model:
             self.model = model
             self.graph = graph
@@ -65,7 +68,7 @@ class Models:
                 logger.info(str(id_topic) + "temp model present in memory")
                 temp = True
                 return model, self.model_temp, temp, self.graph
-            model_temp, graph = self.load_saved_model(self.model_weights_path_temp)
+            model_temp, graph = self.load_saved_model(self.model_weights_path_temp, load_timeout=60)
             if model_temp:
                 temp = True
                 self.model_temp = model_temp
@@ -74,6 +77,7 @@ class Models:
             else:
                 return self.model, self.model_temp, temp, self.graph
 
+    @timeoutable((None, False), timeout_param='load_timeout')
     def load_saved_model(self, path):
         try:
             # os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'

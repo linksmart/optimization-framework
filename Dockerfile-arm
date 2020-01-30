@@ -44,6 +44,7 @@ RUN pip3 install -U senml==0.1.0
 RUN pip3 install -U redis==2.10.6
 RUN pip3 install -U Pyro4==4.77
 RUN pip3 install -U numpy==1.14.3
+RUN pip3 install -U stopit==1.1.2
 
 
 # Set the working directory to usr/src/app
