@@ -429,6 +429,7 @@ class OptControllerStochastic(ControllerBase):
                         GESSCon_Value = data_dict[None]["ESS_Control"][0]
                         GESSCon_Output.append(GESSCon_Value)
 
+
                     results = {
                         "id": self.id,
                         "P_PV_Output": p_pv,

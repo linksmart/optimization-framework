@@ -82,6 +82,18 @@ class InstanceMonitor:
         service_name = self.get_service_name(instance_id)
         flag = False
         if service_name in self.docker_file_names.keys():
+            try:
+                log_path = os.path.join("/usr/src/app/monitor/resources/", "log_ofw_"+str(int(time.time()))+".log")
+                command_to_write = "docker logs " + self.docker_file_names[service_name] + " &> " + str(log_path)
+                self.logger.debug("Command: "+str(command_to_write))
+                flag = self.execute_command(command_to_write, service_name, "logs", False)
+                if flag:
+                    self.logger.debug("Logs stored on the memory")
+                else:
+                    self.logger.error("Logs couldn't be taken")
+            except Exception as e:
+                self.logger.error("Problems while storing logs. "+str(e))
+                
             flag = self.execute_command("docker-compose -f " + self.docker_file_names[service_name] + " down",
                                         service_name, "stopped", False)
             if flag:
