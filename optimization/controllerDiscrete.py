@@ -113,3 +113,5 @@ class OptControllerDiscrete(ControllerBase):
                     time.sleep(1)
                     if self.redisDB.get_bool(self.stop_signal_key):
                         break
+                    if self.redisDB.get("End ofw") == "True":
+                        break

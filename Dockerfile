@@ -60,8 +60,8 @@ WORKDIR /usr/src/app
 #COPY entry.sh /usr/src/app/
 COPY ofw.py /usr/src/app/
 COPY utils /usr/src/app/utils
-COPY optimization /usr/src/app/optimization
 COPY prediction /usr/src/app/prediction
+COPY optimization /usr/src/app/optimization
 COPY swagger_server /usr/src/app/swagger_server
 COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data

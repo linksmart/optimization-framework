@@ -226,6 +226,8 @@ class OptControllerStochastic(ControllerBase):
 
                 if self.redisDB.get_bool(self.stop_signal_key):
                     break
+                if self.redisDB.get("End ofw") == "True":
+                    break
                 else:
                     self.logger.info("Timestep :#"+str(timestep))
 
@@ -262,7 +264,7 @@ class OptControllerStochastic(ControllerBase):
 
                             for future in concurrent.futures.as_completed(futures, timeout=self.stochastic_timeout):
                                 try:
-                                    d, v = future.result()
+                                    d, v = future.result(timeout=self.stochastic_timeout)
                                     if d is None and v is None:
                                         loop_fail = True
                                         self.logger.error("Optimization calculation was not possible. Process will be repeated")
@@ -503,6 +505,8 @@ class OptControllerStochastic(ControllerBase):
                         for i in range(sleep_time):
                             time.sleep(1)
                             if self.redisDB.get_bool(self.stop_signal_key): #or self.stopRequest.isSet():
+                                break
+                            if self.redisDB.get("End ofw") == "True":
                                 break
 
     @staticmethod

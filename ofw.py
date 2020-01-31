@@ -20,6 +20,7 @@ import time
 
 import swagger_server.wsgi as webserver
 
+
 from IO.ZMQClient import ForwarderDevice
 from config.configUpdater import ConfigUpdater
 
@@ -27,6 +28,14 @@ from config.configUpdater import ConfigUpdater
 Get the address of the data.dat
 """
 
+def sigterm(x, y):
+    print('SIGTERM received, time to leave for OFW')
+    from IO.redisDB import RedisDB
+    redisDB = RedisDB()
+    redisDB.set("End ofw", "True")
+
+# Register the signal to the handler
+signal.signal(signal.SIGTERM, sigterm)  # Used by this script
 
 def startOfw(options):
     # code to start a daemon
@@ -38,9 +47,6 @@ def parseArgs():
 
 
 def main():
-    signal.signal(signal.SIGTERM, signal_handler)
-    #signal.signal(signal.SIGKILL, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
     global OPTIONS
 
     logger, redisDB = setup()
@@ -61,20 +67,17 @@ def main():
     # print(results)
     # time.sleep(5)
 
-def signal_handler(sig, frame):
+"""def signal_handler(sig, frame):
     print('You pressed Ctrl+C!')
     print(sig)
     if zmqForwarder:
         print("stopping zmq forwarder")
         zmqForwarder.Stop()
-    sys.exit(0)
+    sys.exit(0)"""
 
 zmqForwarder = None
 
-# Register the signal to the handler
-signal.signal(signal.SIGTERM, signal_handler)
-#signal.signal(signal.SIGKILL, signal_handler)
-signal.signal(signal.SIGINT, signal_handler)
+
 
 def setup():
 
@@ -123,6 +126,7 @@ def clear_redis(logger):
     redisDB = RedisDB()
     redisDB.reset()
     redisDB.set("time", time.time())
+    redisDB.set("End ofw", "False")
     return redisDB
 
 def copy_env_varibles():

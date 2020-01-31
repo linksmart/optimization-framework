@@ -8,28 +8,42 @@ import threading
 import time
 import subprocess
 import os
+from subprocess import Popen, PIPE
+import shlex
 
 from monitor.status import Status
 from utils_intern.messageLogger import MessageLogger
+
+#from IO.redisDB import RedisDB
 
 
 class InstanceMonitor:
 
     def __init__(self, config):
         self.logger = MessageLogger.get_logger(__name__, None)
+        #self.redisDB = RedisDB()
         self.config = config
         self.topic_params = json.loads(config.get("IO", "monitor.mqtt.topic"))
         self.check_frequency = config.getint("IO", "monitor.frequency.sec", fallback=60)
         self.allowed_delay_count = config.getfloat("IO", "allowed.delay.count", fallback=2)
-        docker_typ = config.get("IO", "docker.typ")
+        self.timeout = config.getint("IO", "timeout", fallback=60)
+        self.docker_typ = config.get("IO", "docker.typ")
         self.docker_file_names = self.get_docker_file_names()
         self.status = Status(False, self.topic_params, config)
-        if docker_typ == "ofw":
-            self.start_profev(docker_typ)
-        elif docker_typ == "connector":
-            self.start_connector(docker_typ)
+        if self.docker_typ == "ofw":
+            self.start_profev(self.docker_typ)
+        elif self.docker_typ == "connector":
+            self.start_connector(self.docker_typ)
         self.check_status_thread = threading.Thread(target=self.check_status)
         self.check_status_thread.start()
+
+    def Stop(self):
+        command_to_write = "docker-compose -f " + self.docker_file_names[self.docker_typ] + " down -t "+str(self.timeout)
+        args = shlex.split(command_to_write)
+        flag = self.execute_command(args, self.docker_typ, "stopping", False)
+        if self.check_status_thread.isAlive():
+            self.check_status_thread.join(4)
+        self.logger.debug("Monitor thread stopped")
 
     def get_docker_file_names(self):
         docker_file_name = {}
@@ -38,8 +52,11 @@ class InstanceMonitor:
         return docker_file_name
 
     def start_profev(self, docker_typ):
-        flag = self.execute_command("docker-compose -f " + self.docker_file_names[docker_typ] + " up -d",
-                                    docker_typ, "running", False)
+
+        #command_to_write=["docker-compose", "-f", str(self.docker_file_names[docker_typ]), "up", "-d"]
+        command_to_write="docker-compose -f " + self.docker_file_names[docker_typ] + " up -d"
+        args = shlex.split(command_to_write)
+        flag = self.execute_command(args, docker_typ, "running", False)
 
         if not flag:
             self.logger.error(
@@ -48,8 +65,8 @@ class InstanceMonitor:
             self.logger.info("OFW started")
 
     def start_connector(self, docker_typ):
-        flag = self.execute_command("docker-compose -f " + self.docker_file_names[docker_typ] + " up -d",
-                                    docker_typ, "running", False)
+        command_to_write = ["docker-compose", "-f", str(self.docker_file_names[docker_typ]), "up", "-d"]
+        flag = self.execute_command(command_to_write, docker_typ, "running", False)
 
         if not flag:
             self.logger.error(
@@ -76,7 +93,11 @@ class InstanceMonitor:
             self.status.remove_entries(completed_instance_ids)
             sleep_time = self.check_frequency - (time.time() - start_time)
             if sleep_time > 0:
-                time.sleep(sleep_time)
+                for i in range(int(sleep_time)):
+                    time.sleep(1)
+                    #if self.redisDB.get("End monitor") == "True":
+                        #self.Stop()
+
 
     def restart_service(self, instance_id):
         service_name = self.get_service_name(instance_id)
@@ -84,7 +105,8 @@ class InstanceMonitor:
         if service_name in self.docker_file_names.keys():
             try:
                 log_path = os.path.join("/usr/src/app/monitor/resources/", "log_ofw_"+str(int(time.time()))+".log")
-                command_to_write = "docker logs " + self.docker_file_names[service_name] + " &> " + str(log_path)
+                command_to_write=["docker", "logs", str(self.docker_typ), "&>", str(log_path) ]
+                #command_to_write = "docker logs " + self.docker_typ + " &> " + str(log_path)
                 self.logger.debug("Command: "+str(command_to_write))
                 flag = self.execute_command(command_to_write, service_name, "logs", False)
                 if flag:
@@ -93,21 +115,24 @@ class InstanceMonitor:
                     self.logger.error("Logs couldn't be taken")
             except Exception as e:
                 self.logger.error("Problems while storing logs. "+str(e))
-                
-            flag = self.execute_command("docker-compose -f " + self.docker_file_names[service_name] + " down",
-                                        service_name, "stopped", False)
+
+            time.sleep(30)
+            command_to_write = ["docker-compose", "-f", str(self.docker_file_names[service_name]), "down -t "+str(self.timeout)]
+            #command_to_write = "docker-compose -f " + self.docker_file_names[service_name] + " down -t "+str(self.timeout)
+            flag = self.execute_command(command_to_write, service_name, "stopped", False)
             if flag:
-                time.sleep(60)
-                flag = self.execute_command("docker-compose -f " + self.docker_file_names[service_name] + " up -d",
-                                            service_name, "started", False)
+                time.sleep(self.timeout + 5)
+                command_to_write = ["docker-compose", "-f", str(self.docker_file_names[service_name]), "up", "-d"]
+                #command_to_write = "docker-compose -f " + self.docker_file_names[service_name] + " up -d"
+                flag = self.execute_command(command_to_write, service_name, "started", False)
         if not flag:
             self.logger.error(
                 "cannot stop service " + str(service_name) + " because no docker-compose file name in config")
 
     def execute_command(self, command, service_name, msg, log_output):
         try:
-            process = subprocess.Popen([command, service_name], shell=True, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+            self.logger.debug("command "+str(command))
+            process = subprocess.Popen(command, shell=False, stdout=PIPE,stderr=PIPE)
             pid = process.pid
             self.logger.info(service_name + " " + msg + " , pid = " + str(pid))
             if log_output:
