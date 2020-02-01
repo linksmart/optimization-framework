@@ -30,6 +30,7 @@ class InstanceMonitor:
         self.docker_typ = config.get("IO", "docker.typ")
         self.docker_file_names = self.get_docker_file_names()
         self.status = Status(False, self.topic_params, config)
+        self.count = 0
         if self.docker_typ == "ofw":
             self.start_profev(self.docker_typ)
         elif self.docker_typ == "connector":
@@ -104,30 +105,47 @@ class InstanceMonitor:
         flag = False
         if service_name in self.docker_file_names.keys():
             try:
-                log_path = os.path.join("/usr/src/app/monitor/resources/", "log_ofw_"+str(int(time.time()))+".log")
-                command_to_write=["docker", "logs", str(self.docker_typ), "&>", str(log_path) ]
-                #command_to_write = "docker logs " + self.docker_typ + " &> " + str(log_path)
-                self.logger.debug("Command: "+str(command_to_write))
-                flag = self.execute_command(command_to_write, service_name, "logs", False)
-                if flag:
-                    self.logger.debug("Logs stored on the memory")
-                else:
-                    self.logger.error("Logs couldn't be taken")
+
+                if self.count == 0:
+                    self.count = 1
+                    log_path = os.path.join("/usr/src/app/monitor/resources/", "log_ofw_"+str(int(time.time()))+".log")
+                    #command_to_write=["docker", "logs", str(self.docker_typ), "&>", str(log_path) ]
+                    command_to_write = "docker logs " + str(self.docker_typ)
+                    #args = shlex.split(command_to_write)
+                    self.logger.debug("Command: "+str(command_to_write))
+                    flag = self.execute_command_output(command_to_write, log_path)
+                    if flag:
+                        self.logger.debug("Logs stored on the memory")
+                    else:
+                        self.logger.error("Logs couldn't be taken")
             except Exception as e:
                 self.logger.error("Problems while storing logs. "+str(e))
 
             time.sleep(30)
-            command_to_write = ["docker-compose", "-f", str(self.docker_file_names[service_name]), "down -t "+str(self.timeout)]
-            #command_to_write = "docker-compose -f " + self.docker_file_names[service_name] + " down -t "+str(self.timeout)
-            flag = self.execute_command(command_to_write, service_name, "stopped", False)
+            #command_to_write = ["docker-compose", "-f", str(self.docker_file_names[service_name]), "down -t "+str(self.timeout)]
+            command_to_write = "docker-compose -f " + self.docker_file_names[service_name] + " down -t "+str(self.timeout)
+            args = shlex.split(command_to_write)
+            flag = self.execute_command(args, service_name, "stopped", False)
             if flag:
                 time.sleep(self.timeout + 5)
-                command_to_write = ["docker-compose", "-f", str(self.docker_file_names[service_name]), "up", "-d"]
-                #command_to_write = "docker-compose -f " + self.docker_file_names[service_name] + " up -d"
-                flag = self.execute_command(command_to_write, service_name, "started", False)
+                #command_to_write = ["docker-compose", "-f", str(self.docker_file_names[service_name]), "up", "-d"]
+                command_to_write = "docker-compose -f " + self.docker_file_names[service_name] + " up -d"
+                args = shlex.split(command_to_write)
+                flag = self.execute_command(args, service_name, "started", False)
+                self.count = 0
+
         if not flag:
             self.logger.error(
                 "cannot stop service " + str(service_name) + " because no docker-compose file name in config")
+
+    def execute_command_output(self, command, filename):
+        try:
+            output = subprocess.check_output(shlex.split(command)).decode("utf-8")
+            with open(filename, 'w+') as f:
+                f.write(output)
+        except Exception as e:
+            self.logger.error("Error while writig the file. "+str(e))
+
 
     def execute_command(self, command, service_name, msg, log_output):
         try:

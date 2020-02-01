@@ -13,6 +13,7 @@ from IO.ConfigParserUtils import ConfigParserUtils
 from IO.MQTTClient import MQTTClient
 from IO.ZMQClient import ZMQClient
 from utils_intern.messageLogger import MessageLogger
+from IO.redisDB import RedisDB
 
 
 class DataReceiver(ABC):
@@ -36,6 +37,7 @@ class DataReceiver(ABC):
         self.last_time = 0
         self.id = id
         self.section = section
+        self.redisDB = RedisDB()
         self.sub_pub = sub_pub
         if self.section is None:
             self.section = "IO"
@@ -136,7 +138,8 @@ class DataReceiver(ABC):
         if require_updated == 1 and not self.data:
             require_updated = 0
         ctr = 0
-        while require_updated == 0 and not self.data_update and not self.stop_request:
+
+        while require_updated == 0 and not self.data_update and not self.stop_request and not self.redisDB.get("End ofw") == "True":
             if ctr == 9:
                 ctr = 0
                 self.logger.debug("wait for data "+str(self.topics))

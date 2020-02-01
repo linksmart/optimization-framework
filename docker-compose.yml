@@ -91,5 +91,5 @@ services:
       options:
         max-size: "10m"
         max-file: "10"
-    command: ["python3", "-u", "monitor.py"]
+    command: ["exec","python3", "-u", "monitor.py"]
 

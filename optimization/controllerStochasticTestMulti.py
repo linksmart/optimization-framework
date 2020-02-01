@@ -224,10 +224,9 @@ class OptControllerStochastic(ControllerBase):
             self.logger.debug("Entering to timesteps")
             for timestep in reverse_steps:
 
-                if self.redisDB.get_bool(self.stop_signal_key):
+                if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":
                     break
-                if self.redisDB.get("End ofw") == "True":
-                    break
+
                 else:
                     self.logger.info("Timestep :#"+str(timestep))
 

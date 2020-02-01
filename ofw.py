@@ -1,9 +1,11 @@
 import getpass
 import subprocess
 import threading
+import multiprocessing
 
 from optimization.pyroServerManagement import PyroServerManagement
 from utils_intern.messageLogger import MessageLogger
+from swagger_server.wsgi import StandaloneApplication
 
 """
  Created by Gustavo Aragón on 14.03.2018
@@ -28,14 +30,35 @@ from config.configUpdater import ConfigUpdater
 Get the address of the data.dat
 """
 
-def sigterm(x, y):
+class GracefulKiller:
+  kill_now = False
+  signals = {
+    signal.SIGINT: 'SIGINT',
+    signal.SIGTERM: 'SIGTERM'
+  }
+
+  def __init__(self):
+    signal.signal(signal.SIGINT, self.exit_gracefully)
+    signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+  def exit_gracefully(self, signum, frame):
+    print("\nReceived {} signal".format(self.signals[signum]))
+    print("Cleaning up resources. End of the program")
+    from IO.redisDB import RedisDB
+    redisDB = RedisDB()
+    redisDB.set("End ofw", "True")
+    time.sleep(6)
+    self.kill_now = True
+
+
+"""def sigterm(x, y):
     print('SIGTERM received, time to leave for OFW')
     from IO.redisDB import RedisDB
     redisDB = RedisDB()
     redisDB.set("End ofw", "True")
 
 # Register the signal to the handler
-signal.signal(signal.SIGTERM, sigterm)  # Used by this script
+signal.signal(signal.SIGTERM, sigterm)  # Used by this script"""
 
 def startOfw(options):
     # code to start a daemon
@@ -55,10 +78,17 @@ def main():
     logger.info("OFW started")
     logger.debug("###################################")
     logger.debug("Starting name server and dispatch server")
+    #threading.Thread(target=StandaloneApplication.main).start()
+    p = multiprocessing.Process(target=StandaloneApplication.main)
+    p.start()
     #threading.Thread(target=PyroServerManagement.start_name_servers, args=(redisDB,)).start()
     #threading.Thread(target=PyroServerManagement.start_pryo_mip_servers, args=(redisDB, 5,)).start()
     logger.info("Starting webserver")
-    webserver.main()
+    killer = GracefulKiller()
+    #webserver.main()
+    while not killer.kill_now:
+        time.sleep(1)
+    p.join(2)
 
 
     # while True:
