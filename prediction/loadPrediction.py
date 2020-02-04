@@ -297,8 +297,8 @@ class Prediction(threading.Thread):
                         model = model_temp
                     predicted_flag = False
                     if model is not None:
+                        Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
                         try:
-                            Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
@@ -310,6 +310,7 @@ class Prediction(threading.Thread):
                             predicted_flag = False
                             self.models.remove_saved_model(temp_flag)
                             self.logger.error("exception when prediction using model : "+str(e))
+                            continue
                     if not predicted_flag:
                         self.logger.info("prediction model is none, extending the known values")
                         test_predictions = self.processingData.get_regression_values(true_data, self.num_timesteps, self.output_size + 1, self.dT_in_seconds)

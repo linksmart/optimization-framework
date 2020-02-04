@@ -246,6 +246,7 @@ class OptControllerStochastic(ControllerBase):
                     try:
                         futures = []
                         with concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers) as executor:
+                            submit_ctr = 0
                             if self.single_ev:
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc, position = combination
@@ -254,6 +255,8 @@ class OptControllerStochastic(ControllerBase):
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
+                                    self.logger.debug("submit_ctr = "+str(submit_ctr))
+                                    submit_ctr += 1
                             else:
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc = combination
@@ -262,10 +265,14 @@ class OptControllerStochastic(ControllerBase):
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
-
+                                    self.logger.debug("submit_ctr = " + str(submit_ctr))
+                                    submit_ctr += 1
                             try:
+                                future_ctr = 0
                                 for future in concurrent.futures.as_completed(futures):
                                     try:
+                                        self.logger.debug("future_ctr = "+str(future_ctr))
+                                        future_ctr += 1
                                         d, v = future.result()
                                         if d is None and v is None:
                                             loop_fail = True
@@ -502,7 +509,7 @@ class OptControllerStochastic(ControllerBase):
                         self.repetition_completed = True
                         break
 
-                    #time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
+                    time_spent = IDStatusManager.update_count(self.repetition, self.id, self.redisDB)
                     final_time_total = time.time()
                     sleep_time = self.control_frequency - int(final_time_total - start_time_total)
                     if sleep_time > 0:

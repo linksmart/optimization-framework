@@ -121,3 +121,4 @@ class Models:
             self.graph = None
             self.model_temp = None
             self.last_loaded = None
+            logger.info("deleting model "+str(path))
