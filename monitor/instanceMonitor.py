@@ -4,6 +4,7 @@ Created on Jan 28 13:24 2020
 @author: nishit
 """
 import json
+import sys
 import threading
 import time
 import subprocess
@@ -14,7 +15,7 @@ import shlex
 from monitor.status import Status
 from utils_intern.messageLogger import MessageLogger
 
-#from IO.redisDB import RedisDB
+from IO.redisDB import RedisDB
 
 
 class InstanceMonitor:
@@ -42,9 +43,14 @@ class InstanceMonitor:
         command_to_write = "docker-compose -f " + self.docker_file_names[self.docker_typ] + " down -t "+str(self.timeout)
         args = shlex.split(command_to_write)
         flag = self.execute_command(args, self.docker_typ, "stopping", False)
+        time.sleep(10)
+        redisDB = RedisDB()
+        while redisDB.get("End ofw") == "True":
+            pass
         if self.check_status_thread.isAlive():
             self.check_status_thread.join(4)
         self.logger.debug("Monitor thread stopped")
+        sys.exit(0)
 
     def get_docker_file_names(self):
         docker_file_name = {}
@@ -140,9 +146,13 @@ class InstanceMonitor:
 
     def execute_command_output(self, command, filename):
         try:
-            output = subprocess.check_output(shlex.split(command)).decode("utf-8")
+            p = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+            out, err = p.communicate()
+            #output = subprocess.check_output(shlex.split(command)).decode("utf-8")
             with open(filename, 'w+') as f:
-                f.write(output)
+                f.write(out.decode('utf-8'))
+            return True
         except Exception as e:
             self.logger.error("Error while writig the file. "+str(e))
 
@@ -150,9 +160,13 @@ class InstanceMonitor:
     def execute_command(self, command, service_name, msg, log_output):
         try:
             self.logger.debug("command "+str(command))
-            process = subprocess.Popen(command, shell=False, stdout=PIPE,stderr=PIPE)
+            process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+            out, err = process.communicate()
             pid = process.pid
             self.logger.info(service_name + " " + msg + " , pid = " + str(pid))
+            self.logger.debug("Output: "+str(out.decode('utf-8')))
+            self.logger.debug("Error: " + str(err))
             if log_output:
                 self.logger.debug("Logging thread started")
                 #threading.Thread(target=InstanceMonitor.log_subprocess_output, args=(process,)).start()

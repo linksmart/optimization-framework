@@ -122,6 +122,7 @@ def setup():
     logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
 
     redisDB = clear_redis(logger)
+    redisDB.set("End ofw", "False")
     copy_models()
     copy_pv_files()
     copy_env_varibles()
