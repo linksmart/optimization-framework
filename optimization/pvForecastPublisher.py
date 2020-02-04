@@ -49,7 +49,7 @@ class PVForecastPublisher(DataPublisher):
             except Exception:
                 self.logger.error("Queue empty")
         else:
-            self.logger.debug("PV Qqueue empty")
+            self.logger.debug("PV Queue empty")
             return None
 
     def extract_horizon_data(self):

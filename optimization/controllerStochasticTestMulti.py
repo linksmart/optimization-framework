@@ -222,6 +222,7 @@ class OptControllerStochastic(ControllerBase):
             reverse_steps = reversed(range(0, self.horizon_in_steps))
             loop_fail = False
             self.logger.debug("Entering to timesteps")
+            self.logger.debug("timeout "+str(self.stochastic_timeout))
             for timestep in reverse_steps:
 
                 if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":
@@ -229,6 +230,7 @@ class OptControllerStochastic(ControllerBase):
 
                 else:
                     self.logger.info("Timestep :#"+str(timestep))
+
 
                     value_index, value,bm_idx, bm, ess_vac_product = self.calculate_internal_values(timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,
                                               position_states)
@@ -262,7 +264,7 @@ class OptControllerStochastic(ControllerBase):
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
 
                             try:
-                                for future in concurrent.futures.as_completed(futures, timeout=self.stochastic_timeout):
+                                for future in concurrent.futures.as_completed(futures):
                                     try:
                                         d, v = future.result()
                                         if d is None and v is None:
