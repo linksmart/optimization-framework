@@ -151,7 +151,7 @@ class CommandController:
             message = "System stopped succesfully"
             self.redisDB.set("run:" + id, "stopped")
             logger.debug(message)
-            gc.collect()
+            #gc.collect()
             logger.debug("checking End ofw flag "+str(self.redisDB.get("End ofw")))
             if self.redisDB.get("End ofw") == "True":
                 self.redisDB.set("End ofw", "False")
