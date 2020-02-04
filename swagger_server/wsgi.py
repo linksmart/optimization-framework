@@ -6,6 +6,7 @@ import psutil
 import gunicorn.app.base
 
 from gunicorn.six import iteritems
+import signal
 
 from swagger_server.__main__ import create_app as web
 
@@ -36,17 +37,17 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
     def load(self):
         return self.application
 
+    @staticmethod
+    def main():
+        options = {
+            'bind': '%s:%s' % ('0.0.0.0', '8080'),
+            'workers': int(number_of_workers()),
+            'timeout': 300,
+            'loglevel': None,
+        }
+        StandaloneApplication(web(), options).run()
+        logger.debug("Number of cores: " + str(number_of_workers()))
 
-def main():
-    options = {
-        'bind': '%s:%s' % ('0.0.0.0', '8080'),
-        'workers': int(number_of_workers()),
-        'timeout': 300,
-        #'loglevel': 'debug',
-    }
-    StandaloneApplication(web(), options).run()
-    logger.debug("Number of cores: " + str(number_of_workers()))
 
-
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+    #main()

@@ -224,8 +224,9 @@ class OptControllerStochastic(ControllerBase):
             self.logger.debug("Entering to timesteps")
             for timestep in reverse_steps:
 
-                if self.redisDB.get_bool(self.stop_signal_key):
+                if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":
                     break
+
                 else:
                     self.logger.info("Timestep :#"+str(timestep))
 
@@ -262,7 +263,7 @@ class OptControllerStochastic(ControllerBase):
 
                             for future in concurrent.futures.as_completed(futures):
                                 try:
-                                    d, v = future.result()
+                                    d, v = future.result(timeout=self.stochastic_timeout)
                                     if d is None and v is None:
                                         loop_fail = True
                                         self.logger.error("Optimization calculation was not possible. Process will be repeated")
@@ -429,6 +430,7 @@ class OptControllerStochastic(ControllerBase):
                         GESSCon_Value = data_dict[None]["ESS_Control"][0]
                         GESSCon_Output.append(GESSCon_Value)
 
+
                     results = {
                         "id": self.id,
                         "P_PV_Output": p_pv,
@@ -502,6 +504,8 @@ class OptControllerStochastic(ControllerBase):
                         for i in range(sleep_time):
                             time.sleep(1)
                             if self.redisDB.get_bool(self.stop_signal_key): #or self.stopRequest.isSet():
+                                break
+                            if self.redisDB.get("End ofw") == "True":
                                 break
 
     @staticmethod

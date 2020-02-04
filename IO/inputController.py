@@ -184,6 +184,7 @@ class InputController:
         # self.logger.info("sleep for data")
         # time.sleep(100)
         while not success:
+            self.logger.debug("Starting getting data")
             current_bucket = self.get_current_bucket()
             self.logger.info("Get input data for bucket " + str(current_bucket))
             try:
@@ -199,13 +200,14 @@ class InputController:
                                                    self.external_data_receiver, [], ["SoC_Value"], current_bucket))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
                                                    self.generic_data_receiver, [], [], current_bucket))
-                for future in concurrent.futures.as_completed(futures,timeout=90):
+                for future in concurrent.futures.as_completed(futures):
                     try:
                         success, read_data, mqtt_timer = future.result()
                         if success:
                             self.update_data(read_data)
                             self.mqtt_timer.update(mqtt_timer)
                         else:
+                            self.logger.error("Success flag is False")
                             break
                     except Exception as exc:
                         print("input fetch data caused an exception: " + str(exc))

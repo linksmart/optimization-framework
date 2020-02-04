@@ -110,8 +110,19 @@ class Model:
 
     model.con_fronius_power = Constraint(rule=con_rule_fronius_power)
 
+    #def con_is_negative(model):
+        #return model.P_PV_OUTPUT - model.P_Load_single >= 0
+    #model.x = Expression(rule=con_is_negative)
+
+    #def con_grid_output(model):
+        #return  model.P_GRID_OUTPUT >= model.x * (-1) * model.Q_Grid_Max_Export_Power
+    #model.con_grid_max_output = Constraint(rule=con_grid_output)
+
+    def generation_ess(model):
+        return model.x * model.P_ESS_OUTPUT - model.x * model.P_ESS_OUTPUT
+
     def home_demandmeeting_R(model):
-        return model.P_Grid_R_Output + (model.P_ESS_OUTPUT/3)+ (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
+        return model.P_Grid_R_Output + (model.P_ESS_OUTPUT/3) + (model.P_PV_OUTPUT/2) == model.P_VAC_OUTPUT + (model.P_Load_single/3)
 
     model.const_demand_R = Constraint(rule=home_demandmeeting_R)
 

@@ -1,9 +1,11 @@
 import getpass
 import subprocess
 import threading
+import multiprocessing
 
 from optimization.pyroServerManagement import PyroServerManagement
 from utils_intern.messageLogger import MessageLogger
+from swagger_server.wsgi import StandaloneApplication
 
 """
  Created by Gustavo Aragón on 14.03.2018
@@ -20,6 +22,7 @@ import time
 
 import swagger_server.wsgi as webserver
 
+
 from IO.ZMQClient import ForwarderDevice
 from config.configUpdater import ConfigUpdater
 
@@ -27,6 +30,35 @@ from config.configUpdater import ConfigUpdater
 Get the address of the data.dat
 """
 
+class GracefulKiller:
+  kill_now = False
+  signals = {
+    signal.SIGINT: 'SIGINT',
+    signal.SIGTERM: 'SIGTERM'
+  }
+
+  def __init__(self):
+    signal.signal(signal.SIGINT, self.exit_gracefully)
+    signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+  def exit_gracefully(self, signum, frame):
+    print("\nReceived {} signal".format(self.signals[signum]))
+    print("Cleaning up resources. End of the program")
+    from IO.redisDB import RedisDB
+    redisDB = RedisDB()
+    redisDB.set("End ofw", "True")
+    time.sleep(6)
+    self.kill_now = True
+
+
+"""def sigterm(x, y):
+    print('SIGTERM received, time to leave for OFW')
+    from IO.redisDB import RedisDB
+    redisDB = RedisDB()
+    redisDB.set("End ofw", "True")
+
+# Register the signal to the handler
+signal.signal(signal.SIGTERM, sigterm)  # Used by this script"""
 
 def startOfw(options):
     # code to start a daemon
@@ -38,9 +70,6 @@ def parseArgs():
 
 
 def main():
-    signal.signal(signal.SIGTERM, signal_handler)
-    #signal.signal(signal.SIGKILL, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
     global OPTIONS
 
     logger, redisDB = setup()
@@ -49,10 +78,17 @@ def main():
     logger.info("OFW started")
     logger.debug("###################################")
     logger.debug("Starting name server and dispatch server")
+    #threading.Thread(target=StandaloneApplication.main).start()
+    p = multiprocessing.Process(target=StandaloneApplication.main)
+    p.start()
     #threading.Thread(target=PyroServerManagement.start_name_servers, args=(redisDB,)).start()
     #threading.Thread(target=PyroServerManagement.start_pryo_mip_servers, args=(redisDB, 5,)).start()
     logger.info("Starting webserver")
-    webserver.main()
+    killer = GracefulKiller()
+    #webserver.main()
+    while not killer.kill_now:
+        time.sleep(1)
+    p.join(2)
 
 
     # while True:
@@ -61,20 +97,17 @@ def main():
     # print(results)
     # time.sleep(5)
 
-def signal_handler(sig, frame):
+"""def signal_handler(sig, frame):
     print('You pressed Ctrl+C!')
     print(sig)
     if zmqForwarder:
         print("stopping zmq forwarder")
         zmqForwarder.Stop()
-    sys.exit(0)
+    sys.exit(0)"""
 
 zmqForwarder = None
 
-# Register the signal to the handler
-signal.signal(signal.SIGTERM, signal_handler)
-#signal.signal(signal.SIGKILL, signal_handler)
-signal.signal(signal.SIGINT, signal_handler)
+
 
 def setup():
 
@@ -89,6 +122,7 @@ def setup():
     logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
 
     redisDB = clear_redis(logger)
+    redisDB.set("End ofw", "False")
     copy_models()
     copy_pv_files()
     copy_env_varibles()
@@ -123,6 +157,7 @@ def clear_redis(logger):
     redisDB = RedisDB()
     redisDB.reset()
     redisDB.set("time", time.time())
+    redisDB.set("End ofw", "False")
     return redisDB
 
 def copy_env_varibles():

@@ -202,7 +202,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.info("repetition completed "+ str(self.repetition_completed))
             self.logger.info("stop request "+str(self.redisDB.get_bool(self.stop_signal_key)))
             self.logger.info("execution error "+str(execution_error))
-            if not self.redisDB.get_bool(self.stop_signal_key) and not self.repetition_completed and not execution_error:
+            if self.redisDB.get("End ofw") == "True" or (not self.redisDB.get_bool(self.stop_signal_key) and not self.repetition_completed and not execution_error):
                 self.logger.error("Process interrupted")
                 self.redisDB.set("kill_signal", True)
 

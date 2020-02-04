@@ -5,9 +5,8 @@ import logging
 
 from swagger_server import encoder
 
-
 def create_app():
-    logging.getLogger('connexion.operation').setLevel('ERROR')
+    #logging.getLogger('connexion.operation').setLevel('ERROR')
     app = connexion.App(__name__, specification_dir='./swagger/')
     app.app.json_encoder = encoder.JSONEncoder
     app.add_api('swagger.yaml', arguments={'title': 'Optimization framework service'})
