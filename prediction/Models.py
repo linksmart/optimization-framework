@@ -55,7 +55,7 @@ class Models:
             #logger.debug(self.model_weights_path + " file does not exist")
         if self.model and (
                 self.last_loaded is not None and last_updated is not None and last_updated <= self.last_loaded):
-            logger.info(str(id_topic) + "model present in memory ")
+            logger.info(str(id_topic) + " model present in memory ")
             return self.model, self.model_temp, temp, self.graph
         model, graph = self.load_saved_model(self.model_weights_path, load_timeout=30)
         logger.debug("model is none "+str(model is None))
@@ -66,7 +66,7 @@ class Models:
         else:
             """try temp model"""
             if self.model_temp is not None:
-                logger.info(str(id_topic) + "temp model present in memory")
+                logger.info(str(id_topic) + " temp model present in memory")
                 temp = True
                 return model, self.model_temp, temp, self.graph
             else:

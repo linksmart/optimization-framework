@@ -1,6 +1,7 @@
 
 # Use an official Python runtime as a parent image
-FROM garagon/solvers:amd_v3
+#FROM garagon/solvers:amd_v3
+FROM garagon/solvers:amd_v4
 
 RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
 
@@ -30,22 +31,25 @@ RUN pip3 install -U connexion==2.2.0
 RUN pip3 install -U paho-mqtt==1.4.0
 RUN pip3 install -U pyzmq==18.0.1
 RUN pip3 install -U psutil==5.6.1
-RUN pip3 install -U tensorflow==1.8.0
-RUN pip3 install -U keras==2.1.6
+RUN pip3 install -U tensorflow==1.14.0
+RUN pip3 install -U keras==2.3.1
 RUN pip3 install -U senml==0.1.0
 RUN pip3 install -U redis==2.10.6
 
 #RUN pip3 install --upgrade pyomo
 
-RUN pip3 install -U numpy==1.14.3
+#RUN pip3 install -U numpy
+#==1.14.3
 RUN pip3 install -U h5py==2.10.0
-RUN pip3 install -U scipy==1.3.3
-RUN pip3 install -U pandas==0.22.0
+RUN pip3 install -U scipy==1.4.1
+#==1.3.3
+RUN pip3 install -U pandas==1.0.0
+#==0.22.0
 RUN pip3 install -U sklearn==0.0
 
 RUN pip3 install -U Pyro4==4.77
 
-RUN pip3 install -U pydevd==1.8.0
+#RUN pip3 install -U pydevd==1.8.0
 
 
 RUN pip3 install -U xlrd==1.2.0
