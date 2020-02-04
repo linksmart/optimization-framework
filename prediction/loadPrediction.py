@@ -299,9 +299,11 @@ class Prediction(threading.Thread):
                     if model is not None:
                         Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
                         try:
+                            self.logger.debug("model present, so predicting data for "+str(self.id)+" "+str(self.topic_name))
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
+                            self.logger.debug("Prediction successful for " + str(self.id) + " " + str(self.topic_name))
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
                             self.q.put(data)
                             self.old_predictions.append(data)
