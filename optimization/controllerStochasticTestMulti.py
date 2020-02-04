@@ -261,18 +261,22 @@ class OptControllerStochastic(ControllerBase):
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc))
 
-                            for future in concurrent.futures.as_completed(futures, timeout=self.stochastic_timeout):
-                                try:
-                                    d, v = future.result(timeout=self.stochastic_timeout)
-                                    if d is None and v is None:
+                            try:
+                                for future in concurrent.futures.as_completed(futures, timeout=self.stochastic_timeout):
+                                    try:
+                                        d, v = future.result(timeout=self.stochastic_timeout)
+                                        if d is None and v is None:
+                                            loop_fail = True
+                                            self.logger.error("Optimization calculation was not possible. Process will be repeated")
+                                            break
+                                        Value.update(v)
+                                        Decision.update(d)
+                                    except Exception as exc:
+                                        self.logger.error("caused an exception: "+str(exc)+". Repeating the process")
                                         loop_fail = True
-                                        self.logger.error("Optimization calculation was not possible. Process will be repeated")
-                                        break
-                                    Value.update(v)
-                                    Decision.update(d)
-                                except Exception as exc:
-                                    self.logger.error("caused an exception: "+str(exc)+". Repeating the process")
-                                    loop_fail = True
+                            except Exception as e:
+                                self.logger.error("One future failed. "+str(e))
+                                loop_fail = True
                     except Exception as e:
                         self.logger.error(e)
                         loop_fail = True
