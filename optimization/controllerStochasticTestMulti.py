@@ -14,7 +14,7 @@ import gc
 import numpy as np
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
-
+from stopit import threading_timeoutable as timeoutable  #doctest: +SKIP
 
 import pyutilib.subprocess.GlobalData
 
@@ -250,7 +250,7 @@ class OptControllerStochastic(ControllerBase):
                                         executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
                             else:
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc = combination
@@ -258,9 +258,9 @@ class OptControllerStochastic(ControllerBase):
                                         executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
 
-                            for future in concurrent.futures.as_completed(futures, timeout=self.stochastic_timeout):
+                            for future in concurrent.futures.as_completed(futures):
                                 try:
                                     d, v = future.result()
                                     if d is None and v is None:
@@ -505,6 +505,7 @@ class OptControllerStochastic(ControllerBase):
                                 break
 
     @staticmethod
+    @timeoutable((None, None), timeout_param="time_out")
     def create_instance_and_solve(data_dict, ess_decision_domain, min_value, max_value, vac_decision_domain,
                                   vac_decision_domain_n, max_vac_soc_states, max_power_charging_station, timestep, single_ev, solver_name,
                                   absolute_path, ini_ess_soc, ini_vac_soc, position=None):
