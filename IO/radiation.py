@@ -134,7 +134,7 @@ class Radiation:
         date = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
         total_seconds = (current_date - start_date).total_seconds()
         total_hrs = int(total_seconds / 3600)
-        return total_hrs, date.timestamp()
+        return (total_hrs, date.timestamp())
 
     def filter_next_48_hrs(self, data):
         index, timestamp = self.get_row_by_time()
@@ -143,7 +143,7 @@ class Radiation:
         if carry < 0:
             carry = 0
         filtered_data = data[index:index + range] + data[:carry]
-        return filtered_data, timestamp
+        return (filtered_data, timestamp)
 
     def append_timestamp(self, data, timestamp):
         new_data = []

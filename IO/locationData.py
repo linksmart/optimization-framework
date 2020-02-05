@@ -30,7 +30,7 @@ class LocationData:
                 lat, lon = self.get_coordinate_google(city, country)
             if lat is not None and lon is not None:
                 self.save_city(city, country, lat, lon)
-        return lat, lon
+        return (lat, lon)
 
     def find_city(self, city, country):
         lat = None
@@ -48,7 +48,7 @@ class LocationData:
                                 lat = float(row[2].strip())
                                 lon = float(row[3].strip())
                                 break
-        return lat, lon
+        return (lat, lon)
 
     def save_city(self, city, country, lat, lon):
         if city is not None and len(city) > 0 and \
@@ -79,7 +79,7 @@ class LocationData:
                 return float(coord["lat"]), float(coord['lng'])
         except KeyError:
             pass
-        return None, None
+        return (None, None)
 
     def get_coordinate_osm(self, city, country):
         try:
@@ -94,7 +94,7 @@ class LocationData:
                 return self.get_coordinate_osm_q(city, country)
         except Exception:
             pass
-        return None, None
+        return (None, None)
 
     def get_coordinate_osm_q(self, city, country):
         try:
@@ -107,4 +107,4 @@ class LocationData:
                 return float(coord["lat"]), float(coord['lon'])
         except Exception:
             pass
-        return None, None
+        return (None, None)

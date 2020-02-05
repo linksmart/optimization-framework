@@ -5,7 +5,7 @@ import logging
 import psutil
 import gunicorn.app.base
 
-from gunicorn.six import iteritems
+#from gunicorn.six import iteritems
 import signal
 
 from swagger_server.__main__ import create_app as web
@@ -29,9 +29,12 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
         super(StandaloneApplication, self).__init__()
 
     def load_config(self):
-        config = dict([(key, value) for key, value in iteritems(self.options)
+        #config = dict([(key, value) for key, value in iteritems(self.options)
+                       #if key in self.cfg.settings and value is not None])
+        config = dict([(key, value) for key, value in self.options.items()
                        if key in self.cfg.settings and value is not None])
-        for key, value in iteritems(config):
+        #for key, value in iteritems(config):
+        for key, value in config.items():
             self.cfg.set(key.lower(), value)
 
     def load(self):

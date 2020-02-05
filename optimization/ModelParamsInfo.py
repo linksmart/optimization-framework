@@ -20,7 +20,7 @@ class ModelParamsInfo:
                 file_path = os.path.join(mypath, file)
                 if os.path.isfile(file_path) and file[len(file)-3:] == ".py":
                     f.append(file_path)
-        return f, mypath
+        return (f, mypath)
 
     @staticmethod
     def get_model_param(model_name):
@@ -46,7 +46,7 @@ class ModelParamsInfo:
                             var_map[var_name] = {"type":type_name, "indexing":indexing}
                             if type_name == "Param":
                                 param_key_list.append(var_name)
-        return var_map, param_key_list
+        return (var_map, param_key_list)
 
     @staticmethod
     def pos_and_type_of_var(line, pos_of_equal):
@@ -71,5 +71,5 @@ class ModelParamsInfo:
                         return type_name, "index"
                     else:
                         return type_name, "None"
-        return None, None
+        return (None, None)
 

@@ -69,7 +69,7 @@ class DataReceiver(ABC):
                                                                     self.config, self.section)
         if topic:
             topic_qos.append((topic, qos))
-        return topic_qos, host, host_params
+        return (topic_qos, host, host_params)
 
     def get_internal_channel_params(self):
         if self.channel == "MQTT":
@@ -95,7 +95,7 @@ class DataReceiver(ABC):
             host_params["password"] = self.config.get("IO", "mqtt.password", fallback=None)
             host_params["ca_cert_path"] = self.config.get("IO", "mqtt.ca.cert.path", fallback=None)
             host_params["insecure_flag"] = bool(self.config.get("IO", "mqtt.insecure.flag", fallback=False))
-            return topic_qos, host_params
+            return (topic_qos, host_params)
         elif self.channel == "ZMQ":
             topics = []
             for k, v in self.topic_params.items():
@@ -103,7 +103,7 @@ class DataReceiver(ABC):
                     topics.append(v + "/" + self.id)
             self.port = self.config.get("IO", "zmq.sub.port")
             self.host = self.config.get("IO", "zmq.host")
-            return topics, None
+            return (topics, None)
 
     def init_mqtt(self, topic_qos):
         self.logger.info("Initializing mqtt subscription client")

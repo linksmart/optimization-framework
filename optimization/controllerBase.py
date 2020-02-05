@@ -20,6 +20,7 @@ from pyutilib.services import TempfileManager
 import time
 import shutil
 import os
+from pathlib import Path
 
 from IO.inputController import InputController
 from IO.monitorPub import MonitorPub
@@ -182,8 +183,10 @@ class ControllerBase(ABC, threading.Thread):
         try:
 
             count = 0
-
-            self.optimize(count, self.solver_name, self.model_path)
+            model_name = Path(self.model_path).stem
+            module_name = "optimization.models."+str(model_name)
+            #self.optimize(count, self.solver_name, self.model_path)
+            self.optimize(count, self.solver_name, module_name)
 
         except Exception as e:
             execution_error = True

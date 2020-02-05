@@ -229,6 +229,7 @@ class InputController:
             data_available_for_bucket = True
             new_data = {}
             mqtt_timer = {}
+
             if mqtt_flags is not None:
                 for name, mqtt_flag in mqtt_flags.items():
                     if mqtt_flag:
@@ -236,6 +237,8 @@ class InputController:
                         if name not in mqtt_exception_list:
                             data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
                             mqtt_timer[name] = last_time
+                            self.logger.debug("mqtt_timer "+str(mqtt_timer))
+                            self.logger.debug("Bucket available "+str(bucket_available)+" for "+str(name))
                             if not bucket_available:
                                 data_available_for_bucket = False
                                 self.logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
@@ -247,13 +250,15 @@ class InputController:
                         if name not in file_exception_list:
                             data = self.read_input_data(self.id, name, name + ".txt")
                             new_data.update(data)
-            return data_available_for_bucket, new_data, mqtt_timer
+            self.logger.debug("data_available_for_bucket: " + str(data_available_for_bucket))
+            return (data_available_for_bucket, new_data, mqtt_timer)
         except Exception as e:
             self.logger.error("error in fetch_mqtt_and_file_data for "+str(e))
             raise e
 
     def update_data(self, data):
         self.logger.info("data for update : "+str(data))
+        self.logger.debug("Length of data for update: "+str(len(data)))
         for k,v_new in data.items():
             new_data = {}
             if k in self.optimization_data.keys():

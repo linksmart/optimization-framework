@@ -94,12 +94,12 @@ class Models:
             if os.path.exists(path):
                 logger.info("Loading model from disk from path = " + str(path))
                 K.clear_session()
-                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
-                sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+                session_conf = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
+                sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph(), config=session_conf)
                 K.set_session(sess)
                 model = load_model(path)
                 model._make_predict_function()
-                graph = tf.get_default_graph()
+                graph = tf.compat.v1.get_default_graph()
                 self.last_loaded = time.time()
                 logger.info("Loaded model from disk")
             else:
