@@ -30,6 +30,9 @@ class Constants:
     optimization_type = "optimization_type"
     lock_key = "id_lock"
 
+    recharge_event_connect = 0
+    recharge_event_disconnect = 0
+
     @staticmethod
     def get_data_flow_key(id):
         return "data_flow_"+str(id)

@@ -1,5 +1,7 @@
 import time
 
+from utils_intern.constants import Constants
+
 
 class ChargingStation:
 
@@ -37,12 +39,12 @@ class ChargingStation:
 
     def recharge_event(self, event, timestamp, hosted_ev = None):
         if isinstance(event, int):
-            if event == 1:
+            if event == Constants.recharge_event_connect:
                 event = True
             else:
                 event = False
         if isinstance(event, bool):
-            if event:
+            if not event:
                 self.plug(hosted_ev, None)
                 self.recharge_start_time = timestamp
             else:
