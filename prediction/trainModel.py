@@ -29,8 +29,8 @@ class TrainModel:
         import tensorflow as tf
         K.clear_session()
 
-        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
-        sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+        session_conf = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
+        sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph(), config=session_conf)
         K.set_session(sess)
 
         model = Sequential()
@@ -87,8 +87,8 @@ class TrainModel:
         import tensorflow as tf
         K.clear_session()
 
-        session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
-        sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+        session_conf = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
+        sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph(), config=session_conf)
         K.set_session(sess)
 
         model = Sequential()

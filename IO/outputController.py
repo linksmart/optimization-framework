@@ -133,7 +133,7 @@ class OutputController:
             bn, n, val = self.get_names(value)
         else:
             bn, n, val = bn, key, value
-        return bn, n, val
+        return (bn, n, val)
 
     def save_to_redis(self, id, data, time):
         try:
@@ -168,4 +168,4 @@ class OutputController:
             n = dict["n"]
         if "v" in dict.keys():
             v = dict["v"]
-        return bn,n,v
+        return (bn,n,v)

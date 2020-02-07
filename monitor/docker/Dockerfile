@@ -8,7 +8,7 @@
 
 #FROM python:3.6.4-jessie
 # Switch to root for install
-FROM python:3.6.8-stretch
+FROM python:3.7.6-stretch
 # Switch to root for install
 USER root
 

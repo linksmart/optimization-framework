@@ -204,10 +204,12 @@ class BaseDataReceiver(DataReceiver, ABC):
         if len(data) >= steps:
             for i in reversed(range(self.number_of_bucket_days+1)):
                 key = str(i) + "_" + str(bucket)
+                self.logger.debug("key in data: "+str(key)+" for "+str(self.generic_name))
                 if key in data.keys():
                     day = str(i)
                     break
             if day is None:
+                self.logger.debug("Setting bucket available to False. Day is None for "+str(self.generic_name))
                 bucket_available = False
             else:
                 new_data = {}
@@ -224,6 +226,7 @@ class BaseDataReceiver(DataReceiver, ABC):
                         if day_i >= self.number_of_bucket_days:
                             day_i = 0
                         day = str(day_i)
+                self.logger.debug("base_value_flag "+str(self.base_value_flag)+" for "+str(self.generic_name))
                 if self.base_value_flag:
                     for k, v in new_data.items():
                         if isinstance(v, dict):
@@ -231,12 +234,13 @@ class BaseDataReceiver(DataReceiver, ABC):
                 else:
                     final_data = {self.generic_name: new_data}
         if check_bucket_change:
+            self.logger.debug("check_bucket_change flag: "+str(check_bucket_change)+ " for "+str(self.generic_name))
             new_bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
             if new_bucket > bucket_requested:
                 self.logger.debug("bucket changed from " + str(bucket_requested) +
                                   " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
                 final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
-        return final_data, bucket_available, self.last_time
+        return (final_data, bucket_available, self.last_time)
 
     def time_conversion(self, time):
         t = str(time)

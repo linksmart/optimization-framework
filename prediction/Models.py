@@ -55,7 +55,7 @@ class Models:
             #logger.debug(self.model_weights_path + " file does not exist")
         if self.model and (
                 self.last_loaded is not None and last_updated is not None and last_updated <= self.last_loaded):
-            logger.info(str(id_topic) + "model present in memory ")
+            logger.info(str(id_topic) + " model present in memory ")
             return self.model, self.model_temp, temp, self.graph
         model, graph = self.load_saved_model(self.model_weights_path, load_timeout=30)
         logger.debug("model is none "+str(model is None))
@@ -66,7 +66,7 @@ class Models:
         else:
             """try temp model"""
             if self.model_temp is not None:
-                logger.info(str(id_topic) + "temp model present in memory")
+                logger.info(str(id_topic) + " temp model present in memory")
                 temp = True
                 return model, self.model_temp, temp, self.graph
             else:
@@ -94,12 +94,12 @@ class Models:
             if os.path.exists(path):
                 logger.info("Loading model from disk from path = " + str(path))
                 K.clear_session()
-                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
-                sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+                session_conf = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
+                sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph(), config=session_conf)
                 K.set_session(sess)
                 model = load_model(path)
                 model._make_predict_function()
-                graph = tf.get_default_graph()
+                graph = tf.compat.v1.get_default_graph()
                 self.last_loaded = time.time()
                 logger.info("Loaded model from disk")
             else:

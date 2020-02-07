@@ -295,7 +295,7 @@ class InputPreprocess:
         #min_value = int(min_value)
         #max_value = int(max_value)
 
-        return min_value, max_value, steps, np.arange(min_value, max_value + steps, steps).tolist()
+        return (min_value, max_value, steps, np.arange(min_value, max_value + steps, steps).tolist())
 
     def round_to_steps(self, value, min, step):
         self.logger.info("round values "+str(value)+" "+str(min)+" "+str(step))

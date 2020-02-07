@@ -36,16 +36,17 @@ class OptControllerDiscrete(ControllerBase):
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=False, redisDB=self.redisDB)  # blocking call
             self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
-            if self.redisDB.get_bool(self.stop_signal_key):
+            if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":
                 break
 
             start_time = time.time()
             # Creating an optimization instance with the referenced model
             try:
                 optsolver = SolverFactory(solver_name)
-                spec = importlib.util.spec_from_file_location(model_path, model_path)
-                module = spec.loader.load_module(spec.name)
-                my_class = getattr(module, 'Model')
+                #spec = importlib.util.spec_from_file_location(model_path, model_path)
+                #module = spec.loader.load_module(spec.name)
+                mod = __import__(model_path, fromlist=['Model'])
+                my_class = getattr(mod, 'Model')
                 self.logger.debug("Creating an optimization instance")
 
                 cnt = 0
@@ -63,9 +64,7 @@ class OptControllerDiscrete(ControllerBase):
                     result.solver.termination_condition == TerminationCondition.optimal):
                 # this is feasible and optimal
                 self.logger.info("Solver status and termination condition ok")
-                #self.logger.debug("Results for " + self.solved_name + " with id: " + str(self.id))
-                #self.logger.debug("Results for id: " + str(self.id))
-                #self.logger.debug(result)
+
                 instance.solutions.load_from(result)
                 try:
                     my_dict = {}

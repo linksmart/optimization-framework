@@ -2,7 +2,7 @@
 # Use an official Python runtime as a parent image
 #FROM garagon/ipopt:V0.2
 
-FROM python:3.6.8-stretch
+FROM python:3.7.6-stretch
 # Switch to root for install
 USER root
 
@@ -47,15 +47,16 @@ RUN apt-get update -y && apt-get install -y \
 #RUN apt-get install libhdf5-serial-dev
 RUN pip3 install -U numpy==1.14.3
 RUN pip3 install -U h5py==2.10.0
-RUN pip3 install -U scipy==1.3.3
-RUN pip3 install -U pandas==0.22.0
+RUN pip3 install -U scipy==1.4.1
+RUN pip3 install -U pandas==1.0.0
 RUN pip3 install -U sklearn==0.0
 
-RUN pip3 install -U tensorflow==1.8.0
-RUN pip3 install -U keras==2.1.6
+RUN pip3 install -U tensorflow==1.14.0
+RUN pip3 install -U keras
+#==2.1.6
 RUN pip3 install -U redis==2.10.6
 RUN pip3 install -U senml==0.1.0
-RUN pip3 install -U numpy==1.14.3
+#RUN pip3 install -U numpy==1.14.3
 
 WORKDIR /usr/src/app
 

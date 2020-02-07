@@ -132,7 +132,7 @@ def setup():
     subPort = config.get("IO", "zmq.sub.port")
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
-    return logger, redisDB
+    return (logger, redisDB)
 
 def copy_pv_files():
     pv_path = "/usr/src/app/optimization/pv_data"

@@ -61,13 +61,13 @@ class ZMQClient:
             messagedata = self.subscriber.recv_string()
             topic, message = messagedata.split(" ", 1)
             logger.debug(topic + " " + message)
-            return True, topic, message
+            return (True, topic, message)
         except zmq.Again as e:
             logger.debug("No messages received yet. Error = " + str(e))
-            return False, None, None
+            return (False, None, None)
         except Exception as e:
             logger.error(e)
-            return False, None, None
+            return (False, None, None)
 
 
 class ForwarderDevice(threading.Thread):
