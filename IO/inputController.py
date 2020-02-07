@@ -182,8 +182,10 @@ class InputController:
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         success = False
         # self.logger.info("sleep for data")
-        # time.sleep(100)
+        #time.sleep(100)
         while not success:
+            if redisDB.get("End ofw") == "True":
+                break
             self.logger.debug("Starting getting data")
             current_bucket = self.get_current_bucket()
             self.logger.info("Get input data for bucket " + str(current_bucket))
@@ -250,7 +252,7 @@ class InputController:
                         if name not in file_exception_list:
                             data = self.read_input_data(self.id, name, name + ".txt")
                             new_data.update(data)
-            self.logger.debug("data_available_for_bucket: " + str(data_available_for_bucket))
+            self.logger.debug("data_available_for_bucket: " + str(data_available_for_bucket)+" for "+str(mqtt_flags))
             return (data_available_for_bucket, new_data, mqtt_timer)
         except Exception as e:
             self.logger.error("error in fetch_mqtt_and_file_data for "+str(e))

@@ -226,7 +226,7 @@ class CommandController:
 
 
 variable = CommandController()
-#variable.restart_ids()
+variable.restart_ids()
 
 
 def get_models():

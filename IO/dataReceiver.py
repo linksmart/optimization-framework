@@ -171,6 +171,7 @@ class DataReceiver(ABC):
         self.data_update = False
         if clearData:
             self.clear_data()
+        self.logger.debug("new_data "+str(new_data))
         return new_data
 
     def clear_data(self):

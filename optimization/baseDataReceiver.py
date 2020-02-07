@@ -71,7 +71,8 @@ class BaseDataReceiver(DataReceiver, ABC):
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-            #self.logger.debug("data received "+str(payload))
+            if "chargers" in payload:
+                self.logger.debug("data received "+str(payload))
             senml_data = json.loads(payload)
             #self.logger.debug("senml_data "+str(senml_data))
             formated_data = self.add_formated_data(senml_data)
@@ -201,57 +202,61 @@ class BaseDataReceiver(DataReceiver, ABC):
         else:
             data = self.get_data(require_updated=1)
 
-        self.logger.debug(str(self.generic_name)+ " data from mqtt is : "+ json.dumps(data, indent=4))
-        if steps > self.length:
-            steps = self.length
-        day = None
-        if len(data) >= steps:
-            for i in reversed(range(self.number_of_bucket_days+1)):
-                key = str(i) + "_" + str(bucket)
-                self.logger.debug("key in data: "+str(key)+" for "+str(self.generic_name))
-                if key in data.keys():
-                    day = str(i)
-                    break
-            if day is None and self.detachable and not self.value_used_once:
-                day = 0
-            if day is None and self.detachable:
-                pass
-            elif day is None:
-                bucket_available = False
-                self.logger.debug("Setting bucket available to False. Day is None for "+str(self.generic_name))
-            else:
-                new_data = {}
-                index = 0
-                while len(new_data) < steps:
-                    bucket_key = day + "_" + str(bucket)
-                    if bucket_key in data.keys():
-                        new_data[index] = data[bucket_key]
-                        index += 1
-                    bucket += 1
-                    if bucket >= self.total_steps_in_day:
-                        bucket = 0
-                        day_i = int(day) + 1
-                        if day_i >= self.number_of_bucket_days:
-                            day_i = 0
-                        day = str(day_i)
-                self.logger.debug("base_value_flag "+str(self.base_value_flag)+" for "+str(self.generic_name))
-                if self.base_value_flag:
-                    for k, v in new_data.items():
-                        if isinstance(v, dict):
-                            final_data.update(v)
+        if not self.redisDB.get("End ofw") == "True":
+            self.logger.debug(str(self.generic_name) + " data from mqtt is : "+ json.dumps(data, indent=4))
+            self.logger.debug(str(self.generic_name) + " steps: "+str(steps) + " length: "+str(self.length))
+            if steps > self.length:
+                steps = self.length
+            day = None
+            self.logger.debug(str(self.generic_name) + " steps: " + str(steps))
+            if len(data) >= steps:
+                for i in reversed(range(self.number_of_bucket_days+1)):
+                    key = str(i) + "_" + str(bucket)
+                    self.logger.debug("key in data: "+str(key)+" for "+str(self.generic_name))
+                    if key in data.keys():
+                        day = str(i)
+                        break
+                if day is None and self.detachable and not self.value_used_once and self.last_time > 0:
+                    self.logger.debug("Day set to 0 for detachable for " + str(self.generic_name))
+                    day = "0"
+                if day is None and self.detachable:
+                    self.logger.debug("Ignoring day for detachable for " + str(self.generic_name))
+                    pass
+                elif day is None:
+                    bucket_available = False
+                    self.logger.debug("Setting bucket available to False. Day is None for " + str(self.generic_name))
                 else:
-                    final_data = {self.generic_name: new_data}
-        if check_bucket_change:
-            self.logger.debug("check_bucket_change flag: "+str(check_bucket_change)+ " for "+str(self.generic_name))
-            new_bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
-            if new_bucket > bucket_requested:
-                self.logger.debug("bucket changed from " + str(bucket_requested) +
-                                  " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
-                final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
+                    new_data = {}
+                    index = 0
+                    while len(new_data) < steps:
+                        bucket_key = day + "_" + str(bucket)
+                        if bucket_key in data.keys():
+                            new_data[index] = data[bucket_key]
+                            index += 1
+                        bucket += 1
+                        if bucket >= self.total_steps_in_day:
+                            bucket = 0
+                            day_i = int(day) + 1
+                            if day_i >= self.number_of_bucket_days:
+                                day_i = 0
+                            day = str(day_i)
+                    self.logger.debug("base_value_flag "+str(self.base_value_flag)+" for "+str(self.generic_name))
+                    if self.base_value_flag:
+                        for k, v in new_data.items():
+                            if isinstance(v, dict):
+                                final_data.update(v)
+                    else:
+                        final_data = {self.generic_name: new_data}
+            if check_bucket_change:
+                self.logger.debug("check_bucket_change flag: "+str(check_bucket_change)+ " for "+str(self.generic_name))
+                new_bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
+                if new_bucket > bucket_requested:
+                    self.logger.debug("bucket changed from " + str(bucket_requested) +
+                                      " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
+                    final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
         if self.detachable and bucket_available:
             self.value_used_once = True
-        return final_data, bucket_available, self.last_time
-
+        return (final_data, bucket_available, self.last_time)
 
     def time_conversion(self, time):
         t = str(time)

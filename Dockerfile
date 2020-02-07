@@ -63,12 +63,13 @@ COPY utils /usr/src/app/utils
 COPY optimization /usr/src/app/optimization
 COPY prediction /usr/src/app/prediction
 COPY swagger_server /usr/src/app/swagger_server
-COPY IO /usr/src/app/IO
 COPY mock_data /usr/src/app/mock_data
+COPY IO /usr/src/app/IO
 COPY config /usr/src/app/config
 COPY profev /usr/src/app/profev
-#COPY logs /usr/src/app/logs
 COPY utils_intern /usr/src/app/utils_intern
+#COPY logs /usr/src/app/logs
+#COPY utils_intern /usr/src/app/utils_intern
 COPY stochastic_programming /usr/src/app/stochastic_programming
 
 
