@@ -38,6 +38,8 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.detachable = topic_params["detachable"]
         else:
             self.detachable = False
+        if self.detachable:
+            self.value_used_once = False
         if "reuseable" in topic_params.keys():
             self.reuseable = topic_params["reuseable"]
         else:
@@ -188,6 +190,8 @@ class BaseDataReceiver(DataReceiver, ABC):
         #TODO: figure out every use case
         if self.detachable and self.reuseable:
             data = self.get_data(require_updated=2)
+        elif self.detachable and not self.value_used_once:
+            data = self.get_data(require_updated=2)
         elif self.detachable:
             data = self.get_data(require_updated=2, clearData=True)
         elif self.reuseable:
@@ -208,9 +212,13 @@ class BaseDataReceiver(DataReceiver, ABC):
                 if key in data.keys():
                     day = str(i)
                     break
-            if day is None:
-                self.logger.debug("Setting bucket available to False. Day is None for "+str(self.generic_name))
+            if day is None and self.detachable and not self.value_used_once:
+                day = 0
+            if day is None and self.detachable:
+                pass
+            elif day is None:
                 bucket_available = False
+                self.logger.debug("Setting bucket available to False. Day is None for "+str(self.generic_name))
             else:
                 new_data = {}
                 index = 0
@@ -240,7 +248,10 @@ class BaseDataReceiver(DataReceiver, ABC):
                 self.logger.debug("bucket changed from " + str(bucket_requested) +
                                   " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
                 final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
-        return (final_data, bucket_available, self.last_time)
+        if self.detachable and bucket_available:
+            self.value_used_once = True
+        return final_data, bucket_available, self.last_time
+
 
     def time_conversion(self, time):
         t = str(time)
