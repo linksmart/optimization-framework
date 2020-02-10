@@ -1,3 +1,6 @@
+import json
+import os
+import time
 from utils_intern.messageLogger import MessageLogger
 
 class EVPark:
@@ -7,6 +10,9 @@ class EVPark:
         self.evs = {}
         self.chargers = {}
         self.total_charging_stations_power = 0
+        persist_real_data_path = "optimization/resources"
+        persist_real_data_path = os.path.join("/usr/src/app", persist_real_data_path, id, "real")
+        self.persist_real_data_file = os.path.join(persist_real_data_path, "ev_info" + ".txt")
 
     def add_evs(self, evs_list):
         for ev in evs_list:
@@ -14,6 +20,8 @@ class EVPark:
                 self.evs[ev.ev_name].update(ev.battery_capacity)
             else:
                 self.evs[ev.ev_name] = ev
+        self.logger.debug("EVs "+str(self.evs))
+
 
     def get_num_of_cars(self):
         return len(self.evs)
@@ -86,35 +94,57 @@ class EVPark:
         avg = avg/len(self.evs)
         return avg
 
+    def sum_battery_capacity(self):
+        count = 0
+        for key, charger in self.chargers.items():
+            count = count + 1
+        cap = 0
+        count2=0
+        for ev_id, ev in self.evs.items():
+            cap += ev.battery_capacity
+            count2 = count2 + 1
+            #if count2 == count:
+                #break
+        return cap
+
     # TODO: include all evs for calculation
     def calculate_vac_soc_value(self, vac_soc_value_override=None):
-        default = 50
+        #default = 0.4
         vac_soc_value = 0
-        vac = 0
         all_soc_present = True
+        sum_battery_cap = self.sum_battery_capacity()
         avg_battery_cap = self.avg_battery_capacity()
         self.logger.info(self.chargers.keys())
         self.logger.info(self.evs.keys())
+        list_of_evs = []
+        for ev_name in self.evs.keys():
+            list_of_evs.append(ev_name)
         for key, charger in self.chargers.items():
-            self.logger.info("charger "+str(key)+" "+str(charger.hosted_ev))
+            self.logger.info("charger "+str(key)+" hosting "+str(charger.hosted_ev))
             if charger.hosted_ev in self.evs.keys():
                 ev = self.evs[charger.hosted_ev]
-                self.logger.info("inside "+str(ev.battery_capacity))
+                ev.set_soc(charger.soc)
+                self.logger.info("inside "+str(ev.battery_capacity) + " charger.soc "+str(charger.soc))
                 vac_soc_value += charger.soc * ev.battery_capacity
-                vac += ev.battery_capacity
-            elif charger.soc is not None:
-                vac_soc_value += charger.soc * avg_battery_cap
-                vac += avg_battery_cap
+                list_of_evs.remove(charger.hosted_ev)
             else:
                 all_soc_present = False
-        self.logger.info("cal "+str(vac_soc_value)+ " "+ str(vac))
-        if vac <= 0:
-            vac_soc_value = 0
-        else:
-            vac_soc_value = vac_soc_value * 100 / vac
+                #vac_soc_value += default * avg_battery_cap
+                #vac += avg_battery_cap
+            """elif charger.soc is not None:
+                            self.logger.debug("Charger.soc is not None: "+str(charger.soc))
+                            vac_soc_value += charger.soc * avg_battery_cap
+                            #vac += avg_battery_cap"""
+
+        self.logger.debug("evs not connected "+str(list_of_evs))
+        for ev_name in list_of_evs:
+            vac_soc_value += self.evs[ev_name].get_soc() * self.evs[ev_name].battery_capacity
+        vac_soc_value = vac_soc_value * 100 / sum_battery_cap
+        self.logger.info("vac_soc_value " + str(vac_soc_value) + " " + str(sum_battery_cap))
+
         if not all_soc_present:
-            vac_soc_value = default
-            self.logger.info("Not all soc values present so using default vac_soc_value of "+str(default))
+            #vac_soc_value = default
+            self.logger.info("Not all soc values present so using default vac_soc_value of "+str(vac_soc_value))
         if vac_soc_value_override is not None:
             vac_soc_value = vac_soc_value_override
             self.logger.info("vac_soc_value_override to "+str(vac_soc_value_override))
@@ -123,6 +153,18 @@ class EVPark:
     def charge_ev(self, p_ev, dT):
         self.logger.debug("p_ev: "+str(p_ev))
         socs = {}
+        #self.persist_real_data_file = os.path.join(os.getcwd(), "ev_test2.txt")
+        ev_data_from_file = None
+        if os.path.exists(self.persist_real_data_file):
+            ev_data_from_file = self.read_data(self.persist_real_data_file)
+
+        #Poner aquí analsis de tiempo
+        list_of_evs = []
+        for ev_name in self.evs.keys():
+            if not ev_data_from_file == None:
+                self.evs[ev_name].set_soc(ev_data_from_file.get(ev_name))
+            list_of_evs.append(ev_name)
+
         for key, charger in self.chargers.items():
             if key in p_ev.keys():
                 self.logger.info("charging " + str(charger.__str__()))
@@ -134,25 +176,67 @@ class EVPark:
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("charged " + str(charger.__str__()))
                     socs[key] = new_soc
+                    list_of_evs.remove(hosted_ev)
                 elif hosted_ev in self.evs.keys():
-                    new_soc = self.evs[hosted_ev].discharge(soc)
+                    if not charger.plugged:
+                        new_soc = self.evs[hosted_ev].discharge(soc, dT)
+                    else:
+                        self.evs[hosted_ev].set_soc(soc)
+                        new_soc = self.evs[hosted_ev].get_soc()
                     charger.set_calculated_soc(new_soc)
-                    self.logger.info("discharged " + str(charger.__str__()))
+                    self.logger.info("Set new soc " + str(charger.__str__()))
                     socs[key] = new_soc
+                    list_of_evs.remove(hosted_ev)
                 else:
-                    self.logger.error("Charger "+charger.charger_id+" does not have hosted ev so cannot calculate soc")
+                    self.logger.error("Charger "+str(charger.charger_id)+" does not have hosted ev")
             else:
                 self.logger.info("discharging " + str(charger.__str__()))
                 soc = charger.soc
                 hosted_ev = charger.hosted_ev
                 if hosted_ev in self.evs.keys():
-                    new_soc = self.evs[hosted_ev].discharge(soc)
+                    self.logger.debug("soc before "+str(self.evs[hosted_ev].get_soc()))
+                    list_of_evs.remove(hosted_ev)
+                    if not charger.plugged:
+                        new_soc = self.evs[hosted_ev].discharge(soc, dT)
+                    else:
+                        self.evs[hosted_ev].set_soc(soc)
+                        new_soc = self.evs[hosted_ev].get_soc()
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("discharged " + str(charger.__str__()))
                     socs[key] = new_soc
                 else:
-                    self.logger.error("Charger "+charger.charger_id+" does not have hosted ev so cannot calculate soc")
+                    self.logger.error("Charger "+charger.charger_id+" does not have hosted")
+
+        self.logger.debug("Reducing the soc for driving EVs")
+        for ev_name in list_of_evs:
+            self.evs[ev_name].discharge(None, dT)
+        dict_to_save = {}
+        for ev_name in self.evs.keys():
+            dict_to_save[ev_name] = self.evs[ev_name].get_soc()
+            self.logger.debug("soc for "+str(ev_name)+" is "+str(self.evs[ev_name].get_soc()))
+        dict_to_save["time"] = time.time()
+
+        self.save_data(dict_to_save, self.persist_real_data_file)
         return socs
+
+    def save_data(self, data, filepath):
+        try:
+            with open(filepath, "w") as f:
+                f.write(json.dumps(data))
+            self.logger.debug("EV data saved to: " + str(filepath))
+        except Exception as e:
+            self.logger.error("Read input file exception: " + str(e))
+
+
+    def read_data(self, filepath):
+        try:
+            with open(filepath, "r") as file:
+                data = file.read()
+            return json.loads(data)
+        except Exception as e:
+            self.logger.error("Read input file exception: " + str(e))
+
+
 
     def single_ev_recharge(self):
         if len(self.chargers) == 1:

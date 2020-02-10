@@ -351,10 +351,10 @@ class OptControllerStochastic(ControllerBase):
                     p_ev = {}
 
                     self.logger.debug("Dynamic programming calculations")
-                    self.logger.debug("PV generation:" + str(p_pv))
-                    self.logger.debug("Import:" + str(p_grid))
-                    self.logger.debug("ESS discharge:" + str(p_ess))
-                    self.logger.debug("VAC charging" + str(p_vac))
+                    self.logger.debug("PV generation: " + str(p_pv))
+                    self.logger.debug("Grid power: " + str(p_grid))
+                    self.logger.debug("ESS discharge: " + str(p_ess))
+                    self.logger.debug("VAC charging " + str(p_vac))
 
                     #############################################################################
                     # This section distributes virtual capacity charging power into the cars plugged chargers in the station
@@ -386,6 +386,14 @@ class OptControllerStochastic(ControllerBase):
 
                     #############################################################################
                     # This section decides what to do with the non utilized virtual capacity charging power
+                    p_ev_single = 0
+                    if self.single_ev:
+                        for charger, max_charge_power_of_car in connections.items():
+                            p_ev_single = p_ev[charger]
+                        if (p_pv - p_load - p_ev_single) < 0:
+                            if p_ess > (p_load + p_ev_single):
+                                p_ess = p_load + p_ev_single
+                    self.logger.debug("p_ess "+str(p_ess) +" with load "+str(p_load) +" and p_ev "+str(p_ev_single))
 
                     self.logger.debug("Implemented actions")
                     self.logger.debug("PV generation: " + str(p_pv))

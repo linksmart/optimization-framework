@@ -20,6 +20,9 @@ class ChargingStation:
         if ev_unplugged:
             self.unplug()
 
+    def is_plug(self):
+        return self.plugged
+
     def plug(self, ev, soc):
         self.hosted_ev = ev
         if soc:

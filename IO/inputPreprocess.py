@@ -21,6 +21,7 @@ class InputPreprocess:
         self.data_dict = {}
         self.logger = MessageLogger.get_logger(__name__, id)
         self.ev_park = EVPark(id)
+        self.id = id
         self.mqtt_time_threshold = mqtt_time_threshold
         self.event_data = {}
 
@@ -73,6 +74,7 @@ class InputPreprocess:
         for charger_id, charger in self.ev_park.chargers.items():
             self.logger.info(charger.__str__())
         #time.sleep(60)
+        self.logger.info("data_dict = " + str(self.data_dict))
         return self.data_dict
 
     def get_last_timestamp(self, partial_key):
@@ -87,7 +89,7 @@ class InputPreprocess:
         self.logger.info("data_dict : "+str(self.data_dict))
         if "Unit_Consumption_Assumption" in self.data_dict.keys():
             uac = float(self.data_dict["Unit_Consumption_Assumption"][None])
-            self.logger.debug("uac "+str(uac)+ " vac_min "+str(vac_min)+" vac_step "+str(vac_step))
+            self.logger.debug("Unit consumption assumption "+str(uac)+ " vac_min "+str(vac_min)+" vac_step "+str(vac_step))
             if not (((uac - vac_min) / vac_step).is_integer()):
                 raise Exception("Unit_Consumption_Assumption should be a valid step of VAC_steps")
         else:
@@ -148,7 +150,7 @@ class InputPreprocess:
                     soc = None
                 assert max_charging_power_kw, "Incorrect input: Max_Charging_Power_kW missing for charger: " + str(charger)
                 chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc, ev_unplugged))
-                v["SoC"] = None
+                v["SoC"] = soc
                 update[k] = v
         self.data_dict.update(update)
         return chargers_list
@@ -170,7 +172,7 @@ class InputPreprocess:
                 battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
                 assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
                 ev_no_base = self.remove_key_base(ev)
-                evs_list.append(EV(ev_no_base, battery_capacity))
+                evs_list.append(EV(self.id, ev_no_base, battery_capacity))
         self.remove_used_keys(ev_keys)
         return evs_list
 
