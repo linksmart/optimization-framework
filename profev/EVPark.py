@@ -116,9 +116,18 @@ class EVPark:
         avg_battery_cap = self.avg_battery_capacity()
         self.logger.info(self.chargers.keys())
         self.logger.info(self.evs.keys())
+
+        ev_data_from_file = None
+        if os.path.exists(self.persist_real_data_file):
+            ev_data_from_file = self.read_data(self.persist_real_data_file)
+
+        # Poner aquí analsis de tiempo
         list_of_evs = []
         for ev_name in self.evs.keys():
+            if not ev_data_from_file == None:
+                self.evs[ev_name].set_soc(ev_data_from_file.get(ev_name))
             list_of_evs.append(ev_name)
+
         for key, charger in self.chargers.items():
             self.logger.info("charger "+str(key)+" hosting "+str(charger.hosted_ev))
             if charger.hosted_ev in self.evs.keys():
@@ -153,16 +162,8 @@ class EVPark:
     def charge_ev(self, p_ev, dT):
         self.logger.debug("p_ev: "+str(p_ev))
         socs = {}
-        #self.persist_real_data_file = os.path.join(os.getcwd(), "ev_test2.txt")
-        ev_data_from_file = None
-        if os.path.exists(self.persist_real_data_file):
-            ev_data_from_file = self.read_data(self.persist_real_data_file)
-
-        #Poner aquí analsis de tiempo
         list_of_evs = []
         for ev_name in self.evs.keys():
-            if not ev_data_from_file == None:
-                self.evs[ev_name].set_soc(ev_data_from_file.get(ev_name))
             list_of_evs.append(ev_name)
 
         for key, charger in self.chargers.items():

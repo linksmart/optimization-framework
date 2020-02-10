@@ -393,7 +393,8 @@ class OptControllerStochastic(ControllerBase):
                         if (p_pv - p_load - p_ev_single) < 0:
                             if p_ess > (p_load + p_ev_single):
                                 p_ess = p_load + p_ev_single
-                    self.logger.debug("p_ess "+str(p_ess) +" with load "+str(p_load) +" and p_ev "+str(p_ev_single))
+                                self.logger.debug("p_ess output changed")
+                    self.logger.debug("p_ess "+str(p_ess) + " with load " + str(p_load) + " and p_ev " + str(p_ev_single))
 
                     self.logger.debug("Implemented actions")
                     self.logger.debug("PV generation: " + str(p_pv))
