@@ -5,6 +5,7 @@ Created on Jan 28 12:26 2020
 """
 import json
 
+import time
 from senml import senml
 
 from IO.dataReceiver import DataReceiver
@@ -54,3 +55,9 @@ class Status(DataReceiver):
         for id in instance_ids:
             if id in self.data.keys():
                 self.data.pop(id)
+
+    def set_to_current_time(self, instance_ids):
+        current_time = int(time.time())
+        for id in instance_ids:
+            if id in self.data.keys():
+                self.data[id]["last_time"] = current_time
