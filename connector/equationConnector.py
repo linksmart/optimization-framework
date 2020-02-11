@@ -74,38 +74,19 @@ class EquationConnector(SummationPub):
                 result = eval(self.meta_eq["eq"], input)
                 if self.meta_eq["dtype"] == "int":
                     result = int(result)
-                if self.check_bounds(result):
-                    senml_data = self.to_senml(self.meta_eq["name"], result, self.rec.last_time)
-                    d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
-                    self.q.put(d)
-                    logger.debug("###### added to queue")
-                else:
-                    bound = self.get_bound(result)
-                    if not bound == None:
-                        senml_data = self.to_senml(self.meta_eq["name"], bound, self.rec.last_time)
-                        d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
-                        self.q.put(d)
-                        logger.debug("###### added to queue with bound")
+                result = self.bound(result)
+                senml_data = self.to_senml(self.meta_eq["name"], result, self.rec.last_time)
+                d = {"topic": self.meta_eq["pub_topic"], "data": senml_data}
+                self.q.put(d)
+                logger.debug("###### added to queue")
 
-
-
-    def get_bound(self, result):
+    def bound(self, result):
         if ("min" in self.meta_eq.keys() and result < self.meta_eq["min"]):
             return self.meta_eq["min"]
-        else:
-            None
-        if ("max" in self.meta_eq.keys() and result > self.meta_eq["max"]):
+        elif ("max" in self.meta_eq.keys() and result > self.meta_eq["max"]):
             return self.meta_eq["max"]
         else:
-            None
-
-
-    def check_bounds(self, result):
-        if ("min" in self.meta_eq.keys() and result < self.meta_eq["min"]):
-            return False
-        if ("max" in self.meta_eq.keys() and result > self.meta_eq["max"]):
-            return False
-        return True
+            return result
 
     def build_input_dict(self, data):
         input = {}

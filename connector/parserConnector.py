@@ -23,10 +23,9 @@ class ParserConnector(RecPub):
         self.data_type = config.get(house, "data.type", fallback="json")
         self.key_map = dict(config.items("KEYS"))
         self.house = house
-        self.monitor_connector = monitor_connector
         self.base = senml.SenMLMeasurement()
         self.base.name = house + "/"
-        super().__init__(receiver_params, publisher_workers, config, house)
+        super().__init__(receiver_params, publisher_workers, config, house, monitor_connector)
 
     def data_formater(self, data):
         if self.data_type == "json":
