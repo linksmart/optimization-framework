@@ -83,7 +83,6 @@ class Publisher():
                 host = self.config.get("IO", "pub.mqtt.host")
             else:
                 host = self.config.get("IO", "mqtt.host")
-            host = "mosquito_S4G"
             port = self.config.get("IO", "mqtt.port")
             client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
             mqtt = MQTTClient(str(host), port, client_id,
