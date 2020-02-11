@@ -221,7 +221,7 @@ class ControllerBase(ABC, threading.Thread):
 
             self.logger.info(return_msg)
             self.redisDB.set(self.finish_status_key, True)
-            #self.monitor.optimization_finished(-9)
+            #self.monitor.send_monitor_ping(-9)
             return return_msg
 
     @abstractmethod

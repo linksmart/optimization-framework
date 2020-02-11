@@ -11,10 +11,11 @@ import time
 from connector.apiConnectorFactory import ApiConnectorFactory
 from connector.equationConnector import EquationConnector
 from connector.equationParser import EquationParser
+from connector.monitorConnectors import MonitorConnectors
 from connector.parserConnector import ParserConnector
 from utils_intern.messageLogger import MessageLogger
 
-logger = MessageLogger.get_logger_parent()
+logger = MessageLogger.get_logger_parent(parent="connector")
 
 class Connector:
 
@@ -23,6 +24,7 @@ class Connector:
         self.workers = config.getint("IO", "number.of.workers", fallback=2)
         self.connector_list = []
         self.active_sources = {}
+        self.monitor_connector = MonitorConnectors(config)
         for section in config.sections():
             if section.startswith('HOUSE'):
                 self.active_sources[section] = False
@@ -54,7 +56,7 @@ class Connector:
                     self.active_sources[section] = True
                 elif rec_params:
                     rec_params = json.loads(rec_params)
-                    connector = ParserConnector(rec_params, self.workers, self.config, section)
+                    connector = ParserConnector(rec_params, self.workers, self.config, section, self.monitor_connector)
                     self.connector_list.append(connector)
                     self.active_sources[section] = True
                 else:
@@ -87,7 +89,7 @@ class Connector:
                         all_sources_active = False
                         logger.debug("##### house " + str(source) + " not active yet")
                 if all_sources_deaclred and all_sources_active:
-                    connector = EquationConnector(meta_eq, self.config)
+                    connector = EquationConnector(meta_eq, self.config, self.monitor_connector)
                     self.connector_list.append(connector)
             except Exception as e:
                 logger.error(e)

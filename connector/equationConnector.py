@@ -10,11 +10,11 @@ from senml import senml
 
 from IO.summationPub import SummationPub
 from utils_intern.messageLogger import MessageLogger
-logger = MessageLogger.get_logger_parent()
+logger = MessageLogger.get_logger_parent(parent="connector")
 
 class EquationConnector(SummationPub):
 
-    def __init__(self, meta_eq, config):
+    def __init__(self, meta_eq, config, monitor_connector):
         self.stopRequest = threading.Event()
         self.meta_eq = meta_eq
         self.variables = self.meta_eq["variables"]
@@ -23,7 +23,7 @@ class EquationConnector(SummationPub):
             self.base.name = self.meta_eq["base_name"]
         else:
             self.base = None
-        super().__init__(meta_eq["topics"], config)
+        super().__init__(meta_eq["topics"], config, monitor_connector)
         self.sum_data_thread = threading.Thread(target=self.sum_data)
         self.sum_data_thread.start()
         logger.debug("###### start equation")

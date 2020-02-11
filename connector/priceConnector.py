@@ -8,7 +8,7 @@ import datetime
 from connector.apiConnector import ApiConnector
 
 from utils_intern.messageLogger import MessageLogger
-logger = MessageLogger.get_logger_parent()
+logger = MessageLogger.get_logger_parent(parent="connector")
 
 class PriceConnector(ApiConnector):
 

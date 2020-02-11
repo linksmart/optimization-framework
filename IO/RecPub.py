@@ -27,16 +27,18 @@ class RecPub:
     def data_formater(self, data):
         pass
 
-    def __init__(self, receiver_params, publisher_workers, config, section):
+    def __init__(self, receiver_params, publisher_workers, config, section, monitor_connector=None):
         self.q = Queue(maxsize=0)
         self.pub = Publisher(config, self.q, publisher_workers, id="none")
-        self.rec = Receiver(False, receiver_params, config, self.q, self.data_formater, section, id="none")
+        self.rec = Receiver(False, receiver_params, config, self.q, self.data_formater, section, id="none", monitor_connector=monitor_connector)
 
 class Receiver(DataReceiver):
 
-    def __init__(self, internal, topic_params, config, q, data_formater, section, id):
+    def __init__(self, internal, topic_params, config, q, data_formater, section, id, monitor_connector=None):
         self.q = q
         self.data_formater = data_formater
+        self.monitor_connector = monitor_connector
+        self.section = section
         super().__init__(internal, topic_params, config, id=id, section=section)
 
     def on_msg_received(self, payload):
@@ -48,6 +50,8 @@ class Receiver(DataReceiver):
             for topic, value in data.items():
                 d = {"topic": topic, "data": value}
                 self.q.put(d)
+            if self.monitor_connector:
+                self.monitor_connector.ping(self.section)
         except Exception as e:
             logger.error(e)
 
@@ -79,6 +83,7 @@ class Publisher():
                 host = self.config.get("IO", "pub.mqtt.host")
             else:
                 host = self.config.get("IO", "mqtt.host")
+            host = "mosquito_S4G"
             port = self.config.get("IO", "mqtt.port")
             client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".","")
             mqtt = MQTTClient(str(host), port, client_id,

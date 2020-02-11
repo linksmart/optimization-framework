@@ -11,18 +11,19 @@ from senml import senml
 from IO.RecPub import RecPub
 
 from utils_intern.messageLogger import MessageLogger
-logger = MessageLogger.get_logger_parent()
+logger = MessageLogger.get_logger_parent(parent="connector")
 
 
 class ParserConnector(RecPub):
 
-    def __init__(self, receiver_params, publisher_workers, config, house):
+    def __init__(self, receiver_params, publisher_workers, config, house, monitor_connector):
         self.pub_prefix = config.get("IO","pub.topic.prefix") + str(house) + "/"
         self.key_level = int(config.get(house,"key.level"))
         self.key_separator = config.get(house,"key.separator", fallback="/")
         self.data_type = config.get(house, "data.type", fallback="json")
         self.key_map = dict(config.items("KEYS"))
         self.house = house
+        self.monitor_connector = monitor_connector
         self.base = senml.SenMLMeasurement()
         self.base.name = house + "/"
         super().__init__(receiver_params, publisher_workers, config, house)

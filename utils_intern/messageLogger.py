@@ -50,8 +50,7 @@ class MessageLogger:
         return logger
 
     @staticmethod
-    def get_logger_parent():
-        parent = "ofw"
+    def get_logger_parent(parent="ofw"):
         logger = logging.getLogger(parent)
         extra = {"id": ""}
         logger = logging.LoggerAdapter(logger, extra)

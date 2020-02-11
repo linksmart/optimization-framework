@@ -6,7 +6,7 @@ Created on Sep 19 14:02 2019
 import json
 import re
 from utils_intern.messageLogger import MessageLogger
-logger = MessageLogger.get_logger_parent()
+logger = MessageLogger.get_logger_parent(parent="connector")
 
 class EquationParser():
 

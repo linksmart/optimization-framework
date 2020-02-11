@@ -10,6 +10,7 @@ import time
 
 from senml import senml
 
+from IO.ConfigParserUtils import ConfigParserUtils
 from IO.MQTTClient import MQTTClient
 from utils_intern.messageLogger import MessageLogger
 
@@ -22,12 +23,9 @@ class MonitorPub:
         self.host = config.get("IO", "mqtt.host")
         self.port = config.getint("IO", "mqtt.port", fallback=1883)
         self.topic_params = json.loads(config.get("IO", "monitor.mqtt.topic"))
-        self.topic = self.topic_params["topic"]
-        if "mqtt.port" in self.topic_params:
-            self.port = int(self.topic_params["mqtt.port"])
-        self.qos = 1
-        if "qos" in self.topic_params:
-            self.qos = int(self.topic_params["qos"])
+        self.host, host_params, self.qos, self.topic, self.port = ConfigParserUtils.extract_host_params(self.host, self.port,
+                                                                                                   self.topic_params,
+                                                                                                   self.config, None)
         self.init_mqtt()
 
     def init_mqtt(self):
@@ -38,7 +36,7 @@ class MonitorPub:
         except Exception as e:
             self.logger.error(e)
 
-    def optimization_finished(self, control_frequency):
+    def send_monitor_ping(self, control_frequency):
         msg = self.to_senml(control_frequency)
         self.mqtt.publish(self.topic, msg, qos=self.qos)
 

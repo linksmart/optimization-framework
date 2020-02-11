@@ -17,8 +17,7 @@ from senml import senml
 from IO.MQTTClient import MQTTClient
 
 from utils_intern.messageLogger import MessageLogger
-logger = MessageLogger.get_logger_parent()
-
+logger = MessageLogger.get_logger_parent(parent="connector")
 
 class ApiConnector:
 

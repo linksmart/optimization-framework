@@ -31,9 +31,9 @@ class SummationPub():
     def sum_data(self):
         pass
 
-    def __init__(self, receiver_params, config):
+    def __init__(self, receiver_params, config, monitor_connector=None):
         self.q = Queue(maxsize=0)
-        self.pub = Publisher(config, self.q)
+        self.pub = Publisher(config, self.q, monitor_connector=monitor_connector)
         self.rec = Receiver(True, receiver_params, config, self.data_formater, id="none")
 
 
@@ -57,10 +57,11 @@ class Receiver(DataReceiver):
 
 class Publisher():
 
-    def __init__(self, config, q):
+    def __init__(self, config, q, monitor_connector):
         self.stopRequest = threading.Event()
         self.config = config
         self.q = q
+        self.monitor_connector = monitor_connector
         self.mqtt_client = self.init_mqtt()
         self.consumer_thread = threading.Thread(target=self.consumer)
         self.consumer_thread.start()
@@ -102,6 +103,8 @@ class Publisher():
             data = data["data"]
             self.mqtt_client.publish(topic=topic, message=data, waitForAck=True, qos=1)
             logger.debug("Results published on this topic: " + topic)
+            if self.monitor_connector:
+                self.monitor_connector.ping(topic)
         except Exception as e:
             logger.error("Error pub data " + str(e))
 
