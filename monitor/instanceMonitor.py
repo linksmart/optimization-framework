@@ -32,6 +32,7 @@ class InstanceMonitor:
             self.status = Status(False, self.topic_params, config)
             self.service_status = {}
             self.log_persisted = {}
+            self.start_services()
             self.check_status_thread = threading.Thread(target=self.check_status)
             self.check_status_thread.start()
 

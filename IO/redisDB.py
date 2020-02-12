@@ -14,7 +14,7 @@ logger = MessageLogger.get_logger_parent()
 class RedisDB:
 
     def __init__(self):
-        self.redis_db = redis.StrictRedis(host="redis_S4G", port=6379, db=0)
+        self.redis_db = redis.StrictRedis(host="redis_S4G_3", port=6379, db=0)
         self.disable_persistence()
 
     def disable_persistence(self):
