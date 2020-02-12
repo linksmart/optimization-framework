@@ -10,13 +10,16 @@ import shutil
 
 import os
 
+from utils_intern.constants import Constants
+from utils_intern.messageLogger import MessageLogger
+
 logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s: %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
 class ConfigUpdater:
 
     @staticmethod
-    def copy_config(source_config_path, destination_config_path, config_parser_option=False):
+    def copy_config(source_config_path, destination_config_path):
         if not os.path.exists(destination_config_path):
             shutil.copyfile(source_config_path, destination_config_path)
             logger.info("copied config file")
@@ -25,16 +28,14 @@ class ConfigUpdater:
             destination_config = None
             try:
                 source_config = configparser.RawConfigParser()
-                if config_parser_option:
-                    source_config.optionxform = str
+                source_config.optionxform = str
                 source_config.read(source_config_path)
             except Exception as e:
                 logger.error(e)
 
             try:
                 destination_config = configparser.RawConfigParser()
-                if config_parser_option:
-                    destination_config.optionxform = str
+                destination_config.optionxform = str
                 destination_config.read(destination_config_path)
             except Exception as e:
                 logger.error(e)
@@ -55,3 +56,29 @@ class ConfigUpdater:
                         logger.info("updated config with whole section: "+ str(section))
                 with open(destination_config_path, "w") as outf:
                     destination_config.write(outf)
+
+    @staticmethod
+    def get_config_and_logger(parent, source_config_path, destination_config_path):
+        ConfigUpdater.copy_config(source_config_path, destination_config_path)
+
+        # Creating an object of the configuration file (standard values)
+        config = configparser.RawConfigParser()
+        config.optionxform = str
+        config.read(destination_config_path)
+
+        ConfigUpdater.set_redis_host(config)
+
+        log_level = config.get("IO", "log.level", fallback="DEBUG")
+        logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level, parent=parent)
+
+        for section in config.sections():
+            logger.info("[" + section + "]")
+            for key, value in config.items(section):
+                logger.info(key + " = " + value)
+
+        return config, logger
+
+    @staticmethod
+    def set_redis_host(config):
+        host = config.get("IO", "redis.host")
+        Constants.redis_host = host

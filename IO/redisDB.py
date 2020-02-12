@@ -7,6 +7,7 @@ Created on Aug 16 11:57 2018
 import redis
 import time
 
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 logger = MessageLogger.get_logger_parent()
@@ -14,7 +15,7 @@ logger = MessageLogger.get_logger_parent()
 class RedisDB:
 
     def __init__(self):
-        self.redis_db = redis.StrictRedis(host="redis_S4G_3", port=6379, db=0)
+        self.redis_db = redis.StrictRedis(host=Constants.redis_host, port=6379, db=0)
         self.disable_persistence()
 
     def disable_persistence(self):

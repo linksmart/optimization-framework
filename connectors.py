@@ -15,12 +15,6 @@ if __name__ == '__main__':
     config = None
     config_path = "/usr/src/app/connector/resources/connectorConfig.properties"
     config_path_default = "/usr/src/app/config/connectorConfig.properties"
-    ConfigUpdater.copy_config(config_path_default, config_path, True)
-
-    config = configparser.ConfigParser()
-    config.optionxform = str
-    config.read(config_path)
-    log_level = config.get("IO", "log.level", fallback="DEBUG")
-    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
+    config, logger = ConfigUpdater.get_config_and_logger("connector", config_path_default, config_path)
 
     connector = Connector(config)

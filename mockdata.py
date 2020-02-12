@@ -84,12 +84,7 @@ if __name__ == '__main__':
     config = None
     config_path = "/usr/src/app/mock_data/resources/mockConfig.properties"
     config_path_default = "/usr/src/app/config/mockConfig.properties"
-    ConfigUpdater.copy_config(config_path_default, config_path)
-
-    config = configparser.RawConfigParser()
-    config.read(config_path)
-    log_level = config.get("IO", "log.level", fallback="DEBUG")
-    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
+    config, logger = ConfigUpdater.get_config_and_logger("mockdata", config_path_default, config_path)
 
     logger.info("Starting mock data generation")
     mockData = MockData(config)

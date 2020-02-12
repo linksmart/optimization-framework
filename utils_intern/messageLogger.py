@@ -9,10 +9,9 @@ import logging
 class MessageLogger:
 
     @staticmethod
-    def set_and_get_logger_parent(id="", level="INFO"):
+    def set_and_get_logger_parent(id="", level="INFO", parent="ofw"):
         if id is None:
             id = ""
-        parent = "ofw"
         logger = logging.getLogger(parent)
         syslog = logging.StreamHandler()
         formatter = logging.Formatter('%(asctime)s %(levelname)s [%(id)s] %(name)s: %(message)s')

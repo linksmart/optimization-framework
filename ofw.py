@@ -113,13 +113,8 @@ def setup():
 
     config_path = "/usr/src/app/optimization/resources/ConfigFile.properties"
     config_path_default = "/usr/src/app/config/ConfigFile.properties"
-    ConfigUpdater.copy_config(config_path_default, config_path)
 
-    # Creating an object of the configuration file (standard values)
-    config = configparser.RawConfigParser()
-    config.read(config_path)
-    log_level = config.get("IO", "log.level", fallback="DEBUG")
-    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
+    config, logger = ConfigUpdater.get_config_and_logger("ofw", config_path_default, config_path)
 
     redisDB = clear_redis(logger)
     redisDB.set("End ofw", "False")

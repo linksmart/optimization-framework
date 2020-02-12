@@ -57,11 +57,7 @@ def clear_redis(logger):
 if __name__ == '__main__':
     config_path = "/usr/src/app/prediction/resources/trainingConfig.properties"
     config_path_default = "/usr/src/app/config/trainingConfig.properties"
-    ConfigUpdater.copy_config(config_path_default, config_path)
+    config, logger = ConfigUpdater.get_config_and_logger("training", config_path_default, config_path)
 
-    config = configparser.RawConfigParser()
-    config.read(config_path)
-    log_level = config.get("IO", "log.level", fallback="DEBUG")
-    logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level)
     clear_redis(logger) #  need to relook
     check_training(config, logger)
