@@ -63,7 +63,8 @@ class RawLoadDataReceiver(DataReceiver):
                     self.current_minute = dt
                     self.sum = item[1]
                     self.count = 1
-            self.data_update = True
+            if len(mod_data) > 0:
+                self.data_update = True
             self.minute_data.extend(mod_data)
             #logger.info("raw data size = " + str(len(mod_data)))
         except Exception as e:

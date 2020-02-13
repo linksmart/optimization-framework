@@ -50,7 +50,10 @@ class ProcessingData:
 
         look_back = num_timesteps
         num_features = 1
-        nb_samples = data.shape[0] - num_timesteps
+        print(data.shape[0])
+        print(num_timesteps)
+        nb_samples = data.shape[0] - num_timesteps + 1
+        print(nb_samples)
         if nb_samples <= 0:
             logger.error("nb samples is "+str(nb_samples))
         x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
