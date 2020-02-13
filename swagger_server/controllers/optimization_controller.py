@@ -151,12 +151,10 @@ class CommandController:
             message = "System stopped succesfully"
             self.redisDB.set("run:" + id, "stopped")
             logger.debug(message)
-            #gc.collect()
             logger.debug("checking End ofw flag "+str(self.redisDB.get("End ofw")))
             if self.redisDB.get("End ofw") == "True":
-                self.redisDB.set("End ofw", "False")
                 logger.debug("Closing the system")
-                sys.exit(0)
+
         else:
             message = "No threads found"
             logger.debug(message)

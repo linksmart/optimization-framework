@@ -341,7 +341,10 @@ class OptControllerStochastic(ControllerBase):
                     p_ess = Decision[result_key]['ESS']
                     p_vac = Decision[result_key]['VAC']
                     if "P_Load" in data_dict[None].keys():
-                        p_load = data_dict[None]["P_Load"][0] / 1000
+                        if self.single_ev:
+                            p_load = data_dict[None]["P_Load"][0]/1000
+                        else:
+                            p_load = data_dict[None]["P_Load"][0]
                     else:
                         p_load = 0
 
@@ -388,10 +391,11 @@ class OptControllerStochastic(ControllerBase):
                     # This section decides what to do with the non utilized virtual capacity charging power
                     p_ev_single = 0
                     for charger, max_charge_power_of_car in connections.items():
-                        p_ev_single += p_ev[charger]
+                        if charger in p_ev.keys():
+                            p_ev_single += p_ev[charger]
                     if (p_pv - p_load - p_ev_single) < 0:
-                        if p_ess > (p_load + p_ev_single):
-                            p_ess = p_load + p_ev_single
+                        if p_ess > (p_load + p_ev_single - p_pv):
+                            p_ess = p_load + p_ev_single - p_pv
                             self.logger.debug("p_ess output changed")
 
                     self.logger.debug("p_ess "+str(p_ess) + " with load " + str(p_load) + " and p_ev " + str(p_ev_single))
@@ -624,31 +628,31 @@ class OptControllerStochastic(ControllerBase):
                 try:
                     optsolver = SolverFactory(solver_name)
                 except Exception as e:
-                    print("optsolver didn't load. "+str(e))
+                    #print("optsolver didn't load. "+str(e))
                     continue
 
                 try:
                     mod = __import__(absolute_path, fromlist=['Model'])
                     #mod = importlib.import_module(absolute_path)
                 except Exception as e:
-                    print("class import didn't work. "+str(e))
+                    #print("class import didn't work. "+str(e))
                     continue
 
                 my_class = getattr(mod, 'Model')
                 try:
                     instance = my_class.model.create_instance(data_dict)
                 except Exception as e:
-                    print("instance could not be created. "+str(e))
+                    #print("instance could not be created. "+str(e))
                     continue
 
                 try:
                     result = optsolver.solve(instance)
                 except Exception as e:
-                    print("Solving the model did not work on pyomo. "+str(e))
+                    #print("Solving the model did not work on pyomo. "+str(e))
                     continue
 
                 if result is None:
-                    print("result is none for " + str(v) + " repeat")
+                    #print("result is none for " + str(v) + " repeat")
                     continue
                 elif (result.solver.status == SolverStatus.ok) and (
                         result.solver.termination_condition == TerminationCondition.optimal):

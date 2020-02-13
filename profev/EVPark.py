@@ -178,12 +178,8 @@ class EVPark:
                     self.logger.info("charged " + str(charger.__str__()))
                     socs[key] = new_soc
                     list_of_evs.remove(hosted_ev)
-                elif hosted_ev in self.evs.keys():
-                    if not charger.plugged:
-                        new_soc = self.evs[hosted_ev].discharge(soc, dT)
-                    else:
-                        self.evs[hosted_ev].set_soc(soc)
-                        new_soc = self.evs[hosted_ev].get_soc()
+                elif hosted_ev in self.evs.keys() and not charger.plugged:
+                    new_soc = self.evs[hosted_ev].discharge(soc, dT)
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("Set new soc " + str(charger.__str__()))
                     socs[key] = new_soc

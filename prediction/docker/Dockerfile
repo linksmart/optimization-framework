@@ -64,5 +64,5 @@ COPY mlTraining.py /usr/src/app/
 COPY prediction /usr/src/app/prediction
 COPY IO/redisDB.py /usr/src/app/IO/redisDB.py
 COPY utils /usr/src/app/utils
-COPY config /usr/src/app/config
 COPY utils_intern /usr/src/app/utils_intern
+COPY config /usr/src/app/config

@@ -45,14 +45,22 @@ class InstanceMonitor:
             command_to_write = "docker-compose -f " + self.docker_file_names[service] + " down -t "+str(self.timeout)
             args = shlex.split(command_to_write)
             flag = self.execute_command(args, service, "down", False)
-            time.sleep(10)
-            redisDB = RedisDB()
-            while service == "ofw" and redisDB.get("End ofw") == "True":
-                pass
+            #time.sleep(10)
+            self.service_stopped(service)
         if self.check_status_thread.isAlive():
             self.check_status_thread.join(4)
         self.logger.debug("Monitor thread stopped")
-        sys.exit(0)
+
+
+    def service_stopped(self, service):
+        command_to_write = "docker ps"
+        args = shlex.split(command_to_write)
+        while True:
+            result = self.execute_command_get_output(args)
+            self.logger.debug("docker ps result "+str(result))
+            if result is not None and service not in result:
+                break
+            time.sleep(2)
 
     def get_docker_file_names(self):
         docker_file_name = {}
@@ -92,8 +100,8 @@ class InstanceMonitor:
                     completed_instance_ids.append(instance_id)
                 elif freq > 0 and current_time - last_time > self.allowed_delay_count * freq:
                     self.logger.info("Instance " + str(instance_id) + " has stopped working. Restarting the service")
-                    serice, flag = self.restart_service(instance_id)
-                    if serice == "ofw":
+                    service, flag = self.restart_service(instance_id)
+                    if service == "ofw":
                         ofw_restarted = flag
                     else:
                         completed_instance_ids.append(instance_id)
@@ -114,20 +122,25 @@ class InstanceMonitor:
 
     def restart_service(self, instance_id):
         service = self.get_service_name(instance_id)
-        flag = False
+        self.logger.debug("Restarting the system for service "+str(service))
+        flag_stop = False
+        flag_restart = False
         if service in self.docker_file_names.keys():
             self.save_log(service)
             command_to_write = "docker-compose -f " + self.docker_file_names[service] + " down -t "+str(self.timeout)
             args = shlex.split(command_to_write)
-            flag = self.execute_command(args, service, "stopped", False)
-            if not self.service_status[service]:
+            flag_stop = self.execute_command(args, service, "stopped", False)
+            self.logger.debug("service_status[service]: "+str(self.service_status[service]))
+            if flag_stop:
                 time.sleep(self.timeout + 5)
-                self.start_service(service, "restarted")
-        if not flag:
+                self.logger.debug("Restarting service "+str(service))
+                flag_restart = self.start_service(service, "restarted")
+        if not flag_stop or not flag_restart:
             self.logger.error("cannot stop/restart service " + str(service))
-        return service, flag
+        return service, flag_restart
 
     def save_log(self, service):
+        self.logger.debug("Trying to save the logs")
         try:
             if self.service_status[service] and not self.log_persisted[service]:
                 log_path = os.path.join("/usr/src/app/monitor/resources/",
@@ -167,6 +180,20 @@ class InstanceMonitor:
         except Exception as e:
             self.logger.error("error running the command " + str(command) + " " + str(e))
             return False
+
+    def execute_command_get_output(self, command):
+        try:
+            self.logger.debug("command "+str(command))
+            process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+            out, err = process.communicate()
+            pid = process.pid
+            self.logger.debug("Output: "+str(out.decode('utf-8')))
+            self.logger.debug("Error: " + str(err))
+            return str(out.decode('utf-8'))
+        except Exception as e:
+            self.logger.error("error running the command " + str(command) + " " + str(e))
+            return None
 
     def get_service_name(self, instance_id):
         if instance_id == "connector":

@@ -1,3 +1,5 @@
+import datetime
+
 from utils_intern.messageLogger import MessageLogger
 
 class EV:
@@ -24,6 +26,7 @@ class EV:
         return self.calculated_soc
 
     def discharge(self, soc, discharge_period,  number_km_driven = 2):
+        number_km_driven = self.number_of_km_driven(number_km_driven)
         if soc:
             self.calculated_soc = soc - ((self.consumption * number_km_driven * 3600) / (self.battery_capacity * 3600)) * (discharge_period / 3600) # consumption in 1 hr
             if self.calculated_soc < 0:
@@ -33,6 +36,13 @@ class EV:
             if self.calculated_soc < 0:
                 self.calculated_soc = 0
         return self.calculated_soc
+
+    def number_of_km_driven(self, number_km_driven):
+        current_hour = datetime.datetime.now().hour
+        if 21 >= current_hour or current_hour <= 6:
+            return 0
+        else:
+            return number_km_driven
 
     def update(self, battery_capacity, consumption_pro_100_km = (11.7 / 100)):
         self.battery_capacity = battery_capacity

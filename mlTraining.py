@@ -8,18 +8,13 @@ import json
 
 import time
 
-from IO.redisDB import RedisDB
 from config.configUpdater import ConfigUpdater
 from prediction.loadPrediction import LoadPrediction
-
-from utils_intern.messageLogger import MessageLogger
-
-redisDB = RedisDB()
 
 training_threads = {}
 
 
-def check_training(config, logger):
+def check_training(config, logger, redisDB):
     while True:
         keys = redisDB.get_keys_for_pattern("train:*")
         if keys is not None:
@@ -52,6 +47,7 @@ def clear_redis(logger):
         redisDB.remove(training_lock_key)
     except Exception as e:
         logger.debug("training_lock key does not exist")
+    return redisDB
 
 
 if __name__ == '__main__':
@@ -59,5 +55,5 @@ if __name__ == '__main__':
     config_path_default = "/usr/src/app/config/trainingConfig.properties"
     config, logger = ConfigUpdater.get_config_and_logger("training", config_path_default, config_path)
 
-    clear_redis(logger) #  need to relook
-    check_training(config, logger)
+    redisDB = clear_redis(logger) #  need to relook
+    check_training(config, logger, redisDB)
