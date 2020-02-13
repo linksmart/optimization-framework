@@ -297,6 +297,7 @@ class Prediction(threading.Thread):
                         model = model_temp
                     predicted_flag = False
                     if model is not None:
+                        self.logger.debug("pred input "+str(data))
                         Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
                         try:
                             self.logger.debug("model present, so predicting data for "+str(self.id)+" "+str(self.topic_name))
@@ -305,6 +306,7 @@ class Prediction(threading.Thread):
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
                             self.logger.debug("Prediction successful for " + str(self.id) + " " + str(self.topic_name))
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
+                            self.logger.debug("pred output " + str(data))
                             self.q.put(data)
                             self.old_predictions.append(data)
                             predicted_flag = True
