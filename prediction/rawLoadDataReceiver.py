@@ -117,6 +117,7 @@ class RawLoadDataReceiver(DataReceiver):
             return RawDataReader.format_data(data)
         else:
             data = self.get_data(0, True)
+            self.logger.debug("p load value from mqtt for prediction input = "+str(data))
             for item in data:
                 self.buffer_data.append(item)
             self.buffer_data = self.buffer_data[-self.buffer:]

@@ -306,7 +306,10 @@ class Prediction(threading.Thread):
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
                             self.logger.debug("Prediction successful for " + str(self.id) + " " + str(self.topic_name))
                             data = self.processingData.postprocess_data(test_predictions, latest_timestamp, self.dT_in_seconds, scaling)
-                            self.logger.debug("pred output " + str(data))
+                            self.logger.debug("pred output date " + str(data))
+                            sdata = [[d.timestamp(), v] for d, v in data.items()]
+                            self.logger.debug("pred output time " + str(sdata))
+                            self.logger.debug("current timestamp = "+str(time.time())+ " date = "+str(datetime.datetime.fromtimestamp(time.time())))
                             self.q.put(data)
                             self.old_predictions.append(data)
                             predicted_flag = True
