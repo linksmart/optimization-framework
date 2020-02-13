@@ -156,5 +156,5 @@ class Radiation:
         data, start_time = self.filter_next_48_hrs(raw_data)
         data = self.adjust_data_for_max_PV(data)
         data = self.append_timestamp(data, start_time)
-        data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
+        data = TimeSeries.expand_and_resample(data, self.dT_in_seconds, True)
         return data
