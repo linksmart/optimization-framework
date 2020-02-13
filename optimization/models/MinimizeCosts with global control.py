@@ -56,7 +56,7 @@ class Model:
 
 	# rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
-		return model.P_PV_Output[t] == model.P_PV[t]
+		return model.P_PV_Output[t] <= model.P_PV[t]
 
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
@@ -79,8 +79,8 @@ class Model:
 	def con_rule_energy_balance(model, t):
 		return model.P_Load[t] == model.P_PV_Output[t] + model.P_ESS_Output[t] + model.P_Grid_Output[t]
 
-	def con_rule_deviation(model, t):
-		return model.P_ESS_Output[t] - model.ESS_Control[t] <= 2
+	#def con_rule_deviation(model, t):
+		#return model.P_ESS_Output[t] - model.ESS_Control[t] <= 2
 
 	# Generation-feed in balance
 	# def con_rule_generation_feedin(model, t):
@@ -90,13 +90,13 @@ class Model:
 	model.con_ess_soc = Constraint(model.T, rule=con_rule_socBalance)
 	model.con_ess_Inisoc = Constraint(rule=con_rule_iniSoC)
 	model.con_energy_balance = Constraint(model.T, rule=con_rule_energy_balance)
-	model.con_deviation = Constraint(model.T, rule=con_rule_deviation)
+	#model.con_deviation = Constraint(model.T, rule=con_rule_deviation)
 	
 	
 	###########################################################################
 	#######                         OBJECTIVE                           #######
 	###########################################################################
 	def obj_rule(model):
-	    return sum(model.Price_Forecast[t] * model.P_Grid_Output[t] for t in model.T)
+		return sum(3 * model.Price_Forecast[t] * model.P_Grid_Output[t] * model.P_Grid_Output[t] + (model.ESS_Control[t]-model.P_ESS_Output[t]) * (model.ESS_Control[t]-model.P_ESS_Output[t]) for t in model.T)
 	
 	model.obj = Objective(rule=obj_rule, sense=minimize)
