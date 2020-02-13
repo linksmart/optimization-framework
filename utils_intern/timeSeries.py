@@ -7,9 +7,10 @@ Created on Nov 12 11:21 2019
 class TimeSeries:
 
     @staticmethod
-    def expand_and_resample(raw_data, dT):
+    def expand_and_resample(raw_data, dT, append_next_dT = False):
         if TimeSeries.valid_time_series(raw_data):
-            raw_data = TimeSeries.append_next_dT_value(raw_data, dT)
+            if append_next_dT:
+                raw_data = TimeSeries.append_next_dT_value(raw_data, dT)
             step = float(dT)
             j = len(raw_data) - 1
             new_data = []
