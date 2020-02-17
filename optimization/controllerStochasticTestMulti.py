@@ -392,6 +392,7 @@ class OptControllerStochastic(ControllerBase):
                     data = self.input.get_data_single(redisDB=self.redisDB)  # blocking call
                     self.logger.debug("single data at this moment "+str(data))
                     self.logger.debug("data keys "+str(data.keys()))
+                    p_ev_single = 0
                     if not data == None:
                         if not "P_PV" or not "P_Load" in data.keys():
                             p_pv_now = p_pv
@@ -409,15 +410,18 @@ class OptControllerStochastic(ControllerBase):
                                         p_load_now = value
                                     self.logger.debug("p_load_now "+str(p_load_now))
 
-                        p_ev_single = 0
-
                         for charger, max_charge_power_of_car in connections.items():
                             if charger in p_ev.keys():
                                 p_ev_single += p_ev[charger]
+
                         if (p_pv_now - p_load_now - p_ev_single) < 0:
                             if p_ess > (p_load_now + p_ev_single - p_pv_now):
                                 p_ess = p_load_now + p_ev_single - p_pv_now
-                                self.logger.debug("p_ess output changed")
+                                self.logger.debug("p_ess output changed to "+str(p_ess)+" kW")
+                        else:
+                            if (p_pv_now - p_load_now - p_ev_single) < p_ess:
+                                p_ess = p_pv_now - p_load_now - p_ev_single
+                                self.logger.debug("p_ess output changed to " + str(p_ess) + " kW")
 
                     self.logger.debug("p_ess "+str(p_ess) + " with load " + str(p_load) + " and p_ev " + str(p_ev_single))
 
