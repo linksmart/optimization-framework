@@ -135,7 +135,10 @@ class EVPark:
                 ev.set_soc(charger.soc)
                 self.logger.info("inside "+str(ev.battery_capacity) + " charger.soc "+str(charger.soc))
                 vac_soc_value += charger.soc * ev.battery_capacity
-                list_of_evs.remove(charger.hosted_ev)
+                if charger.hosted_ev in list_of_evs:
+                    list_of_evs.remove(charger.hosted_ev)
+                else:
+                    self.logger.error("EV "+str(charger.hosted_ev)+" not existing or assigned to another charging station.")
             else:
                 all_soc_present = False
                 #vac_soc_value += default * avg_battery_cap

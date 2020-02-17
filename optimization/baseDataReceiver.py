@@ -57,7 +57,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         try:
             super().__init__(internal, topic_params, config, id=id)
         except Exception as e:
-            redisDB.set("Error mqtt" + self.id, True)
+            redisDB.set("Error mqtt" + id, True)
             self.logger.error(e)
 
         if self.reuseable:

@@ -89,7 +89,8 @@ class Model:
 	#######                         OBJECTIVE                           #######
 	###########################################################################
 	def obj_rule(model):
+		return sum(
+			3 * model.P_Grid_Output[t] * model.P_Grid_Output[t] + (model.ESS_Control[t] - model.P_ESS_Output[t]) * (
+						model.ESS_Control[t] - model.P_ESS_Output[t]) for t in model.T)
 
-		return sum(3 * model.P_Grid_Output[t] * model.P_Grid_Output[t] + (model.ESS_Control[t]-model.P_ESS_Output[t]) * (model.ESS_Control[t]-model.P_ESS_Output[t]) for t in model.T)
-	
 	model.obj = Objective(rule=obj_rule, sense=minimize)

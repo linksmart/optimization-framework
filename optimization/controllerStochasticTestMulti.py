@@ -389,14 +389,35 @@ class OptControllerStochastic(ControllerBase):
 
                     #############################################################################
                     # This section decides what to do with the non utilized virtual capacity charging power
-                    p_ev_single = 0
-                    for charger, max_charge_power_of_car in connections.items():
-                        if charger in p_ev.keys():
-                            p_ev_single += p_ev[charger]
-                    if (p_pv - p_load - p_ev_single) < 0:
-                        if p_ess > (p_load + p_ev_single - p_pv):
-                            p_ess = p_load + p_ev_single - p_pv
-                            self.logger.debug("p_ess output changed")
+                    data = self.input.get_data_single(redisDB=self.redisDB)  # blocking call
+                    self.logger.debug("single data at this moment "+str(data))
+                    self.logger.debug("data keys "+str(data.keys()))
+                    if not data == None:
+                        if not "P_PV" or not "P_Load" in data.keys():
+                            p_pv_now = p_pv
+                            p_load_now = p_load
+                            self.logger.debug("Not PV or Load data present")
+                        else:
+                            for name, value in data.items():
+                                if "P_PV" in name:
+                                    p_pv_now = value / 1000
+                                    self.logger.debug("p_pv_now "+str(p_pv_now))
+                                if "P_Load" in name:
+                                    if self.single_ev:
+                                        p_load_now = value / 1000
+                                    else:
+                                        p_load_now = value
+                                    self.logger.debug("p_load_now "+str(p_load_now))
+
+                        p_ev_single = 0
+
+                        for charger, max_charge_power_of_car in connections.items():
+                            if charger in p_ev.keys():
+                                p_ev_single += p_ev[charger]
+                        if (p_pv_now - p_load_now - p_ev_single) < 0:
+                            if p_ess > (p_load_now + p_ev_single - p_pv_now):
+                                p_ess = p_load_now + p_ev_single - p_pv_now
+                                self.logger.debug("p_ess output changed")
 
                     self.logger.debug("p_ess "+str(p_ess) + " with load " + str(p_load) + " and p_ev " + str(p_ev_single))
 

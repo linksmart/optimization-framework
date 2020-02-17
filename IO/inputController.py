@@ -57,6 +57,7 @@ class InputController:
             horizon_sec = horizon_sec - sec_in_day
 
         self.internal_receiver = {}
+        self.logger.debug("prediction_mqtt_flags " + str(self.prediction_mqtt_flags))
         for name, flag in self.prediction_mqtt_flags.items():
             if flag:
                 """ should be prediction topic instead of load"""
@@ -65,6 +66,8 @@ class InputController:
                 prediction_topic["topic"] = prediction_topic["topic"] + name
                 self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name, self.id,
                                                                    self.required_buffer_data, self.dT_in_seconds)
+
+        self.logger.debug("non_prediction_mqtt_flags " + str(self.non_prediction_mqtt_flags))
         for name, flag in self.non_prediction_mqtt_flags.items():
             if flag:
                 non_prediction_topic = config.get("IO", "forecast.topic")
@@ -74,6 +77,7 @@ class InputController:
                                                                    self.required_buffer_data, self.dT_in_seconds)
         # ESS data
         self.external_data_receiver = {}
+        self.logger.debug("external_mqtt_flags " + str(self.external_mqtt_flags))
         for name, flag in self.external_mqtt_flags.items():
             if flag:
                 if name == "SoC_Value":
@@ -84,6 +88,7 @@ class InputController:
                                                                              self.dT_in_seconds)
 
         self.preprocess_data_receiver = {}
+        self.logger.debug("preprocess_mqtt_flags " + str(self.preprocess_mqtt_flags))
         for name, flag in self.preprocess_mqtt_flags.items():
             if flag:
                 params = self.input_config_parser.get_params(name)
@@ -93,14 +98,22 @@ class InputController:
                                                                           self.dT_in_seconds)
 
         self.event_data_receiver = {}
+        self.logger.debug("event_mqtt_flags " + str(self.event_mqtt_flags))
         for name, flag in self.event_mqtt_flags.items():
             if flag:
                 params = self.input_config_parser.get_params(name)
-                self.logger.debug("params for MQTT " + name + " : " + str(params))
+                self.logger.debug("params for MQTT generic event " + name + " : " + str(params))
                 self.external_data_receiver[name] = GenericEventDataReceiver(False, params, config, name, self.id,
                                                                              self.inputPreprocess.event_received)
 
+        #GenericDataReceiver(False, raw_pv_data_topic, config, self.generic_name, id, 1, dT_in_seconds)
         self.generic_data_receiver = {}
+
+
+        self.generic_data_mqtt_flags["P_Load"] = True
+        self.generic_data_mqtt_flags["P_PV"] = True
+
+        self.logger.debug("generic_data_mqtt_flags " + str(self.generic_data_mqtt_flags))
         if len(self.generic_data_mqtt_flags) > 0:
             for generic_name, mqtt_flag in self.generic_data_mqtt_flags.items():
                 if mqtt_flag:
@@ -178,6 +191,34 @@ class InputController:
         else:
             return {topic: data}
 
+    def get_data_single(self, redisDB):
+        #redisDB.set(Constants.get_data_flow_key(self.id), True)
+        success = False
+        read_data = None
+        while not success:
+            if redisDB.get("End ofw") == "True":
+                break
+            self.logger.debug("Starting getting single data")
+            current_bucket = self.get_current_bucket()
+            self.logger.info("Get input single data for bucket " + str(current_bucket))
+            try:
+                read_data ={}
+                bucket_available = False
+                for name, DataReceiverObject in self.generic_data_receiver.items():
+                    data, bucket_available, last_time = DataReceiverObject.get_current_bucket_data(steps=1)
+                    if not bucket_available:
+                        self.logger.error("No data available for the bucket")
+                        break
+                    read_data[name] = next(iter(data[name].values()))
+                if bucket_available:
+                    success = True
+                else:
+                    read_data = None
+            except Exception as e:
+                self.logger.error("Error occured while getting single data for bucket "+str(current_bucket)+". "+str(e))
+
+        return read_data
+
     def get_data(self, preprocess, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         success = False
@@ -193,15 +234,15 @@ class InputController:
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     futures = []
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
-                                                   self.internal_receiver, [], [], current_bucket))
+                                                   self.internal_receiver, [], [], current_bucket, self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.non_prediction_mqtt_flags,
-                                                   self.internal_receiver, [], [], current_bucket))
+                                                   self.internal_receiver, [], [], current_bucket, self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,
-                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket))
+                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket, self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.preprocess_mqtt_flags,
-                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket))
+                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket, self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
-                                                   self.generic_data_receiver, [], [], current_bucket))
+                                                   self.generic_data_receiver, [], [], current_bucket, self.horizon_in_steps))
                 for future in concurrent.futures.as_completed(futures):
                     try:
                         success, read_data, mqtt_timer = future.result()
@@ -224,7 +265,8 @@ class InputController:
         redisDB.set(Constants.get_data_flow_key(self.id), False)
         return {None: complete_optimization_data}
 
-    def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket):
+
+    def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket, number_of_steps):
         try:
             self.logger.debug("mqtt flags " + str(mqtt_flags))
             self.logger.info("current bucket = "+str(current_bucket))
@@ -237,7 +279,7 @@ class InputController:
                     if mqtt_flag:
                         self.logger.debug("mqtt True " + str(name))
                         if name not in mqtt_exception_list:
-                            data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket, self.horizon_in_steps)
+                            data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket, number_of_steps)#self.horizon_in_steps)
                             mqtt_timer[name] = last_time
                             self.logger.debug("mqtt_timer "+str(mqtt_timer))
                             self.logger.debug("Bucket available "+str(bucket_available)+" for "+str(name))

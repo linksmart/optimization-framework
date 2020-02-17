@@ -151,7 +151,7 @@ class ControllerBase(ABC, threading.Thread):
     def erase_pyomo_files(self, folder):
 
         # erasing files from pyomo
-        folder = "/usr/src/app/logs/pyomo"
+        #folder = "/usr/src/app/logs/pyomo"
         for the_file in os.listdir(folder):
             file_path = os.path.join(folder, the_file)
             try:
