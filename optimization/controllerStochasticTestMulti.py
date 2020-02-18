@@ -297,16 +297,15 @@ class OptControllerStochastic(ControllerBase):
                     #value.clear()
                     #bm.clear()
 
-                    # erasing files from pyomo
-                    folder = "/usr/src/app/logs/pyomo/"+str(self.id)
-                    self.erase_pyomo_files(folder)
-
                     if loop_fail:
                         self.logger.error("ERROR: Optimization calculation was not possible. Process will be repeated")
                         break
 
             if loop_fail:
                 self.logger.error("Optimization will be repeated")
+                # erasing files from pyomo
+                folder = "/usr/src/app/logs/pyomo/" + str(self.id)
+                self.erase_pyomo_files(folder)
                 if self.redisDB.get_bool(self.stop_signal_key):
                     break
                 #Decision.clear()
@@ -316,6 +315,9 @@ class OptControllerStochastic(ControllerBase):
             else:
 
                 self.logger.debug("Flag loop_fail is False")
+                # erasing files from pyomo
+                folder = "/usr/src/app/logs/pyomo/" + str(self.id)
+                self.erase_pyomo_files(folder)
                 """
                 with open("/usr/src/app/optimization/resources/Value_p.txt", "w") as f:
                     f.write(str(Value))
