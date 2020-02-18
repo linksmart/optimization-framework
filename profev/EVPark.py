@@ -130,7 +130,7 @@ class EVPark:
 
         for key, charger in self.chargers.items():
             self.logger.info("charger "+str(key)+" hosting "+str(charger.hosted_ev))
-            if charger.hosted_ev in self.evs.keys():
+            if charger.hosted_ev in self.evs.keys() and charger.soc is not None:
                 ev = self.evs[charger.hosted_ev]
                 ev.set_soc(charger.soc)
                 self.logger.info("inside "+str(ev.battery_capacity) + " charger.soc "+str(charger.soc))
@@ -244,3 +244,9 @@ class EVPark:
                 if charger.plugged:
                     return 1
         return 0
+
+    def get_chargers_dict_list(self):
+        charger_list = []
+        for name, charger in self.chargers.items():
+            charger_list.append(charger.get_dict())
+        return charger_list

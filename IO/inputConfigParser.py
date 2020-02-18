@@ -3,6 +3,8 @@ Created on Aug 03 14:22 2018
 
 @author: nishit
 """
+import json
+import os
 
 from IO.ConfigParserUtils import ConfigParserUtils
 from utils_intern.constants import Constants
@@ -13,7 +15,7 @@ from utils_intern.messageLogger import MessageLogger
 
 class InputConfigParser:
 
-    def __init__(self, input_config_file, input_config_mqtt, model_name, id, optimization_type):
+    def __init__(self, input_config_file, input_config_mqtt, model_name, id, optimization_type, persist_path, restart):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
@@ -39,6 +41,8 @@ class InputConfigParser:
         self.car_park = None
         self.simulator = None
         self.optimization_params = self.extract_optimization_values()
+        if restart:
+            self.read_persisted_data(persist_path)
         self.logger.debug("optimization_params: " + str(self.optimization_params))
         self.logger.info("generic names = " + str(self.generic_names))
 
@@ -213,3 +217,22 @@ class InputConfigParser:
             if key not in all_keys:
                 not_available_keys.append(key)
         return not_available_keys
+
+    def read_persisted_data(self, persist_path):
+        if os.path.exists(persist_path):
+            files = os.listdir(persist_path)
+            for file in files:
+                with open(os.path.join(persist_path, file), "r") as f:
+                    data = f.readlines()
+                    print(data)
+                    if ".json" in file:
+                        data = data[0]
+                        data = json.loads(data)
+                        print(data)
+                        if isinstance(data, list):
+                            for row in data:
+                                if isinstance(row, dict):
+                                    print(row)
+                                    self.optimization_params.update(row)
+                        elif isinstance(data, dict):
+                            self.optimization_params.update(data)

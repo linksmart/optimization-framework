@@ -76,7 +76,7 @@ class CommandController:
     def get_statusThread(self, id):
         return self.statusThread[id]
 
-    def start(self, id, json_object, dict_object=None):
+    def start(self, id, json_object, dict_object=None, restart=False):
         logger.debug(str(json_object))
         if json_object is not None:
             self.model_name = json_object.model_name
@@ -99,7 +99,7 @@ class CommandController:
 
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
-                               self.repetition, self.solver, id, self.optimization_type, self.single_ev))
+                               self.repetition, self.solver, id, self.optimization_type, self.single_ev, restart))
 
         logger.info("Thread: " + str(self.get(id)))
         self.redisDB.set("run:" + id, "starting")
@@ -174,7 +174,7 @@ class CommandController:
         for s in old_ids:
             val = json.loads(s)
             try:
-                self.start(val["id"], None, val)
+                self.start(val["id"], None, val, restart=True)
             except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
                 # TODO: should we catch these exceptions here?
                 logger.error("Error " + str(e))

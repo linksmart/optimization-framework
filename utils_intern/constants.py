@@ -35,6 +35,8 @@ class Constants:
 
     redis_host = None
 
+    persisted_folder_name = "persisted"
+
     @staticmethod
     def get_data_flow_key(id):
         return "data_flow_"+str(id)

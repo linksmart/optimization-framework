@@ -12,13 +12,14 @@ from optimization.controllerMpc import OptControllerMPC
 from optimization.controllerStochasticTestMulti import OptControllerStochastic
 from prediction.loadPrediction import LoadPrediction
 from prediction.pvPrediction import PVPrediction
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 
 class ThreadFactory:
 
     def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id,
-                 optimization_type, single_ev):
+                 optimization_type, single_ev, restart):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.control_frequency = control_frequency
@@ -31,6 +32,7 @@ class ThreadFactory:
         self.single_ev = single_ev
         self.redisDB = RedisDB()
         self.pyro_mip_server = None
+        self.restart = restart
 
     def getFilePath(self, dir, file_name):
         # print(os.path.sep)
@@ -116,7 +118,10 @@ class ThreadFactory:
             input_config_mqtt = {}
             self.logger.error(e)
 
-        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name, self.id, self.optimization_type)
+        persist_base_path = config.get("IO", "persist.base.file.path")
+        persist_base_path = os.path.join(os.getcwd(), persist_base_path, str(self.id), Constants.persisted_folder_name)
+        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name, self.id,
+                                                self.optimization_type, persist_base_path, self.restart)
 
         missing_keys = input_config_parser.check_keys_for_completeness()
         if len(missing_keys) > 0:

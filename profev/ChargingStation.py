@@ -66,3 +66,11 @@ class ChargingStation:
 
     def __str__(self):
         return str(self.dict())
+
+    def get_dict(self):
+        return {self.charger_id : {
+                "Max_Charging_Power_kW":self.max_charging_power_kw,
+                "Hosted_EV": self.hosted_ev,
+                "SoC": self.soc
+                }
+        }

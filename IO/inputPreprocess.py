@@ -3,6 +3,8 @@ Created on Mai 21 14:08 2019
 
 @author: nishit
 """
+import json
+import os
 from functools import partial
 
 import numpy as np
@@ -12,18 +14,22 @@ from profev.EV import EV
 from profev.EVPark import EVPark
 from profev.ChargingStation import ChargingStation
 from profev.MonteCarloSimulator import simulate
+from utils_intern.constants import Constants
 
 from utils_intern.messageLogger import MessageLogger
 
 class InputPreprocess:
 
-    def __init__(self, id, mqtt_time_threshold):
+    def __init__(self, id, mqtt_time_threshold, config):
         self.data_dict = {}
         self.logger = MessageLogger.get_logger(__name__, id)
         self.ev_park = EVPark(id)
         self.id = id
         self.mqtt_time_threshold = mqtt_time_threshold
         self.event_data = {}
+        persist_base_file_path = config.get("IO", "persist.base.file.path")
+        self.charger_base_path = os.path.join("/usr/app/src", persist_base_file_path, str(id), Constants.persisted_folder_name)
+        self.charger_file_name = "chargers.json"
 
     def event_received(self, data):
         self.event_data.update(data)
@@ -73,6 +79,9 @@ class InputPreprocess:
 
         for charger_id, charger in self.ev_park.chargers.items():
             self.logger.info(charger.__str__())
+
+        self.persist_charger_data()
+
         #time.sleep(60)
         self.logger.info("data_dict = " + str(self.data_dict))
         return self.data_dict
@@ -153,6 +162,8 @@ class InputPreprocess:
                 v["SoC"] = soc
                 update[k] = v
         self.data_dict.update(update)
+        for c in chargers_list:
+            print(c)
         return chargers_list
 
     def exceeded_time_threshold(self, last_time):
@@ -303,3 +314,17 @@ class InputPreprocess:
         self.logger.info("round values "+str(value)+" "+str(min)+" "+str(step))
         return round((value - min) / step) * step + min
 
+    def persist_charger_data(self):
+        try:
+            if not os.path.exists(self.charger_base_path):
+                os.makedirs(self.charger_base_path)
+            file_path = os.path.join(self.charger_base_path, self.charger_file_name)
+            with open(file_path, "w") as f:
+                data = self.ev_park.get_chargers_dict_list()
+                if len(data) > 0:
+                    json_data = json.dumps(data)
+                    f.write(json_data)
+                    self.logger.debug("charger data persisted "+file_path)
+                    print("charger data persisted "+file_path)
+        except Exception as e:
+            self.logger.error("error persisting charger data "+str(e))

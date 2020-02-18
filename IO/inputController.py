@@ -43,7 +43,7 @@ class InputController:
         self.generic_names = None
         self.mqtt_timer = {}
         mqtt_time_threshold = float(self.config.get("IO", "mqtt.detach.threshold", fallback=180))
-        self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold)
+        self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config)
         self.event_data = {}
         self.parse_input_config()
         self.set_timestep_data()
