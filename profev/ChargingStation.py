@@ -32,7 +32,7 @@ class ChargingStation:
             self.recharge_start_time = time.time()
 
     def unplug(self):
-        # self.hosted_ev = None # TODO: should this be uncommented?
+        self.hosted_ev = None
         self.plugged = False
         if self.recharge_stop_time is None:
             self.recharge_stop_time = time.time()
