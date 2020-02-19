@@ -392,10 +392,12 @@ class OptControllerStochastic(ControllerBase):
                     #############################################################################
                     # This section decides what to do with the non utilized virtual capacity charging power
                     sample_data = {}
-                    sample = self.input.get_sample("P_Load", self.redisDB)
+                    p_load_var = "P_Load_Sample"
+                    P_PV_var = "P_PV_Sample"
+                    sample = self.input.get_sample(p_load_var, self.redisDB)
                     if sample is not None:
                         sample_data.update(sample)
-                    sample = self.input.get_sample("P_PV", self.redisDB)
+                    sample = self.input.get_sample(P_PV_var, self.redisDB)
                     if sample is not None:
                         sample_data.update(sample)
 
@@ -406,16 +408,16 @@ class OptControllerStochastic(ControllerBase):
                     self.logger.debug("data keys "+str(sample_data.keys()))
                     p_ev_single = 0
                     if not sample_data == None:
-                        if not "P_PV" or not "P_Load" in sample_data.keys():
+                        if not P_PV_var or not p_load_var in sample_data.keys():
                             p_pv_now = p_pv
                             p_load_now = p_load
                             self.logger.debug("Not PV or Load data present")
                         else:
                             for name, value in sample_data.items():
-                                if "P_PV" in name:
+                                if P_PV_var in name:
                                     p_pv_now = value[0] / 1000
                                     self.logger.debug("p_pv_now "+str(p_pv_now))
-                                if "P_Load" in name:
+                                if p_load_var in name:
                                     if self.single_ev:
                                         p_load_now = value[0] / 1000
                                     else:
