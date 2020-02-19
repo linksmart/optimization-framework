@@ -296,7 +296,7 @@ class InputController:
                                 break
                             data = self.set_indexing(data)
                             self.logger.debug("Indexed data " + str(data))
-                            if (self.restart and last_time == 0) or not self.restart:
+                            if (self.restart and last_time > 0) or not self.restart:
                                 new_data.update(data)
                     else:
                         self.logger.debug("file name: " + str(name))
