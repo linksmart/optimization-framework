@@ -94,11 +94,10 @@ class InputController:
             if flag:
                 params = self.input_config_parser.get_params(name)
                 self.logger.debug("params for MQTT " + name + " : " + str(params))
-                self.external_data_receiver[name] = BaseValueDataReceiver(False, params, config, name, self.id,
+                self.preprocess_data_receiver[name] = BaseValueDataReceiver(False, params, config, name, self.id,
                                                                           self.required_buffer_data,
                                                                           self.dT_in_seconds)
 
-        self.event_data_receiver = {}
         self.logger.debug("event_mqtt_flags " + str(self.event_mqtt_flags))
         for name, flag in self.event_mqtt_flags.items():
             if flag:
@@ -246,7 +245,7 @@ class InputController:
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,
                                                    self.external_data_receiver, [], ["SoC_Value"], current_bucket, self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.preprocess_mqtt_flags,
-                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket, self.horizon_in_steps))
+                                                   self.preprocess_data_receiver, [], ["SoC_Value"], current_bucket, self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
                                                    self.generic_data_receiver, [], [], current_bucket, self.horizon_in_steps))
                 for future in concurrent.futures.as_completed(futures):
@@ -269,7 +268,8 @@ class InputController:
         else:
             complete_optimization_data = self.optimization_data.copy()
         redisDB.set(Constants.get_data_flow_key(self.id), False)
-        self.restart = False
+        if self.restart:
+            self.restart = False
         return {None: complete_optimization_data}
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket, number_of_steps):
@@ -296,7 +296,8 @@ class InputController:
                                 break
                             data = self.set_indexing(data)
                             self.logger.debug("Indexed data " + str(data))
-                            new_data.update(data)
+                            if (self.restart and last_time == 0) or not self.restart:
+                                new_data.update(data)
                     else:
                         self.logger.debug("file name: " + str(name))
                         if name not in file_exception_list:
