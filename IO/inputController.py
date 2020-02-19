@@ -39,6 +39,7 @@ class InputController:
         self.external_mqtt_flags = {}
         self.preprocess_mqtt_flags = {}
         self.event_mqtt_flags = {}
+        self.sampling_mqtt_flags = {}
         self.generic_data_mqtt_flags = {}
         self.generic_names = None
         self.mqtt_timer = {}
@@ -106,19 +107,23 @@ class InputController:
                 self.external_data_receiver[name] = GenericEventDataReceiver(False, params, config, name, self.id,
                                                                              self.inputPreprocess.event_received)
 
-        #GenericDataReceiver(False, raw_pv_data_topic, config, self.generic_name, id, 1, dT_in_seconds)
+        self.sampling_data_receiver = {}
+        self.logger.debug("sampling_mqtt_flags " + str(self.sampling_mqtt_flags))
+        for name, flag in self.sampling_mqtt_flags.items():
+            if flag:
+                params = self.input_config_parser.get_params(name)
+                self.logger.debug("params for MQTT sampling " + name + " : " + str(params))
+                self.sampling_data_receiver[name] = GenericDataReceiver(False, params, config, name, self.id,
+                                                                        self.required_buffer_data, self.dT_in_seconds)
+
         self.generic_data_receiver = {}
-
-
-        self.generic_data_mqtt_flags["P_Load"] = True
-        self.generic_data_mqtt_flags["P_PV"] = True
 
         self.logger.debug("generic_data_mqtt_flags " + str(self.generic_data_mqtt_flags))
         if len(self.generic_data_mqtt_flags) > 0:
             for generic_name, mqtt_flag in self.generic_data_mqtt_flags.items():
                 if mqtt_flag:
-                    topic = self.input_config_parser.get_params(generic_name)
-                    self.generic_data_receiver[generic_name] = GenericDataReceiver(False, topic, config, generic_name,
+                    params = self.input_config_parser.get_params(generic_name)
+                    self.generic_data_receiver[generic_name] = GenericDataReceiver(False, params, config, generic_name,
                                                                                    self.id, self.required_buffer_data,
                                                                                    self.dT_in_seconds)
 
@@ -164,8 +169,12 @@ class InputController:
         self.event_names = self.input_config_parser.get_event_names()
         self.set_mqtt_flags(self.event_names, self.event_mqtt_flags)
 
+        self.sampling_names = self.input_config_parser.get_sampling_names()
+        self.set_mqtt_flags(self.sampling_names, self.sampling_mqtt_flags)
+
         self.generic_names = self.input_config_parser.get_generic_data_names()
         self.set_mqtt_flags(self.generic_names, self.generic_data_mqtt_flags)
+
         self.logger.debug("optimization data: " + str(self.optimization_data))
 
     def set_mqtt_flags(self, names, mqtt_flags):
@@ -194,6 +203,20 @@ class InputController:
             return {}
         else:
             return {topic: data}
+
+    def get_sample(self, name, redisDB):
+        if name in self.sampling_names and self.sampling_mqtt_flags[name]:
+            while True:
+                try:
+                    if redisDB.get("End ofw") == "True":
+                        break
+                    data, bucket_available, last_time = self.sampling_data_receiver[name].get_current_bucket_data(steps=self.horizon_in_steps, wait_for_data=False, check_bucket_change=False)
+                    if bucket_available:
+                        return data
+                    else:
+                        self.logger.debug("bucket not available "+str(name))
+                except Exception as e:
+                    self.logger.error("error getting sample "+str(name)+ " "+ str(e))
 
     def get_data_single(self, redisDB):
         #redisDB.set(Constants.get_data_flow_key(self.id), True)

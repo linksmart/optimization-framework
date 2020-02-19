@@ -391,25 +391,35 @@ class OptControllerStochastic(ControllerBase):
 
                     #############################################################################
                     # This section decides what to do with the non utilized virtual capacity charging power
-                    data = self.input.get_data_single(redisDB=self.redisDB)  # blocking call
-                    self.logger.debug("single data at this moment "+str(data))
-                    self.logger.debug("data keys "+str(data.keys()))
+                    sample_data = {}
+                    sample = self.input.get_sample("P_Load", self.redisDB)
+                    if sample is not None:
+                        sample_data.update(sample)
+                    sample = self.input.get_sample("P_PV", self.redisDB)
+                    if sample is not None:
+                        sample_data.update(sample)
+
+                    """
+                    sample_data = self.input.get_data_single(redisDB=self.redisDB)  # blocking call
+                    """
+                    self.logger.debug("single data at this moment "+str(sample_data))
+                    self.logger.debug("data keys "+str(sample_data.keys()))
                     p_ev_single = 0
-                    if not data == None:
-                        if not "P_PV" or not "P_Load" in data.keys():
+                    if not sample_data == None:
+                        if not "P_PV" or not "P_Load" in sample_data.keys():
                             p_pv_now = p_pv
                             p_load_now = p_load
                             self.logger.debug("Not PV or Load data present")
                         else:
-                            for name, value in data.items():
+                            for name, value in sample_data.items():
                                 if "P_PV" in name:
-                                    p_pv_now = value / 1000
+                                    p_pv_now = value[0] / 1000
                                     self.logger.debug("p_pv_now "+str(p_pv_now))
                                 if "P_Load" in name:
                                     if self.single_ev:
-                                        p_load_now = value / 1000
+                                        p_load_now = value[0] / 1000
                                     else:
-                                        p_load_now = value
+                                        p_load_now = value[0]
                                     self.logger.debug("p_load_now "+str(p_load_now))
 
                         for charger, max_charge_power_of_car in connections.items():
