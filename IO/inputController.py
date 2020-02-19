@@ -45,6 +45,7 @@ class InputController:
         mqtt_time_threshold = float(self.config.get("IO", "mqtt.detach.threshold", fallback=180))
         self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config)
         self.event_data = {}
+        self.restart = self.input_config_parser.get_restart_value()
         self.parse_input_config()
         self.set_timestep_data()
 
@@ -122,6 +123,8 @@ class InputController:
                                                                                    self.id, self.required_buffer_data,
                                                                                    self.dT_in_seconds)
 
+        #self.logger.debug("optimization data new: " + str(self.optimization_data))
+
     def set_timestep_data(self):
         self.optimization_data["N"] = {None: [0]}
         self.optimization_data["dT"] = {None: self.dT_in_seconds}
@@ -143,6 +146,7 @@ class InputController:
 
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
+        self.logger.debug("param data: "+str(data))
 
         self.optimization_data.update(data)
 
@@ -163,6 +167,7 @@ class InputController:
 
         self.generic_names = self.input_config_parser.get_generic_data_names()
         self.set_mqtt_flags(self.generic_names, self.generic_data_mqtt_flags)
+        self.logger.debug("optimization data: " + str(self.optimization_data))
 
     def set_mqtt_flags(self, names, mqtt_flags):
         self.logger.debug("names = " + str(names))
@@ -230,6 +235,7 @@ class InputController:
             self.logger.debug("Starting getting data")
             current_bucket = self.get_current_bucket()
             self.logger.info("Get input data for bucket " + str(current_bucket))
+            self.logger.debug("optimization_data before getting new values "+str(self.optimization_data))
             try:
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     futures = []
@@ -263,8 +269,8 @@ class InputController:
         else:
             complete_optimization_data = self.optimization_data.copy()
         redisDB.set(Constants.get_data_flow_key(self.id), False)
+        self.restart = False
         return {None: complete_optimization_data}
-
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket, number_of_steps):
         try:
@@ -280,6 +286,7 @@ class InputController:
                         self.logger.debug("mqtt True " + str(name))
                         if name not in mqtt_exception_list:
                             data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket, number_of_steps)#self.horizon_in_steps)
+                            self.logger.debug("Received data "+str(data))
                             mqtt_timer[name] = last_time
                             self.logger.debug("mqtt_timer "+str(mqtt_timer))
                             self.logger.debug("Bucket available "+str(bucket_available)+" for "+str(name))
@@ -288,6 +295,7 @@ class InputController:
                                 self.logger.info(str(name)+" data for bucket "+str(current_bucket)+" not available")
                                 break
                             data = self.set_indexing(data)
+                            self.logger.debug("Indexed data " + str(data))
                             new_data.update(data)
                     else:
                         self.logger.debug("file name: " + str(name))

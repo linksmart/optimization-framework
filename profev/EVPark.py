@@ -70,9 +70,10 @@ class EVPark:
         self.logger.info("evs : " + str(self.evs))
         self.logger.info("chargers : "+str(self.chargers))
         for key, charger in self.chargers.items():
+            self.logger.debug(charger.get_dict())
             hosted_ev = charger.hosted_ev
             self.logger.info("ev "+str(hosted_ev))
-            if hosted_ev:
+            if hosted_ev and charger.soc is not None:
                 ev = self.evs[hosted_ev]
                 battery_depth_of_discharge = (1 - charger.soc) * ev.battery_capacity * 3600 # max_charging_power_kw-sec
 

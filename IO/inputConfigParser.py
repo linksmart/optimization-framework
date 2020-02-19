@@ -41,10 +41,14 @@ class InputConfigParser:
         self.car_park = None
         self.simulator = None
         self.optimization_params = self.extract_optimization_values()
+        self.restart = restart
         if restart:
             self.read_persisted_data(persist_path)
         self.logger.debug("optimization_params: " + str(self.optimization_params))
         self.logger.info("generic names = " + str(self.generic_names))
+
+    def get_restart_value(self):
+        return self.restart
 
     def read_mqtt_flags(self, value2, name):
         if isinstance(value2, dict):
@@ -220,19 +224,25 @@ class InputConfigParser:
 
     def read_persisted_data(self, persist_path):
         if os.path.exists(persist_path):
+            self.logger.debug("Persisted path exists: "+str(persist_path))
             files = os.listdir(persist_path)
             for file in files:
-                with open(os.path.join(persist_path, file), "r") as f:
-                    data = f.readlines()
-                    print(data)
-                    if ".json" in file:
-                        data = data[0]
-                        data = json.loads(data)
+                try:
+                    with open(os.path.join(persist_path, file), "r") as f:
+                        data = f.readlines()
                         print(data)
-                        if isinstance(data, list):
-                            for row in data:
-                                if isinstance(row, dict):
-                                    print(row)
-                                    self.optimization_params.update(row)
-                        elif isinstance(data, dict):
-                            self.optimization_params.update(data)
+                        if ".json" in file:
+                            data = data[0]
+                            data = json.loads(data)
+                            print(data)
+                            if isinstance(data, list):
+                                for row in data:
+                                    if isinstance(row, dict):
+                                        print(row)
+                                        self.optimization_params.update(row)
+                            elif isinstance(data, dict):
+                                self.optimization_params.update(data)
+                except Exception as e:
+                    self.logger.error("Error reading persisted file "+str(persist_path))
+        else:
+            self.logger.debug("Persisted path does not exist: " + str(persist_path))

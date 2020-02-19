@@ -20,6 +20,7 @@ class ThreadFactory:
 
     def __init__(self, model_name, control_frequency, horizon_in_steps, dT_in_seconds, repetition, solver, id,
                  optimization_type, single_ev, restart):
+        self.id = id
         self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.control_frequency = control_frequency
@@ -27,11 +28,11 @@ class ThreadFactory:
         self.dT_in_seconds = dT_in_seconds
         self.repetition = repetition
         self.solver = solver
-        self.id = id
         self.optimization_type = optimization_type
         self.single_ev = single_ev
         self.redisDB = RedisDB()
         self.pyro_mip_server = None
+        restart = True
         self.restart = restart
 
     def getFilePath(self, dir, file_name):
@@ -52,7 +53,7 @@ class ThreadFactory:
         self.logger.info("Optimization calculated with the following optimization_type: " + self.optimization_type)
 
         self.redisDB.set("Error mqtt" + self.id, False)
-        self.logger.debug("Error mqtt " + str(self.redisDB.get("Error mqtt" + self.id)))
+        #self.logger.debug("Error mqtt " + str(self.redisDB.get("Error mqtt" + self.id)))
 
         # Creating an object of the configuration file (standard values)
         try:

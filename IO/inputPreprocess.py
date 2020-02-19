@@ -28,7 +28,7 @@ class InputPreprocess:
         self.mqtt_time_threshold = mqtt_time_threshold
         self.event_data = {}
         persist_base_file_path = config.get("IO", "persist.base.file.path")
-        self.charger_base_path = os.path.join("/usr/app/src", persist_base_file_path, str(id), Constants.persisted_folder_name)
+        self.charger_base_path = os.path.join("/usr/src/app", persist_base_file_path, str(id), Constants.persisted_folder_name)
         self.charger_file_name = "chargers.json"
 
     def event_received(self, data):
@@ -143,7 +143,7 @@ class InputPreprocess:
                 charger = k
                 charger_dict = v
                 last_timestamp = self.get_last_timestamp(charger)
-                self.logger.info("charger "+ str(charger)+" "+str(last_timestamp))
+                self.logger.info("charger "+ str(charger)+" last timestamp: "+str(last_timestamp))
                 self.logger.info("charger dict "+str(charger_dict))
                 max_charging_power_kw = charger_dict.get("Max_Charging_Power_kW", None)
                 hosted_ev = charger_dict.get("Hosted_EV", None)
@@ -325,6 +325,6 @@ class InputPreprocess:
                     json_data = json.dumps(data)
                     f.write(json_data)
                     self.logger.debug("charger data persisted "+file_path)
-                    print("charger data persisted "+file_path)
+                    #print("charger data persisted "+file_path)
         except Exception as e:
             self.logger.error("error persisting charger data "+str(e))
