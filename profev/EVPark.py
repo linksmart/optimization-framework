@@ -72,8 +72,8 @@ class EVPark:
         for key, charger in self.chargers.items():
             self.logger.debug(charger.get_dict())
             hosted_ev = charger.hosted_ev
-            self.logger.info("ev "+str(hosted_ev))
-            if hosted_ev and charger.soc is not None:
+            self.logger.info("ev "+str(hosted_ev) + " charger.soc "+str(charger.soc))
+            if hosted_ev and not charger.soc == None:
                 ev = self.evs[hosted_ev]
                 battery_depth_of_discharge = (1 - charger.soc) * ev.battery_capacity * 3600 # max_charging_power_kw-sec
 
@@ -131,7 +131,7 @@ class EVPark:
 
         for key, charger in self.chargers.items():
             self.logger.info("charger "+str(key)+" hosting "+str(charger.hosted_ev))
-            if charger.hosted_ev in self.evs.keys() and charger.soc is not None:
+            if charger.hosted_ev in self.evs.keys() and charger.plugged and charger.soc is not None:
                 ev = self.evs[charger.hosted_ev]
                 ev.set_soc(charger.soc)
                 self.logger.info("inside "+str(ev.battery_capacity) + " charger.soc "+str(charger.soc))
@@ -140,6 +140,9 @@ class EVPark:
                     list_of_evs.remove(charger.hosted_ev)
                 else:
                     self.logger.error("EV "+str(charger.hosted_ev)+" not existing or assigned to another charging station.")
+            elif charger.hosted_ev in self.evs.keys() and not charger.plugged and charger.soc == None:
+                self.logger.debug("Unplugging EV "+str(charger.hosted_ev))
+                charger.unplug()
             else:
                 all_soc_present = False
                 #vac_soc_value += default * avg_battery_cap

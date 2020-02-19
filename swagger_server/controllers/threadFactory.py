@@ -32,7 +32,7 @@ class ThreadFactory:
         self.single_ev = single_ev
         self.redisDB = RedisDB()
         self.pyro_mip_server = None
-        restart = True
+        #restart = True
         self.restart = restart
 
     def getFilePath(self, dir, file_name):
