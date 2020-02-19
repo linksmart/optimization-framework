@@ -143,6 +143,12 @@ class EVPark:
             elif charger.hosted_ev in self.evs.keys() and not charger.plugged and charger.soc == None:
                 self.logger.debug("Unplugging EV "+str(charger.hosted_ev))
                 charger.unplug()
+                ev = self.evs[charger.hosted_ev]
+                vac_soc_value += ev.get_soc() * ev.battery_capacity
+                if charger.hosted_ev in list_of_evs:
+                    list_of_evs.remove(charger.hosted_ev)
+                else:
+                    self.logger.error("EV "+str(charger.hosted_ev)+" not existing or assigned to another charging station.")
             else:
                 all_soc_present = False
                 #vac_soc_value += default * avg_battery_cap

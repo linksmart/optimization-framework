@@ -13,7 +13,10 @@ class EV:
 
     def set_soc(self, soc):
         self.logger.debug("Setting soc of "+str(soc)+ " for "+str(self.ev_name))
-        self.calculated_soc = soc
+        if soc == None:
+            self.logger.error("Soc could not be added")
+        else:
+            self.calculated_soc = soc
 
     def get_soc(self):
         return self.calculated_soc
