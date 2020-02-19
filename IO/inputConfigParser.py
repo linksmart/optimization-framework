@@ -31,11 +31,13 @@ class InputConfigParser:
         self.defined_external_names = ["SoC_Value"]
         self.defined_preprocess_names = []
         self.defined_event_names = []
+        self.defined_sampling_names = []
         self.prediction_names = []
         self.non_prediction_names = []
         self.external_names = []
         self.preprocess_names = []
         self.event_names = []
+        self.sampling_names = []
         self.set_params = {}
         self.extract_mqtt_params()
         self.car_park = None
@@ -64,6 +66,10 @@ class InputConfigParser:
                 event = bool(value2["event"])
                 if event:
                     self.defined_event_names.append(name)
+            if "sampling" in value2.keys():
+                sampling = bool(value2["sampling"])
+                if sampling:
+                    self.defined_sampling_names.append(name)
 
     def extract_mqtt_params(self):
         for key, value in self.input_config_mqtt.items():
@@ -91,6 +97,8 @@ class InputConfigParser:
             self.preprocess_names.append(key)
         elif key in self.defined_event_names:
             self.event_names.append(key)
+        elif key in self.defined_sampling_names:
+            self.sampling_names.append(key)
         else:
             self.generic_names.append(key)
 
@@ -183,6 +191,9 @@ class InputConfigParser:
 
     def get_event_names(self):
         return self.event_names
+
+    def get_sampling_names(self):
+        return self.sampling_names
 
     def get_variable_index(self, name):
         if name in self.model_variables:

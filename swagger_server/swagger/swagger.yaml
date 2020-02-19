@@ -1184,6 +1184,8 @@ definitions:
         type: "boolean"
       event:
         type: "boolean"
+      sampling:
+        type: "boolean"
     description: "Selection between MQTT or file mode inputs or outputs"
     example:
       mqtt:
@@ -1193,6 +1195,7 @@ definitions:
         detachable: true
       predict: true
       preprocess: true
+      sampling: true
   SourceESS:
     type: "object"
     properties:

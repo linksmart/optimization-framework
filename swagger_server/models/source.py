@@ -16,7 +16,7 @@ class Source(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None, predict: bool=None, preprocess: bool=None, event: bool=None):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None, predict: bool=None, preprocess: bool=None, event: bool=None, sampling: bool=None):  # noqa: E501
         """Source - a model defined in Swagger
 
         :param mqtt: The mqtt of this Source.  # noqa: E501
@@ -27,25 +27,30 @@ class Source(Model):
         :type preprocess: bool
         :param event: The event of this Source.  # noqa: E501
         :type event: bool
+        :param sampling: The sampling of this Source.  # noqa: E501
+        :type sampling: bool
         """
         self.swagger_types = {
             'mqtt': MQTT,
             'predict': bool,
             'preprocess': bool,
-            'event': bool
+            'event': bool,
+            'sampling': bool
         }
 
         self.attribute_map = {
             'mqtt': 'mqtt',
             'predict': 'predict',
             'preprocess': 'preprocess',
-            'event': 'event'
+            'event': 'event',
+            'sampling': 'sampling'
         }
 
         self._mqtt = mqtt
         self._predict = predict
         self._preprocess = preprocess
         self._event = event
+        self._sampling = sampling
 
     @classmethod
     def from_dict(cls, dikt) -> 'Source':
@@ -141,3 +146,24 @@ class Source(Model):
         """
 
         self._event = event
+
+    @property
+    def sampling(self) -> bool:
+        """Gets the sampling of this Source.
+
+
+        :return: The sampling of this Source.
+        :rtype: bool
+        """
+        return self._sampling
+
+    @sampling.setter
+    def sampling(self, sampling: bool):
+        """Sets the sampling of this Source.
+
+
+        :param sampling: The sampling of this Source.
+        :type sampling: bool
+        """
+
+        self._sampling = sampling
