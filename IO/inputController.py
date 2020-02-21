@@ -205,6 +205,9 @@ class InputController:
             return {topic: data}
 
     def get_sample(self, name, redisDB):
+        self.logger.debug("name "+str(name))
+        self.logger.debug("Sampling_names "+str(self.sampling_names))
+        self.logger.debug("sampling_mqtt_flags " + str(self.sampling_mqtt_flags[name]))
         if name in self.sampling_names and self.sampling_mqtt_flags[name]:
             while True:
                 try:
@@ -358,6 +361,8 @@ class InputController:
         self.exit_receiver(self.external_data_receiver)
         self.logger.debug("generic receiver exit start")
         self.exit_receiver(self.generic_data_receiver)
+        self.logger.debug("sample receiver exit start")
+        self.exit_receiver(self.sampling_data_receiver)
 
     def exit_receiver(self, receiver):
         if receiver is not None:

@@ -392,8 +392,8 @@ class OptControllerStochastic(ControllerBase):
                     #############################################################################
                     # This section decides what to do with the non utilized virtual capacity charging power
                     sample_data = {}
-                    p_load_var = "P_Load_Sample"
-                    P_PV_var = "P_PV_Sample"
+                    p_load_var = "P_Load_sample"
+                    P_PV_var = "P_PV_sample"
                     sample = self.input.get_sample(p_load_var, self.redisDB)
                     if sample is not None:
                         sample_data.update(sample)
@@ -516,7 +516,7 @@ class OptControllerStochastic(ControllerBase):
 
                     # update soc
                     self.logger.debug("results "+str(results))
-                    socs = ev_park.charge_ev(p_ev, self.dT_in_seconds)
+                    socs = ev_park.charge_ev(p_ev, self.dT_in_seconds, self.single_ev)
 
 
                     results_publish = {

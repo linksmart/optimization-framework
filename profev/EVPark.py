@@ -5,14 +5,13 @@ from utils_intern.messageLogger import MessageLogger
 
 class EVPark:
 
-    def __init__(self, id):
+    def __init__(self, id, path):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.evs = {}
         self.chargers = {}
         self.total_charging_stations_power = 0
-        persist_real_data_path = "optimization/resources"
-        persist_real_data_path = os.path.join("/usr/src/app", persist_real_data_path, id, "real")
-        self.persist_real_data_file = os.path.join(persist_real_data_path, "ev_info" + ".txt")
+        self.persist_real_data_file = path
+
 
     def add_evs(self, evs_list):
         for ev in evs_list:
@@ -172,8 +171,8 @@ class EVPark:
             self.logger.info("vac_soc_value_override to "+str(vac_soc_value_override))
         return vac_soc_value
 
-    def charge_ev(self, p_ev, dT):
-        self.logger.debug("p_ev: "+str(p_ev))
+    def charge_ev(self, p_ev, dT, single_ev):
+        self.logger.debug("p_ev: "+str(p_ev) + " single_ev " + str(single_ev))
         socs = {}
         list_of_evs = []
         for ev_name in self.evs.keys():
@@ -186,17 +185,30 @@ class EVPark:
                 soc = charger.soc
                 if hosted_ev in self.evs.keys() and charger.plugged:
                     new_soc = self.evs[hosted_ev].charge(soc, dT, p_ev[key])
+                    if single_ev:
+                        for ev, ev_value in self.evs.items():
+                            ev_value.set_soc(new_soc)
+                            if ev in list_of_evs:
+                                list_of_evs.remove(ev)
                     self.logger.debug("new soc = "+str(new_soc))
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("charged " + str(charger.__str__()))
                     socs[key] = new_soc
-                    list_of_evs.remove(hosted_ev)
+                    if not single_ev:
+                        if hosted_ev in list_of_evs:
+                            list_of_evs.remove(hosted_ev)
                 elif hosted_ev in self.evs.keys() and not charger.plugged:
                     new_soc = self.evs[hosted_ev].discharge(soc, dT)
+                    if single_ev:
+                        for ev, ev_value in self.evs.items():
+                            ev_value.set_soc(new_soc)
+                            if ev in list_of_evs:
+                                list_of_evs.remove(ev)
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("Set new soc " + str(charger.__str__()))
-                    socs[key] = new_soc
-                    list_of_evs.remove(hosted_ev)
+                    if not single_ev:
+                        if hosted_ev in list_of_evs:
+                            list_of_evs.remove(hosted_ev)
                 else:
                     self.logger.error("Charger "+str(charger.charger_id)+" does not have hosted ev")
             else:
@@ -205,20 +217,28 @@ class EVPark:
                 hosted_ev = charger.hosted_ev
                 if hosted_ev in self.evs.keys():
                     self.logger.debug("soc before "+str(self.evs[hosted_ev].get_soc()))
-                    list_of_evs.remove(hosted_ev)
                     if not charger.plugged:
                         new_soc = self.evs[hosted_ev].discharge(soc, dT)
                     else:
                         self.evs[hosted_ev].set_soc(soc)
                         new_soc = self.evs[hosted_ev].get_soc()
+                    if single_ev:
+                        for ev, ev_value in self.evs.items():
+                            ev_value.set_soc(new_soc)
+                            if ev in list_of_evs:
+                                list_of_evs.remove(ev)
                     charger.set_calculated_soc(new_soc)
                     self.logger.info("discharged " + str(charger.__str__()))
                     socs[key] = new_soc
+                    if not single_ev:
+                        if hosted_ev in list_of_evs:
+                            list_of_evs.remove(hosted_ev)
                 else:
-                    self.logger.error("Charger "+charger.charger_id+" does not have hosted")
+                    self.logger.error("Charger "+charger.charger_id+" does not have hosted ev")
 
         self.logger.debug("Reducing the soc for driving EVs")
         for ev_name in list_of_evs:
+            self.logger.debug("Discharging "+str(ev_name))
             self.evs[ev_name].discharge(None, dT)
         dict_to_save = {}
         for ev_name in self.evs.keys():

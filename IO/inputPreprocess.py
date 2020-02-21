@@ -23,7 +23,11 @@ class InputPreprocess:
     def __init__(self, id, mqtt_time_threshold, config):
         self.data_dict = {}
         self.logger = MessageLogger.get_logger(__name__, id)
-        self.ev_park = EVPark(id)
+        persist_real_data_path = "optimization/resources"
+        persist_real_data_path = os.path.join("/usr/src/app", persist_real_data_path, id, "real")
+        # persist_real_data_path = os.path.join(os.getcwd())
+        self.persist_real_data_file = os.path.join(persist_real_data_path, "ev_info" + ".txt")
+        self.ev_park = EVPark(id, self.persist_real_data_file)
         self.id = id
         self.mqtt_time_threshold = mqtt_time_threshold
         self.event_data = {}
@@ -186,6 +190,42 @@ class InputPreprocess:
                 evs_list.append(EV(self.id, ev_no_base, battery_capacity))
         self.remove_used_keys(ev_keys)
         return evs_list
+
+    def generate_ev_classes(self):
+        ev_data_from_file = None
+        if os.path.exists(self.persist_real_data_file):
+            ev_data_from_file = self.read_data(self.persist_real_data_file)
+
+        evs_list = []
+        ev_keys = []
+        for k, v in self.data_dict.items():
+            # print("k "+str(k) + " v " + str(v))
+            if self.is_ev(v):
+                ev = k
+                ev_dict = v
+                ev_keys.append(k)
+                battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
+                assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
+                # print("ev "+str(ev))
+                ev_no_base = self.remove_key_base(ev)
+                soc = None
+                if not ev_data_from_file == None:
+                    if ev in ev_data_from_file.keys():
+                        soc = ev_data_from_file[ev]
+                if not soc == None:
+                    evs_list.append(evs_list.append(EV(self.id, ev_no_base, battery_capacity, soc)))
+                else:
+                    evs_list.append(evs_list.append(EV(self.id, ev_no_base, battery_capacity)))
+
+        return evs_list
+
+    def read_data(self, filepath):
+        try:
+            with open(filepath, "r") as file:
+                data = file.read()
+            return json.loads(data)
+        except Exception as e:
+            self.logger.error("Read input file exception: " + str(e))
 
     def process_uncertainty_data(self):
         plugged_time_key = self.get_required_keys("Plugged_Time")
