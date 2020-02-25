@@ -31,7 +31,7 @@ class Constants:
     lock_key = "id_lock"
 
     recharge_event_connect = 0
-    recharge_event_disconnect = 0
+    recharge_event_disconnect = 1
 
     redis_host = None
 

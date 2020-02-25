@@ -195,6 +195,7 @@ class EVPark:
                     self.logger.info("charged " + str(charger.__str__()))
                     socs[key] = new_soc
                     if not single_ev:
+                        self.logger.debug("hosted_ev "+str(hosted_ev) + " in list_of_evs "+str(list_of_evs))
                         if hosted_ev in list_of_evs:
                             list_of_evs.remove(hosted_ev)
                 elif hosted_ev in self.evs.keys() and not charger.plugged:
@@ -272,8 +273,8 @@ class EVPark:
         if len(self.chargers) == 1:
             for charger_id, charger in self.chargers.items():
                 if charger.plugged:
-                    return 1
-        return 0
+                    return 0
+        return 1
 
     def get_chargers_dict_list(self):
         charger_list = []

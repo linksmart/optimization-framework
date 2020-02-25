@@ -54,11 +54,13 @@ class InputPreprocess:
                                             hosted_ev = None
                                             if "Hosted_EV" in charger_value.keys():
                                                 hosted_ev = charger_value["Hosted_EV"]
+                                            self.logger.debug("recharge_state " + str(recharge_state)+" for hosted ev "+str(hosted_ev) + " in charger "+str(charger_name))
                                             if charger_name in self.ev_park.chargers.keys():
                                                 self.ev_park.chargers[charger_name].recharge_event(recharge_state,
                                                                                                    timestamp, hosted_ev)
                                                 events_completed.append(key)
                                                 self.logger.info("recharge event "+str(charger_value))
+                                                self.logger.debug("ev_park.chargers "+str(self.ev_park.chargers[charger_name]))
 
         for event in events_completed:
             self.event_data.pop(event)
@@ -70,6 +72,7 @@ class InputPreprocess:
         self.last_timesamps = mqtt_timer
         self.logger.info("mqtt timer = "+str(mqtt_timer))
         evs_list = self.generate_ev_classes()
+        self.logger.debug("evs_list "+str(evs_list))
         self.ev_park.add_evs(evs_list)
         chargers_list = self.generate_charger_classes()
         self.ev_park.add_chargers(chargers_list)
@@ -77,9 +80,12 @@ class InputPreprocess:
         self.data_dict["Number_of_Parked_Cars"] = {None: number_of_evs}
         self.data_dict["VAC_Capacity"] = {None: vac_capacity}
 
-        self.process_uncertainty_data()
-        self.set_recharge_for_single_ev()
         self.event_received(self.event_data)
+
+        self.process_uncertainty_data()
+        #why is it different as for the other evs
+        self.set_recharge_for_single_ev()
+
 
         for charger_id, charger in self.ev_park.chargers.items():
             self.logger.info(charger.__str__())
@@ -153,22 +159,39 @@ class InputPreprocess:
                 hosted_ev = charger_dict.get("Hosted_EV", None)
                 soc = charger_dict.get("SoC", None)
                 ev_unplugged = False
-                if isinstance(soc, dict):
+                """if isinstance(soc, dict):
                     # did not receive soc value from mqtt
                     # check time threshold for EV unplugged
                     if self.exceeded_time_threshold(last_timestamp):
                         # EV unplugged
-                        ev_unplugged = True
+                        ev_unplugged = True"""
                 if not (isinstance(soc, float) or isinstance(soc, int)):
                     soc = None
+                    ev_unplugged = True
                 assert max_charging_power_kw, "Incorrect input: Max_Charging_Power_kW missing for charger: " + str(charger)
-                chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc, ev_unplugged))
+                self.logger.debug("hosted_ev "+str(hosted_ev)+ " with soc "+str(soc) + " ev_unplugged "+str(ev_unplugged))
+                chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc))
                 v["SoC"] = soc
                 update[k] = v
         self.data_dict.update(update)
         for c in chargers_list:
-            print(c)
+            self.logger.debug(c)
+        self.check_evs_in_charging_stations(chargers_list)
+        for c in chargers_list:
+            self.logger.debug(c)
         return chargers_list
+
+    def check_evs_in_charging_stations(self, cs_list):
+        for cs in cs_list:
+            for new_cs in cs_list:
+                if not cs == new_cs:
+                    if cs.hosted_ev == new_cs.hosted_ev:
+                        if cs.soc == None:
+                            cs.unplug()
+                        if new_cs.soc == None:
+                            new_cs.unplug()
+
+
 
     def exceeded_time_threshold(self, last_time):
         if last_time - time.time() > self.mqtt_time_threshold:
@@ -176,7 +199,7 @@ class InputPreprocess:
         else:
             return False
 
-    def generate_ev_classes(self):
+    """def generate_ev_classes(self):
         evs_list = []
         ev_keys = []
         for k, v in self.data_dict.items():
@@ -187,14 +210,17 @@ class InputPreprocess:
                 battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
                 assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
                 ev_no_base = self.remove_key_base(ev)
-                evs_list.append(EV(self.id, ev_no_base, battery_capacity))
+                self.logger.debug("ev_no_base "+str(ev_no_base))
+                if not ev_no_base == None:
+                    evs_list.append(EV(self.id, ev_no_base, battery_capacity))
         self.remove_used_keys(ev_keys)
-        return evs_list
+        return evs_list"""
 
     def generate_ev_classes(self):
         ev_data_from_file = None
         if os.path.exists(self.persist_real_data_file):
             ev_data_from_file = self.read_data(self.persist_real_data_file)
+            self.logger.debug("Data from file read: "+str(self.persist_real_data_file))
 
         evs_list = []
         ev_keys = []
@@ -206,16 +232,18 @@ class InputPreprocess:
                 ev_keys.append(k)
                 battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
                 assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
-                # print("ev "+str(ev))
+                self.logger.debug("ev "+str(ev))
                 ev_no_base = self.remove_key_base(ev)
                 soc = None
                 if not ev_data_from_file == None:
                     if ev in ev_data_from_file.keys():
                         soc = ev_data_from_file[ev]
-                if not soc == None:
-                    evs_list.append(evs_list.append(EV(self.id, ev_no_base, battery_capacity, soc)))
+                if not soc == None and not ev_no_base == None:
+                    self.logger.debug("soc "+str(soc)+" ev_no_base "+str(ev_no_base))
+                    evs_list.append(EV(self.id, ev_no_base, battery_capacity, soc))
                 else:
-                    evs_list.append(evs_list.append(EV(self.id, ev_no_base, battery_capacity)))
+                    if not ev_no_base == None:
+                        evs_list.append(EV(self.id, ev_no_base, battery_capacity))
 
         return evs_list
 

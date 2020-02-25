@@ -13,10 +13,8 @@ class ChargingStation:
         self.plugged = False
         self.recharge_start_time = None
         self.recharge_stop_time = None
-
-        if hosted_ev:
+        if hosted_ev and not ev_unplugged:
             self.plug(hosted_ev, soc)
-
         if ev_unplugged:
             self.unplug()
 
@@ -24,14 +22,17 @@ class ChargingStation:
         return self.plugged
 
     def plug(self, ev, soc):
-        self.hosted_ev = ev
-        if soc:
-            self.soc = soc
-        self.plugged = True
-        if self.recharge_start_time is None:
-            self.recharge_start_time = time.time()
+        print("Plugging ev "+str(ev))
+        if not ev ==None:
+            self.hosted_ev = ev
+            if soc:
+                self.soc = soc
+            self.plugged = True
+            if self.recharge_start_time is None:
+                self.recharge_start_time = time.time()
 
     def unplug(self):
+        print("Unplugging ev")
         self.hosted_ev = None
         self.plugged = False
         if self.recharge_stop_time is None:
@@ -41,16 +42,17 @@ class ChargingStation:
         self.soc = soc
 
     def recharge_event(self, event, timestamp, hosted_ev = None):
+        print("recharge event "+str(event))
+        if isinstance(event, bool):
+            if event:
+                event = Constants.recharge_event_disconnect
+            else:
+                event = Constants.recharge_event_connect
         if isinstance(event, int):
             if event == Constants.recharge_event_connect:
-                event = True
-            else:
-                event = False
-        if isinstance(event, bool):
-            if not event:
                 self.plug(hosted_ev, None)
                 self.recharge_start_time = timestamp
-            else:
+            if event == Constants.recharge_event_disconnect:
                 self.unplug()
                 self.recharge_stop_time = timestamp
 

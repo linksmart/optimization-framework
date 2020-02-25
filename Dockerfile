@@ -1,7 +1,7 @@
 
 # Use an official Python runtime as a parent image
 #FROM garagon/solvers:amd_v3
-FROM garagon/solvers:amd_v4
+FROM garagon/solvers:amd_v5
 
 RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
 
@@ -58,8 +58,8 @@ USER garagon
 WORKDIR /usr/src/app
 
 #COPY entry.sh /usr/src/app/
-COPY ofw.py /usr/src/app/
 COPY utils /usr/src/app/utils
+COPY ofw.py /usr/src/app/
 COPY prediction /usr/src/app/prediction
 COPY optimization /usr/src/app/optimization
 COPY swagger_server /usr/src/app/swagger_server
