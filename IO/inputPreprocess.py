@@ -35,6 +35,7 @@ class InputPreprocess:
         self.charger_base_path = os.path.join("/usr/src/app", persist_base_file_path, str(id), Constants.persisted_folder_name)
         self.charger_file_name = "chargers.json"
 
+
     def event_received(self, data):
         self.event_data.update(data)
         self.logger.info("events received = "+str(self.event_data))
@@ -59,8 +60,16 @@ class InputPreprocess:
                                                 self.ev_park.chargers[charger_name].recharge_event(recharge_state,
                                                                                                    timestamp, hosted_ev)
                                                 events_completed.append(key)
-                                                self.logger.info("recharge event "+str(charger_value))
-                                                self.logger.debug("ev_park.chargers "+str(self.ev_park.chargers[charger_name]))
+                                                for k, v in self.data_dict.items():
+                                                    if self.is_charger(v):
+                                                        self.logger.debug(" k "+str(k) + " charger_name " + str(charger_name))
+                                                        if k == charger_name and recharge_state==1:
+                                                            self.data_dict[k]["Hosted_EV"] =  None
+                                                            self.data_dict[k]["SoC"] =  None
+
+                                                self.logger.debug("data dict recharge "+str(self.data_dict))
+                                                self.logger.info("recharge event " + str(charger_value))
+                                                self.logger.debug("ev_park chargers[charger_name] "+str(self.ev_park.chargers[charger_name]))
 
         for event in events_completed:
             self.event_data.pop(event)
@@ -240,6 +249,13 @@ class InputPreprocess:
                         soc = ev_data_from_file[ev]
                 if not soc == None and not ev_no_base == None:
                     self.logger.debug("soc "+str(soc)+" ev_no_base "+str(ev_no_base))
+                    for k, v in self.data_dict.items():
+                        if self.is_charger(v):
+                            if "Hosted_EV" in v.keys() and "SoC" in v.keys():
+                                if v["Hosted_EV"] == ev_no_base:
+                                    if isinstance(v["SoC"], float) or isinstance(v["SoC"], int):
+                                        soc = v["SoC"]
+                                    self.logger.debug("new soc "+str(soc)+" for ev "+str(ev_no_base))
                     evs_list.append(EV(self.id, ev_no_base, battery_capacity, soc))
                 else:
                     if not ev_no_base == None:

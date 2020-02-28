@@ -315,6 +315,7 @@ class OptControllerStochastic(ControllerBase):
             else:
 
                 self.logger.debug("Flag loop_fail is False")
+                time.sleep(0.2)
                 # erasing files from pyomo
                 folder = "/usr/src/app/logs/pyomo/" + str(self.id)
                 self.erase_pyomo_files(folder)

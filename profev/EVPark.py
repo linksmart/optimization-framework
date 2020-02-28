@@ -33,10 +33,13 @@ class EVPark:
         return vac_capacity
 
     def add_chargers(self, chargers_list):
+        self.logger.debug("chargers_list "+str(chargers_list))
+        self.logger.debug("self chargers "+str(self.chargers))
         for charger in chargers_list:
             self.validate_hosted_ev(charger)
             if charger.charger_id in self.chargers.keys():
                 self.update_charger(charger, charger.charger_id)
+                self.logger.debug("self chargers 2 " + str(self.chargers))
             else:
                 self.chargers[charger.charger_id] = charger
                 self.total_charging_stations_power += charger.max_charging_power_kw
@@ -117,15 +120,15 @@ class EVPark:
         self.logger.info(self.chargers.keys())
         self.logger.info(self.evs.keys())
 
-        ev_data_from_file = None
-        if os.path.exists(self.persist_real_data_file):
-            ev_data_from_file = self.read_data(self.persist_real_data_file)
+        #ev_data_from_file = None
+        #if os.path.exists(self.persist_real_data_file):
+            #ev_data_from_file = self.read_data(self.persist_real_data_file)
 
         # Poner aquí analsis de tiempo
         list_of_evs = []
         for ev_name in self.evs.keys():
-            if not ev_data_from_file == None:
-                self.evs[ev_name].set_soc(ev_data_from_file.get(ev_name))
+            #if not ev_data_from_file == None:
+                #self.evs[ev_name].set_soc(ev_data_from_file.get(ev_name))
             list_of_evs.append(ev_name)
 
         for key, charger in self.chargers.items():
@@ -272,6 +275,7 @@ class EVPark:
     def single_ev_recharge(self):
         if len(self.chargers) == 1:
             for charger_id, charger in self.chargers.items():
+                print("charger "+str(charger))
                 if charger.plugged:
                     return 0
         return 1

@@ -22,7 +22,7 @@ class ChargingStation:
         return self.plugged
 
     def plug(self, ev, soc):
-        print("Plugging ev "+str(ev))
+        print("Plugging ev "+str(ev)+ " from charging station "+str(self.charger_id))
         if not ev ==None:
             self.hosted_ev = ev
             if soc:
@@ -32,10 +32,10 @@ class ChargingStation:
                 self.recharge_start_time = time.time()
 
     def unplug(self):
-        print("Unplugging ev")
+        print("Unplugging ev "+str(self.hosted_ev)+" from charging station "+str(self.charger_id))
         self.hosted_ev = None
         self.plugged = False
-        if self.recharge_stop_time is None:
+        if self.recharge_stop_time == None:
             self.recharge_stop_time = time.time()
 
     def set_calculated_soc(self, soc):

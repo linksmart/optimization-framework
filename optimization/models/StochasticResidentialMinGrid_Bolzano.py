@@ -95,7 +95,7 @@ class Model:
     model.const_esschargepw = Constraint(rule=ess_chargepower)
 
     def vac_chargepower(model):
-        if model.Recharge == 1:
+        if model.Recharge == 0:
             return model.P_VAC_OUTPUT == sum(model.Decision[ess, vac] * vac for ess, vac in
                                              product(model.Feasible_ESS_Decisions,
                                                      model.Feasible_VAC_Decisions)) * (model.VAC_Capacity * 3600) / (
@@ -142,7 +142,7 @@ class Model:
     model.const_demand = Constraint(rule=rule_p_power)
 
     def con_expected_future_value(model, p_ess, p_vac):
-        if model.Recharge == 1:
+        if model.Recharge == 0:
 
             # model.powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
 
@@ -160,7 +160,7 @@ class Model:
             return model.expected_future_cost[p_ess,p_vac] == model.Behavior_Model[(1, 1)] * valueOf_home + \
                                    model.Behavior_Model[(1, 0)] * valueOf_away
 
-        elif model.Recharge == 0:
+        elif model.Recharge == 1:
         # If vac is charged with one of the feasible decision 'p_ev'
             #model.powerFromEss = -p_ess / 100 * model.ESS_Capacity / model.dT
 
