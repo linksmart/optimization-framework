@@ -277,8 +277,8 @@ class EVPark:
             for charger_id, charger in self.chargers.items():
                 print("charger "+str(charger))
                 if charger.plugged:
-                    return 0
-        return 1
+                    return 1
+        return 0
 
     def get_chargers_dict_list(self):
         charger_list = []

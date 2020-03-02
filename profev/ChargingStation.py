@@ -35,6 +35,7 @@ class ChargingStation:
         print("Unplugging ev "+str(self.hosted_ev)+" from charging station "+str(self.charger_id))
         self.hosted_ev = None
         self.plugged = False
+        self.soc = None
         if self.recharge_stop_time == None:
             self.recharge_stop_time = time.time()
 

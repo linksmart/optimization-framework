@@ -223,6 +223,7 @@ class OptControllerStochastic(ControllerBase):
 
             reverse_steps = reversed(range(0, self.horizon_in_steps))
             loop_fail = False
+            position_single_ev = int(data_dict[None]["Recharge"][None])
             self.logger.debug("Entering to timesteps")
             self.logger.debug("timeout "+str(self.stochastic_timeout))
             for timestep in reverse_steps:
@@ -334,8 +335,9 @@ class OptControllerStochastic(ControllerBase):
                     self.logger.debug("initial_vac_soc_value " + str(initial_vac_soc_value))
 
                     if self.single_ev:
-                        recharge_value = int(data_dict[None]["Recharge"][None])
-                        result_key = (0, initial_ess_soc_value, initial_vac_soc_value, recharge_value)
+                        #recharge_value = int(data_dict[None]["Recharge"][None])
+                        self.logger.debug("position_single_ev "+str(position_single_ev))
+                        result_key = (0, initial_ess_soc_value, initial_vac_soc_value, position_single_ev)
                     else:
                         result_key = (0, initial_ess_soc_value, initial_vac_soc_value)
 
@@ -587,7 +589,7 @@ class OptControllerStochastic(ControllerBase):
             feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
             if single_ev:
-                recharge_value = int(data_dict[None]["Recharge"][None])
+                #recharge_value = int(data_dict[None]["Recharge"][None])
 
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
@@ -598,12 +600,15 @@ class OptControllerStochastic(ControllerBase):
 
 
                 feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
-                if recharge_value == 1:
+                if position == 1:
                     # When decided charging with p_VAC
                     if vac_decision_domain[0] <= max_vac_soc_states - ini_vac_soc:
                         # if the final vac_SoC is within the specified domain
                         index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
                         feasible_Pvac = vac_decision_domain[0:index + 1]
+                        if len(feasible_Pvac) > 1:
+                            if 0 in feasible_Pvac:
+                                feasible_Pvac.remove(0)
                 else:
                     feasible_Pvac.append(0)
                 #logger.debug("feasible p_ESS " + str(feasible_Pess)+" feasible p_VAC " + str(feasible_Pvac))
@@ -632,6 +637,7 @@ class OptControllerStochastic(ControllerBase):
 
             data_dict[None]["Initial_VAC_SoC"] = {None: ini_vac_soc}
             data_dict[None]["Max_Charging_Power_kW"] = {None: max_power_charging_station}
+            data_dict[None]["Recharge"] = {None: position}
 
             final_ev_soc = ini_vac_soc - data_dict[None]["Unit_Consumption_Assumption"][None]
 
