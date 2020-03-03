@@ -13,6 +13,7 @@ from prediction.processingData import ProcessingData
 from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 from utils_intern.timeSeries import TimeSeries
+from utils_intern.utilFunctions import UtilFunctions
 
 """
 Creates a thread for prediction and a thread for training
@@ -70,7 +71,7 @@ class LoadPrediction:
         if self.predictionFlag:
             from prediction.rawLoadDataReceiver import RawLoadDataReceiver
             self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins, self.horizon_in_steps * 25,
-                                                self.raw_data_file_container, self.topic_name, self.id)
+                                                self.raw_data_file_container, self.topic_name, self.id, True)
 
             self.q = Queue(maxsize=0)
 
@@ -341,16 +342,7 @@ class Prediction(threading.Thread):
                                                                                   self.horizon_in_steps,
                                                                                   self.prediction_data_file_container,
                                                                                   self.topic_name)
-            time.sleep(self.get_sleep_secs(1))
-
-    def get_sleep_secs(self, repeat_hour):
-        current_time = datetime.datetime.now()
-        current_hour = current_time.hour
-        hr_diff = repeat_hour - current_hour%repeat_hour
-        next_time = current_time + datetime.timedelta(hours=hr_diff)
-        next_time = next_time.replace(minute=0, second=0, microsecond=0)
-        time_diff = next_time - current_time
-        return time_diff.total_seconds()
+            time.sleep(UtilFunctions.get_sleep_secs(1,0,0))
 
     def Stop(self):
         self.logger.info("start prediction thread exit")

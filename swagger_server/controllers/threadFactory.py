@@ -153,7 +153,8 @@ class ThreadFactory:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
                     if non_prediction_name == "P_PV":
-                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, input_config_parser,
+                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, output_config,
+                                                                                        input_config_parser,
                                                                                         self.id,
                                                                                         self.control_frequency,
                                                                                         self.horizon_in_steps,

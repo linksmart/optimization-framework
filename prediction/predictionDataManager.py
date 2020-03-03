@@ -99,6 +99,29 @@ class PredictionDataManager:
         return predictions
 
     @staticmethod
+    def save_predictions_dict_to_file(predictions, horizon_in_steps, prediction_data_file_container, topic_name):
+        try:
+            if len(predictions) > 0:
+                old_data = PredictionDataManager.read_from_file(prediction_data_file_container, topic_name)
+                print(predictions)
+                for start_time, result in predictions.items():
+                    data = []
+                    for i in range(horizon_in_steps):
+                        value = result[i][1]
+                        data.append(str(value))
+                    values = ",".join(data)
+                    values = str(start_time) + "," + values + "\n"
+                    old_data.append(values)
+                old_data = old_data[-4320:]  # 3 days data, assuming 1 prediction every min
+                logger.info("Saving prediction data to file " + str(prediction_data_file_container))
+                with open(prediction_data_file_container, 'w+') as file:
+                    file.writelines(old_data)
+                return {}
+        except Exception as e:
+            logger.error("failed to save_predictions_to_file " + str(e))
+        return predictions
+
+    @staticmethod
     def del_predictions_from_file(start_times, prediction_data_file_container, topic_name):
         try:
             if len(start_times) > 0:

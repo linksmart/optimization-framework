@@ -14,12 +14,14 @@ from IO.redisDB import RedisDB
 from prediction.rawDataReader import RawDataReader
 
 from utils_intern.messageLogger import MessageLogger
+from utils_intern.utilFunctions import UtilFunctions
+
 logger = MessageLogger.get_logger_parent()
 
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id):
+    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id, load_file_data):
         self.file_path = save_path
         redisDB = RedisDB()
         try:
@@ -36,7 +38,8 @@ class RawLoadDataReceiver(DataReceiver):
         self.count = 0
         self.minute_data = []
         self.topic_name = topic_name
-        self.load_data()
+        if load_file_data:
+            self.load_data()
         self.file_save_thread = threading.Thread(target=self.save_to_file_cron)
         self.file_save_thread.start()
 
@@ -118,26 +121,17 @@ class RawLoadDataReceiver(DataReceiver):
             return RawDataReader.format_data(data)
         else:
             data = self.get_data(0, True)
-            self.logger.debug("p load value from mqtt for prediction input = "+str(data))
+            self.logger.debug(str(self.topic_name)+"value from mqtt for prediction input = "+str(data))
             for item in data:
                 self.buffer_data.append(item)
             self.buffer_data = self.buffer_data[-self.buffer:]
             return self.buffer_data
 
-    def get_sleep_secs(self, repeat_hour):
-        current_time = datetime.datetime.now()
-        current_hour = current_time.hour
-        hr_diff = repeat_hour - current_hour%repeat_hour
-        next_time = current_time + datetime.timedelta(hours=hr_diff)
-        next_time = next_time.replace(minute=0, second=0, microsecond=0)
-        time_diff = next_time - current_time
-        return time_diff.total_seconds()
-
     def save_to_file_cron(self):
         self.logger.debug("Started save file cron")
         while True and not self.stop_request:
             self.save_to_file()
-            time.sleep(self.get_sleep_secs(1))
+            time.sleep(UtilFunctions.get_sleep_secs(2,0,0))
 
     def load_data(self):
         data = RawDataReader.get_raw_data(self.file_path, self.buffer, self.topic_name)

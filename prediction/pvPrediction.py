@@ -5,6 +5,7 @@ Created on Aug 03 14:02 2018
 """
 import datetime
 import json
+import os
 import threading
 
 import time
@@ -17,13 +18,15 @@ from IO.radiation import Radiation
 from IO.redisDB import RedisDB
 from optimization.genericDataReceiver import GenericDataReceiver
 from optimization.pvForecastPublisher import PVForecastPublisher
+from prediction.predictionDataManager import PredictionDataManager
 from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
+from utils_intern.utilFunctions import UtilFunctions
 
 
 class PVPrediction(threading.Thread):
 
-    def __init__(self, config, input_config_parser, id, control_frequency, horizon_in_steps, dT_in_seconds, generic_name):
+    def __init__(self, config, output_config, input_config_parser, id, control_frequency, horizon_in_steps, dT_in_seconds, generic_name):
         super().__init__()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.debug("PV prediction class")
@@ -35,6 +38,18 @@ class PVPrediction(threading.Thread):
         self.control_frequency = int(self.control_frequency / 2)
         self.control_frequency = 60
         self.id = id
+        self.horizon_in_steps = horizon_in_steps
+        self.old_predictions = {}
+        self.output_config = output_config
+        self.raw_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id,
+                                                    "raw_data_" + str(generic_name) + ".csv")
+
+        self.prediction_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id,
+                                                           "prediction_data_" + str(generic_name) + ".csv")
+
+        self.error_result_file_path = os.path.join("/usr/src/app", "prediction/resources", self.id,
+                                                   "error_data_" + str(generic_name) + ".csv")
+
         self.redisDB = RedisDB()
         raw_pv_data_topic = input_config_parser.get_params(generic_name)
         opt_values = input_config_parser.get_optimization_values()
@@ -59,11 +74,28 @@ class PVPrediction(threading.Thread):
         self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation,))
         self.pv_thread.start()
 
-        self.raw_data = GenericDataReceiver(False, raw_pv_data_topic, config, self.generic_name, id, 1, dT_in_seconds)
+        #self.raw_data = GenericDataReceiver(False, raw_pv_data_topic, config, self.generic_name, id, 1, dT_in_seconds)
+
+        from prediction.rawLoadDataReceiver import RawLoadDataReceiver
+        self.raw_data = RawLoadDataReceiver(raw_pv_data_topic, config, 1, 1,
+                                            self.raw_data_file_container, generic_name, self.id, False)
 
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, 60,
                                                    horizon_in_steps, dT_in_seconds, self.q)
         self.pv_forecast_pub.start()
+
+        self.prediction_save_thread = threading.Thread(target=self.save_to_file_cron)
+        self.prediction_save_thread.start()
+
+        from prediction.errorReporting import ErrorReporting
+        error_topic_params = config.get("IO", "error.topic")
+        error_topic_params = json.loads(error_topic_params)
+        error_topic_params["topic"] = error_topic_params["topic"] + generic_name
+        self.error_reporting = ErrorReporting(config, id, generic_name, dT_in_seconds, control_frequency,
+                                              horizon_in_steps, self.prediction_data_file_container,
+                                              self.raw_data_file_container, error_topic_params,
+                                              self.error_result_file_path, self.output_config)
+        self.error_reporting.start()
 
     def get_pv_data_from_source(self, radiation):
         """PV Data fetch thread. Runs at 23:30 every day"""
@@ -100,26 +132,27 @@ class PVPrediction(threading.Thread):
             self.pv_forecast_pub.Stop()
         if self.raw_data is not None:
             self.raw_data.exit()
+        if self.error_reporting:
+            self.error_reporting.Stop()
         self.logger.debug("pv prediction thread exit")
 
     def run(self):
         self.logger.debug("Running pv prediction")
         while not self.stopRequest.is_set():
-            #self.logger.debug("before entering pv prediction "+ str(self.redisDB.get_bool(Constants.get_data_flow_key(self.id))))
             if not self.redisDB.get_bool(Constants.get_data_flow_key(self.id)):
-                #self.logger.debug("pv prediction waiting for data flow to start")
                 time.sleep(30)
                 continue
             self.logger.debug("pv prediction data flow true")
             try:
                 start = time.time()
-                data, bucket_available, self.last_time = self.raw_data.get_current_bucket_data(steps=1)
+                data = self.raw_data.get_raw_data(train=False)
                 self.logger.debug("pv data in run is "+str(data))
                 if len(data) > 0:
-                    value = data[self.generic_name][0]
+                    value = data[0][1]
                     self.logger.debug("base_data = "+str(self.base_data))
                     adjusted_data = self.adjust_data(value)
                     self.q.put(adjusted_data)
+                    self.old_predictions[int(time.time())] = adjusted_data
                 start = self.control_frequency - (time.time() - start)
                 if start > 0:
                     time.sleep(start)
@@ -155,3 +188,11 @@ class PVPrediction(threading.Thread):
                 break
         return closest
 
+    def save_to_file_cron(self):
+        self.logger.debug("Started save file cron")
+        while True and not self.stopRequest.is_set():
+            self.old_predictions = PredictionDataManager.save_predictions_dict_to_file(self.old_predictions,
+                                                                                  self.horizon_in_steps,
+                                                                                  self.prediction_data_file_container,
+                                                                                  self.generic_name)
+            time.sleep(UtilFunctions.get_sleep_secs(1,0,0))
