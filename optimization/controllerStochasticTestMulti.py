@@ -169,6 +169,7 @@ class OptControllerStochastic(ControllerBase):
         ess_max_power = data_dict[None]["ESS_Max_Charge_Power"][None]
         ess_min_power = data_dict[None]["ESS_Max_Discharge_Power"][None]
         ess_capacity = data_dict[None]["ESS_Capacity"][None]
+        ess_min_soc = data_dict[None]["ESS_Min_SoC"][None]
         # self.logger.debug("ess_capacity: "+str(ess_capacity)+" ess_min_power: "+str(ess_min_power)+ " ess_max_power: "+str(ess_max_power))
         ess_domain_range_max = math.floor(((ess_max_power * self.dT_in_seconds) / (ess_capacity * 3600)) * 100)
         ess_domain_range_min = math.floor(((ess_min_power * self.dT_in_seconds) / (ess_capacity * 3600)) * 100)
@@ -205,8 +206,9 @@ class OptControllerStochastic(ControllerBase):
                 ev_park.get_vac_capacity() * 3600) * 100
 
             vac_soc_states, vac_decision_domain, vac_decision_domain_n = self.calculate_vac_domain(domain_range)
-
+            self.logger.debug("vac_soc_states " + str(vac_soc_states))
             ess_soc_states, ess_decision_domain = self.calculate_ess_domain(data_dict, domain_range)
+            self.logger.debug("ess_soc_states "+str(ess_soc_states))
 
             T = self.horizon_in_steps
 
@@ -619,7 +621,7 @@ class OptControllerStochastic(ControllerBase):
                     compare_value = ini_ess_soc - p_ESS
                     if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                         feasible_Pess.append(p_ESS)
-                # self.logger.debug("feasible p_ESS " + str(feasible_Pess))
+                #print("ini_ess_soc "+str(ini_ess_soc)+" feasible p_ESS " + str(feasible_Pess))
 
                 feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                 # When decided charging with p_VAC
@@ -629,6 +631,8 @@ class OptControllerStochastic(ControllerBase):
                     feasible_Pvac = vac_decision_domain[0:index + 1]
 
                 # self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
+
+
 
             data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
             data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}

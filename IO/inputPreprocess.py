@@ -312,7 +312,9 @@ class InputPreprocess:
         assert vac_states, "VAC_States is missing in Uncertainty"
 
         ess_min, ess_max, ess_steps, ess_soc_states = self.generate_states(ess_states, "ESS_States")
+        self.logger.debug("ess_soc_states "+str(ess_soc_states))
         vac_min, vac_max, vac_steps, vac_soc_states = self.generate_states(vac_states, "VAC_States")
+        self.logger.debug("vac_soc_states " + str(vac_soc_states))
 
         self.ess_steps = ess_steps
         self.vac_steps = vac_steps
@@ -381,6 +383,7 @@ class InputPreprocess:
                                  plugged_mean=plugged_time_mean, plugged_std=plugged_time_std)
 
     def generate_states(self, states, state_name):
+        self.logger.debug("states "+str(states))
         min_value = states.get("Min", None)
         max_value = states.get("Max", None)
         steps = states.get("Steps", None)
