@@ -204,6 +204,7 @@ class InputController:
         else:
             return {topic: data}
 
+    # TODO add support for file data set as well
     def get_sample(self, name, redisDB):
         self.logger.debug("name "+str(name))
         self.logger.debug("Sampling_names "+str(self.sampling_names))
@@ -252,8 +253,8 @@ class InputController:
     def get_data(self, preprocess, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         success = False
-        # self.logger.info("sleep for data")
-        #time.sleep(100)
+        #self.logger.info("sleep for data")
+        #time.sleep(10)
         while not success:
             if redisDB.get("End ofw") == "True":
                 break

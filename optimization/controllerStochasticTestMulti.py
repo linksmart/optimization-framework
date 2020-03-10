@@ -110,12 +110,12 @@ class OptControllerStochastic(ControllerBase):
 
         return (value_index, value,bm_idx, bm, ess_vac_product)
 
+    #TODO: method can be optimized
     def find_decision_domain_ess(self, ess_vac_product, ess_decision_domain, min_value, max_value ):
         for combination in ess_vac_product:
             feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
             if self.single_ev:
-                #recharge_value = int(data_dict[None]["Recharge"][None])
                 ini_ess_soc, ini_vac_soc, position = combination
 
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
@@ -198,6 +198,7 @@ class OptControllerStochastic(ControllerBase):
             # STOCHASTIC OPTIMIZATION
 
             ev_park = self.input.inputPreprocess.ev_park
+            # read from data dict whenever possible
             max_number_of_cars = ev_park.get_num_of_cars()
 
             position_states = [0, 1]
@@ -213,8 +214,6 @@ class OptControllerStochastic(ControllerBase):
             T = self.horizon_in_steps
 
             behaviour_model, Value, Decision = self.get_values(T, ess_soc_states, vac_soc_states,  position_states, max_number_of_cars)
-
-
 
             stochastic_start_time = time.time()
 
@@ -337,7 +336,6 @@ class OptControllerStochastic(ControllerBase):
                     self.logger.debug("initial_vac_soc_value " + str(initial_vac_soc_value))
 
                     if self.single_ev:
-                        #recharge_value = int(data_dict[None]["Recharge"][None])
                         self.logger.debug("position_single_ev "+str(position_single_ev))
                         result_key = (0, initial_ess_soc_value, initial_vac_soc_value, position_single_ev)
                     else:

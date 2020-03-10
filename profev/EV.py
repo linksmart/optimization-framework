@@ -59,3 +59,8 @@ class EV:
 
     def __str__(self):
         return self.ev_name
+
+    def get_dict(self):
+        return {"ev": self.ev_name,
+                "battery_capacity": self.battery_capacity,
+                "calculated_soc": self.calculated_soc}

@@ -18,6 +18,7 @@ from utils_intern.constants import Constants
 
 from utils_intern.messageLogger import MessageLogger
 
+
 class InputPreprocess:
 
     def __init__(self, id, mqtt_time_threshold, config):
@@ -32,13 +33,13 @@ class InputPreprocess:
         self.mqtt_time_threshold = mqtt_time_threshold
         self.event_data = {}
         persist_base_file_path = config.get("IO", "persist.base.file.path")
-        self.charger_base_path = os.path.join("/usr/src/app", persist_base_file_path, str(id), Constants.persisted_folder_name)
+        self.charger_base_path = os.path.join("/usr/src/app", persist_base_file_path, str(id),
+                                              Constants.persisted_folder_name)
         self.charger_file_name = "chargers.json"
-
 
     def event_received(self, data):
         self.event_data.update(data)
-        self.logger.info("events received = "+str(self.event_data))
+        self.logger.info("events received = " + str(self.event_data))
         events_completed = []
         for key, value in data.items():
             if isinstance(value, list):
@@ -48,62 +49,84 @@ class InputPreprocess:
                         event = v[1]
                         if isinstance(event, dict):
                             for charger_name, charger_value in event.items():
-                                if "recharge" in key:
-                                    if isinstance(charger_value, dict):
-                                        if "recharge" in charger_value.keys():
-                                            recharge_state = charger_value["recharge"]
-                                            hosted_ev = None
-                                            if "Hosted_EV" in charger_value.keys():
-                                                hosted_ev = charger_value["Hosted_EV"]
-                                            self.logger.debug("recharge_state " + str(recharge_state)+" for hosted ev "+str(hosted_ev) + " in charger "+str(charger_name))
-                                            if charger_name in self.ev_park.chargers.keys():
-                                                self.ev_park.chargers[charger_name].recharge_event(recharge_state,
-                                                                                                   timestamp, hosted_ev)
-                                                events_completed.append(key)
-                                                for k, v in self.data_dict.items():
-                                                    if self.is_charger(v):
-                                                        self.logger.debug(" k "+str(k) + " charger_name " + str(charger_name))
-                                                        if k == charger_name and recharge_state==1:
-                                                            self.data_dict[k]["Hosted_EV"] =  None
-                                                            self.data_dict[k]["SoC"] =  None
-
-                                                self.logger.debug("data dict recharge "+str(self.data_dict))
-                                                self.logger.info("recharge event " + str(charger_value))
-                                                self.logger.debug("ev_park chargers[charger_name] "+str(self.ev_park.chargers[charger_name]))
+                                if "recharge" in key and isinstance(charger_value, dict) and "recharge" in charger_value.keys():
+                                    recharge_state = charger_value["recharge"]
+                                    hosted_ev = None
+                                    if "Hosted_EV" in charger_value.keys():
+                                        hosted_ev = charger_value["Hosted_EV"]
+                                    self.logger.debug(
+                                        "recharge_state " + str(recharge_state) + " for hosted ev " + str(
+                                            hosted_ev) + " in charger " + str(charger_name))
+                                    if charger_name in self.ev_park.chargers.keys():
+                                        self.ev_park.chargers[charger_name].recharge_event(recharge_state,
+                                                                                           timestamp, hosted_ev)
+                                        events_completed.append(key)
+                                        # WARNING: all changes to charger should be done to ev park
+                                        """
+                                        for k, v in self.data_dict.items():
+                                            if self.is_charger(v):
+                                                self.logger.debug(
+                                                    " k " + str(k) + " charger_name " + str(charger_name))
+                                                if k == charger_name and recharge_state == 1:
+                                                    self.data_dict[k]["Hosted_EV"] = None
+                                                    self.data_dict[k]["SoC"] = None
+        
+                                        self.logger.debug("data dict recharge " + str(self.data_dict))
+                                        """
+                                        self.logger.info("recharge event " + str(charger_value))
+                                        self.logger.debug("ev_park chargers[charger_name] " + str(
+                                            self.ev_park.chargers[charger_name]))
 
         for event in events_completed:
             self.event_data.pop(event)
-        self.logger.info("events to be considered later = "+str(self.event_data))
+        self.logger.info("events to be considered later = " + str(self.event_data))
 
     def preprocess(self, data_dict, mqtt_timer):
-        self.logger.info("data_dict = "+str(data_dict))
+        self.logger.info("data_dict = " + str(data_dict))
         self.data_dict = data_dict
         self.last_timesamps = mqtt_timer
-        self.logger.info("mqtt timer = "+str(mqtt_timer))
-        evs_list = self.generate_ev_classes()
-        self.logger.debug("evs_list "+str(evs_list))
-        self.ev_park.add_evs(evs_list)
-        chargers_list = self.generate_charger_classes()
-        self.ev_park.add_chargers(chargers_list)
-        number_of_evs, vac_capacity = self.ev_park.get_num_of_cars(), self.ev_park.get_vac_capacity()
-        self.data_dict["Number_of_Parked_Cars"] = {None: number_of_evs}
-        self.data_dict["VAC_Capacity"] = {None: vac_capacity}
+        self.logger.info("mqtt timer = " + str(mqtt_timer))
 
+        """Read and process data from data dictionary"""
+        """Process data dict data to build ev park"""
+        self.generate_ev_classes()
+        self.generate_charger_classes()
+        self.ev_park.set_ev_soc()
+
+        """process the recharge event. if we have soc and recharge = 1 (unplug) then it would be unplug-ed"""
         self.event_received(self.event_data)
 
-        self.process_uncertainty_data()
-        #why is it different as for the other evs
-        self.set_recharge_for_single_ev()
+        """get processed data"""
+        number_of_evs, vac_capacity = self.ev_park.get_num_of_cars(), self.ev_park.get_vac_capacity()
+        recharge = self.ev_park.single_ev_recharge()
+        self.logger.info("Recharge value: " + str(recharge))
 
+        soc_value, vac_soc_value, vac_min = self.process_uncertainty_data()
+
+        """Set the data in data dictionary"""
+        self.set_data_in_data_dict(number_of_evs, vac_capacity, soc_value, vac_soc_value, vac_min, recharge)
 
         for charger_id, charger in self.ev_park.chargers.items():
             self.logger.info(charger.__str__())
 
         self.persist_charger_data()
 
-        #time.sleep(60)
+        # time.sleep(60)
         self.logger.info("data_dict = " + str(self.data_dict))
         return self.data_dict
+
+    def set_data_in_data_dict(self, number_of_evs, vac_capacity, soc_value, vac_soc_value, vac_min, recharge):
+        self.data_dict["Number_of_Parked_Cars"] = {None: number_of_evs}  # Total no. of cars
+        self.data_dict["VAC_Capacity"] = {None: vac_capacity}
+        self.data_dict["SoC_Value"] = {None: soc_value}
+        self.data_dict["VAC_SoC_Value"] = {None: vac_soc_value}
+        self.data_dict["VAC_States_Min"] = {None: vac_min}
+        self.data_dict["Recharge"] = {None: recharge}
+
+        self.data_dict["Value"] = "null"
+        self.data_dict["Initial_ESS_SoC"] = "null"
+        self.data_dict["Initial_VAC_SoC"] = "null"
+        self.data_dict["Behavior_Model"] = "null"
 
     def get_last_timestamp(self, partial_key):
         timestamp = -1
@@ -114,10 +137,11 @@ class InputPreprocess:
         return timestamp
 
     def validate_unit_consumption_assumption(self, vac_min, vac_step):
-        self.logger.info("data_dict : "+str(self.data_dict))
+        self.logger.info("data_dict : " + str(self.data_dict))
         if "Unit_Consumption_Assumption" in self.data_dict.keys():
             uac = float(self.data_dict["Unit_Consumption_Assumption"][None])
-            self.logger.debug("Unit consumption assumption "+str(uac)+ " vac_min "+str(vac_min)+" vac_step "+str(vac_step))
+            self.logger.debug(
+                "Unit consumption assumption " + str(uac) + " vac_min " + str(vac_min) + " vac_step " + str(vac_step))
             if not (((uac - vac_min) / vac_step).is_integer()):
                 raise Exception("Unit_Consumption_Assumption should be a valid step of VAC_steps")
         else:
@@ -126,7 +150,7 @@ class InputPreprocess:
     def remove_key_base(self, key):
         i = key.rfind("/")
         if i > 0:
-            return key[i+1:]
+            return key[i + 1:]
         else:
             return key
 
@@ -155,15 +179,14 @@ class InputPreprocess:
         return False
 
     def generate_charger_classes(self):
-        chargers_list = []
         update = {}
         for k, v in self.data_dict.items():
             if self.is_charger(v):
-                charger = k
+                charger_id = k
                 charger_dict = v
-                last_timestamp = self.get_last_timestamp(charger)
-                self.logger.info("charger "+ str(charger)+" last timestamp: "+str(last_timestamp))
-                self.logger.info("charger dict "+str(charger_dict))
+                last_timestamp = self.get_last_timestamp(charger_id)
+                self.logger.info("charger " + str(charger_id) + " last timestamp: " + str(last_timestamp))
+                self.logger.info("charger dict " + str(charger_dict))
                 max_charging_power_kw = charger_dict.get("Max_Charging_Power_kW", None)
                 hosted_ev = charger_dict.get("Hosted_EV", None)
                 soc = charger_dict.get("SoC", None)
@@ -176,19 +199,23 @@ class InputPreprocess:
                         ev_unplugged = True"""
                 if not (isinstance(soc, float) or isinstance(soc, int)):
                     soc = None
+                    # TODO: WARNING: no threshold before unplug. #
+                    #  earlier we used to wait for certain threshold before unplug-ing when no charger soc comes.
+                    #  now if we don't get so, we directly unplug.
+                    #  this would also mean that we would never use the calculated soc incase of no soc from mqtt
                     ev_unplugged = True
-                assert max_charging_power_kw, "Incorrect input: Max_Charging_Power_kW missing for charger: " + str(charger)
-                self.logger.debug("hosted_ev "+str(hosted_ev)+ " with soc "+str(soc) + " ev_unplugged "+str(ev_unplugged))
-                chargers_list.append(ChargingStation(charger, max_charging_power_kw, hosted_ev, soc))
+                assert max_charging_power_kw, "Incorrect input: Max_Charging_Power_kW missing for charger: " + str(
+                    charger_id)
+                self.logger.debug(
+                    "hosted_ev " + str(hosted_ev) + " with soc " + str(soc) + " ev_unplugged " + str(ev_unplugged))
+                self.ev_park.add_charger(charger_id, max_charging_power_kw, hosted_ev, soc)
+                # TODO: WARNING: v["SoC"] was set to none previously
+                #  v["SoC"] = None means in next iteration we don't get stale values and instead use the calculated soc
+                #  v["SoC"] = soc means we use the old value in next iteration if we don't get a new mqtt value
                 v["SoC"] = soc
                 update[k] = v
         self.data_dict.update(update)
-        for c in chargers_list:
-            self.logger.debug(c)
-        self.check_evs_in_charging_stations(chargers_list)
-        for c in chargers_list:
-            self.logger.debug(c)
-        return chargers_list
+        #self.check_evs_in_charging_stations(chargers_list)
 
     def check_evs_in_charging_stations(self, cs_list):
         for cs in cs_list:
@@ -199,8 +226,6 @@ class InputPreprocess:
                             cs.unplug()
                         if new_cs.soc == None:
                             new_cs.unplug()
-
-
 
     def exceeded_time_threshold(self, last_time):
         if last_time - time.time() > self.mqtt_time_threshold:
@@ -229,9 +254,8 @@ class InputPreprocess:
         ev_data_from_file = None
         if os.path.exists(self.persist_real_data_file):
             ev_data_from_file = self.read_data(self.persist_real_data_file)
-            self.logger.debug("Data from file read: "+str(self.persist_real_data_file))
+            self.logger.debug("Data from file read: " + str(self.persist_real_data_file))
 
-        evs_list = []
         ev_keys = []
         for k, v in self.data_dict.items():
             # print("k "+str(k) + " v " + str(v))
@@ -241,27 +265,14 @@ class InputPreprocess:
                 ev_keys.append(k)
                 battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
                 assert battery_capacity, "Incorrect input: Battery_Capacity_kWh missing for EV: " + str(ev)
-                self.logger.debug("ev "+str(ev))
+                self.logger.debug("ev " + str(ev))
                 ev_no_base = self.remove_key_base(ev)
                 soc = None
-                if not ev_data_from_file == None:
+                if ev_data_from_file is not None:
                     if ev in ev_data_from_file.keys():
                         soc = ev_data_from_file[ev]
-                if not soc == None and not ev_no_base == None:
-                    self.logger.debug("soc "+str(soc)+" ev_no_base "+str(ev_no_base))
-                    for k, v in self.data_dict.items():
-                        if self.is_charger(v):
-                            if "Hosted_EV" in v.keys() and "SoC" in v.keys():
-                                if v["Hosted_EV"] == ev_no_base:
-                                    if isinstance(v["SoC"], float) or isinstance(v["SoC"], int):
-                                        soc = v["SoC"]
-                                    self.logger.debug("new soc "+str(soc)+" for ev "+str(ev_no_base))
-                    evs_list.append(EV(self.id, ev_no_base, battery_capacity, soc))
-                else:
-                    if not ev_no_base == None:
-                        evs_list.append(EV(self.id, ev_no_base, battery_capacity))
-
-        return evs_list
+                self.logger.debug("soc " + str(soc) + " ev_no_base " + str(ev_no_base))
+                self.ev_park.add_ev(ev_no_base, battery_capacity, soc)
 
     def read_data(self, filepath):
         try:
@@ -312,10 +323,11 @@ class InputPreprocess:
         assert vac_states, "VAC_States is missing in Uncertainty"
 
         ess_min, ess_max, ess_steps, ess_soc_states = self.generate_states(ess_states, "ESS_States")
-        self.logger.debug("ess_soc_states "+str(ess_soc_states))
+        self.logger.debug("ess_soc_states " + str(ess_soc_states))
         vac_min, vac_max, vac_steps, vac_soc_states = self.generate_states(vac_states, "VAC_States")
         self.logger.debug("vac_soc_states " + str(vac_soc_states))
 
+        # Crucial to set them to self as they are being read in optimization
         self.ess_steps = ess_steps
         self.vac_steps = vac_steps
         self.ess_soc_states = ess_soc_states
@@ -341,28 +353,15 @@ class InputPreprocess:
         if soc_value < ess_min:
             soc_value = ess_min
 
-        self.logger.info("vac_soc_value = " + str(vac_soc_value))
-        self.logger.info("soc_value = " + str(soc_value))
-
-        self.data_dict["SoC_Value"] = {None: soc_value}
-        self.data_dict["VAC_SoC_Value"] = {None: vac_soc_value}
-
-        self.data_dict["VAC_States_Min"] = {None: vac_min}
-        self.data_dict["Value"] = "null"
-        self.data_dict["Initial_ESS_SoC"] = "null"
-        self.data_dict["Initial_VAC_SoC"] = "null"
-        self.data_dict["Behavior_Model"] = "null"
-
+        self.validate_unit_consumption_assumption(vac_min, vac_steps)
 
         self.remove_used_keys(ess_states_keys)
         self.remove_used_keys(vac_states_keys)
 
-        self.validate_unit_consumption_assumption(vac_min, vac_steps)
+        self.logger.info("vac_soc_value = " + str(vac_soc_value))
+        self.logger.info("soc_value = " + str(soc_value))
 
-    def set_recharge_for_single_ev(self):
-        recharge = self.ev_park.single_ev_recharge()
-        self.data_dict["Recharge"] = {None: recharge}
-        self.logger.info("Recharge value: "+str(recharge))
+        return soc_value, vac_soc_value, vac_min
 
     def generate_behaviour_model(self, plugged_time, unplugged_time, monte_carlo_repetition):
         plugged_time_mean = plugged_time.get("mean", None)
@@ -383,7 +382,7 @@ class InputPreprocess:
                                  plugged_mean=plugged_time_mean, plugged_std=plugged_time_std)
 
     def generate_states(self, states, state_name):
-        self.logger.debug("states "+str(states))
+        self.logger.debug("states " + str(states))
         min_value = states.get("Min", None)
         max_value = states.get("Max", None)
         steps = states.get("Steps", None)
@@ -392,13 +391,13 @@ class InputPreprocess:
         assert max_value, "Max value missing in " + str(state_name)
         assert steps, "Steps value missing in " + str(state_name)
 
-        #min_value = int(min_value)
-        #max_value = int(max_value)
+        # min_value = int(min_value)
+        # max_value = int(max_value)
 
         return (min_value, max_value, steps, np.arange(min_value, max_value + steps, steps).tolist())
 
     def round_to_steps(self, value, min, step):
-        self.logger.info("round values "+str(value)+" "+str(min)+" "+str(step))
+        self.logger.info("round values " + str(value) + " " + str(min) + " " + str(step))
         return round((value - min) / step) * step + min
 
     def persist_charger_data(self):
@@ -411,7 +410,7 @@ class InputPreprocess:
                 if len(data) > 0:
                     json_data = json.dumps(data)
                     f.write(json_data)
-                    self.logger.debug("charger data persisted "+file_path)
-                    #print("charger data persisted "+file_path)
+                    self.logger.debug("charger data persisted " + file_path)
+                    # print("charger data persisted "+file_path)
         except Exception as e:
-            self.logger.error("error persisting charger data "+str(e))
+            self.logger.error("error persisting charger data " + str(e))
