@@ -76,9 +76,11 @@ class PVPrediction(threading.Thread):
 
         #self.raw_data = GenericDataReceiver(False, raw_pv_data_topic, config, self.generic_name, id, 1, dT_in_seconds)
 
+        self.max_file_size_mins = config.getint("IO", "pv.raw.data.file.size", fallback=10800)
+
         from prediction.rawLoadDataReceiver import RawLoadDataReceiver
-        self.raw_data = RawLoadDataReceiver(raw_pv_data_topic, config, 1, 1,
-                                            self.raw_data_file_container, generic_name, self.id, False)
+        self.raw_data = RawLoadDataReceiver(raw_pv_data_topic, config, 1, 1, self.raw_data_file_container,
+                                            generic_name, self.id, False, self.max_file_size_mins)
 
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, 60,
                                                    horizon_in_steps, dT_in_seconds, self.q)
