@@ -438,8 +438,10 @@ class OptControllerStochastic(ControllerBase):
                                 p_ess = p_load_now + p_ev_single - p_pv_now
                                 self.logger.debug("p_ess output changed to "+str(p_ess)+" kW")
                         else:
-                            if (p_pv_now - p_load_now - p_ev_single) < p_ess:
-                                p_ess = p_pv_now - p_load_now - p_ev_single
+                            #if (p_pv_now - p_load_now - p_ev_single) < p_ess:
+                            if p_ess > 0:
+                                #p_ess = p_pv_now - p_load_now - p_ev_single
+                                p_ess = 0
                                 self.logger.debug("p_ess output changed to " + str(p_ess) + " kW")
 
                     self.logger.debug("p_ess "+str(p_ess) + " with load " + str(p_load) + " and p_ev " + str(p_ev_single))
