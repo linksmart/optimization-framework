@@ -42,7 +42,7 @@ class OfflinePrediction:
     def predict(self):
         try:
             #data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
-            data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
+            data = RawDataReader.get_raw_data(self.raw_data_file, self.topic_name, 7200)
             logger.debug("len data = " + str(len(data)))
             data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
             logger.debug("len resample data = " + str(len(data)))

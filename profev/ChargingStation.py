@@ -23,7 +23,7 @@ class ChargingStation:
 
     def plug(self, ev, soc):
         print("Plugging ev "+str(ev)+ " from charging station "+str(self.charger_id))
-        if not ev ==None:
+        if ev is not None:
             self.hosted_ev = ev
             if soc:
                 self.soc = soc
@@ -49,6 +49,8 @@ class ChargingStation:
                 event = Constants.recharge_event_disconnect
             else:
                 event = Constants.recharge_event_connect
+        if isinstance(event, float):
+            event = int(event)
         if isinstance(event, int):
             if event == Constants.recharge_event_connect:
                 self.plug(hosted_ev, None)
@@ -56,6 +58,7 @@ class ChargingStation:
             if event == Constants.recharge_event_disconnect:
                 self.unplug()
                 self.recharge_stop_time = timestamp
+        return event
 
     def dict(self):
         return {"charger": self.charger_id,

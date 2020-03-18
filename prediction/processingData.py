@@ -166,7 +166,7 @@ class ProcessingData:
         for raw_data in blocks:
             # Loading Data
             if len(raw_data) >= num_timesteps + output_size + 5:
-                raw_data = raw_data[-7200:]
+                # raw_data = raw_data[-7200:]
                 latest_timestamp = raw_data[-1:][0][0]
                 logger.debug(latest_timestamp)
                 # df = pd.DataFrame(raw_data, columns=col_heads)

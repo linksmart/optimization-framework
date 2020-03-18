@@ -69,9 +69,13 @@ class LoadPrediction:
         total_mins = int(float(self.num_timesteps * self.dT_in_seconds)/60.0) + 1
 
         if self.predictionFlag:
+
+            self.max_file_size_mins = config.getint("IO", "load.raw.data.file.size", fallback=10800)
+
             from prediction.rawLoadDataReceiver import RawLoadDataReceiver
             self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins, self.horizon_in_steps * 25,
-                                                self.raw_data_file_container, self.topic_name, self.id, True)
+                                                self.raw_data_file_container, self.topic_name, self.id, True,
+                                                self.max_file_size_mins)
 
             self.q = Queue(maxsize=0)
 
@@ -97,6 +101,7 @@ class LoadPrediction:
             self.startPrediction()
         else:
             self.max_training_samples = config.getint("IO", "max.training.samples", fallback=250)
+            self.max_raw_data_to_read = config.getint("IO", "max.raw.data.samples", fallback=7200)
             self.logger.debug("max_training_samples "+str(self.max_training_samples))
             self.startTraining()
 
@@ -105,8 +110,8 @@ class LoadPrediction:
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
                                         self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, 
-                                        self.output_size, self.max_training_samples, self.model_file_container_temp,
-                                        self.logger)
+                                        self.output_size, self.max_training_samples, self.max_raw_data_to_read,
+                                        self.model_file_container_temp, self.logger)
         self.training_thread.start()
 
     def startPrediction(self):
@@ -147,8 +152,9 @@ class Training(threading.Thread):
     - After training is completed, copy the model_train.h5 to model.h5
     """
 
-    def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data_file, processingData,
-                 model_file_container, model_file_container_train, topic_name, id, dT_in_seconds, output_size, max_training_samples,
+    def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs,
+                 raw_data_file, processingData, model_file_container, model_file_container_train, topic_name, id,
+                 dT_in_seconds, output_size, max_training_samples, max_raw_data_to_read,
                  model_file_container_temp, log):
         super().__init__()
         self.control_frequency = control_frequency
@@ -172,7 +178,10 @@ class Training(threading.Thread):
         self.id = id
         self.dT_in_seconds = dT_in_seconds
         self.output_size = output_size
+        # samples given to ml model
         self.max_training_samples = max_training_samples
+        # number of data points to read from file
+        self.max_raw_data_to_read = max_raw_data_to_read
         self.logger = log
 
     def run(self):
@@ -184,7 +193,7 @@ class Training(threading.Thread):
                     # get raw data from file
                     from prediction.rawDataReader import RawDataReader
                     # at-most last 5 days' data
-                    data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name) #7200 = 5 days data
+                    data = RawDataReader.get_raw_data(self.raw_data_file, self.topic_name, self.max_raw_data_to_read)  #7200 = 5 days data
                     self.logger.debug("raw data ready " + str(len(data)))
                     data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
                                                                                self.num_timesteps, self.output_size)

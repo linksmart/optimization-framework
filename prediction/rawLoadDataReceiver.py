@@ -21,7 +21,7 @@ logger = MessageLogger.get_logger_parent()
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id, load_file_data):
+    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id, load_file_data, max_file_size_mins):
         self.file_path = save_path
         redisDB = RedisDB()
         try:
@@ -38,6 +38,7 @@ class RawLoadDataReceiver(DataReceiver):
         self.count = 0
         self.minute_data = []
         self.topic_name = topic_name
+        self.max_file_size_mins = max_file_size_mins
         if load_file_data:
             self.load_data()
         self.file_save_thread = threading.Thread(target=self.save_to_file_cron)
@@ -80,7 +81,7 @@ class RawLoadDataReceiver(DataReceiver):
             for item in self.minute_data:
                 line = ','.join(map(str, item[:2])) + "\n"
                 old_data.append(line)
-            old_data = old_data[-10080:] # 7 days data
+            old_data = old_data[-self.max_file_size_mins:]
             update_data = []
             for i, line in enumerate(old_data):
                 c = line.count(",")
@@ -134,5 +135,5 @@ class RawLoadDataReceiver(DataReceiver):
             time.sleep(UtilFunctions.get_sleep_secs(2,0,0))
 
     def load_data(self):
-        data = RawDataReader.get_raw_data(self.file_path, self.buffer, self.topic_name)
+        data = RawDataReader.get_raw_data(self.file_path, self.topic_name, self.buffer)
         self.buffer_data = data.copy()

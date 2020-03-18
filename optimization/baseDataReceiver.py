@@ -72,7 +72,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
             if "chargers" in payload:
-                self.logger.debug("data received "+str(payload))
+                self.logger.debug("data received for charger = "+str(payload))
             senml_data = json.loads(payload)
             #self.logger.debug("senml_data "+str(senml_data))
             formated_data = self.add_formated_data(senml_data)
@@ -154,8 +154,8 @@ class BaseDataReceiver(DataReceiver, ABC):
                         self.logger.error("error " + str(e) + "  n = " + str(n))
                 #self.logger.debug("raw data: " + str(raw_data))
                 raw_data = TimeSeries.expand_and_resample(raw_data, self.dT, True)
-                self.length = len(raw_data)
                 if len(raw_data) > 0:
+                    self.length = len(raw_data)
                     bucket = self.time_to_bucket(raw_data[0][0])
                     for row in raw_data:
                         bucket_key = str(self.current_day_index) + "_" + str(bucket)

@@ -77,9 +77,9 @@ class RawDataReader:
             return new_data
 
     @staticmethod
-    def get_raw_data(file_path, data_length, topic_name):
+    def get_raw_data(file_path, topic_name, data_length=None):
         data = RawDataReader.read_from_file(file_path, topic_name)
-        if len(data) > data_length:
+        if data_length is not None and len(data) > data_length:
             data = data[-data_length:]
         return RawDataReader.format_data(data)
 

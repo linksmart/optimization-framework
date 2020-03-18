@@ -36,7 +36,7 @@ class OfflineTrain:
     def train(self):
         try:
             from prediction.rawDataReader import RawDataReader
-            data = RawDataReader.get_raw_data(self.raw_data_file, 7200, self.topic_name)
+            data = RawDataReader.get_raw_data(self.raw_data_file, self.topic_name, 7200)
             logger.debug("raw data ready " + str(len(data)))
             data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
                                                                        self.num_timesteps, self.output_size)
