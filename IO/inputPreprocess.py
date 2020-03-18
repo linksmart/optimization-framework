@@ -277,7 +277,7 @@ class InputPreprocess:
         vac_states_keys = self.get_required_keys("VAC_States")
 
         ess_states, vac_states = None, None
-        # TODO: assumption that only one plugged_time_key
+        # TODO: assumption that only one key
         if len(ess_states_keys) > 0:
             ess_states = self.data_dict.get(ess_states_keys[0], None)
         if len(vac_states_keys) > 0:
