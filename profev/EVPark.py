@@ -15,7 +15,6 @@ class EVPark:
         self.id = id
         self.evs = {}
         self.chargers = {}
-        self.change = {}
         self.total_charging_stations_power = 0
         self.persist_real_data_file = path
 
