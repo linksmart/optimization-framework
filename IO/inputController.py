@@ -254,7 +254,7 @@ class InputController:
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         success = False
         #self.logger.info("sleep for data")
-        #time.sleep(10)
+        #time.sleep(100)
         while not success:
             if redisDB.get("End ofw") == "True":
                 break
@@ -291,13 +291,11 @@ class InputController:
             except Exception as e:
                 self.logger.error("Error occured while getting data for bucket "+str(current_bucket)+". "+str(e))
         if preprocess:
-            complete_optimization_data = self.inputPreprocess.preprocess(self.optimization_data.copy(), self.mqtt_timer)
-        else:
-            complete_optimization_data = self.optimization_data.copy()
+            self.inputPreprocess.preprocess(self.optimization_data, self.mqtt_timer)
         redisDB.set(Constants.get_data_flow_key(self.id), False)
         if self.restart:
             self.restart = False
-        return {None: complete_optimization_data}
+        return {None: self.optimization_data.copy()}
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket, number_of_steps):
         try:

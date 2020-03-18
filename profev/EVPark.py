@@ -4,6 +4,7 @@ import time
 
 from profev.ChargingStation import ChargingStation
 from profev.EV import EV
+from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 
@@ -14,6 +15,7 @@ class EVPark:
         self.id = id
         self.evs = {}
         self.chargers = {}
+        self.change = {}
         self.total_charging_stations_power = 0
         self.persist_real_data_file = path
 
@@ -313,13 +315,14 @@ class EVPark:
                 old_charger.max_charging_power_kw = max_charging_power_kw
             self.logger.debug("old charger updated " + str(old_charger))
         else:
+            assert max_charging_power_kw, "Incorrect input: Max_Charging_Power_kW missing for charger: " + str(
+                charger_id)
             new_charger = ChargingStation(charger_id, max_charging_power_kw, hosted_ev, soc)
             self.chargers[new_charger.charger_id] = new_charger
             self.total_charging_stations_power += new_charger.max_charging_power_kw
             self.logger.debug("new charger added " + str(new_charger))
 
         # Check if hosted ev in any other charger
-        # TODO: tried to implement check_evs_in_charging_stations logic. need logic check
         if hosted_ev:
             for charger_id2, charger_dict in self.chargers.items():
                 if charger_id != charger_id2:
@@ -333,3 +336,14 @@ class EVPark:
             for charger_id, charger in self.chargers.items():
                 if ev_id == charger.hosted_ev and charger.soc is not None:
                     ev.set_soc(charger.soc)
+
+    def add_recharge_event(self, charger_name, recharge_state, timestamp, hosted_ev):
+        if charger_name in self.chargers.keys():
+            event = self.chargers[charger_name].recharge_event(recharge_state, timestamp, hosted_ev)
+            if event == Constants.recharge_event_connect:
+                # remove ev from other chargers
+                for charger, charger_data in self.chargers.items():
+                    if charger_name != charger:
+                        if charger_data.hosted_ev == hosted_ev:
+                            charger_data.unplug()
+

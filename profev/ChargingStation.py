@@ -58,6 +58,7 @@ class ChargingStation:
             if event == Constants.recharge_event_disconnect:
                 self.unplug()
                 self.recharge_stop_time = timestamp
+        return event
 
     def dict(self):
         return {"charger": self.charger_id,
