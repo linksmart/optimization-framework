@@ -55,7 +55,7 @@ class Model:
 
 	# rule to limit the PV ouput to value of the PV forecast
 	def con_rule_pv_potential(model, t):
-		return model.P_PV_Output[t] == model.P_PV[t]
+		return model.P_PV_Output[t] <= model.P_PV[t]
 
 	# ESS SoC balance
 	def con_rule_socBalance(model, t):
