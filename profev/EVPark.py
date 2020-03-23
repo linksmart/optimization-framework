@@ -27,14 +27,22 @@ class EVPark:
         self.logger.debug("EVs " + str(self.evs))
 
     def get_num_of_cars(self):
-        return len(self.evs)
+        if len(self.chargers) == 1:
+            return 1
+        else:
+            return len(self.evs)
 
     # TODO: should it be calculated only for hosted evs?
     def get_vac_capacity(self):
-        vac_capacity = 0
-        for ev_name, ev in self.evs.items():
-            vac_capacity += ev.battery_capacity
-        return vac_capacity
+        if len(self.chargers) == 1:
+            ev_name = next(iter(self.evs))
+            vac_capacity = self.evs[ev_name].battery_capacity
+            return vac_capacity
+        else:
+            vac_capacity = 0
+            for ev_name, ev in self.evs.items():
+                vac_capacity += ev.battery_capacity
+            return vac_capacity
 
     def add_chargers(self, chargers_list):
         self.logger.debug("chargers_list " + str(chargers_list))

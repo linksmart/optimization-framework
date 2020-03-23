@@ -150,21 +150,29 @@ class OptControllerStochastic(ControllerBase):
         return (action_handles, action_handle_map)
 
 
-    def calculate_vac_domain(self, domain_range):
+    def calculate_vac_domain(self, ev_park):
         vac_soc_states = self.input.inputPreprocess.vac_soc_states
         vac_steps = self.input.inputPreprocess.vac_steps
         vac_domain_min = vac_soc_states[0]
-        vac_domain_max = domain_range + vac_steps
+        vac_domain_max = max(vac_soc_states)
+        
+        #vac_domain_max = domain_range + vac_steps
 
-        vac_domain_min = vac_steps * math.floor(vac_domain_min / vac_steps)
-        vac_domain_max = vac_steps * math.floor(vac_domain_max / vac_steps)
+        domain_range_max = math.floor(((ev_park.total_charging_stations_power * self.dT_in_seconds) / (ev_park.get_vac_capacity() * 3600)) * 100)
+        self.logger.debug("get_vac_capacity "+str(ev_park.get_vac_capacity())+" dT_in_seconds "+str(self.dT_in_seconds))
+        domain_range_min = 0
+        self.logger.debug("max power "+str(ev_park.total_charging_stations_power)+" domain_range_max " + str(domain_range_max))
+
+        vac_domain_min = - vac_steps * math.floor(domain_range_min / vac_steps)
+        vac_domain_max = vac_steps * math.floor(domain_range_max / vac_steps) + vac_steps
+
 
         vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
         vac_decision_domain_n = np.arange(vac_domain_min, vac_domain_max, vac_steps)
 
         return (vac_soc_states, vac_decision_domain, vac_decision_domain_n)
 
-    def calculate_ess_domain(self, data_dict, domain_range):
+    def calculate_ess_domain(self, data_dict):
         ess_soc_states = self.input.inputPreprocess.ess_soc_states
         ess_max_power = data_dict[None]["ESS_Max_Charge_Power"][None]
         ess_min_power = data_dict[None]["ESS_Max_Discharge_Power"][None]
@@ -203,13 +211,10 @@ class OptControllerStochastic(ControllerBase):
 
             position_states = [0, 1]
 
-            domain_range = (ev_park.total_charging_stations_power * self.dT_in_seconds) / (
-                ev_park.get_vac_capacity() * 3600) * 100
-
-            vac_soc_states, vac_decision_domain, vac_decision_domain_n = self.calculate_vac_domain(domain_range)
-            self.logger.debug("vac_soc_states " + str(vac_soc_states))
-            ess_soc_states, ess_decision_domain = self.calculate_ess_domain(data_dict, domain_range)
-            self.logger.debug("ess_soc_states "+str(ess_soc_states))
+            vac_soc_states, vac_decision_domain, vac_decision_domain_n = self.calculate_vac_domain(ev_park)
+            self.logger.debug("vac_soc_states " + str(vac_soc_states)+" vac_decision_domain "+str(vac_decision_domain))
+            ess_soc_states, ess_decision_domain = self.calculate_ess_domain(data_dict)
+            self.logger.debug("ess_soc_states "+str(ess_soc_states)+" ess_decision_domain "+str(ess_decision_domain))
 
             T = self.horizon_in_steps
 
@@ -384,7 +389,7 @@ class OptControllerStochastic(ControllerBase):
 
                     for charger, max_charge_power_of_car in connections.items():
                         if feasible_ev_charging_power == 0:
-                            p_ev[charger] = 0
+                            p_ev[charger] = 0.6
                         else:
                             power_output_of_charger = feasible_ev_charging_power * (
                                     max_charge_power_of_car / max_power_for_cars)
@@ -591,8 +596,7 @@ class OptControllerStochastic(ControllerBase):
             feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
             if single_ev:
-                #recharge_value = int(data_dict[None]["Recharge"][None])
-
+                
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
                     # self.logger.debug("min_value "+str(min_value))
@@ -600,7 +604,7 @@ class OptControllerStochastic(ControllerBase):
                     if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                         feasible_Pess.append(p_ESS)
 
-
+                
                 feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                 if position == 1:
                     # When decided charging with p_VAC
@@ -608,13 +612,12 @@ class OptControllerStochastic(ControllerBase):
                         # if the final vac_SoC is within the specified domain
                         index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
                         feasible_Pvac = vac_decision_domain[0:index + 1]
-                        if len(feasible_Pvac) > 1:
-                            if 0 in feasible_Pvac:
-                                feasible_Pvac.remove(0)
+                        #if len(feasible_Pvac) > 1:
+                            #if 0 in feasible_Pvac:
+                                #feasible_Pvac.remove(0)
                 else:
                     feasible_Pvac.append(0)
-                #logger.debug("feasible p_ESS " + str(feasible_Pess)+" feasible p_VAC " + str(feasible_Pvac))
-
+        
             else:
 
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
@@ -633,7 +636,6 @@ class OptControllerStochastic(ControllerBase):
                 # self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
 
 
-
             data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
             data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
 
@@ -644,7 +646,7 @@ class OptControllerStochastic(ControllerBase):
             data_dict[None]["Recharge"] = {None: position}
 
             final_ev_soc = ini_vac_soc - data_dict[None]["Unit_Consumption_Assumption"][None]
-
+            
             if final_ev_soc < data_dict[None]["VAC_States_Min"][None]:
                 final_ev_soc = data_dict[None]["VAC_States_Min"][None]
             #logger.debug("Max_Charging_Power_kW "+str(max_power_charging_station))
@@ -653,105 +655,103 @@ class OptControllerStochastic(ControllerBase):
 
             pv = data_dict[None]["P_PV"][timestep]
             load = data_dict[None]["P_Load"][timestep]
-
+            
             if "ESS_Control" in data_dict[None].keys():
                 gesscon = data_dict[None]["ESS_Control"][timestep]
             else:
                 gesscon = None
-
+                
             #print("gesscon "+str(gesscon))
             v = str(timestep) + "_" + str(ini_ess_soc) + "_" + str(ini_vac_soc)+" load "+str(load)+" pv "+str(pv)+\
                 " gesscon "+str(gesscon) + " feasible_Pvac "+str(feasible_Pvac) + " feasible_Pess "+str(feasible_Pess)
                 #" Behavior "+str(data_dict[None]["Behavior_Model"])
 
-            result = None
-            instance = None
             my_dict = {}
-            my_dict_param={}
             ctr = 0
             repeat_count = 2
-        except Exception as e:
-            print("--1. Exception--"+str(e))
-        while ctr < repeat_count:
-            try:
-                ctr += 1
+            while ctr < repeat_count:
                 try:
-                    optsolver = SolverFactory(solver_name)
-                except Exception as e:
-                    #print("optsolver didn't load. "+str(e))
-                    continue
-
-                try:
-                    mod = __import__(absolute_path, fromlist=['Model'])
-                    #mod = importlib.import_module(absolute_path)
-                except Exception as e:
-                    #print("class import didn't work. "+str(e))
-                    continue
-
-                my_class = getattr(mod, 'Model')
-                try:
-                    instance = my_class.model.create_instance(data_dict)
-                except Exception as e:
-                    #print("instance could not be created. "+str(e))
-                    continue
-
-                try:
-                    result = optsolver.solve(instance)
-                except Exception as e:
-                    #print("Solving the model did not work on pyomo. "+str(e))
-                    continue
-
-                if result is None:
-                    #print("result is none for " + str(v) + " repeat")
-                    continue
-                elif (result.solver.status == SolverStatus.ok) and (
-                        result.solver.termination_condition == TerminationCondition.optimal):
-                    instance.solutions.load_from(result)
-
-                    # * if solved get the values in dict
-                    for v1 in instance.component_objects(Var, active=True):
-                        # self.logger.debug("Variable in the optimization: " + str(v))
-                        varobject = getattr(instance, str(v1))
-                        var_list = []
-                        try:
-                            # Try and add to the dictionary by key ref
-                            if str(v1) == "Value_output":
-                                #print("Value_output " +str(varobject.get_values()))
-                                my_dict[str(v1)] = varobject.get_values()
-                            else:
-                                for index in varobject:
-                                    var_list.append(varobject[index].value)
-                                # self.logger.debug("Identified variables " + str(var_list))
-                                my_dict[str(v1)] = var_list
-                        except Exception as e:
-                            print("error reading result " + str(e))
-
-                    if single_ev:
-                        combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+                    ctr += 1
+                    try:
+                        optsolver = SolverFactory(solver_name)
+                    except Exception as e:
+                        #print("optsolver didn't load. "+str(e))
+                        continue
+    
+                    try:
+                        mod = __import__(absolute_path, fromlist=['Model'])
+                        #mod = importlib.import_module(absolute_path)
+                    except Exception as e:
+                        #print("class import didn't work. "+str(e))
+                        continue
+    
+                    my_class = getattr(mod, 'Model')
+                    try:
+                        instance = my_class.model.create_instance(data_dict)
+                    except Exception as e:
+                        #print("instance could not be created. "+str(e))
+                        continue
+    
+                    try:
+                        result = optsolver.solve(instance)
+                    except Exception as e:
+                        #print("Solving the model did not work on pyomo. "+str(e))
+                        continue
+    
+                    if result is None:
+                        #print("result is none for " + str(v) + " repeat")
+                        continue
+                    elif (result.solver.status == SolverStatus.ok) and (
+                            result.solver.termination_condition == TerminationCondition.optimal):
+                        instance.solutions.load_from(result)
+    
+                        # * if solved get the values in dict
+                        for v1 in instance.component_objects(Var, active=True):
+                            # self.logger.debug("Variable in the optimization: " + str(v))
+                            varobject = getattr(instance, str(v1))
+                            var_list = []
+                            try:
+                                # Try and add to the dictionary by key ref
+                                if str(v1) == "Value_output":
+                                    #print("Value_output " +str(varobject.get_values()))
+                                    my_dict[str(v1)] = varobject.get_values()
+                                else:
+                                    for index in varobject:
+                                        var_list.append(varobject[index].value)
+                                    # self.logger.debug("Identified variables " + str(var_list))
+                                    my_dict[str(v1)] = var_list
+                            except Exception as e:
+                                print("error reading result " + str(e))
+    
+                        if single_ev:
+                            combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
+                        else:
+                            combined_key = (timestep, ini_ess_soc, ini_vac_soc)
+    
+                        Decision = {combined_key: {}}
+                        if len(my_dict) >= 4:
+                            Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
+                            Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
+                            Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
+                            Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
+    
+                        Value = {combined_key: {}}
+                        Value[combined_key] = instance.obj.expr()
+    
+                        return (Decision, Value)
+                    elif result.solver.termination_condition == TerminationCondition.infeasible:
+                        # do something about it? or exit?
+                        print("Termination condition is infeasible " + v + " repeat")
+                        continue
                     else:
-                        combined_key = (timestep, ini_ess_soc, ini_vac_soc)
-
-                    Decision = {combined_key: {}}
-                    if len(my_dict) >= 4:
-                        Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
-                        Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
-                        Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
-                        Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
-
-                    Value = {combined_key: {}}
-                    Value[combined_key] = instance.obj.expr()
-
-                    return (Decision, Value)
-                elif result.solver.termination_condition == TerminationCondition.infeasible:
-                    # do something about it? or exit?
-                    print("Termination condition is infeasible " + v + " repeat")
-                    continue
-                else:
-                    print("Nothing fits " + v + " repeat")
-                    continue
-            except Exception as e:
-                print("--Exception-- Thread: " + v + " " + str(e))
-
-        print("--ERROR-- Result not found after "+str(ctr)+" repetitions")
-        return (None, None)
+                        print("Nothing fits " + v + " repeat")
+                        continue
+                except Exception as e:
+                    print("--Exception-- Thread: " + v + " " + str(e))
+            print("--ERROR-- Result not found after " + str(ctr) + " repetitions")
+            return (None, None)
+        except Exception as e:
+            print("--Exception--"+str(e))
+            
+        
 
