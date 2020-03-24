@@ -231,7 +231,7 @@ class InputPreprocess:
                         soc = ev_data_from_file[ev]
                 self.logger.debug("soc " + str(soc) + " ev_no_base " + str(ev_no_base))
                 self.ev_park.add_ev(ev_no_base, battery_capacity, soc)
-        self.remove_used_keys(ev_keys)
+        #self.remove_used_keys(ev_keys)
 
     def read_data(self, filepath):
         try:
