@@ -77,10 +77,16 @@ def monte_carlo_simulation(time_resolution, horizon, repetition, unplugged_mean,
             # Checks how many cars are at home state
             for car_label in range(1, max_number_of_cars + 1):
 
-                if departure[day, car_label] < current_time_step[1] < arrival[day, car_label]:
-                    total_parking_cars += 0
+                if unplugged_mean < plugged_mean:
+                    if departure[day, car_label] < current_time_step[1] < arrival[day, car_label]:
+                        total_parking_cars += 0
+                    else:
+                        total_parking_cars += 1
                 else:
-                    total_parking_cars += 1
+                    if arrival[day, car_label] < current_time_step[1] < departure[day, car_label]:
+                        total_parking_cars += 1
+                    else:
+                        total_parking_cars += 0
 
             # Use this as a proof for hosting n cars at HH:MM
             position_proof[current_time_step, total_parking_cars] += 1 / repetition
