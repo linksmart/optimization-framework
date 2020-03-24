@@ -128,7 +128,8 @@ class ErrorReporting(DataPublisher):
         end_time = start_time + self.dT_in_seconds*self.horizon_in_steps
         data = self.raw_data.get_raw_data_by_time(self.raw_data_file_container, self.topic_name, start_time, end_time)
         data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
-        data = data[:-1]
+        #data = data[:-1]
+        data = data[:self.horizon_in_steps]
         new_data = {}
         for t, v in data:
             bucket = self.time_to_bucket(t, start_of_day)
