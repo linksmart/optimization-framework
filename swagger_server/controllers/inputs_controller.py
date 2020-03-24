@@ -320,7 +320,8 @@ def get_data_source_values(id):  # noqa: E501
             if os.path.exists(file_registry):
                 with open(file_registry, "r") as infile:
                     response = json.load(infile)
-            return FileInputSource.from_dict(response)
+            #return FileInputSource.from_dict(response)
+            return response
     except Exception as e:
         logger.error("error reading registry " + str(e))
     return "error"
@@ -346,7 +347,8 @@ def get_mqtt_data_source_values(id):  # noqa: E501
             if os.path.exists(mqtt_registry):
                 with open(mqtt_registry, "r") as infile:
                     response = json.load(infile)
-            return MQTTInputSource.from_dict(response)
+            #return MQTTInputSource.from_dict(response)
+            return response
     except Exception as e:
         logger.error("error reading registry " + str(e))
     return None
@@ -474,7 +476,8 @@ def get_all_data_source_values():  # noqa: E501
             result = get_data_source_values(id)
             if result is not None:
                 response[id] = result
-    return FileOutputAll.from_dict(response)
+    #return FileOutputAll.from_dict(response)
+    return response
 
 
 def get_all_mqtt_data_source_values():  # noqa: E501
@@ -492,7 +495,8 @@ def get_all_mqtt_data_source_values():  # noqa: E501
             result = get_mqtt_data_source_values(id)
             if result is not None:
                 response[id] = result
-    return MQTTOutputAll.from_dict(response)
+    #return MQTTOutputAll.from_dict(response)
+    return response
 
 
 def get_all_mqtt_data_source_ids():  # noqa: E501
