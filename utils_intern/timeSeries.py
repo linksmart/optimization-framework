@@ -3,6 +3,7 @@ Created on Nov 12 11:21 2019
 
 @author: nishit
 """
+import pandas as pd
 
 class TimeSeries:
 
@@ -87,3 +88,40 @@ class TimeSeries:
             return False
         except Exception:
             return False
+
+    @staticmethod
+    def panda_resample(raw_data, dT, append_next_dT = False):
+        # Not working as expected
+        if TimeSeries.valid_time_series(raw_data):
+            if append_next_dT:
+                raw_data = TimeSeries.append_next_dT_value(raw_data, dT)
+
+            df = pd.DataFrame(raw_data, columns=["time", "val"])
+            df['time'] = pd.to_datetime(df['time'], unit='s')
+            df.set_index('time', inplace=True)
+
+            ratio = str(dT) + "S"
+
+            df_result = df.resample(ratio).mean()
+            if df_result.isnull().values.any():
+                df_result = df.resample(ratio).interpolate()
+            if df_result.isnull().values.any():
+                df_result = df.resample(ratio).mean().interpolate()
+                df_result.fillna(method='pad')
+
+            df_result.reset_index(level=0, inplace=True)
+            df_result["time"] = (df_result["time"] - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
+
+            new_data = []
+            for row in df_result.values:
+                new_data.append([int(row[0]), float(row[1])])
+
+            new_t = new_data[0][0]
+            raw_t = raw_data[0][0]
+
+            if new_t < raw_t:
+                new_data = new_data[1:]
+
+            return new_data
+        else:
+            return raw_data

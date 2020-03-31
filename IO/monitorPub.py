@@ -26,6 +26,7 @@ class MonitorPub:
         self.host, host_params, self.qos, self.topic, self.port = ConfigParserUtils.extract_host_params(self.host, self.port,
                                                                                                    self.topic_params,
                                                                                                    self.config, None)
+        self.mqtt = None
         self.init_mqtt()
 
     def init_mqtt(self):
@@ -37,8 +38,14 @@ class MonitorPub:
             self.logger.error(e)
 
     def send_monitor_ping(self, control_frequency):
-        msg = self.to_senml(control_frequency)
-        self.mqtt.publish(self.topic, msg, qos=self.qos)
+        try:
+            if self.mqtt:
+                msg = self.to_senml(control_frequency)
+                self.mqtt.publish(self.topic, msg, qos=self.qos)
+            else:
+                self.logger.warning("mqtt not initialized")
+        except Exception as e:
+            self.logger.error("Error sending monitor ping "+str(e))
 
     def to_senml(self, value):
         meas = senml.SenMLMeasurement()
