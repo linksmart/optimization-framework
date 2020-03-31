@@ -3,7 +3,7 @@ Created on Nov 12 11:21 2019
 
 @author: nishit
 """
-import pandas as pd
+#import pandas as pd
 
 class TimeSeries:
 
@@ -89,6 +89,7 @@ class TimeSeries:
         except Exception:
             return False
 
+    """
     @staticmethod
     def panda_resample(raw_data, dT, append_next_dT = False):
         # Not working as expected
@@ -124,4 +125,4 @@ class TimeSeries:
 
             return new_data
         else:
-            return raw_data
+            return raw_data """
