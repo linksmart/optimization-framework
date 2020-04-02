@@ -11,16 +11,13 @@ import threading
 import time
 from queue import Queue
 
-from senml import senml
-
-from IO.dataReceiver import DataReceiver
 from IO.radiation import Radiation
 from IO.redisDB import RedisDB
-from optimization.genericDataReceiver import GenericDataReceiver
 from optimization.pvForecastPublisher import PVForecastPublisher
 from prediction.predictionDataManager import PredictionDataManager
 from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
+from utils_intern.timeSeries import TimeSeries
 from utils_intern.utilFunctions import UtilFunctions
 
 
@@ -39,6 +36,7 @@ class PVPrediction(threading.Thread):
         self.control_frequency = 60
         self.id = id
         self.horizon_in_steps = horizon_in_steps
+        self.dT_in_seconds = dT_in_seconds
         self.old_predictions = {}
         self.output_config = output_config
         self.raw_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id,
@@ -108,14 +106,14 @@ class PVPrediction(threading.Thread):
                 pv_data = json.loads(data)
                 self.base_data = pv_data
                 self.logger.debug("pv data = "+str(self.base_data))
-                delay = self.get_delay_time(23, 30)
-                while delay > 100 or not self.stopRequest.is_set():
+                delay = self.get_delay_time(23, 30) + 1
+                while delay > 0 or not self.stopRequest.is_set():
                     time.sleep(30)
                     delay -= 30
                 if self.stopRequest.is_set():
                     break
-                delay = self.get_delay_time(23, 30)
-                time.sleep(delay)
+                #delay = self.get_delay_time(23, 30)
+                #time.sleep(delay)
             except Exception as e:
                 self.logger.error(e)
                 time.sleep(10)
@@ -151,27 +149,33 @@ class PVPrediction(threading.Thread):
                 self.logger.debug("pv data in run is "+str(data))
                 if len(data) > 0:
                     value = data[0][1]
-                    self.logger.debug("base_data = "+str(self.base_data))
-                    adjusted_data = self.adjust_data(value)
-                    self.q.put(adjusted_data)
-                    self.old_predictions[int(time.time())] = adjusted_data
+                    current_timestamp = data[0][0]
+                    self.logger.debug("pv received timestamp "+str(current_timestamp)+ " val "+str(value))
+                    shifted_base_data = TimeSeries.shift_by_timestamp(self.base_data, current_timestamp, self.dT_in_seconds)
+                    self.logger.debug("base_data = "+str(shifted_base_data))
+                    adjusted_data = self.adjust_data(shifted_base_data, value, current_timestamp)
+                    predicted_data = self.extract_horizon_data(adjusted_data)
+                    self.logger.debug("pv predicted timestamp "+str(predicted_data[0][0]))
+                    if predicted_data is not None and len(predicted_data) > 0:
+                        self.q.put(predicted_data)
+                        self.old_predictions[int(predicted_data[0][0])] = predicted_data
                 start = self.control_frequency - (time.time() - start)
                 if start > 0:
                     time.sleep(start)
             except Exception as e:
                 self.logger.error(str(self.generic_name) + " prediction thread exception " + str(e))
 
-    def adjust_data(self, value):
+    def adjust_data(self, shifted_base_data, value, current_timestamp):
         new_data = []
-        if len(self.base_data) > 0:
-            current_timestamp = datetime.datetime.now().timestamp()
-            closest_index = self.find_closest_prev_timestamp(self.base_data, current_timestamp)
-            base_value = self.base_data[closest_index][1]
+        if len(shifted_base_data) > 0:
+            closest_index = self.find_closest_prev_timestamp(shifted_base_data, current_timestamp)
+            self.logger.debug("closest index = "+str(closest_index))
+            base_value = shifted_base_data[closest_index][1]
             #if value < 1:
                 #value = 1
             factor = value - base_value
             self.logger.debug("closest index = " + str(base_value)+" value = "+ str(value) +" factor = "+str(factor))
-            for row in self.base_data:
+            for row in shifted_base_data:
                 new_value = row[1]+factor
                 if new_value < 0:
                     new_value = 0
@@ -190,6 +194,31 @@ class PVPrediction(threading.Thread):
                 break
         return closest
 
+    def find_closest_next_timestamp(self, data, date):
+        closest = len(data) - 1
+        for i in reversed(range(len(data))):
+            item = data[i]
+            if item[0] > date:
+                closest = i
+            else:
+                break
+        return closest
+
+    def extract_horizon_data(self, predicted_data):
+        new_data = []
+        if len(predicted_data) > 0:
+            current_timestamp = datetime.datetime.now().timestamp()
+            closest_index = self.find_closest_prev_timestamp(predicted_data, current_timestamp)
+            for i in range(self.horizon_in_steps):
+                row = predicted_data[closest_index]
+                new_data.append([row[0], row[1]])
+                closest_index += 1
+                if closest_index >= len(predicted_data):
+                    closest_index = 0
+            return new_data
+        else:
+            return None
+
     def save_to_file_cron(self):
         self.logger.debug("Started save file cron")
         while True and not self.stopRequest.is_set():
@@ -198,3 +227,4 @@ class PVPrediction(threading.Thread):
                                                                                   self.prediction_data_file_container,
                                                                                   self.generic_name)
             time.sleep(UtilFunctions.get_sleep_secs(1,0,0))
+            #time.sleep(UtilFunctions.get_sleep_secs(0, 2, 0))

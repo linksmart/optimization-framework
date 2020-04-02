@@ -3,12 +3,12 @@ Created on Nov 12 11:21 2019
 
 @author: nishit
 """
-#import pandas as pd
+# import pandas as pd
 
 class TimeSeries:
 
     @staticmethod
-    def expand_and_resample(raw_data, dT, append_next_dT = False):
+    def expand_and_resample(raw_data, dT, append_next_dT=False):
         if TimeSeries.valid_time_series(raw_data):
             if append_next_dT:
                 raw_data = TimeSeries.append_next_dT_value(raw_data, dT)
@@ -55,7 +55,7 @@ class TimeSeries:
             start_time = raw_data[0][0]
             end_time = raw_data[-1][0]
             time_diff = end_time - start_time
-            time_diff = time_diff + time_diff/(len(raw_data)-1)
+            time_diff = time_diff + time_diff / (len(raw_data) - 1)
             changed_time_data = TimeSeries.increment_time(raw_data, time_diff)
             i = 0
             dt_diff = 0
@@ -71,10 +71,9 @@ class TimeSeries:
         if len(raw_data) > 0:
             new_data = []
             for t, v in raw_data:
-                new_data.append([t+time_diff,v])
+                new_data.append([t + time_diff, v])
             return new_data
         return raw_data
-
 
     @staticmethod
     def valid_time_series(raw_data):
@@ -83,12 +82,30 @@ class TimeSeries:
                 if len(raw_data) > 0:
                     sample = raw_data[0]
                     if len(sample) == 2:
-                        if (isinstance(sample[0], float) or isinstance(sample[0], int)) and (isinstance(sample[1], float) or isinstance(sample[1], int)):
+                        if (isinstance(sample[0], float) or isinstance(sample[0], int)) and (
+                                isinstance(sample[1], float) or isinstance(sample[1], int)):
                             return True
             return False
         except Exception:
             return False
 
+    @staticmethod
+    def shift_by_timestamp(data, timestamp, dT_in_seconds):
+        if len(data) > 0:
+            if TimeSeries.valid_time_series(data):
+                data_start_time = data[0][0]
+                time_shift_required = (timestamp - data_start_time) % dT_in_seconds
+                ratio = time_shift_required/dT_in_seconds
+                new_data = []
+                for i in range(len(data) - 1):
+                    start_time = data[i][0]
+                    start_value = data[i][1]
+                    end_value = data[i + 1][1]
+                    inter_value = start_value + (end_value - start_value) * ratio
+                    inter_time = start_time + time_shift_required
+                    new_data.append([inter_time, inter_value])
+                return new_data
+        return data
     """
     @staticmethod
     def panda_resample(raw_data, dT, append_next_dT = False):

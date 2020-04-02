@@ -112,7 +112,7 @@ class PredictionDataManager:
                     values = ",".join(data)
                     values = str(start_time) + "," + values + "\n"
                     old_data.append(values)
-                old_data = old_data[-4320:]  # 3 days data, assuming 1 prediction every min
+                old_data = old_data[-5600:]  # 4 days data, assuming 1 prediction every min
                 logger.info("Saving prediction data to file " + str(prediction_data_file_container))
                 with open(prediction_data_file_container, 'w+') as file:
                     file.writelines(old_data)

@@ -44,7 +44,7 @@ class PVForecastPublisher(DataPublisher):
                 self.q.task_done()
                 self.pv_data = new_data
                 self.logger.debug("extract pv data")
-                data = self.extract_horizon_data()
+                data = self.convert_to_senml()
                 return data
             except Exception:
                 self.logger.error("Queue empty")
@@ -52,17 +52,11 @@ class PVForecastPublisher(DataPublisher):
             self.logger.debug("PV Queue empty")
             return None
 
-    def extract_horizon_data(self):
+    def convert_to_senml(self):
         meas = []
         if len(self.pv_data) > 0:
-            current_timestamp = datetime.datetime.now().timestamp()
-            closest_index = self.find_closest_prev_timestamp(self.pv_data, current_timestamp)
-            for i in range(self.horizon_in_steps):
-                row = self.pv_data[closest_index]
+            for row in self.pv_data:
                 meas.append(self.get_senml_meas(float(row[1]), row[0]))
-                closest_index += 1
-                if closest_index >= len(self.pv_data):
-                    closest_index = 0
         doc = senml.SenMLDocument(meas)
         val = doc.to_json()
         return json.dumps(val)

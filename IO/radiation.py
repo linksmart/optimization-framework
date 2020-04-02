@@ -23,7 +23,7 @@ logger = MessageLogger.get_logger_parent()
 # W10   = Wind speed at 10m (m/s)
 
 class RadiationData:
-    def __init__(self, date=datetime.datetime.now(), pv_output=0.0):
+    def __init__(self, date, pv_output):
         self.date = datetime.datetime(date.year, date.month, date.day, date.hour, 0)
         self.pv_output = pv_output
 
@@ -49,6 +49,8 @@ class Radiation:
         self.pv_data_path = os.path.join("/usr/src/app/", pv_data_base_path,
                                          "pv_data_" + str(self.city.casefold()) + "_" + str(self.country.casefold()) + ".txt")
 
+    # values from api are sampled at 55 min mark every hour,
+    # and we assume it to be for next hr (5min shift)
     def get_data(self):
         pv_data = self.read_data_from_file()
         if pv_data is None:
@@ -90,7 +92,7 @@ class Radiation:
                 if w.__len__() != 9:
                     break
                 date_file = datetime.datetime.strptime(w[0], "%Y%m%d:%H%M%S")
-                date = datetime.datetime(2000, date_file.month, date_file.day, date_file.hour, date_file.minute)
+                date = datetime.datetime(2016, date_file.month, date_file.day, date_file.hour, date_file.minute)
                 rad_data.append(RadiationData(date, w[1]))
             we = sorted(rad_data, key=lambda w: w.date)
             return we
@@ -127,14 +129,17 @@ class Radiation:
     def adjust_data_for_max_PV(self, data):
         return [float(i) * self.maxPV for i in data]
 
+    # values from api are sampled at 55 min mark every hour,
+    # and we assume it to be for next hr (5min shift)
     def get_row_by_time(self):
-        start_date = datetime.datetime.now().replace(year=2016, month=1, day=1, hour=0, minute=0, second=0,
+        start_date = datetime.datetime.now().replace(year=2016, month=1, day=1, hour=1, minute=0, second=0,
                                                      microsecond=0)
-        current_date = datetime.datetime.now().replace(year=2016, minute=0, second=0, microsecond=0)
-        date = datetime.datetime.now().replace(minute=0, second=0, microsecond=0)
-        total_seconds = (current_date - start_date).total_seconds()
+        now = datetime.datetime.now()
+        end_date = now.replace(year=2016, minute=0, second=0, microsecond=0)
+        present_date = now.replace(minute=0, second=0, microsecond=0)
+        total_seconds = (end_date - start_date).total_seconds()
         total_hrs = int(total_seconds / 3600)
-        return (total_hrs, date.timestamp())
+        return (total_hrs, present_date.timestamp())
 
     def filter_next_48_hrs(self, data):
         index, timestamp = self.get_row_by_time()
@@ -148,8 +153,8 @@ class Radiation:
     def append_timestamp(self, data, timestamp):
         new_data = []
         for row in data:
-            timestamp += 3600
             new_data.append([timestamp, row])
+            timestamp += 3600
         return new_data
 
     def format_data(self, raw_data):
