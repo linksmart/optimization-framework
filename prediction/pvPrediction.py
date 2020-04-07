@@ -66,13 +66,8 @@ class PVPrediction(threading.Thread):
         pv_forecast_topic = config.get("IO", "forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
         pv_forecast_topic["topic"] = pv_forecast_topic["topic"] + self.generic_name
-        self.base_data = {}
 
-        radiation = Radiation(config, self.maxPV, dT_in_seconds, location)
-        self.pv_thread = threading.Thread(target=self.get_pv_data_from_source, args=(radiation,))
-        self.pv_thread.start()
-
-        #self.raw_data = GenericDataReceiver(False, raw_pv_data_topic, config, self.generic_name, id, 1, dT_in_seconds)
+        self.radiation = Radiation(config, self.maxPV, dT_in_seconds, location, horizon_in_steps)
 
         self.max_file_size_mins = config.getint("IO", "pv.raw.data.file.size", fallback=10800)
 
@@ -96,34 +91,6 @@ class PVPrediction(threading.Thread):
                                               self.raw_data_file_container, error_topic_params,
                                               self.error_result_file_path, self.output_config)
         self.error_reporting.start()
-
-    def get_pv_data_from_source(self, radiation):
-        """PV Data fetch thread. Runs at 23:30 every day"""
-        while not self.stopRequest.is_set():
-            try:
-                self.logger.info("Fetching pv data from radiation api")
-                data = radiation.get_data()
-                pv_data = json.loads(data)
-                self.base_data = pv_data
-                self.logger.debug("pv data = "+str(self.base_data))
-                delay = self.get_delay_time(23, 30) + 1
-                while delay > 0 or not self.stopRequest.is_set():
-                    time.sleep(30)
-                    delay -= 30
-                if self.stopRequest.is_set():
-                    break
-                #delay = self.get_delay_time(23, 30)
-                #time.sleep(delay)
-            except Exception as e:
-                self.logger.error(e)
-                time.sleep(10)
-
-    def get_delay_time(self, hour, min):
-        date = datetime.datetime.now()
-        requestedTime = datetime.datetime(date.year, date.month, date.day, hour, min, 0)
-        if requestedTime < date:
-            requestedTime = requestedTime + datetime.timedelta(days=1)
-        return requestedTime.timestamp() - date.timestamp()
 
     def Stop(self):
         self.logger.debug("Stopping pv forecast thread")
@@ -151,7 +118,8 @@ class PVPrediction(threading.Thread):
                     value = data[0][1]
                     current_timestamp = data[0][0]
                     self.logger.debug("pv received timestamp "+str(current_timestamp)+ " val "+str(value))
-                    shifted_base_data = TimeSeries.shift_by_timestamp(self.base_data, current_timestamp, self.dT_in_seconds)
+                    base_data = self.radiation.get_data(current_timestamp)
+                    shifted_base_data = TimeSeries.shift_by_timestamp(base_data, current_timestamp, self.dT_in_seconds)
                     self.logger.debug("base_data = "+str(shifted_base_data))
                     adjusted_data = self.adjust_data(shifted_base_data, value, current_timestamp)
                     predicted_data = self.extract_horizon_data(adjusted_data)
@@ -174,7 +142,7 @@ class PVPrediction(threading.Thread):
             #if value < 1:
                 #value = 1
             factor = value - base_value
-            self.logger.debug("closest index = " + str(base_value)+" value = "+ str(value) +" factor = "+str(factor))
+            self.logger.debug("closest index value = " + str(base_value)+" mqtt value = "+ str(value) +" factor = "+str(factor))
             for row in shifted_base_data:
                 new_value = row[1]+factor
                 if new_value < 0:
