@@ -253,6 +253,9 @@ class OptControllerStochastic(ControllerBase):
 
                     # retrieve the solutions
                     try:
+                        if timestep == (self.horizon_in_steps - 1):
+                            self.logger.debug("20 sec sleep")
+                            time.sleep(20)
                         futures = []
                         with concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers) as executor:
                             #submit_ctr = 0
