@@ -315,10 +315,10 @@ class OptControllerStochastic(ControllerBase):
                 self.erase_pyomo_files(folder)
                 if self.redisDB.get_bool(self.stop_signal_key):
                     break
-                #Decision.clear()
-                #Value.clear()
-                #data_dict.clear()
-                continue
+                if self.repetition == -1:
+                    continue
+                else:
+                    break
             else:
 
                 self.logger.debug("Flag loop_fail is False")
@@ -399,55 +399,63 @@ class OptControllerStochastic(ControllerBase):
 
                     #############################################################################
                     # This section decides what to do with the non utilized virtual capacity charging power
-                    sample_data = {}
-                    p_load_var = "P_Load_sample"
-                    P_PV_var = "P_PV_sample"
-                    sample = self.input.get_sample(p_load_var, self.redisDB)
-                    if sample is not None:
-                        sample_data.update(sample)
-                    sample = self.input.get_sample(P_PV_var, self.redisDB)
-                    if sample is not None:
-                        sample_data.update(sample)
+                    if self.repetition == -1:
+                        sample_data = {}
+                        p_load_var = "P_Load_sample"
+                        P_PV_var = "P_PV_sample"
+                        sample = self.input.get_sample(p_load_var, self.redisDB)
+                        if sample is not None:
+                            sample_data.update(sample)
+                        sample = self.input.get_sample(P_PV_var, self.redisDB)
+                        if sample is not None:
+                            sample_data.update(sample)
+    
+                        """
+                        sample_data = self.input.get_data_single(redisDB=self.redisDB)  # blocking call
+                        """
+                        self.logger.debug("single data at this moment "+str(sample_data))
+                        self.logger.debug("data keys "+str(sample_data.keys()))
+                        p_ev_single = 0
+                        if not sample_data == None:
+                            if not P_PV_var or not p_load_var in sample_data.keys():
+                                p_pv_now = p_pv
+                                p_load_now = p_load
+                                self.logger.debug("Not PV or Load data present")
+                            else:
+                                for name, value in sample_data.items():
+                                    if P_PV_var in name:
+                                        p_pv_now = value[0] / 1000
+                                        self.logger.debug("p_pv_now "+str(p_pv_now))
+                                    if p_load_var in name:
+                                        if self.single_ev:
+                                            p_load_now = value[0] / 1000
+                                        else:
+                                            p_load_now = value[0]
+                                        self.logger.debug("p_load_now "+str(p_load_now))
+    
+                            for charger, max_charge_power_of_car in connections.items():
+                                if charger in p_ev.keys():
+                                    p_ev_single += p_ev[charger]
+    
+                            if (p_pv_now - p_load_now - p_ev_single) < 0:
+                                if p_ess > (p_load_now + p_ev_single - p_pv_now):
+                                    p_ess = p_load_now + p_ev_single - p_pv_now
+                                    self.logger.debug("p_ess output changed to "+str(p_ess)+" kW")
+                            else:
+                                #if (p_pv_now - p_load_now - p_ev_single) < p_ess:
+                                if p_ess > 0:
+                                    #p_ess = p_pv_now - p_load_now - p_ev_single
+                                    p_ess = 0
+                                    self.logger.debug("p_ess output changed to " + str(p_ess) + " kW")
 
-                    """
-                    sample_data = self.input.get_data_single(redisDB=self.redisDB)  # blocking call
-                    """
-                    self.logger.debug("single data at this moment "+str(sample_data))
-                    self.logger.debug("data keys "+str(sample_data.keys()))
-                    p_ev_single = 0
-                    if not sample_data == None:
-                        if not P_PV_var or not p_load_var in sample_data.keys():
-                            p_pv_now = p_pv
-                            p_load_now = p_load
-                            self.logger.debug("Not PV or Load data present")
-                        else:
-                            for name, value in sample_data.items():
-                                if P_PV_var in name:
-                                    p_pv_now = value[0] / 1000
-                                    self.logger.debug("p_pv_now "+str(p_pv_now))
-                                if p_load_var in name:
-                                    if self.single_ev:
-                                        p_load_now = value[0] / 1000
-                                    else:
-                                        p_load_now = value[0]
-                                    self.logger.debug("p_load_now "+str(p_load_now))
-
+                    else:
+                        p_ev_single = 0
                         for charger, max_charge_power_of_car in connections.items():
                             if charger in p_ev.keys():
                                 p_ev_single += p_ev[charger]
 
-                        if (p_pv_now - p_load_now - p_ev_single) < 0:
-                            if p_ess > (p_load_now + p_ev_single - p_pv_now):
-                                p_ess = p_load_now + p_ev_single - p_pv_now
-                                self.logger.debug("p_ess output changed to "+str(p_ess)+" kW")
-                        else:
-                            #if (p_pv_now - p_load_now - p_ev_single) < p_ess:
-                            if p_ess > 0:
-                                #p_ess = p_pv_now - p_load_now - p_ev_single
-                                p_ess = 0
-                                self.logger.debug("p_ess output changed to " + str(p_ess) + " kW")
-
-                    self.logger.debug("p_ess "+str(p_ess) + " with load " + str(p_load) + " and p_ev " + str(p_ev_single))
+                    self.logger.debug(
+                        "p_ess " + str(p_ess) + " with load " + str(p_load) + " and p_ev " + str(p_ev_single))
 
                     self.logger.debug("Implemented actions")
                     self.logger.debug("PV generation: " + str(p_pv))

@@ -44,7 +44,7 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
     def main():
         options = {
             'bind': '%s:%s' % ('0.0.0.0', '8080'),
-            'workers': int(number_of_workers()),
+            'workers': 1,#int(number_of_workers()),
             'timeout': 300,
             'loglevel': None,
         }
