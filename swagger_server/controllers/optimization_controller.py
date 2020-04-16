@@ -16,6 +16,7 @@ import psutil
 from IO.MQTTClient import InvalidMQTTHostException
 
 from IO.redisDB import RedisDB
+from config.configUpdater import ConfigUpdater
 from optimization.ModelException import InvalidModelException, MissingKeysException
 from swagger_server.controllers.threadFactory import ThreadFactory
 from swagger_server.models.start import Start  # noqa: E501
@@ -26,6 +27,8 @@ from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 logger = MessageLogger.get_logger_parent()
 
+config_path = "/usr/src/app/optimization/resources/ConfigFile.properties"
+config = ConfigUpdater.get_config(config_path)
 
 class CommandController:
     _instance = None
@@ -259,7 +262,9 @@ class CommandController:
 
 
 variable = CommandController()
-variable.restart_ids(wait_time_between_instances=240)
+wait_time_between_instances = config.getint("IO", "wait.time.between.instances", fallback=60)
+print("################################wait_time_between_instances "+str(wait_time_between_instances))
+variable.restart_ids(wait_time_between_instances=wait_time_between_instances)
 
 
 def get_models():

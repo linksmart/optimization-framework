@@ -79,6 +79,14 @@ class ConfigUpdater:
         return config, logger
 
     @staticmethod
+    def get_config(config_path):
+        # Creating an object of the configuration file (standard values)
+        config = configparser.RawConfigParser()
+        config.optionxform = str
+        config.read(config_path)
+        return config
+
+    @staticmethod
     def set_redis_host(config):
         host = config.get("IO", "redis.host")
         Constants.redis_host = host
