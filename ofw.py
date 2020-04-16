@@ -72,17 +72,15 @@ def parseArgs():
 def main():
     global OPTIONS
 
-    logger, redisDB = setup()
+    logger, redisDB, config = setup()
 
     logger.debug("###################################")
     logger.info("OFW started")
     logger.debug("###################################")
     logger.debug("Starting name server and dispatch server")
-    #threading.Thread(target=StandaloneApplication.main).start()
-    p = multiprocessing.Process(target=StandaloneApplication.main)
+    number_of_workers = config.getint("IO", "number.of.gunicorn.workers", fallback=-1)
+    p = multiprocessing.Process(target=StandaloneApplication.main, args=(number_of_workers,))
     p.start()
-    #threading.Thread(target=PyroServerManagement.start_name_servers, args=(redisDB,)).start()
-    #threading.Thread(target=PyroServerManagement.start_pryo_mip_servers, args=(redisDB, 5,)).start()
     logger.info("Starting webserver")
     killer = GracefulKiller()
     #webserver.main()
@@ -127,7 +125,7 @@ def setup():
     subPort = config.get("IO", "zmq.sub.port")
     zmqForwarder = ForwarderDevice(zmqHost, pubPort, subPort)
     zmqForwarder.start()
-    return (logger, redisDB)
+    return (logger, redisDB, config)
 
 def copy_pv_files():
     pv_path = "/usr/src/app/optimization/pv_data"

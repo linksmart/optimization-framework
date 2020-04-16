@@ -41,10 +41,12 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
         return self.application
 
     @staticmethod
-    def main():
+    def main(workers):
+        if workers == -1:
+            workers = int(number_of_workers())
         options = {
             'bind': '%s:%s' % ('0.0.0.0', '8080'),
-            'workers': 1,#int(number_of_workers()),
+            'workers': workers,
             'timeout': 300,
             'loglevel': None,
         }
