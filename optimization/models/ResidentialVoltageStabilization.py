@@ -34,9 +34,7 @@ class Model:
     model.P_Load = Param(model.T, within=NonNegativeReals)  # active power of load
 
     # voltage control
-    model.voltage_prediction_R = Param(model.T, within=NonNegativeReals)  # measured voltage at node
-    model.voltage_prediction_S = Param(model.T, within=NonNegativeReals)  # measured voltage at node
-    model.voltage_prediction_T = Param(model.T, within=NonNegativeReals)  # measured voltage at node
+    model.voltage_prediction = Param(model.T, within=NonNegativeReals)  # measured voltage at node
 
     model.voltage_sensitivity_P = Param(within=Reals)  # voltage sensitivity factorof active power
 
@@ -58,9 +56,7 @@ class Model:
     model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))
 
     # voltage
-    model.voltage_calculated_R = Var(model.T, within=NonNegativeReals)
-    model.voltage_calculated_S = Var(model.T, within=NonNegativeReals)
-    model.voltage_calculated_T = Var(model.T, within=NonNegativeReals)
+    model.voltage_calculated = Var(model.T, within=NonNegativeReals)
 
     model.P_Fronius = Var(model.T, within=Reals, bounds=(-model.Fronius_Max_Power, model.Fronius_Max_Power),
                           initialize=0)
