@@ -193,6 +193,19 @@ class CommandController:
         ids_to_be_restarted = {k: v for k, v in sorted(ids_to_be_restarted.items(), key=lambda item: item[0])}
         print(ids_to_be_restarted)
         for key, value in ids_to_be_restarted.items():
+            if key == -1:
+                continue
+            for val in value:
+                try:
+                    self.start(val["id"], None, val, restart=True)
+                    time.sleep(wait_time_between_instances)
+                except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
+                    # TODO: should we catch these exceptions here?
+                    logger.error("Error " + str(e))
+                    self.redisDB.set("run:" + val["id"], "stopped")
+                    return str(e)
+        if -1 in ids_to_be_restarted.keys():
+            value = ids_to_be_restarted[-1]
             for val in value:
                 try:
                     self.start(val["id"], None, val, restart=True)
