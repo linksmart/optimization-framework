@@ -87,6 +87,10 @@ class CommandController:
             self.solver = json_object.solver
             self.optimization_type = json_object.optimization_type
             self.single_ev = json_object.single_ev
+            try:
+                self.priority = json_object.priority
+            except Exception:
+                self.priority = -1
         elif dict_object is not None:
             self.model_name = dict_object["model"]
             self.control_frequency = dict_object["control_frequency"]
@@ -96,7 +100,10 @@ class CommandController:
             self.solver = dict_object["solver"]
             self.optimization_type = dict_object["optimization_type"]
             self.single_ev = dict_object["single_ev"]
-
+            try:
+                self.priority = dict_object["priority"]
+            except Exception:
+                self.priority = -1
         self.set(id,
                  ThreadFactory(self.model_name, self.control_frequency, self.horizon_in_steps, self.dT_in_seconds,
                                self.repetition, self.solver, id, self.optimization_type, self.single_ev, restart))
@@ -120,6 +127,7 @@ class CommandController:
                          "solver": self.solver,
                          "optimization_type": self.optimization_type,
                          "single_ev": self.single_ev,
+                         "priority": self.priority,
                          "ztarttime": time.time()}
             self.redisDB.set("run:" + id, "running")
             IDStatusManager.persist_id(id, True, meta_data, self.redisDB)
@@ -169,17 +177,31 @@ class CommandController:
                 break
             time.sleep(1)
 
-    def restart_ids(self):
+    def restart_ids(self, wait_time_between_instances):
         old_ids, stopped_ids = IDStatusManager.instances_to_restart(self.redisDB)
+        ids_to_be_restarted = {}
         for s in old_ids:
             val = json.loads(s)
-            try:
-                self.start(val["id"], None, val, restart=True)
-            except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
-                # TODO: should we catch these exceptions here?
-                logger.error("Error " + str(e))
-                self.redisDB.set("run:" + val["id"], "stopped")
-                return str(e)
+            if "priority" in val.keys():
+                priority = val["priority"]
+            else:
+                val["priority"] = -1
+                priority = -1
+            if priority not in ids_to_be_restarted.keys():
+                ids_to_be_restarted[priority] = []
+            ids_to_be_restarted[priority].append(val)
+        ids_to_be_restarted = {k: v for k, v in sorted(ids_to_be_restarted.items(), key=lambda item: item[0])}
+        print(ids_to_be_restarted)
+        for key, value in ids_to_be_restarted.items():
+            for val in value:
+                try:
+                    self.start(val["id"], None, val, restart=True)
+                    time.sleep(wait_time_between_instances)
+                except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
+                    # TODO: should we catch these exceptions here?
+                    logger.error("Error " + str(e))
+                    self.redisDB.set("run:" + val["id"], "stopped")
+                    return str(e)
         for s in stopped_ids:
             val = json.loads(s)
             id = val["id"]
@@ -224,7 +246,7 @@ class CommandController:
 
 
 variable = CommandController()
-variable.restart_ids()
+variable.restart_ids(wait_time_between_instances=240)
 
 
 def get_models():

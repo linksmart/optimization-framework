@@ -15,7 +15,7 @@ class Start(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, repetition: int=None, control_frequency: int=None, horizon_in_steps: int=None, model_name: str=None, solver: str=None, d_t_in_seconds: int=None, optimization_type: str=None, single_ev: bool=False):  # noqa: E501
+    def __init__(self, repetition: int=None, control_frequency: int=None, horizon_in_steps: int=None, model_name: str=None, solver: str=None, d_t_in_seconds: int=None, optimization_type: str=None, single_ev: bool=False, priority: int=-1):  # noqa: E501
         """Start - a model defined in Swagger
 
         :param repetition: The repetition of this Start.  # noqa: E501
@@ -34,6 +34,8 @@ class Start(Model):
         :type optimization_type: str
         :param single_ev: The single_ev of this Start.  # noqa: E501
         :type single_ev: bool
+        :param priority: The priority of this Start.  # noqa: E501
+        :type priority: int
         """
         self.swagger_types = {
             'repetition': int,
@@ -43,7 +45,8 @@ class Start(Model):
             'solver': str,
             'd_t_in_seconds': int,
             'optimization_type': str,
-            'single_ev': bool
+            'single_ev': bool,
+            'priority': int
         }
 
         self.attribute_map = {
@@ -54,7 +57,8 @@ class Start(Model):
             'solver': 'solver',
             'd_t_in_seconds': 'dT_in_seconds',
             'optimization_type': 'optimization_type',
-            'single_ev': 'single_ev'
+            'single_ev': 'single_ev',
+            'priority': 'priority'
         }
 
         self._repetition = repetition
@@ -65,6 +69,7 @@ class Start(Model):
         self._d_t_in_seconds = d_t_in_seconds
         self._optimization_type = optimization_type
         self._single_ev = single_ev
+        self._priority = priority
 
     @classmethod
     def from_dict(cls, dikt) -> 'Start':
@@ -254,3 +259,24 @@ class Start(Model):
         """
 
         self._single_ev = single_ev
+
+    @property
+    def priority(self) -> int:
+        """Gets the priority of this Start.
+
+
+        :return: The priority of this Start.
+        :rtype: int
+        """
+        return self._priority
+
+    @priority.setter
+    def priority(self, priority: int):
+        """Sets the priority of this Start.
+
+
+        :param priority: The priority of this Start.
+        :type priority: int
+        """
+
+        self._priority = priority
