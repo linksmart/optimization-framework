@@ -181,6 +181,7 @@ class CommandController:
             time.sleep(1)
 
     def restart_ids(self, wait_time_between_instances):
+        time.sleep(5)
         old_ids, stopped_ids = IDStatusManager.instances_to_restart(self.redisDB)
         ids_to_be_restarted = {}
         for s in old_ids:

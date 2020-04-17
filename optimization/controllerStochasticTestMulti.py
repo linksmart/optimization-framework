@@ -4,7 +4,7 @@ Created on Fri Mar 16 15:05:36 2018
 
 @author: garagon
 """
-
+import os
 import time
 import concurrent.futures
 from itertools import product
@@ -12,6 +12,7 @@ import math
 import gc
 
 import numpy as np
+import psutil
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
 from stopit import threading_timeoutable as timeoutable  #doctest: +SKIP
@@ -190,6 +191,17 @@ class OptControllerStochastic(ControllerBase):
 
         return (ess_soc_states, ess_decision_domain)
 
+    import signal
+
+    def kill_child_processes(parent_pid, sig=signal.SIGTERM):
+        try:
+            parent = psutil.Process(parent_pid)
+        except psutil.NoSuchProcess:
+            return
+        children = parent.children(recursive=True)
+        for process in children:
+            process.send_signal(sig)
+    
     def optimize(self, count, solver_name, model_path):
         #self.logger.debug("##############  testsf")
         while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
@@ -253,13 +265,13 @@ class OptControllerStochastic(ControllerBase):
 
                     # retrieve the solutions
                     try:
-                        if timestep == (self.horizon_in_steps - 1):
-                            self.logger.debug("20 sec sleep")
-                            time.sleep(20)
+                        """if timestep == (self.horizon_in_steps - 1):
+                            self.logger.debug("20 sec sleep. Only once")
+                            time.sleep(20)"""
                         futures = []
                         with concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers) as executor:
-                            #submit_ctr = 0
                             if self.single_ev:
+                                self.logger.debug("Entering to ProcessPoolExecutor single ev")
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc, position = combination
                                     futures.append(
@@ -267,9 +279,9 @@ class OptControllerStochastic(ControllerBase):
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
-                                    #self.logger.debug("submit_ctr = "+str(submit_ctr))
-                                    #submit_ctr += 1
+
                             else:
+                                self.logger.debug("Entering to ProcessPoolExecutor")
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc = combination
                                     futures.append(
@@ -277,15 +289,11 @@ class OptControllerStochastic(ControllerBase):
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
                                                         solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
-                                    #self.logger.debug("submit_ctr = " + str(submit_ctr))
-                                    #submit_ctr += 1
+
                             try:
-                                #future_ctr = 0
                                 self.logger.debug("Entering to futures")
-                                for future in concurrent.futures.as_completed(futures):
+                                for future in concurrent.futures.as_completed(futures,timeout=60):
                                     try:
-                                        #self.logger.debug("future_ctr = "+str(future_ctr))
-                                        #future_ctr += 1
                                         d, v = future.result()
                                         if d is None and v is None:
                                             loop_fail = True
@@ -299,13 +307,12 @@ class OptControllerStochastic(ControllerBase):
                             except Exception as e:
                                 self.logger.error("One future failed. "+str(e))
                                 loop_fail = True
+                                executor.shutdown(wait=False)
+                                self.kill_child_processes(os.getpid())
                     except Exception as e:
                         self.logger.error(e)
                         loop_fail = True
 
-                    #value_index.clear()
-                    #value.clear()
-                    #bm.clear()
 
                     if loop_fail:
                         self.logger.error("ERROR: Optimization calculation was not possible. Process will be repeated")
