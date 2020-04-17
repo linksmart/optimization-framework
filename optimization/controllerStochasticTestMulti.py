@@ -10,7 +10,7 @@ import concurrent.futures
 from itertools import product
 import math
 import gc
-
+import signal
 import numpy as np
 import psutil
 from pyomo.environ import *
@@ -191,15 +191,18 @@ class OptControllerStochastic(ControllerBase):
 
         return (ess_soc_states, ess_decision_domain)
 
-    import signal
+    
 
-    def kill_child_processes(parent_pid, sig=signal.SIGTERM):
+    def kill_child_processes(self, parent_pid, sig=signal.SIGTERM):
         try:
             parent = psutil.Process(parent_pid)
+            self.logger.debug("parent "+str(parent))
         except psutil.NoSuchProcess:
+            self.logger.error("No such parent ")
             return
         children = parent.children(recursive=True)
         for process in children:
+            self.logger.debug("killing process "+str(process))
             process.send_signal(sig)
     
     def optimize(self, count, solver_name, model_path):
@@ -307,7 +310,9 @@ class OptControllerStochastic(ControllerBase):
                             except Exception as e:
                                 self.logger.error("One future failed. "+str(e))
                                 loop_fail = True
+                                self.logger.error("Executor shutdown")
                                 executor.shutdown(wait=False)
+                                self.logger.error("Kill child processes")
                                 self.kill_child_processes(os.getpid())
                     except Exception as e:
                         self.logger.error(e)
