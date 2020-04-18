@@ -20,6 +20,8 @@ from stopit import threading_timeoutable as timeoutable  #doctest: +SKIP
 import pyutilib.subprocess.GlobalData
 import importlib.machinery
 import importlib.util
+from pebble import ProcessPool, ProcessExpired
+
 
 from optimization.controllerBase import ControllerBase
 from optimization.idStatusManager import IDStatusManager
@@ -271,50 +273,53 @@ class OptControllerStochastic(ControllerBase):
                         """if timestep == (self.horizon_in_steps - 1):
                             self.logger.debug("20 sec sleep. Only once")
                             time.sleep(20)"""
-                        
-                        with concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers) as executor:
+                        with ProcessPool(max_workers=self.number_of_workers) as pool:
+                            self.logger.debug("Using pebble")
                             futures = []
                             if self.single_ev:
                                 self.logger.debug("Entering to ProcessPoolExecutor single ev")
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc, position = combination
-                                    futures.append(
-                                        executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                    futures.append(pool.schedule(OptControllerStochastic.create_instance_and_solve, args=(data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position),  timeout=self.stochastic_timeout))
 
                             else:
                                 self.logger.debug("Entering to ProcessPoolExecutor")
                                 for combination in ess_vac_product:
                                     ini_ess_soc, ini_vac_soc = combination
-                                    futures.append(
-                                        executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                    futures.append(pool.schedule(OptControllerStochastic.create_instance_and_solve, args=(data_dict,
                                                         ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                         vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
+                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc), timeout=self.stochastic_timeout))
+                            
+                            iterator = (future.result() for future in futures)
 
-                            try:
-                                self.logger.debug("Entering to futures")
-                                for future in concurrent.futures.as_completed(futures,timeout=60):
-                                    try:
-                                        d, v = future.result()
-                                        if d is None and v is None:
-                                            loop_fail = True
-                                            self.logger.error("Optimization calculation was not possible. Process will be repeated")
-                                            break
-                                        Value.update(v)
-                                        Decision.update(d)
-                                    except Exception as exc:
-                                        self.logger.error("caused an exception: "+str(exc)+". Repeating the process")
+
+                            while True:
+                                try:
+                                    d, v = next(iterator)
+                                    
+                                    if d is None and v is None:
                                         loop_fail = True
-                            except Exception as e:
-                                self.logger.error("One future failed. "+str(e))
-                                loop_fail = True
-                                self.logger.error("Executor shutdown")
-                                executor.shutdown(wait=False)
-                                #self.logger.error("Kill child processes")
-                                #self.kill_child_processes(os.getpid())
+                                        self.logger.error("Optimization calculation was not possible. Process will be repeated")
+                                        break
+                                    Value.update(v)
+                                    Decision.update(d)
+                                        
+                                except StopIteration:
+                                    break
+                                except TimeoutError as error:
+                                    self.logger.error("function took longer than %d seconds" % error.args[1])
+                                    loop_fail = True
+                                except ProcessExpired as error:
+                                    self.logger.error("%s. Exit code: %d" % (error, error.exitcode))
+                                    loop_fail = True
+                                except Exception as error:
+                                    self.logger.error("function raised %s" % error)
+                                    loop_fail = True
+                                    print(error.traceback)  # Python's traceback of remote process
                     except Exception as e:
                         self.logger.error(e)
                         loop_fail = True

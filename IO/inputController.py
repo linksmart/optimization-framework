@@ -20,6 +20,8 @@ from optimization.genericEventDataReceiver import GenericEventDataReceiver
 from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
+from pebble import ThreadPool, ProcessExpired
+
 
 class InputController:
 
@@ -256,38 +258,64 @@ class InputController:
         #self.logger.info("sleep for data")
         #time.sleep(100)
         while not success:
-            if redisDB.get("End ofw") == "True":
+            
+            
+            if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
                 break
             self.logger.debug("Starting getting data")
             current_bucket = self.get_current_bucket()
             self.logger.info("Get input data for bucket " + str(current_bucket))
             self.logger.debug("optimization_data before getting new values "+str(self.optimization_data))
             try:
-                with concurrent.futures.ThreadPoolExecutor() as executor:
+                
+                with ThreadPool() as pool:
                     futures = []
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
-                                                   self.internal_receiver, [], [], current_bucket, self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.non_prediction_mqtt_flags,
-                                                   self.internal_receiver, [], [], current_bucket, self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,
-                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket, self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.preprocess_mqtt_flags,
-                                                   self.preprocess_data_receiver, [], ["SoC_Value"], current_bucket, self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
-                                                   self.generic_data_receiver, [], [], current_bucket, self.horizon_in_steps))
-                for future in concurrent.futures.as_completed(futures):
-                    try:
-                        success, read_data, mqtt_timer = future.result()
-                        self.logger.debug("Success flag for future in wait data: "+str(success))
-                        if success:
-                            self.update_data(read_data)
-                            self.mqtt_timer.update(mqtt_timer)
-                        else:
-                            self.logger.error("Success flag is False")
+            
+                    futures.append(pool.schedule(self.fetch_mqtt_and_file_data, args=(self.prediction_mqtt_flags,
+                                                   self.internal_receiver, [], [], current_bucket, self.horizon_in_steps)))
+                    futures.append(pool.schedule(self.fetch_mqtt_and_file_data, args=(self.non_prediction_mqtt_flags,
+                                                                                      self.internal_receiver, [], [],
+                                                                                      current_bucket,
+                                                                                      self.horizon_in_steps)))
+                    futures.append(pool.schedule(self.fetch_mqtt_and_file_data, args=(self.external_mqtt_flags,
+                                                                                      self.external_data_receiver, [], ["SoC_Value"],
+                                                                                      current_bucket,
+                                                                                      self.horizon_in_steps)))
+                    futures.append(pool.schedule(self.fetch_mqtt_and_file_data, args=(self.preprocess_mqtt_flags,
+                                                                                      self.preprocess_data_receiver, [],
+                                                                                      ["SoC_Value"],
+                                                                                      current_bucket,
+                                                                                      self.horizon_in_steps)))
+                    futures.append(pool.schedule(self.fetch_mqtt_and_file_data, args=(self.generic_data_mqtt_flags,
+                                                                                      self.generic_data_receiver, [],
+                                                                                      [],
+                                                                                      current_bucket,
+                                                                                      self.horizon_in_steps)))
+                
+                    iterator = (future.result() for future in futures)
+                    while True:
+                        try:
+                            success, read_data, mqtt_timer = next(iterator)
+                            self.logger.debug("Success flag for future in wait data: " + str(success))
+                            if success:
+                                self.update_data(read_data)
+                                self.mqtt_timer.update(mqtt_timer)
+                            else:
+                                self.logger.error("Success flag is False")
+                                pool.stop()
+                                break
+                        except StopIteration:
+                            self.logger.error("input fetch data caused an exception ")
+                            pool.stop()
                             break
-                    except Exception as exc:
-                        self.logger.error("input fetch data caused an exception: " + str(exc))
-                        break
+                        except TimeoutError as error:
+                            self.logger.error("function took longer than %d seconds" % error.args[1])
+                        except ProcessExpired as error:
+                            self.logger.error("%s. Exit code: %d" % (error, error.exitcode))
+                        except Exception as error:
+                            self.logger.error("function raised %s" % error)
+                            self.logger.error(error.traceback)  # Python's traceback of remote
+
             except Exception as e:
                 self.logger.error("Error occured while getting data for bucket "+str(current_bucket)+". "+str(e))
         if preprocess:
@@ -299,6 +327,7 @@ class InputController:
 
     def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket, number_of_steps):
         try:
+           
             self.logger.debug("mqtt flags " + str(mqtt_flags))
             self.logger.info("current bucket = "+str(current_bucket))
             data_available_for_bucket = True
