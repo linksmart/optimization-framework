@@ -258,8 +258,6 @@ class InputController:
         #self.logger.info("sleep for data")
         #time.sleep(100)
         while not success:
-            
-            
             if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
                 break
             self.logger.debug("Starting getting data")
