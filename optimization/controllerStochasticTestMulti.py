@@ -761,7 +761,7 @@ class OptControllerStochastic(ControllerBase):
                         result = optsolver.solve(instance)
                     except Exception as e:
                         print("Solving the model did not work on pyomo. "+str(e))
-                        #return (None, None)
+                        continue
     
                     if result is None:
                         print("result is none for " + str(v) + " repeat")
