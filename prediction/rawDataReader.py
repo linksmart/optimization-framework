@@ -85,7 +85,7 @@ class RawDataReader:
 
     @staticmethod
     def get_raw_data_by_time(file_path, topic_name, start_time, end_time):
-        logger.debug("start time "+str(start_time)+" end time "+str(end_time))
+        #logger.debug("start time "+str(start_time)+" end time "+str(end_time))
         flag = False
         new_data = []
         if start_time < end_time:
