@@ -26,6 +26,8 @@ from optimization.idStatusManager import IDStatusManager
 
 from pyutilib.services import TempfileManager
 
+from utils_intern.utilFunctions import UtilFunctions
+
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 ins_dict  = {}
@@ -279,6 +281,12 @@ class OptControllerStochastic(ControllerBase):
                     futures = []
                     # retrieve the solutions
                     try:
+                        command_to_write = "docker top ofw"
+                        UtilFunctions.execute_command(command_to_write, "top", "test")
+                    except Exception as e:
+                        print("error in running docker top " + str(e))
+
+                    try:
                         """if timestep == (self.horizon_in_steps - 1):
                             self.logger.debug("20 sec sleep. Only once")
                             time.sleep(20)"""
@@ -319,6 +327,12 @@ class OptControllerStochastic(ControllerBase):
                                     loop_fail = True
                                     break
                         except Exception as e:
+                            try:
+                                command_to_write = "docker top ofw"
+                                UtilFunctions.execute_command(command_to_write, "top", "test")
+                            except Exception as e:
+                                print("error in running docker top " + str(e))
+
                             self.logger.error("One future failed. "+str(e))
                             loop_fail = True
                             for f in futures:
