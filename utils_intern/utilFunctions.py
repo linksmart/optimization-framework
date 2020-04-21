@@ -1,7 +1,7 @@
 import datetime
 import shlex
 import subprocess
-
+from treelib import Node, Tree
 
 class UtilFunctions:
 
@@ -30,7 +30,101 @@ class UtilFunctions:
             print(service_name + " " + msg + " , pid = " + str(pid))
             print("Output: "+str(out.decode('utf-8')))
             print("Error: " + str(err))
-            return True
+            return str(out.decode('utf-8'))
         except Exception as e:
             print("error running the command " + str(command) + " " + str(e))
-            return False
+            return None
+
+    @staticmethod
+    def add_child_process_to_tree(tree, root, data):
+        if root in data.keys():
+            kids = data[root]
+            for kid in kids:
+                tree.create_node(kid, kid, parent=root)
+                UtilFunctions.add_child_process_to_tree(tree, kid, data)
+
+    @staticmethod
+    def get_pids_to_kill_from_docker_top(number_of_gunicorn_workers, number_of_process_pool):
+        try:
+            command_to_write = "docker top ofw"
+            output = UtilFunctions.execute_command(command_to_write, "top", "test")
+            if output is not None:
+                outputs = output.split("\n")
+                parent_child = {}
+                parents = {""}
+                childs = {""}
+                for i, line in enumerate(outputs):
+                    if i == 0:
+                        continue
+                    lines = line.split(" ")
+                    new_lines = []
+                    for value in lines:
+                        if len(value) != 0:
+                            new_lines.append(value)
+                    if len(new_lines) > 6:
+                        if "?" in new_lines[5]:
+                            print(new_lines)
+                            child = new_lines[1]
+                            parent = new_lines[2]
+                            parents.add(parent)
+                            childs.add(child)
+                            if parent not in parent_child.keys():
+                                parent_child[parent] = []
+                            parent_child[parent].append(child)
+                parents.remove("")
+                childs.remove("")
+
+                inter = parents.intersection(childs)
+                for i in inter:
+                    parents.remove(i)
+
+                parents = list(parents)
+
+                tree = Tree()
+                for parent in parents:
+                    tree.create_node(parent, parent)  # root
+
+                UtilFunctions.add_child_process_to_tree(tree, parents[0], parent_child)
+                print(tree.show())
+
+                root_pid = tree.root
+                ofw_pid = tree.children(root_pid)[0].tag
+                gunicorn_master_pid = tree.children(ofw_pid)[0].tag
+
+                pids = [root_pid, ofw_pid, gunicorn_master_pid]
+                pids_instance = {}
+                ctr = 0
+                instance_number = 0
+                for i, child in enumerate(tree.children(gunicorn_master_pid)):
+                    if i < number_of_gunicorn_workers:
+                        pids.append(child.tag)
+                    else:
+                        if ctr < number_of_process_pool:
+                            if instance_number not in pids_instance.keys():
+                                pids_instance[instance_number] = []
+                            pids_instance[instance_number].append(child.tag)
+                            ctr += 1
+                        else:
+                            ctr = 0
+                            instance_number += 1
+                print("root and swagger pids "+str(pids))
+                all_pids = pids.copy()
+                for pid in pids_instance.values():
+                    all_pids.extend(pid)
+                rest_pids = UtilFunctions.get_rest_pids(tree, all_pids)
+                return pids, pids_instance, rest_pids
+        except Exception as e:
+            print("exception getting pids "+str(e))
+            return None, None, None
+
+    @staticmethod
+    def get_rest_pids(tree, pids):
+        try:
+            other_pids = []
+            for node in tree.all_nodes_itr():
+                tag = node.tag
+                if tag not in pids:
+                    other_pids.append(tag)
+            return other_pids
+        except Exception as e:
+            print("error "+str(e))

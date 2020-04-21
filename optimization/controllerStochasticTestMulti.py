@@ -37,7 +37,8 @@ class OptControllerStochastic(ControllerBase):
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
         self.single_ev = single_ev
-        self.number_of_workers = int(config.get("SolverSection", "stochastic.multi.workers", fallback=6))
+        self.number_of_workers = config.getint("SolverSection", "stochastic.multi.workers", fallback=6)
+        self.number_of_gunicorn_workers = config.getint("IO", "number.of.gunicorn.workers", fallback=-1)
         self.stochastic_timeout = config.getint("SolverSection", "stochastic.timeout.sec", fallback=60)
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
@@ -281,12 +282,6 @@ class OptControllerStochastic(ControllerBase):
                     futures = []
                     # retrieve the solutions
                     try:
-                        command_to_write = "docker top ofw"
-                        UtilFunctions.execute_command(command_to_write, "top", "test")
-                    except Exception as e:
-                        print("error in running docker top " + str(e))
-
-                    try:
                         """if timestep == (self.horizon_in_steps - 1):
                             self.logger.debug("20 sec sleep. Only once")
                             time.sleep(20)"""
@@ -327,12 +322,6 @@ class OptControllerStochastic(ControllerBase):
                                     loop_fail = True
                                     break
                         except Exception as e:
-                            try:
-                                command_to_write = "docker top ofw"
-                                UtilFunctions.execute_command(command_to_write, "top", "test")
-                            except Exception as e:
-                                print("error in running docker top " + str(e))
-
                             self.logger.error("One future failed. "+str(e))
                             loop_fail = True
                             for f in futures:
@@ -344,6 +333,10 @@ class OptControllerStochastic(ControllerBase):
                             self.logger.error("Executor shutdown")
                             executor.shutdown(wait=False)
                             self.logger.error("Kill child processes")
+                            self.logger.debug("os.getpid "+str(os.getpid()))
+                            #TODO: pids
+                            root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
+                                self.number_of_gunicorn_workers, self.number_of_workers)
                             self.kill_child_processes(os.getpid())
                     except Exception as e:
                         self.logger.error("Calculation of ProcessPool failed"+ str(e))
