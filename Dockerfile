@@ -4,7 +4,8 @@
 #FROM garagon/solvers:amd_v5
 FROM garagon/solvers:amd_v6
 
-RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
+#RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
+RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon -p "$(openssl passwd -1 storage4grid)"
 
 
 # Set the working directory to usr/src/app
@@ -84,5 +85,6 @@ RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var
 RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
 
 RUN chown -R garagon /usr/src/app/
+
 USER garagon
 
