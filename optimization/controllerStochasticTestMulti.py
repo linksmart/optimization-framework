@@ -205,9 +205,9 @@ class OptControllerStochastic(ControllerBase):
         count =0
         for process in children:
             self.logger.debug("killing process "+str(process)+" type "+str(type(process)))
-            if "gurobi.sh" in process.name() or "python2.7" in process.name():
-                #process.send_signal(sig)
-                self.logger.debug("killing process " + str(process))
+            if "gurobi.sh" in process.name() or "python3.7" in process.name():
+                self.logger.debug("killing gurobi process " + str(process))
+                process.send_signal(sig)
             
         psutil.wait_procs(children, timeout=wait)
     
@@ -305,7 +305,7 @@ class OptControllerStochastic(ControllerBase):
 
                         try:
                             self.logger.debug("Entering to futures")
-                            for future in concurrent.futures.as_completed(futures,timeout=60):
+                            for future in concurrent.futures.as_completed(futures,timeout=120):
                                 try:
                                     d, v = future.result()
                                     if d is None and v is None:
@@ -342,6 +342,8 @@ class OptControllerStochastic(ControllerBase):
 
                         self.logger.error("Executor shutdown")
                         executor.shutdown(wait=False)
+                        self.logger.error("Kill child processes")
+                        self.kill_child_processes(os.getpid())
 
 
                     if loop_fail:
@@ -353,7 +355,9 @@ class OptControllerStochastic(ControllerBase):
                                 self.logger.error("future " + str(f) + " not cancelled")
 
                         self.logger.error("Executor shutdown")
-                        executor.shutdown(wait=True)
+                        executor.shutdown(wait=False)
+                        self.logger.error("Kill child processes")
+                        self.kill_child_processes(os.getpid())
                         break
             
             if loop_fail:
