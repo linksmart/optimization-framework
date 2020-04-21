@@ -1,3 +1,5 @@
+import os
+
 import paho.mqtt.client as mqtt
 import time
 
@@ -23,7 +25,10 @@ class MQTTClient:
             self.client.username_pw_set(username, password)
         if ca_cert_path is not None and len(ca_cert_path) > 0:
             self.logger.debug("ca " + ca_cert_path)
-            self.client.tls_set(ca_certs=ca_cert_path)
+            if os.path.exists(ca_cert_path):
+                self.client.tls_set(ca_certs=ca_cert_path)
+            else:
+                self.logger.warning("ca cert path does not exists "+str(ca_cert_path))
             self.logger.debug("insec "+str(set_insecure))
             if not isinstance(set_insecure, bool):
                 set_insecure = bool(set_insecure)

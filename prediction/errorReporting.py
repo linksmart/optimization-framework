@@ -59,15 +59,17 @@ class ErrorReporting(DataPublisher):
 
     def get_data(self):
         try:
-            results, prediction_keys = self.compare_data(time_delay=self.dT_in_seconds*2)
-            self.logger.debug("len of error cal results = "+str(len(results)))
-            self.logger.debug("error cal results = "+str(results))
+            results, prediction_keys, counter, deletion_keys = self.compare_data(time_delay=self.dT_in_seconds*2)
+            if counter is not None:
+                self.logger.info("error calculation stats: "+str(counter))
             if len(results) > 0:
                 self.save_to_file(results)
                 PredictionDataManager.del_predictions_from_file(prediction_keys, self.prediction_data_file_container,
                                                                 self.topic_name)
                 return self.to_senml(results)
             else:
+                PredictionDataManager.del_predictions_from_file(deletion_keys, self.prediction_data_file_container,
+                                                                self.topic_name)
                 return None
         except Exception as e:
             self.logger.error("error computing error report data " + str(e))
@@ -152,11 +154,21 @@ class ErrorReporting(DataPublisher):
         results = {}
         predicitons = PredictionDataManager.get_predictions_before_timestamp(self.prediction_data_file_container,
                                                                              self.topic_name, timestamp)
-        self.logger.debug("count of predictions = "+str(len(predicitons)))
+        #self.logger.debug("count of predictions = "+str(len(predicitons)))
+        counter = {
+            "predictions": len(predicitons),
+            "length_mismatch": 0,
+            "actual_short": 0,
+            "actual_long": 0,
+            "predicted_short": 0,
+            "predicted_long": 0,
+            "correct": 0
+        }
+        pred_del_keys = []
         for start_time, prediction in predicitons.items():
             predicted_data = self.format_predicted_data(start_time, prediction)
             if start_time is not None and predicted_data is not None:
-                self.logger.debug("start_time " + str(start_time))
+                #self.logger.debug("start_time " + str(start_time))
                 actual_data = self.read_raw_data(start_time)
                 if actual_data is not None:
                     if len(actual_data) == len(predicted_data):
@@ -171,9 +183,21 @@ class ErrorReporting(DataPublisher):
                             rmse = self.rmse(actual, predicted)
                             mae = self.mae(actual, predicted)
                             results[start_time] = {"rmse":rmse, "mae":mae}
+                            pred_del_keys.append(start_time)
                     else:
-                        self.logger.debug("length mismatch actual = " + str(len(actual_data)) + " predicted = " + str(len(predicted_data)))
-        return results, list(predicitons.keys())
+                        counter["length_mismatch"] += 1
+                        if len(actual_data) > self.horizon_in_steps:
+                            counter["actual_long"] += 1
+                        if len(actual_data) < self.horizon_in_steps:
+                            counter["actual_short"] += 1
+                        if len(predicted_data) > self.horizon_in_steps:
+                            counter["predicted_long"] += 1
+                        if len(predicted_data) < self.horizon_in_steps:
+                            counter["predicted_short"] += 1
+                        if timestamp - start_time > 3600*26:
+                            pred_del_keys.append(start_time)
+        counter["correct"] = len(results)
+        return results, list(predicitons.keys()), counter, pred_del_keys
 
     def get_timestamp(self):
         current_time = datetime.datetime.now()
