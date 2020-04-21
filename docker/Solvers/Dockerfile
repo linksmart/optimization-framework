@@ -174,23 +174,23 @@ ENV PATH "$PATH:/usr/src/app/share/CoinIpopt/build/bin"
 RUN mkdir -p /usr/src/app/share
 WORKDIR /usr/src/app/share
 
-COPY gurobi8.1.1_linux64.tar.gz /usr/src/app/share
-RUN gunzip gurobi8.1.1_linux64.tar.gz
-RUN tar xvf gurobi8.1.1_linux64.tar
+COPY gurobi9.0.2_linux64.tar.gz /usr/src/app/share
+RUN gunzip gurobi9.0.2_linux64.tar.gz
+RUN tar xvf gurobi9.0.2_linux64.tar
 # Install ipopt from http
 #COPY gurobi811 /usr/src/app/share/gurobi811
-WORKDIR /usr/src/app/share/gurobi811/linux64
+WORKDIR /usr/src/app/share/gurobi902/linux64
 
 RUN python3 setup.py build
 RUN python3 setup.py install
 #RUN apk add clean
 
-RUN mkdir -p /usr/src/app/share/gurobi811/license
+RUN mkdir -p /usr/src/app/share/gurobi902/license
 
-ENV GUROBI_HOME "/usr/src/app/share/gurobi811/linux64"
-ENV PATH "$PATH:/usr/src/app/share/gurobi811/linux64/bin"
+ENV GUROBI_HOME "/usr/src/app/share/gurobi902/linux64"
+ENV PATH "$PATH:/usr/src/app/share/gurobi902/linux64/bin"
 ENV LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
-ENV GRB_LICENSE_FILE "/usr/src/app/share/gurobi811/license/gurobi.lic"
+ENV GRB_LICENSE_FILE "/usr/src/app/share/gurobi902/license/gurobi.lic"
 
 RUN apt-get clean
 

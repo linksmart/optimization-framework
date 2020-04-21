@@ -1,7 +1,8 @@
 
 # Use an official Python runtime as a parent image
 #FROM garagon/solvers:amd_v3
-FROM garagon/solvers:amd_v5
+#FROM garagon/solvers:amd_v5
+FROM garagon/solvers:amd_v6
 
 RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
 
@@ -50,7 +51,7 @@ RUN pip3 install -U sklearn==0.0
 RUN pip3 install -U Pyro4==4.78
 
 RUN pip3 install -U xlrd==1.2.0
-RUN pip3 install -U pyomo==5.6.8
+RUN pip3 install -U pyomo==5.6.9
 RUN pip3 install -U stopit==1.1.2
 RUN pip3 install connexion[swagger-ui]
 RUN pip3 install -U Pebble==4.5.1

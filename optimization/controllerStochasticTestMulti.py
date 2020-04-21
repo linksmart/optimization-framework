@@ -193,7 +193,7 @@ class OptControllerStochastic(ControllerBase):
 
     
 
-    def kill_child_processes(self, parent_pid, sig=signal.SIGTERM):
+    def kill_child_processes(self, parent_pid, wait = 3, sig=signal.SIGTERM):
         try:
             parent = psutil.Process(parent_pid)
             self.logger.debug("parent "+str(parent))
@@ -201,9 +201,15 @@ class OptControllerStochastic(ControllerBase):
             self.logger.error("No such parent ")
             return
         children = parent.children(recursive=True)
+        self.logger.debug("children "+str(children))
+        count =0
         for process in children:
-            self.logger.debug("killing process "+str(process))
-            process.send_signal(sig)
+            self.logger.debug("killing process "+str(process)+" type "+str(type(process)))
+            if "gurobi.sh" in process.name() or "python2.7" in process.name():
+                #process.send_signal(sig)
+                self.logger.debug("killing process " + str(process))
+            
+        psutil.wait_procs(children, timeout=wait)
     
     def optimize(self, count, solver_name, model_path):
         #self.logger.debug("##############  testsf")
@@ -247,6 +253,9 @@ class OptControllerStochastic(ControllerBase):
             position_single_ev = int(data_dict[None]["Recharge"][None])
             self.logger.debug("Entering to timesteps")
             self.logger.debug("timeout "+str(self.stochastic_timeout))
+
+            executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers)
+            
             for timestep in reverse_steps:
 
                 if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":
@@ -266,69 +275,93 @@ class OptControllerStochastic(ControllerBase):
 
                     data_dict[None]["Timestep"] = {None: timestep}
 
+                    
+                    futures = []
                     # retrieve the solutions
                     try:
                         """if timestep == (self.horizon_in_steps - 1):
                             self.logger.debug("20 sec sleep. Only once")
                             time.sleep(20)"""
                         
-                        with concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers) as executor:
-                            futures = []
-                            if self.single_ev:
-                                self.logger.debug("Entering to ProcessPoolExecutor single ev")
-                                for combination in ess_vac_product:
-                                    ini_ess_soc, ini_vac_soc, position = combination
-                                    futures.append(
-                                        executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
-                                                        ess_decision_domain, min_value, max_value, vac_decision_domain,
-                                                        vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
+                        if self.single_ev:
+                            self.logger.debug("Entering to ProcessPoolExecutor single ev")
+                            for combination in ess_vac_product:
+                                ini_ess_soc, ini_vac_soc, position = combination
+                                futures.append(
+                                    executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                                    ess_decision_domain, min_value, max_value, vac_decision_domain,
+                                                    vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
 
-                            else:
-                                self.logger.debug("Entering to ProcessPoolExecutor")
-                                for combination in ess_vac_product:
-                                    ini_ess_soc, ini_vac_soc = combination
-                                    futures.append(
-                                        executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
-                                                        ess_decision_domain, min_value, max_value, vac_decision_domain,
-                                                        vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
-                                                        solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
+                        else:
+                            self.logger.debug("Entering to ProcessPoolExecutor")
+                            for combination in ess_vac_product:
+                                ini_ess_soc, ini_vac_soc = combination
+                                futures.append(
+                                    executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
+                                                    ess_decision_domain, min_value, max_value, vac_decision_domain,
+                                                    vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
 
-                            try:
-                                self.logger.debug("Entering to futures")
-                                for future in concurrent.futures.as_completed(futures,timeout=60):
-                                    try:
-                                        d, v = future.result()
-                                        if d is None and v is None:
-                                            loop_fail = True
-                                            self.logger.error("Optimization calculation was not possible. Process will be repeated")
-                                            break
-                                        Value.update(v)
-                                        Decision.update(d)
-                                    except Exception as exc:
-                                        self.logger.error("caused an exception: "+str(exc)+". Repeating the process")
+                        try:
+                            self.logger.debug("Entering to futures")
+                            for future in concurrent.futures.as_completed(futures,timeout=60):
+                                try:
+                                    d, v = future.result()
+                                    if d is None and v is None:
                                         loop_fail = True
-                            except Exception as e:
-                                self.logger.error("One future failed. "+str(e))
-                                loop_fail = True
-                                self.logger.error("Executor shutdown")
-                                executor.shutdown(wait=False)
-                                #self.logger.error("Kill child processes")
-                                #self.kill_child_processes(os.getpid())
+                                        self.logger.error("Optimization calculation was not possible. Process will be repeated")
+                                        break
+                                    Value.update(v)
+                                    Decision.update(d)
+                                except Exception as exc:
+                                    self.logger.error("caused an exception: "+str(exc)+". Repeating the process")
+                                    loop_fail = True
+                                    break
+                        except Exception as e:
+                            self.logger.error("One future failed. "+str(e))
+                            loop_fail = True
+                            for f in futures:
+                                if f.cancel():
+                                    self.logger.debug("future " + str(f) + " cancelled")
+                                else:
+                                    self.logger.error("future " + str(f) + " not cancelled")
+
+                            self.logger.error("Executor shutdown")
+                            executor.shutdown(wait=False)
+                            self.logger.error("Kill child processes")
+                            self.kill_child_processes(os.getpid())
                     except Exception as e:
-                        self.logger.error(e)
+                        self.logger.error("Calculation of ProcessPool failed"+ str(e))
                         loop_fail = True
+                        for f in futures:
+                            if f.cancel():
+                                self.logger.debug("future "+str(f)+" cancelled")
+                            else:
+                                self.logger.error("future " + str(f) + " not cancelled")
+
+                        self.logger.error("Executor shutdown")
+                        executor.shutdown(wait=False)
 
 
                     if loop_fail:
                         self.logger.error("ERROR: Optimization calculation was not possible. Process will be repeated")
-                        break
+                        for f in futures:
+                            if f.cancel():
+                                self.logger.debug("future "+str(f)+" cancelled")
+                            else:
+                                self.logger.error("future " + str(f) + " not cancelled")
 
+                        self.logger.error("Executor shutdown")
+                        executor.shutdown(wait=True)
+                        break
+            
             if loop_fail:
                 self.logger.error("Optimization will be repeated")
+                time.sleep(0.2)
                 # erasing files from pyomo
-                folder = "/usr/src/app/logs/pyomo/" + str(self.id)
-                self.erase_pyomo_files(folder)
+                #folder = "/usr/src/app/logs/pyomo/" + str(self.id)
+                #self.erase_pyomo_files(folder)
                 if self.redisDB.get_bool(self.stop_signal_key):
                     break
                 if self.repetition == -1:
@@ -336,12 +369,11 @@ class OptControllerStochastic(ControllerBase):
                 else:
                     break
             else:
-
+                self.logger.error("Executor shutdown outside loop")
+                executor.shutdown(wait=True)
                 self.logger.debug("Flag loop_fail is False")
                 time.sleep(0.2)
-                # erasing files from pyomo
-                folder = "/usr/src/app/logs/pyomo/" + str(self.id)
-                self.erase_pyomo_files(folder)
+                
                 """
                 with open("/usr/src/app/optimization/resources/Value_p.txt", "w") as f:
                     f.write(str(Value))
@@ -374,8 +406,6 @@ class OptControllerStochastic(ControllerBase):
                     else:
                         p_load = 0
 
-                    #Decision.clear()
-                    #Value.clear()
 
                     p_ev = {}
 
@@ -580,18 +610,12 @@ class OptControllerStochastic(ControllerBase):
                     self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
                     self.monitor.send_monitor_ping(self.control_frequency)
 
-                    #results.clear()
+                    # erasing files from pyomo
+                    folder = "/usr/src/app/logs/pyomo/" + str(self.id)
+                    self.erase_pyomo_files(folder)
+                    
                     ev_park = None
-                    #results_publish.clear()
-                    #data_dict.clear()
-
-                    #with open(output_log_filepath, "w") as log_file:
-                        #json.dump(results, log_file, indent=4)
-
-                    #jsonDecision = {str(k): v for k, v in Decision.items()}
-
-                    #with open(decision_log_filepath, "w") as log_file:
-                        #json.dump(jsonDecision, log_file, indent=4)
+                    
 
                     count += 1
                     if self.repetition > 0 and count >= self.repetition:
