@@ -255,7 +255,7 @@ class OptControllerStochastic(ControllerBase):
             position_single_ev = int(data_dict[None]["Recharge"][None])
             self.logger.debug("Entering to timesteps")
             self.logger.debug("timeout "+str(self.stochastic_timeout))
-
+            self.logger.debug("number of workers "+str(self.number_of_workers))
             executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers)
             
             for timestep in reverse_steps:
@@ -740,31 +740,31 @@ class OptControllerStochastic(ControllerBase):
                     try:
                         optsolver = SolverFactory(solver_name)
                     except Exception as e:
-                        #print("optsolver didn't load. "+str(e))
+                        print("optsolver didn't load. "+str(e))
                         continue
     
                     try:
                         mod = __import__(absolute_path, fromlist=['Model'])
                         #mod = importlib.import_module(absolute_path)
                     except Exception as e:
-                        #print("class import didn't work. "+str(e))
+                        print("class import didn't work. "+str(e))
                         continue
     
                     my_class = getattr(mod, 'Model')
                     try:
                         instance = my_class.model.create_instance(data_dict)
                     except Exception as e:
-                        #print("instance could not be created. "+str(e))
+                        print("instance could not be created. "+str(e))
                         continue
     
                     try:
                         result = optsolver.solve(instance)
                     except Exception as e:
-                        #print("Solving the model did not work on pyomo. "+str(e))
-                        continue
+                        print("Solving the model did not work on pyomo. "+str(e))
+                        #return (None, None)
     
                     if result is None:
-                        #print("result is none for " + str(v) + " repeat")
+                        print("result is none for " + str(v) + " repeat")
                         continue
                     elif (result.solver.status == SolverStatus.ok) and (
                             result.solver.termination_condition == TerminationCondition.optimal):

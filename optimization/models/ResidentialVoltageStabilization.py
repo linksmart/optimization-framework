@@ -27,7 +27,6 @@ class Model:
     model.ESS_Discharging_Eff = Param(within=PositiveReals)  # Discharging efficiency of ESSs
 
     model.Fronius_Max_Power = Param(within=PositiveReals)
-
     # grid
     model.P_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max active power export
     model.Q_Grid_Max_Export_Power = Param(within=NonNegativeReals)  # Max reactive power export
