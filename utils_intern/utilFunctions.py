@@ -19,13 +19,19 @@ class UtilFunctions:
         return int(sec_diff)
 
     @staticmethod
-    def execute_command(command, service_name, msg):
+    def execute_command(command, service_name, msg, stdinput=None):
         try:
             command = shlex.split(command)
             print("command "+str(command))
-            process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-            out, err = process.communicate()
+            if stdinput is not None:
+                stdinput = bytes(stdinput)
+                process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE,
+                                           stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+                out, err = process.communicate(input=stdinput)
+            else:
+                process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE,
+                                           stderr=subprocess.STDOUT)
+                out, err = process.communicate()
             pid = process.pid
             print(service_name + " " + msg + " , pid = " + str(pid))
             print("Output: "+str(out.decode('utf-8')))
@@ -44,75 +50,96 @@ class UtilFunctions:
                 UtilFunctions.add_child_process_to_tree(tree, kid, data)
 
     @staticmethod
+    def get_docker_top_output():
+        command_to_write = "sudo -S docker top ofw"
+        output = UtilFunctions.execute_command(command_to_write, "top", "test", "storage4grid")
+        return output
+
+    @staticmethod
+    def extract_pids_from_docker_top_output(output, number_of_gunicorn_workers, number_of_process_pool):
+        if output is not None:
+            outputs = output.split("\n")
+            parent_child = {}
+            parents = {""}
+            childs = {""}
+            for i, line in enumerate(outputs):
+                if i == 0:
+                    continue
+                lines = line.split(" ")
+                new_lines = []
+                for value in lines:
+                    if len(value) != 0:
+                        new_lines.append(value)
+                if len(new_lines) > 6:
+                    if "?" in new_lines[5]:
+                        print(new_lines)
+                        child = new_lines[1]
+                        parent = new_lines[2]
+                        parents.add(parent)
+                        childs.add(child)
+                        if parent not in parent_child.keys():
+                            parent_child[parent] = []
+                        parent_child[parent].append(child)
+            parents.remove("")
+            childs.remove("")
+
+            inter = parents.intersection(childs)
+            for i in inter:
+                parents.remove(i)
+
+            parents = list(parents)
+
+            tree = Tree()
+            for parent in parents:
+                tree.create_node(parent, parent)  # root
+
+            UtilFunctions.add_child_process_to_tree(tree, parents[0], parent_child)
+            print(tree.show())
+
+            root_pid = tree.root
+            ofw_pid = tree.children(root_pid)[0].tag
+            gunicorn_master_pid = tree.children(ofw_pid)[0].tag
+
+            pids = [root_pid, ofw_pid, gunicorn_master_pid]
+            pids_instance = {}
+            ctr = 0
+            instance_number = 0
+            for i, child in enumerate(tree.children(gunicorn_master_pid)):
+                if i < number_of_gunicorn_workers:
+                    pids.append(child.tag)
+                else:
+                    if ctr < number_of_process_pool:
+                        if instance_number not in pids_instance.keys():
+                            pids_instance[instance_number] = []
+                        pids_instance[instance_number].append(child.tag)
+                        ctr += 1
+                    else:
+                        ctr = 0
+                        instance_number += 1
+            print("root and swagger pids " + str(pids))
+            all_pids = pids.copy()
+            for pid in pids_instance.values():
+                all_pids.extend(pid)
+            rest_pids = UtilFunctions.get_rest_pids(tree, all_pids)
+
+            pids = list(map(int, pids))
+            for k, value in pids_instance.items():
+                value = list(map(int, value))
+                pids_instance[k] = value
+            rest_pids = list(map(int, rest_pids))
+            return pids, pids_instance, rest_pids
+        else:
+            return None, None, None
+
+    @staticmethod
+    def convert_string_list_to_int(string_list):
+        return list(map(int, string_list))
+
+    @staticmethod
     def get_pids_to_kill_from_docker_top(number_of_gunicorn_workers, number_of_process_pool):
         try:
-            command_to_write = "docker top ofw"
-            output = UtilFunctions.execute_command(command_to_write, "top", "test")
-            if output is not None:
-                outputs = output.split("\n")
-                parent_child = {}
-                parents = {""}
-                childs = {""}
-                for i, line in enumerate(outputs):
-                    if i == 0:
-                        continue
-                    lines = line.split(" ")
-                    new_lines = []
-                    for value in lines:
-                        if len(value) != 0:
-                            new_lines.append(value)
-                    if len(new_lines) > 6:
-                        if "?" in new_lines[5]:
-                            print(new_lines)
-                            child = new_lines[1]
-                            parent = new_lines[2]
-                            parents.add(parent)
-                            childs.add(child)
-                            if parent not in parent_child.keys():
-                                parent_child[parent] = []
-                            parent_child[parent].append(child)
-                parents.remove("")
-                childs.remove("")
-
-                inter = parents.intersection(childs)
-                for i in inter:
-                    parents.remove(i)
-
-                parents = list(parents)
-
-                tree = Tree()
-                for parent in parents:
-                    tree.create_node(parent, parent)  # root
-
-                UtilFunctions.add_child_process_to_tree(tree, parents[0], parent_child)
-                print(tree.show())
-
-                root_pid = tree.root
-                ofw_pid = tree.children(root_pid)[0].tag
-                gunicorn_master_pid = tree.children(ofw_pid)[0].tag
-
-                pids = [root_pid, ofw_pid, gunicorn_master_pid]
-                pids_instance = {}
-                ctr = 0
-                instance_number = 0
-                for i, child in enumerate(tree.children(gunicorn_master_pid)):
-                    if i < number_of_gunicorn_workers:
-                        pids.append(child.tag)
-                    else:
-                        if ctr < number_of_process_pool:
-                            if instance_number not in pids_instance.keys():
-                                pids_instance[instance_number] = []
-                            pids_instance[instance_number].append(child.tag)
-                            ctr += 1
-                        else:
-                            ctr = 0
-                            instance_number += 1
-                print("root and swagger pids "+str(pids))
-                all_pids = pids.copy()
-                for pid in pids_instance.values():
-                    all_pids.extend(pid)
-                rest_pids = UtilFunctions.get_rest_pids(tree, all_pids)
-                return pids, pids_instance, rest_pids
+            output = UtilFunctions.get_docker_top_output()
+            return UtilFunctions.extract_pids_from_docker_top_output(output, number_of_gunicorn_workers,number_of_process_pool)
         except Exception as e:
             print("exception getting pids "+str(e))
             return None, None, None

@@ -194,7 +194,25 @@ class OptControllerStochastic(ControllerBase):
 
         return (ess_soc_states, ess_decision_domain)
 
-    
+    def kill_processes(self, instance_pids, wait = 3, sig=signal.SIGTERM):
+        try:
+            for k, value in instance_pids:
+                for parent_pid in value:
+                    try:
+                        parent = psutil.Process(parent_pid)
+                        children = parent.children(recursive=True)
+                        self.logger.debug("children " + str(children))
+                        for process in children:
+                            self.logger.debug("killing process " + str(process) + " type " + str(type(process)))
+                            process.send_signal(sig)
+                        psutil.wait_procs(children, timeout=wait)
+                        self.logger.debug("killing process " + str(parent) + " type " + str(type(parent)))
+                        parent.send_signal(sig)
+                        psutil.wait_procs(parent, timeout=wait)
+                    except psutil.NoSuchProcess:
+                        self.logger.error("No such parent "+str(parent_pid))
+        except Exception as e:
+            self.logger.error("error killing processes "+str(e))
 
     def kill_child_processes(self, parent_pid, wait = 3, sig=signal.SIGTERM):
         try:
@@ -339,7 +357,8 @@ class OptControllerStochastic(ControllerBase):
                                 self.number_of_gunicorn_workers, self.number_of_workers)
                             self.logger.debug("pids_for_instances "+str(pids_for_instances))
                             self.logger.debug("other_pids " + str(other_pids))
-                            self.kill_child_processes(os.getpid())
+                            self.kill_processes(pids_for_instances)
+                            #self.kill_child_processes(os.getpid())
                     except Exception as e:
                         self.logger.error("Calculation of ProcessPool failed"+ str(e))
                         loop_fail = True
@@ -357,7 +376,8 @@ class OptControllerStochastic(ControllerBase):
                             self.number_of_gunicorn_workers, self.number_of_workers)
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
                         self.logger.debug("other_pids " + str(other_pids))
-                        self.kill_child_processes(os.getpid())
+                        self.kill_processes(pids_for_instances)
+                        #self.kill_child_processes(os.getpid())
 
 
                     if loop_fail:
@@ -376,7 +396,8 @@ class OptControllerStochastic(ControllerBase):
                             self.number_of_gunicorn_workers, self.number_of_workers)
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
                         self.logger.debug("other_pids " + str(other_pids))
-                        self.kill_child_processes(os.getpid())
+                        self.kill_processes(pids_for_instances)
+                        #self.kill_child_processes(os.getpid())
                         break
             
             if loop_fail:
