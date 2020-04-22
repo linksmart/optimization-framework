@@ -192,19 +192,21 @@ class OptControllerStochastic(ControllerBase):
 
         return (ess_soc_states, ess_decision_domain)
 
-    def kill_processes(self, instance_pids, wait = 3, sig=signal.SIGTERM):
+    def kill_processes(self, instance_pids, rest_pids, wait = 3, sig=signal.SIGTERM):
         try:
+            for j in rest_pids:
+                try:
+                    parent = psutil.Process(j)
+                    self.logger.debug("killing process in other pids " + str(parent))
+                    parent.send_signal(sig)
+                    psutil.wait_procs(parent, timeout=wait)
+                except psutil.NoSuchProcess:
+                    self.logger.error("No such parent in other pids " + str(j))
             for k, value in instance_pids:
                 for parent_pid in value:
                     try:
                         parent = psutil.Process(parent_pid)
-                        children = parent.children(recursive=True)
-                        self.logger.debug("children " + str(children))
-                        for process in children:
-                            self.logger.debug("killing process " + str(process) + " type " + str(type(process)))
-                            process.send_signal(sig)
-                        psutil.wait_procs(children, timeout=wait)
-                        self.logger.debug("killing process " + str(parent) + " type " + str(type(parent)))
+                        self.logger.debug("killing process " + str(parent))
                         parent.send_signal(sig)
                         psutil.wait_procs(parent, timeout=wait)
                     except psutil.NoSuchProcess:
@@ -355,7 +357,7 @@ class OptControllerStochastic(ControllerBase):
                                 self.number_of_gunicorn_workers, self.number_of_workers)
                             self.logger.debug("pids_for_instances "+str(pids_for_instances))
                             self.logger.debug("other_pids " + str(other_pids))
-                            self.kill_processes(pids_for_instances)
+                            self.kill_processes(pids_for_instances, other_pids)
                             #self.kill_child_processes(os.getpid())
                     except Exception as e:
                         self.logger.error("Calculation of ProcessPool failed"+ str(e))
@@ -374,7 +376,7 @@ class OptControllerStochastic(ControllerBase):
                             self.number_of_gunicorn_workers, self.number_of_workers)
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
                         self.logger.debug("other_pids " + str(other_pids))
-                        self.kill_processes(pids_for_instances)
+                        self.kill_processes(pids_for_instances, other_pids)
                         #self.kill_child_processes(os.getpid())
 
 
@@ -394,7 +396,7 @@ class OptControllerStochastic(ControllerBase):
                             self.number_of_gunicorn_workers, self.number_of_workers)
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
                         self.logger.debug("other_pids " + str(other_pids))
-                        self.kill_processes(pids_for_instances)
+                        self.kill_processes(pids_for_instances, other_pids)
                         #self.kill_child_processes(os.getpid())
                         break
             
