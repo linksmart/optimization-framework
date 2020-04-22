@@ -56,6 +56,7 @@ RUN pip3 install -U pyomo==5.6.9
 RUN pip3 install -U stopit==1.1.2
 RUN pip3 install connexion[swagger-ui]
 RUN pip3 install -U Pebble==4.5.1
+RUN pip3 install -U treelib
 USER garagon
 
 WORKDIR /usr/src/app

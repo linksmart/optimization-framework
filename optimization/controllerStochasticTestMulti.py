@@ -337,6 +337,8 @@ class OptControllerStochastic(ControllerBase):
                             #TODO: pids
                             root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
                                 self.number_of_gunicorn_workers, self.number_of_workers)
+                            self.logger.debug("pids_for_instances "+str(pids_for_instances))
+                            self.logger.debug("other_pids " + str(other_pids))
                             self.kill_child_processes(os.getpid())
                     except Exception as e:
                         self.logger.error("Calculation of ProcessPool failed"+ str(e))
@@ -350,6 +352,11 @@ class OptControllerStochastic(ControllerBase):
                         self.logger.error("Executor shutdown")
                         executor.shutdown(wait=False)
                         self.logger.error("Kill child processes")
+                        self.logger.debug("os.getpid " + str(os.getpid()))
+                        root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
+                            self.number_of_gunicorn_workers, self.number_of_workers)
+                        self.logger.debug("pids_for_instances " + str(pids_for_instances))
+                        self.logger.debug("other_pids " + str(other_pids))
                         self.kill_child_processes(os.getpid())
 
 
@@ -364,6 +371,11 @@ class OptControllerStochastic(ControllerBase):
                         self.logger.error("Executor shutdown")
                         executor.shutdown(wait=False)
                         self.logger.error("Kill child processes")
+                        self.logger.debug("os.getpid " + str(os.getpid()))
+                        root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
+                            self.number_of_gunicorn_workers, self.number_of_workers)
+                        self.logger.debug("pids_for_instances " + str(pids_for_instances))
+                        self.logger.debug("other_pids " + str(other_pids))
                         self.kill_child_processes(os.getpid())
                         break
             
