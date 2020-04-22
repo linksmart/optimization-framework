@@ -24,7 +24,7 @@ class UtilFunctions:
             command = shlex.split(command)
             print("command "+str(command))
             if stdinput is not None:
-                stdinput = bytes(stdinput)
+                stdinput = bytes(stdinput, encoding="utf-8")
                 process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE,
                                            stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 out, err = process.communicate(input=stdinput)
