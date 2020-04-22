@@ -24,8 +24,6 @@ import importlib.util
 from optimization.controllerBase import ControllerBase
 from optimization.idStatusManager import IDStatusManager
 
-from pyutilib.services import TempfileManager
-
 from utils_intern.utilFunctions import UtilFunctions
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
@@ -655,8 +653,7 @@ class OptControllerStochastic(ControllerBase):
                     self.monitor.send_monitor_ping(self.control_frequency)
 
                     # erasing files from pyomo
-                    folder = "/usr/src/app/logs/pyomo/" + str(self.id)
-                    self.erase_pyomo_files(folder)
+                    #self.erase_pyomo_files(self.pyomo_path)
                     
                     ev_park = None
                     

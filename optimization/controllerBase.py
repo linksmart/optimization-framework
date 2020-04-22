@@ -47,18 +47,19 @@ class ControllerBase(ABC, threading.Thread):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.info("Initializing optimization controller " + id)
 
-        pyomo_path = "/usr/src/app/logs/pyomo/" + str(id)
-        pyomo_path = os.path.abspath(pyomo_path)
-        self.logger.debug("pyomo_path "+str(pyomo_path))
+        #pyomo_path = "/usr/src/app/logs/pyomo/" + str(id)
+        self.pyomo_path = "/usr/src/app/logs/pyomo/"
+        self.pyomo_path = os.path.abspath(self.pyomo_path)
+        self.logger.debug("pyomo_path "+str(self.pyomo_path))
 
-        if not os.path.exists(pyomo_path):
+        if not os.path.exists(self.pyomo_path):
             try:
-                os.makedirs(pyomo_path, mode=0o777, exist_ok=False)
-                os.chmod(pyomo_path, 0o777)
-                os.chmod(pyomo_path, 0o777)
+                os.makedirs(self.pyomo_path, mode=0o777, exist_ok=False)
+                os.chmod(self.pyomo_path, 0o777)
+                os.chmod(self.pyomo_path, 0o777)
             except Exception as e:
                 self.logger.error(e)
-        TempfileManager.tempdir = pyomo_path
+        TempfileManager.tempdir = self.pyomo_path
 
 
         self.id = id
@@ -210,8 +211,7 @@ class ControllerBase(ABC, threading.Thread):
                 self.redisDB.set("kill_signal", True)
 
             #erase pyomo folder
-            folder = "/usr/src/app/logs/pyomo/" + str(self.id)
-            self.erase_pyomo_folder(folder)
+            #self.erase_pyomo_folder(self.pyomo_path)
 
             # If Stop signal arrives it tries to disconnect all mqtt clients
             if self.output:

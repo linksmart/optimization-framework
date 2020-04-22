@@ -67,8 +67,7 @@ class OptControllerDiscrete(ControllerBase):
             start_time = time.time() - start_time
             self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
 
-            folder = "/usr/src/app/logs/pyomo/" + str(self.id)
-            self.erase_pyomo_files(folder)
+            self.erase_pyomo_files(self.pyomo_path)
 
             count += 1
             if self.repetition > 0 and count >= self.repetition:
