@@ -1,6 +1,8 @@
 import datetime
 import shlex
 import subprocess
+import time
+
 from treelib import Node, Tree
 
 class UtilFunctions:
@@ -39,6 +41,23 @@ class UtilFunctions:
             return str(out.decode('utf-8'))
         except Exception as e:
             print("error running the command " + str(command) + " " + str(e))
+            return None
+
+    @staticmethod
+    def execute_docker_top_command():
+        try:
+            stdinput = bytes("storage4grid", encoding="utf-8")
+            process = subprocess.Popen(['sudo', '-S', 'docker', 'top', 'ofw'], shell=False, stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+            out, err = process.communicate(input=stdinput)
+            pid = process.pid
+            output = str(out.decode('utf-8'))
+            print("docker top command , pid = " + str(pid))
+            print("Output: " + str(output))
+            print("Error: " + str(err))
+            return output
+        except Exception as e:
+            print("error running the command sudo -S docker top " + str(e))
             return None
 
     @staticmethod
@@ -138,7 +157,8 @@ class UtilFunctions:
     @staticmethod
     def get_pids_to_kill_from_docker_top(number_of_gunicorn_workers, number_of_process_pool):
         try:
-            output = UtilFunctions.get_docker_top_output()
+            time.sleep(20)
+            output = UtilFunctions.execute_docker_top_command()
             return UtilFunctions.extract_pids_from_docker_top_output(output, number_of_gunicorn_workers,number_of_process_pool)
         except Exception as e:
             print("exception getting pids "+str(e))
