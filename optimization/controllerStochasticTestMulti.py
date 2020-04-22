@@ -342,23 +342,7 @@ class OptControllerStochastic(ControllerBase):
                         except Exception as e:
                             self.logger.error("One future failed. "+str(e))
                             loop_fail = True
-                            for f in futures:
-                                if f.cancel():
-                                    self.logger.debug("future " + str(f) + " cancelled")
-                                else:
-                                    self.logger.error("future " + str(f) + " not cancelled")
-
-                            self.logger.error("Executor shutdown")
-                            executor.shutdown(wait=False)
-                            self.logger.error("Kill child processes")
-                            self.logger.debug("os.getpid "+str(os.getpid()))
-                            #TODO: pids
-                            root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
-                                self.number_of_gunicorn_workers, self.number_of_workers)
-                            self.logger.debug("pids_for_instances "+str(pids_for_instances))
-                            self.logger.debug("other_pids " + str(other_pids))
-                            self.kill_processes(pids_for_instances, other_pids)
-                            #self.kill_child_processes(os.getpid())
+                            
                     except Exception as e:
                         self.logger.error("Calculation of ProcessPool failed"+ str(e))
                         loop_fail = True
