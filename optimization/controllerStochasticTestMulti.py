@@ -764,7 +764,7 @@ class OptControllerStochastic(ControllerBase):
                         optsolver = SolverFactory(solver_name)
                         if solver_name == "gurobi":
                             optsolver.options['IterationLimit'] = 1000
-                            optsolver.options['TimeLimit'] = 10
+                            optsolver.options['TimeLimit'] = 3
                             
                     except Exception as e:
                         print("optsolver didn't load. "+str(e))
