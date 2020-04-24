@@ -198,17 +198,18 @@ class OptControllerStochastic(ControllerBase):
                 try:
                     parent = psutil.Process(j)
                     self.logger.debug("killing process in other pids " + str(parent))
-                    parent.send_signal(sig)
-                    psutil.wait_procs(parent, timeout=wait)
+                    #parent.send_signal(sig)
+                    #psutil.wait_procs(parent, timeout=wait)
                 except psutil.NoSuchProcess:
                     self.logger.error("No such parent in other pids " + str(j))
-            for k, value in instance_pids:
+            for k, value in instance_pids.items():
                 for parent_pid in value:
                     try:
+                        self.logger.debug("parent_pid "+str(parent_pid))
                         parent = psutil.Process(parent_pid)
                         self.logger.debug("killing process " + str(parent))
-                        parent.send_signal(sig)
-                        psutil.wait_procs(parent, timeout=wait)
+                        #parent.send_signal(sig)
+                        #psutil.wait_procs(parent, timeout=wait)
                     except psutil.NoSuchProcess:
                         self.logger.error("No such parent "+str(parent_pid))
         except Exception as e:
@@ -353,7 +354,7 @@ class OptControllerStochastic(ControllerBase):
                                 self.logger.error("future " + str(f) + " not cancelled")
 
                         self.logger.error("Executor shutdown")
-                        executor.shutdown(wait=True)
+                        executor.shutdown(wait=False)
                         self.logger.error("Kill child processes")
                         self.logger.debug("os.getpid " + str(os.getpid()))
                         root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
@@ -373,9 +374,8 @@ class OptControllerStochastic(ControllerBase):
                                 self.logger.error("future " + str(f) + " not cancelled")
 
                         self.logger.error("Executor shutdown")
-                        executor.shutdown(wait=True)
+                        executor.shutdown(wait=False)
                         self.logger.error("Kill child processes")
-                        self.logger.debug("os.getpid " + str(os.getpid()))
                         root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
                             self.number_of_gunicorn_workers, self.number_of_workers)
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
@@ -762,6 +762,10 @@ class OptControllerStochastic(ControllerBase):
                     ctr += 1
                     try:
                         optsolver = SolverFactory(solver_name)
+                        if solver_name == "gurobi":
+                            optsolver.options['IterationLimit'] = 1000
+                            optsolver.options['TimeLimit'] = 10
+                            
                     except Exception as e:
                         print("optsolver didn't load. "+str(e))
                         continue
@@ -830,6 +834,14 @@ class OptControllerStochastic(ControllerBase):
                     elif result.solver.termination_condition == TerminationCondition.infeasible:
                         # do something about it? or exit?
                         print("Termination condition is infeasible " + v + " repeat")
+                        continue
+                    elif result.solver.termination_condition == TerminationCondition.maxIterations:
+                        # do something about it? or exit?
+                        print("Termination condition is maxIteration limit " + v + " repeat")
+                        continue
+                    elif result.solver.termination_condition == TerminationCondition.maxTimeLimit:
+                        # do something about it? or exit?
+                        print("Termination condition is maxTimeLimit " + v + " repeat")
                         continue
                     else:
                         print("Nothing fits " + v + " repeat")

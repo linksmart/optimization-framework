@@ -20,10 +20,18 @@ RUN apt-get autoclean
 RUN apt-get clean
 
 #RUN apt-get update -y && apt-get install -y \
-    #sudo gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev libatlas-dev
+    #sudo gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev  wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev libatlas-dev
 
 RUN apt-get update -y && apt-get install -y \
-    sudo gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev libatlas-dev
+    sudo gcc build-essential gfortran \
+    libatlas-base-dev \
+    liblapack-dev \
+    wget \
+    libpng-dev \
+    python3-pip \
+    python3-dev \
+    python3-setuptools \
+    libhdf5-serial-dev
 
 RUN pip3 install --upgrade pip
 
