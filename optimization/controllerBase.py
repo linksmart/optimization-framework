@@ -4,19 +4,11 @@ Created on Apr 24 16:10 2019
 @author: nishit
 """
 import importlib.util
-import json
-import threading
 
-import os
 from pyomo.environ import *
 from pyomo.opt import SolverFactory
-from pyomo.opt.parallel import SolverManagerFactory
-#from pyomo.util.plugin import *
-from pyomo.opt.parallel.manager import *
-import pyomo.solvers.plugins.smanager.pyro
 
 from pyutilib.services import TempfileManager
-#TempfileManager.tempdir = "/usr/src/app/logs/pyomo"
 import time
 import shutil
 import os
@@ -26,8 +18,6 @@ from IO.inputController import InputController
 from IO.monitorPub import MonitorPub
 from IO.outputController import OutputController
 from IO.redisDB import RedisDB
-from optimization.ModelException import InvalidModelException
-from threading import Event
 
 
 import pyutilib.subprocess.GlobalData
@@ -38,11 +28,12 @@ pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 from abc import ABC, abstractmethod
 
-class ControllerBase(ABC, threading.Thread):
+class ControllerBase(ABC):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
-        super().__init__()
+
+        super(ControllerBase, self).__init__()
 
         self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.info("Initializing optimization controller " + id)
@@ -98,11 +89,7 @@ class ControllerBase(ABC, threading.Thread):
         module = spec.loader.load_module(spec.name)
         return module
 
-    def join(self, timeout=None):
-        #self.stopRequest.set()
-        super(ControllerBase, self).join(timeout)
-
-    def Stop(self):
+    def exit(self):
         try:
             if self.input:
                 self.input.Stop()
@@ -123,9 +110,6 @@ class ControllerBase(ABC, threading.Thread):
         #self.erase_pyomo_files()
         self.logger.debug("setting stop_signal_key")
         self.redisDB.set(self.stop_signal_key, True)
-
-        if self.isAlive():
-            self.join(1)
 
     def initialize_opt_solver(self):
         start_time_total = time.time()
@@ -176,7 +160,7 @@ class ControllerBase(ABC, threading.Thread):
             self.logger.error(e)
 
     # Start the optimization process and gives back a result
-    def run(self):
+    def run_method(self):
         self.logger.info("Starting optimization controller")
 
         return_msg = "success"

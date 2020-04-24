@@ -21,7 +21,8 @@ import pyutilib.subprocess.GlobalData
 import importlib.machinery
 import importlib.util
 
-from optimization.controllerBase import ControllerBase
+from optimization.controllerBaseProcess import ControllerBaseProcess
+from optimization.controllerBaseThread import ControllerBaseThread
 from optimization.idStatusManager import IDStatusManager
 
 from utils_intern.utilFunctions import UtilFunctions
@@ -30,7 +31,7 @@ pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
 ins_dict  = {}
 
-class OptControllerStochastic(ControllerBase):
+class OptControllerStochastic(ControllerBaseProcess):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
