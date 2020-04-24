@@ -2,8 +2,8 @@
 # Use an official Python runtime as a parent image
 #FROM garagon/solvers:amd_v3
 #FROM garagon/solvers:amd_v5
-FROM garagon/solvers:amd_v6
-
+#FROM garagon/solvers:amd_v6  #with python stretch
+FROM garagon/solvers:amd_v7
 #RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon
 RUN useradd -rm -d /home/garagon -s /bin/bash -g root -G sudo -u 1000 garagon -p "$(openssl passwd -1 storage4grid)"
 
@@ -18,6 +18,9 @@ COPY requirements.txt /usr/src/app/
 # #new addition
 RUN apt-get autoclean
 RUN apt-get clean
+
+#RUN apt-get update -y && apt-get install -y \
+    #sudo gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev libatlas-dev
 
 RUN apt-get update -y && apt-get install -y \
     sudo gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev libatlas-dev

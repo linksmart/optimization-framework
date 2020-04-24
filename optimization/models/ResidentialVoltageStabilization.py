@@ -48,7 +48,7 @@ class Model:
     ################################################################################################
 
     # grid
-    model.P_Grid_Output = Var(model.T, within=Reals,bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
+    model.P_Grid_Output = Var(model.T, within=Reals,bounds=(-model.Q_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 
     # pv
     model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)

@@ -43,6 +43,8 @@ class OptControllerDiscrete(ControllerBase):
             # Creating an optimization instance with the referenced model
             try:
                 optsolver = SolverFactory(solver_name)
+                if solver_name == "ipopt":
+                    optsolver.options['max_iter'] = 1000
                 #spec = importlib.util.spec_from_file_location(model_path, model_path)
                 #module = spec.loader.load_module(spec.name)
                 mod = __import__(model_path, fromlist=['Model'])

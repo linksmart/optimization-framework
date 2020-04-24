@@ -353,7 +353,7 @@ class OptControllerStochastic(ControllerBase):
                                 self.logger.error("future " + str(f) + " not cancelled")
 
                         self.logger.error("Executor shutdown")
-                        executor.shutdown(wait=False)
+                        executor.shutdown(wait=True)
                         self.logger.error("Kill child processes")
                         self.logger.debug("os.getpid " + str(os.getpid()))
                         root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
@@ -361,7 +361,7 @@ class OptControllerStochastic(ControllerBase):
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
                         self.logger.debug("other_pids " + str(other_pids))
                         self.kill_processes(pids_for_instances, other_pids)
-                        #self.kill_child_processes(os.getpid())
+                        
 
 
                     if loop_fail:
@@ -373,7 +373,7 @@ class OptControllerStochastic(ControllerBase):
                                 self.logger.error("future " + str(f) + " not cancelled")
 
                         self.logger.error("Executor shutdown")
-                        executor.shutdown(wait=False)
+                        executor.shutdown(wait=True)
                         self.logger.error("Kill child processes")
                         self.logger.debug("os.getpid " + str(os.getpid()))
                         root_pids, pids_for_instances, other_pids = UtilFunctions.get_pids_to_kill_from_docker_top(
@@ -450,20 +450,34 @@ class OptControllerStochastic(ControllerBase):
                     # calculate the maximum feasible charging power input under given SoC
 
                     dT = data_dict[None]["dT"][None]
-                    ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
-                    ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
+                    #ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
+                    #ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
 
                     connections = ev_park.max_charge_power_calculator(dT)
+                    
 
                     # Calculation of the feasible charging power at the commercial station
                     max_power_for_cars = sum(connections.values())
                     feasible_ev_charging_power = min(max_power_for_cars, p_vac)
                     self.logger.debug("feasible_ev_charging_power" + str(feasible_ev_charging_power))
                     self.logger.debug("max_power_for_cars " + str(max_power_for_cars))
-
+                    charger_dict = ev_park.chargers
+                    self.logger.debug("charger_list "+str(charger_dict))
                     for charger, max_charge_power_of_car in connections.items():
+                        self.logger.debug("charger name "+str(charger))
+                        soc_ev = None
+                        for name, charger_element in charger_dict.items():
+                            if name == charger:
+                                soc_ev = charger_element.soc
+                        self.logger.debug("soc ev "+str(soc_ev)+" in charger "+str(charger))
                         if feasible_ev_charging_power == 0:
-                            p_ev[charger] = 0.6
+                            if not soc_ev == None:
+                                if not soc_ev == 1:
+                                    p_ev[charger] = 0.6
+                                else:
+                                    p_ev[charger] = 0
+                            else:
+                                p_ev[charger] = 0
                         else:
                             power_output_of_charger = feasible_ev_charging_power * (
                                     max_charge_power_of_car / max_power_for_cars)
@@ -552,7 +566,7 @@ class OptControllerStochastic(ControllerBase):
                     self.logger.debug("")
                     self.logger.debug("#" * 80)
 
-                    self.logger.debug("p_fronius_pct_output")
+                    #self.logger.debug("p_fronius_pct_output")
                     p_fronius_pct_output = []
                     if "Fronius_Max_Power" in data_dict[None].keys():
                         p_fronius_max_power = data_dict[None]["Fronius_Max_Power"][None]
@@ -565,7 +579,7 @@ class OptControllerStochastic(ControllerBase):
 
                         p_fronius_pct_output.append(p_fronius_pct_output_calc)
 
-                    self.logger.debug("p_ess_output_pct")
+                    #self.logger.debug("p_ess_output_pct")
                     p_ess_output_pct = []
                     if "ESS_Max_Charge_Power" in data_dict[None].keys():
                         p_ess_max_power = data_dict[None]["ESS_Max_Charge_Power"][None]
@@ -578,20 +592,20 @@ class OptControllerStochastic(ControllerBase):
 
                         p_ess_output_pct.append(p_ess_output_pct_calc)
 
-                    self.logger.debug("SoC_output")
+                    #self.logger.debug("SoC_output")
                     SoC_output = []
                     if "SoC_Value" in data_dict[None].keys():
                         SoC_Value = data_dict[None]["SoC_Value"][None]
                         SoC_output.append(SoC_Value)
 
-                    self.logger.debug("GESSCon_Output")
+                    #self.logger.debug("GESSCon_Output")
                     GESSCon_Output = []
                     if "ESS_Control" in data_dict[None].keys():
                         GESSCon_Value = data_dict[None]["ESS_Control"][0]
                         GESSCon_Output.append(GESSCon_Value)
 
 
-                    results = {
+                    """results = {
                         "id": self.id,
                         "P_PV_Output": p_pv,
                         "P_Grid_Output": p_grid,
@@ -604,10 +618,10 @@ class OptControllerStochastic(ControllerBase):
                         "P_ESS_Output_Pct": p_ess_output_pct,
                         "SoC_copy": SoC_output,
                         "Global_control": GESSCon_Output
-                    }
+                    }"""
 
                     # update soc
-                    self.logger.debug("results "+str(results))
+                    #self.logger.debug("results "+str(results))
                     socs = ev_park.charge_ev(p_ev, self.dT_in_seconds, self.single_ev)
 
 
@@ -641,7 +655,7 @@ class OptControllerStochastic(ControllerBase):
                     # erasing files from pyomo
                     #self.erase_pyomo_files(self.pyomo_path)
                     
-                    ev_park = None
+                    #ev_park = None
                     
 
                     count += 1
