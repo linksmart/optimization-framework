@@ -65,7 +65,8 @@ class BaseDataReceiver(DataReceiver, ABC):
             if formated_data is not None and len(formated_data) > 0:
                 self.length = len(formated_data)
                 self.data.update(formated_data)
-                self.data_update = True
+                #self.data_update = True
+                super(DataReceiver, self).set_data_update(True)
                 self.last_time = time.time()
 
     def on_msg_received(self, payload):
@@ -73,13 +74,26 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
             if "chargers" in payload:
                 self.logger.debug("data received for charger = "+str(payload))
+            elif "P_PV" in payload:
+                self.logger.debug("data received for PV = " + str(payload))
+            elif "P_Load" in payload:
+                self.logger.debug("data received for Load = " + str(payload))
             senml_data = json.loads(payload)
+            if "P_PV" in payload or "P_Load" in payload:
+                self.logger.debug("senml_data "+str(senml_data))
             #self.logger.debug("senml_data "+str(senml_data))
             formated_data = self.add_formated_data(senml_data)
+            if "P_PV" in payload or "P_Load" in payload:
+                self.logger.debug("formated_data "+str(formated_data))
             if self.reuseable:
                 self.save_data(formated_data)
+            if "P_PV" in payload or "P_Load" in payload:
+                self.logger.debug("Updating data")
             self.data.update(formated_data)
-            self.data_update = True
+            #self.data_update = True
+            super(DataReceiver, self).set_data_update(True)
+            if "P_PV" in payload or "P_Load" in payload:
+                self.logger.debug("data_update "+str(self.data_update))
             self.last_time = time.time()
         except Exception as e:
             self.logger.error(e)
@@ -202,6 +216,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         else:
             data = self.get_data(require_updated=1)
 
+        self.logger.debug("Out of getting data for "+str(self.generic_name))
         if not self.redisDB.get("End ofw") == "True":
             self.logger.debug(str(self.generic_name) + " data from mqtt is : "+ json.dumps(data, indent=4))
             self.logger.debug(str(self.generic_name) + " steps: "+str(steps) + " length: "+str(self.length))
@@ -254,6 +269,9 @@ class BaseDataReceiver(DataReceiver, ABC):
                     self.logger.debug("bucket changed from " + str(bucket_requested) +
                                       " to " + str(new_bucket) + " due to wait time for " + str(self.generic_name))
                     final_data, bucket_available, _ = self.get_bucket_aligned_data(new_bucket, steps, wait_for_data=False, check_bucket_change=False)
+        else:
+            self.logger.debug("End ofw in redis is True")
+            
         if self.detachable and bucket_available:
             self.value_used_once = True
         return (final_data, bucket_available, self.last_time)

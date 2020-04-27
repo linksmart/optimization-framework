@@ -262,7 +262,7 @@ class InputController:
         timeout_exception = True
         while timeout_exception:
             success = False
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+            executor = concurrent.futures.ThreadPoolExecutor()#(max_workers=3)
             while not success:
                 if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
                     timeout_exception = False

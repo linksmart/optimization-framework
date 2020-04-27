@@ -134,17 +134,24 @@ class DataReceiver(ABC):
     def on_msg_received(self, payload):
         pass
 
+    def get_data_update(self):
+        return self.data_update
+
+    def set_data_update(self, data_update):
+        self.data_update = data_update
+    
     def get_mqtt_data(self, require_updated, clearData):
         if require_updated == 1 and not self.data:
             require_updated = 0
         ctr = 0
 
         while require_updated == 0 and not self.data_update and not self.stop_request and not self.redisDB.get("End ofw") == "True":
-            if ctr == 9:
+            if ctr >= 45:
                 ctr = 0
+                self.logger.debug("self.data_update "+str(self.data_update))
                 self.logger.debug("wait for data "+str(self.topics))
             ctr += 1
-            time.sleep(0.5)
+            time.sleep(0.1)
         return self.get_and_update_data(clearData)
 
     def exit(self):
