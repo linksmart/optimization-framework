@@ -46,6 +46,7 @@ RUN pip3 install -U Pyro4==4.77
 RUN pip3 install -U numpy==1.14.5
 RUN pip3 install -U stopit==1.1.2
 RUN pip3 install -U Pebble==4.5.1
+RUN pip3 install -U treelib
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

@@ -294,7 +294,7 @@ class InputController:
                     
                     try:
             
-                        for future in concurrent.futures.as_completed(futures,timeout=120):
+                        for future in concurrent.futures.as_completed(futures):#,timeout=30):
                             try:
                                 success, read_data, mqtt_timer = future.result()
                                 self.logger.debug("Success flag for future in wait data: " + str(success))

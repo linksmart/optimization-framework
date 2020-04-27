@@ -43,6 +43,8 @@ class OptControllerDiscrete(ControllerBaseThread):
                 optsolver = SolverFactory(solver_name)
                 if solver_name == "ipopt":
                     optsolver.options['max_iter'] = 1000
+                    optsolver.options['max_cpu_time'] = 120
+                    
                 #spec = importlib.util.spec_from_file_location(model_path, model_path)
                 #module = spec.loader.load_module(spec.name)
                 mod = __import__(model_path, fromlist=['Model'])
@@ -89,6 +91,12 @@ class OptControllerDiscrete(ControllerBaseThread):
             elif result.solver.termination_condition == TerminationCondition.infeasible:
                 # do something about it? or exit?
                 self.logger.info("Termination condition is infeasible")
+            elif result.solver.termination_condition == TerminationCondition.maxIterations:
+                # do something about it? or exit?
+                self.logger.info("Termination condition is maxIteration limit")
+            elif result.solver.termination_condition == TerminationCondition.maxTimeLimit:
+                # do something about it? or exit?
+                self.logger.info("Termination condition is maxTimeLimit")
             else:
                 self.logger.info("Nothing fits")
 

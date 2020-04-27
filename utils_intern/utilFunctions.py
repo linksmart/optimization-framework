@@ -157,7 +157,7 @@ class UtilFunctions:
     @staticmethod
     def get_pids_to_kill_from_docker_top(number_of_gunicorn_workers, number_of_process_pool):
         try:
-            time.sleep(20)
+            #time.sleep(20)
             output = UtilFunctions.execute_docker_top_command()
             return UtilFunctions.extract_pids_from_docker_top_output(output, number_of_gunicorn_workers,number_of_process_pool)
         except Exception as e:
