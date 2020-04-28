@@ -15,7 +15,7 @@ import numpy as np
 import psutil
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
-from stopit import threading_timeoutable as timeoutable  #doctest: +SKIP
+from stopit import threading_timeoutable as timeoutable  # doctest: +SKIP
 
 import pyutilib.subprocess.GlobalData
 import importlib.machinery
@@ -29,20 +29,19 @@ from utils_intern.utilFunctions import UtilFunctions
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
-ins_dict  = {}
+ins_dict = {}
+
 
 class OptControllerStochastic(ControllerBaseProcess):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
+        super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
+                         config, horizon_in_steps, dT_in_seconds, optimization_type)
         self.single_ev = single_ev
         self.number_of_workers = config.getint("SolverSection", "stochastic.multi.workers", fallback=6)
         self.number_of_gunicorn_workers = config.getint("IO", "number.of.gunicorn.workers", fallback=-1)
         self.stochastic_timeout = config.getint("SolverSection", "stochastic.timeout.sec", fallback=60)
-        super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
-                         config, horizon_in_steps, dT_in_seconds, optimization_type)
-
-
 
     def get_values(self, T, ess_soc_states, vac_soc_states, position_states, max_number_of_cars):
         if self.single_ev:
@@ -86,7 +85,8 @@ class OptControllerStochastic(ControllerBaseProcess):
 
         return (behaviour_model, Value, Decision)
 
-    def calculate_internal_values(self, timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,position_states):
+    def calculate_internal_values(self, timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,
+                                  position_states):
         if self.single_ev:
             value_index = [(s_ess, s_vac, s_pos) for t, s_ess, s_vac, s_pos in Value.keys() if
                            t == timestep + 1]
@@ -111,10 +111,10 @@ class OptControllerStochastic(ControllerBaseProcess):
 
             ess_vac_product = product(ess_soc_states, vac_soc_states)
 
-        return (value_index, value,bm_idx, bm, ess_vac_product)
+        return (value_index, value, bm_idx, bm, ess_vac_product)
 
-    #TODO: method can be optimized
-    def find_decision_domain_ess(self, ess_vac_product, ess_decision_domain, min_value, max_value ):
+    # TODO: method can be optimized
+    def find_decision_domain_ess(self, ess_vac_product, ess_decision_domain, min_value, max_value):
         for combination in ess_vac_product:
             feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
@@ -152,23 +152,24 @@ class OptControllerStochastic(ControllerBaseProcess):
         solver_manager.wait_all(action_handles)
         return (action_handles, action_handle_map)
 
-
     def calculate_vac_domain(self, ev_park):
         vac_soc_states = self.input.inputPreprocess.vac_soc_states
         vac_steps = self.input.inputPreprocess.vac_steps
         vac_domain_min = vac_soc_states[0]
         vac_domain_max = max(vac_soc_states)
-        
-        #vac_domain_max = domain_range + vac_steps
 
-        domain_range_max = math.floor(((ev_park.total_charging_stations_power * self.dT_in_seconds) / (ev_park.get_vac_capacity() * 3600)) * 100)
-        self.logger.debug("get_vac_capacity "+str(ev_park.get_vac_capacity())+" dT_in_seconds "+str(self.dT_in_seconds))
+        # vac_domain_max = domain_range + vac_steps
+
+        domain_range_max = math.floor(
+            ((ev_park.total_charging_stations_power * self.dT_in_seconds) / (ev_park.get_vac_capacity() * 3600)) * 100)
+        self.logger.debug(
+            "get_vac_capacity " + str(ev_park.get_vac_capacity()) + " dT_in_seconds " + str(self.dT_in_seconds))
         domain_range_min = 0
-        self.logger.debug("max power "+str(ev_park.total_charging_stations_power)+" domain_range_max " + str(domain_range_max))
+        self.logger.debug(
+            "max power " + str(ev_park.total_charging_stations_power) + " domain_range_max " + str(domain_range_max))
 
         vac_domain_min = - vac_steps * math.floor(domain_range_min / vac_steps)
         vac_domain_max = vac_steps * math.floor(domain_range_max / vac_steps) + vac_steps
-
 
         vac_decision_domain = np.arange(vac_domain_min, vac_domain_max, vac_steps).tolist()
         vac_decision_domain_n = np.arange(vac_domain_min, vac_domain_max, vac_steps)
@@ -193,57 +194,58 @@ class OptControllerStochastic(ControllerBaseProcess):
 
         return (ess_soc_states, ess_decision_domain)
 
-    def kill_processes(self, instance_pids, rest_pids, wait = 3, sig=signal.SIGTERM):
+    def kill_processes(self, instance_pids, rest_pids, wait=3, sig=signal.SIGTERM):
         try:
             for j in rest_pids:
                 try:
                     parent = psutil.Process(j)
                     self.logger.debug("killing process in other pids " + str(parent))
-                    #parent.send_signal(sig)
-                    #psutil.wait_procs(parent, timeout=wait)
+                    # parent.send_signal(sig)
+                    # psutil.wait_procs(parent, timeout=wait)
                 except psutil.NoSuchProcess:
                     self.logger.error("No such parent in other pids " + str(j))
             for k, value in instance_pids.items():
                 for parent_pid in value:
                     try:
-                        self.logger.debug("parent_pid "+str(parent_pid))
+                        self.logger.debug("parent_pid " + str(parent_pid))
                         parent = psutil.Process(parent_pid)
                         self.logger.debug("killing process " + str(parent))
-                        #parent.send_signal(sig)
-                        #psutil.wait_procs(parent, timeout=wait)
+                        # parent.send_signal(sig)
+                        # psutil.wait_procs(parent, timeout=wait)
                     except psutil.NoSuchProcess:
-                        self.logger.error("No such parent "+str(parent_pid))
+                        self.logger.error("No such parent " + str(parent_pid))
         except Exception as e:
-            self.logger.error("error killing processes "+str(e))
+            self.logger.error("error killing processes " + str(e))
 
-    def kill_child_processes(self, parent_pid, wait = 3, sig=signal.SIGTERM):
+    def kill_child_processes(self, parent_pid, wait=3, sig=signal.SIGTERM):
         try:
             parent = psutil.Process(parent_pid)
-            self.logger.debug("parent "+str(parent))
+            self.logger.debug("parent " + str(parent))
         except psutil.NoSuchProcess:
             self.logger.error("No such parent ")
             return
         children = parent.children(recursive=True)
-        self.logger.debug("children "+str(children))
-        count =0
+        self.logger.debug("children " + str(children))
+        count = 0
         for process in children:
-            self.logger.debug("killing process "+str(process)+" type "+str(type(process)))
+            self.logger.debug("killing process " + str(process) + " type " + str(type(process)))
             if "gurobi.sh" in process.name() or "python3.7" in process.name():
                 self.logger.debug("killing gurobi process " + str(process))
                 process.send_signal(sig)
-            
+
         psutil.wait_procs(children, timeout=wait)
-    
+
     def optimize(self, count, solver_name, model_path):
-        #self.logger.debug("##############  testsf")
-        while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
+        # self.logger.debug("##############  testsf")
+        while not self.redisDB.get_bool(self.stop_signal_key):  # and not self.stopRequest.isSet():
             start_time_total = time.time()
             self.logger.debug("number of workers = " + str(self.number_of_workers))
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(preprocess=True, redisDB=self.redisDB)  # blocking call
-            self.logger.debug("data_dict after waiting data "+str(data_dict))
+            self.logger.debug("data_dict after waiting data " + str(data_dict))
 
-            if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":# or self.stopRequest.isSet():
+            if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get(
+                    "End ofw") == "True":  # or self.stopRequest.isSet():
                 break
 
             ######################################
@@ -256,13 +258,16 @@ class OptControllerStochastic(ControllerBaseProcess):
             position_states = [0, 1]
 
             vac_soc_states, vac_decision_domain, vac_decision_domain_n = self.calculate_vac_domain(ev_park)
-            self.logger.debug("vac_soc_states " + str(vac_soc_states)+" vac_decision_domain "+str(vac_decision_domain))
+            self.logger.debug(
+                "vac_soc_states " + str(vac_soc_states) + " vac_decision_domain " + str(vac_decision_domain))
             ess_soc_states, ess_decision_domain = self.calculate_ess_domain(data_dict)
-            self.logger.debug("ess_soc_states "+str(ess_soc_states)+" ess_decision_domain "+str(ess_decision_domain))
+            self.logger.debug(
+                "ess_soc_states " + str(ess_soc_states) + " ess_decision_domain " + str(ess_decision_domain))
 
             T = self.horizon_in_steps
 
-            behaviour_model, Value, Decision = self.get_values(T, ess_soc_states, vac_soc_states,  position_states, max_number_of_cars)
+            behaviour_model, Value, Decision = self.get_values(T, ess_soc_states, vac_soc_states, position_states,
+                                                               max_number_of_cars)
 
             stochastic_start_time = time.time()
 
@@ -275,37 +280,38 @@ class OptControllerStochastic(ControllerBaseProcess):
             loop_fail = False
             position_single_ev = int(data_dict[None]["Recharge"][None])
             self.logger.debug("Entering to timesteps")
-            self.logger.debug("timeout "+str(self.stochastic_timeout))
-            self.logger.debug("number of workers "+str(self.number_of_workers))
+            self.logger.debug("timeout " + str(self.stochastic_timeout))
+            self.logger.debug("number of workers " + str(self.number_of_workers))
             executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.number_of_workers)
-            
+
             for timestep in reverse_steps:
 
                 if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":
                     break
 
                 else:
-                    self.logger.info("Timestep :#"+str(timestep))
+                    self.logger.info("Timestep :#" + str(timestep))
 
-
-                    value_index, value,bm_idx, bm, ess_vac_product = self.calculate_internal_values(timestep, Value, behaviour_model, ess_soc_states, vac_soc_states,
-                                              position_states)
+                    value_index, value, bm_idx, bm, ess_vac_product = self.calculate_internal_values(timestep, Value,
+                                                                                                     behaviour_model,
+                                                                                                     ess_soc_states,
+                                                                                                     vac_soc_states,
+                                                                                                     position_states)
                     data_dict[None]["Value_Index"] = {None: value_index}
                     data_dict[None]["Value"] = value
-                    #self.logger.debug("value "+str(value))
+                    # self.logger.debug("value "+str(value))
                     data_dict[None]["Behavior_Model_Index"] = {None: bm_idx}
                     data_dict[None]["Behavior_Model"] = bm
 
                     data_dict[None]["Timestep"] = {None: timestep}
 
-                    
                     futures = []
                     # retrieve the solutions
                     try:
                         """if timestep == (self.horizon_in_steps - 1):
                             self.logger.debug("20 sec sleep. Only once")
                             time.sleep(20)"""
-                        
+
                         if self.single_ev:
                             self.logger.debug("Entering to ProcessPoolExecutor single ev")
                             for combination in ess_vac_product:
@@ -313,8 +319,10 @@ class OptControllerStochastic(ControllerBaseProcess):
                                 futures.append(
                                     executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                     ess_decision_domain, min_value, max_value, vac_decision_domain,
-                                                    vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
-                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
+                                                    vac_decision_domain_n, max_vac_soc_states,
+                                                    ev_park.total_charging_stations_power, timestep, True,
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, position,
+                                                    time_out=self.stochastic_timeout))
 
                         else:
                             self.logger.debug("Entering to ProcessPoolExecutor")
@@ -323,34 +331,37 @@ class OptControllerStochastic(ControllerBaseProcess):
                                 futures.append(
                                     executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                     ess_decision_domain, min_value, max_value, vac_decision_domain,
-                                                    vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
-                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
+                                                    vac_decision_domain_n, max_vac_soc_states,
+                                                    ev_park.total_charging_stations_power, timestep, False,
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc,
+                                                    time_out=self.stochastic_timeout))
 
                         try:
                             self.logger.debug("Entering to futures")
-                            for future in concurrent.futures.as_completed(futures,timeout=120):
+                            for future in concurrent.futures.as_completed(futures, timeout=120):
                                 try:
                                     d, v = future.result()
                                     if d is None and v is None:
                                         loop_fail = True
-                                        self.logger.error("Optimization calculation was not possible. Process will be repeated")
+                                        self.logger.error(
+                                            "Optimization calculation was not possible. Process will be repeated")
                                         break
                                     Value.update(v)
                                     Decision.update(d)
                                 except Exception as exc:
-                                    self.logger.error("caused an exception: "+str(exc)+". Repeating the process")
+                                    self.logger.error("caused an exception: " + str(exc) + ". Repeating the process")
                                     loop_fail = True
                                     break
                         except Exception as e:
-                            self.logger.error("One future failed. "+str(e))
+                            self.logger.error("One future failed. " + str(e))
                             loop_fail = True
-                            
+
                     except Exception as e:
-                        self.logger.error("Calculation of ProcessPool failed"+ str(e))
+                        self.logger.error("Calculation of ProcessPool failed" + str(e))
                         loop_fail = True
                         for f in futures:
                             if f.cancel():
-                                self.logger.debug("future "+str(f)+" cancelled")
+                                self.logger.debug("future " + str(f) + " cancelled")
                             else:
                                 self.logger.error("future " + str(f) + " not cancelled")
 
@@ -363,14 +374,12 @@ class OptControllerStochastic(ControllerBaseProcess):
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
                         self.logger.debug("other_pids " + str(other_pids))
                         self.kill_processes(pids_for_instances, other_pids)
-                        
-
 
                     if loop_fail:
                         self.logger.error("ERROR: Optimization calculation was not possible. Process will be repeated")
                         for f in futures:
                             if f.cancel():
-                                self.logger.debug("future "+str(f)+" cancelled")
+                                self.logger.debug("future " + str(f) + " cancelled")
                             else:
                                 self.logger.error("future " + str(f) + " not cancelled")
 
@@ -382,15 +391,15 @@ class OptControllerStochastic(ControllerBaseProcess):
                         self.logger.debug("pids_for_instances " + str(pids_for_instances))
                         self.logger.debug("other_pids " + str(other_pids))
                         self.kill_processes(pids_for_instances, other_pids)
-                        #self.kill_child_processes(os.getpid())
+                        # self.kill_child_processes(os.getpid())
                         break
-            
+
             if loop_fail:
                 self.logger.error("Optimization will be repeated")
                 time.sleep(0.2)
                 # erasing files from pyomo
-                #folder = "/usr/src/app/logs/pyomo/" + str(self.id)
-                #self.erase_pyomo_files(folder)
+                # folder = "/usr/src/app/logs/pyomo/" + str(self.id)
+                # self.erase_pyomo_files(folder)
                 if self.redisDB.get_bool(self.stop_signal_key):
                     break
                 if self.repetition == -1:
@@ -402,7 +411,7 @@ class OptControllerStochastic(ControllerBaseProcess):
                 executor.shutdown(wait=True)
                 self.logger.debug("Flag loop_fail is False")
                 time.sleep(0.2)
-                
+
                 """
                 with open("/usr/src/app/optimization/resources/Value_p.txt", "w") as f:
                     f.write(str(Value))
@@ -418,7 +427,7 @@ class OptControllerStochastic(ControllerBaseProcess):
                     self.logger.debug("initial_vac_soc_value " + str(initial_vac_soc_value))
 
                     if self.single_ev:
-                        self.logger.debug("position_single_ev "+str(position_single_ev))
+                        self.logger.debug("position_single_ev " + str(position_single_ev))
                         result_key = (0, initial_ess_soc_value, initial_vac_soc_value, position_single_ev)
                     else:
                         result_key = (0, initial_ess_soc_value, initial_vac_soc_value)
@@ -429,12 +438,11 @@ class OptControllerStochastic(ControllerBaseProcess):
                     p_vac = Decision[result_key]['VAC']
                     if "P_Load" in data_dict[None].keys():
                         if self.single_ev:
-                            p_load = data_dict[None]["P_Load"][0]/1000
+                            p_load = data_dict[None]["P_Load"][0] / 1000
                         else:
                             p_load = data_dict[None]["P_Load"][0]
                     else:
                         p_load = 0
-
 
                     p_ev = {}
 
@@ -451,11 +459,10 @@ class OptControllerStochastic(ControllerBaseProcess):
                     # calculate the maximum feasible charging power input under given SoC
 
                     dT = data_dict[None]["dT"][None]
-                    #ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
-                    #ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
+                    # ESS_Max_Charge = data_dict[None]["ESS_Max_Charge_Power"][None]
+                    # ESS_Capacity = data_dict[None]["ESS_Capacity"][None]
 
                     connections = ev_park.max_charge_power_calculator(dT)
-                    
 
                     # Calculation of the feasible charging power at the commercial station
                     max_power_for_cars = sum(connections.values())
@@ -463,14 +470,14 @@ class OptControllerStochastic(ControllerBaseProcess):
                     self.logger.debug("feasible_ev_charging_power" + str(feasible_ev_charging_power))
                     self.logger.debug("max_power_for_cars " + str(max_power_for_cars))
                     charger_dict = ev_park.chargers
-                    self.logger.debug("charger_list "+str(charger_dict))
+                    self.logger.debug("charger_list " + str(charger_dict))
                     for charger, max_charge_power_of_car in connections.items():
-                        self.logger.debug("charger name "+str(charger))
+                        self.logger.debug("charger name " + str(charger))
                         soc_ev = None
                         for name, charger_element in charger_dict.items():
                             if name == charger:
                                 soc_ev = charger_element.soc
-                        self.logger.debug("soc ev "+str(soc_ev)+" in charger "+str(charger))
+                        self.logger.debug("soc ev " + str(soc_ev) + " in charger " + str(charger))
                         if feasible_ev_charging_power == 0:
                             if not soc_ev == None:
                                 if not soc_ev == 1:
@@ -498,12 +505,12 @@ class OptControllerStochastic(ControllerBaseProcess):
                         sample = self.input.get_sample(P_PV_var, self.redisDB)
                         if sample is not None:
                             sample_data.update(sample)
-    
+
                         """
                         sample_data = self.input.get_data_single(redisDB=self.redisDB)  # blocking call
                         """
-                        self.logger.debug("single data at this moment "+str(sample_data))
-                        self.logger.debug("data keys "+str(sample_data.keys()))
+                        self.logger.debug("single data at this moment " + str(sample_data))
+                        self.logger.debug("data keys " + str(sample_data.keys()))
                         p_ev_single = 0
                         if not sample_data == None:
                             if not P_PV_var or not p_load_var in sample_data.keys():
@@ -514,26 +521,26 @@ class OptControllerStochastic(ControllerBaseProcess):
                                 for name, value in sample_data.items():
                                     if P_PV_var in name:
                                         p_pv_now = value[0] / 1000
-                                        self.logger.debug("p_pv_now "+str(p_pv_now))
+                                        self.logger.debug("p_pv_now " + str(p_pv_now))
                                     if p_load_var in name:
                                         if self.single_ev:
                                             p_load_now = value[0] / 1000
                                         else:
                                             p_load_now = value[0]
-                                        self.logger.debug("p_load_now "+str(p_load_now))
-    
+                                        self.logger.debug("p_load_now " + str(p_load_now))
+
                             for charger, max_charge_power_of_car in connections.items():
                                 if charger in p_ev.keys():
                                     p_ev_single += p_ev[charger]
-    
+
                             if (p_pv_now - p_load_now - p_ev_single) < 0:
                                 if p_ess > (p_load_now + p_ev_single - p_pv_now):
                                     p_ess = p_load_now + p_ev_single - p_pv_now
-                                    self.logger.debug("p_ess output changed to "+str(p_ess)+" kW")
+                                    self.logger.debug("p_ess output changed to " + str(p_ess) + " kW")
                             else:
-                                #if (p_pv_now - p_load_now - p_ev_single) < p_ess:
+                                # if (p_pv_now - p_load_now - p_ev_single) < p_ess:
                                 if p_ess > 0:
-                                    #p_ess = p_pv_now - p_load_now - p_ev_single
+                                    # p_ess = p_pv_now - p_load_now - p_ev_single
                                     p_ess = 0
                                     self.logger.debug("p_ess output changed to " + str(p_ess) + " kW")
 
@@ -560,18 +567,18 @@ class OptControllerStochastic(ControllerBaseProcess):
 
                     self.logger.debug("Time Information".center(80, "#"))
                     self.logger.debug("")
-                    self.logger.debug("Start time: "+str(stochastic_start_time))
-                    self.logger.debug("End time: "+str(stochastic_end_time))
+                    self.logger.debug("Start time: " + str(stochastic_start_time))
+                    self.logger.debug("End time: " + str(stochastic_end_time))
                     execution_time = stochastic_end_time - stochastic_start_time
-                    self.logger.debug("Programming execution time: "+str(execution_time))
+                    self.logger.debug("Programming execution time: " + str(execution_time))
                     self.logger.debug("")
                     self.logger.debug("#" * 80)
 
-                    #self.logger.debug("p_fronius_pct_output")
+                    # self.logger.debug("p_fronius_pct_output")
                     p_fronius_pct_output = []
                     if "Fronius_Max_Power" in data_dict[None].keys():
                         p_fronius_max_power = data_dict[None]["Fronius_Max_Power"][None]
-                        #self.logger.debug("p_fronius_max_power "+str(p_fronius_max_power))
+                        # self.logger.debug("p_fronius_max_power "+str(p_fronius_max_power))
                         p_fronius_pct_output_calc = p_ess * 100 / p_fronius_max_power
                         if p_fronius_pct_output_calc < 0:
                             p_fronius_pct_output_calc = 0
@@ -580,11 +587,11 @@ class OptControllerStochastic(ControllerBaseProcess):
 
                         p_fronius_pct_output.append(p_fronius_pct_output_calc)
 
-                    #self.logger.debug("p_ess_output_pct")
+                    # self.logger.debug("p_ess_output_pct")
                     p_ess_output_pct = []
                     if "ESS_Max_Charge_Power" in data_dict[None].keys():
                         p_ess_max_power = data_dict[None]["ESS_Max_Charge_Power"][None]
-                        #self.logger.debug("p_ess_max_power "+str(p_ess_max_power))
+                        # self.logger.debug("p_ess_max_power "+str(p_ess_max_power))
                         p_ess_output_pct_calc = p_ess * 100 / p_ess_max_power
                         if p_ess_output_pct_calc < -100:
                             p_ess_output_pct_calc = -100
@@ -593,18 +600,17 @@ class OptControllerStochastic(ControllerBaseProcess):
 
                         p_ess_output_pct.append(p_ess_output_pct_calc)
 
-                    #self.logger.debug("SoC_output")
+                    # self.logger.debug("SoC_output")
                     SoC_output = []
                     if "SoC_Value" in data_dict[None].keys():
                         SoC_Value = data_dict[None]["SoC_Value"][None]
                         SoC_output.append(SoC_Value)
 
-                    #self.logger.debug("GESSCon_Output")
+                    # self.logger.debug("GESSCon_Output")
                     GESSCon_Output = []
                     if "ESS_Control" in data_dict[None].keys():
                         GESSCon_Value = data_dict[None]["ESS_Control"][0]
                         GESSCon_Output.append(GESSCon_Value)
-
 
                     """results = {
                         "id": self.id,
@@ -622,9 +628,8 @@ class OptControllerStochastic(ControllerBaseProcess):
                     }"""
 
                     # update soc
-                    #self.logger.debug("results "+str(results))
+                    # self.logger.debug("results "+str(results))
                     socs = ev_park.charge_ev(p_ev, self.dT_in_seconds, self.single_ev)
-
 
                     results_publish = {
                         "P_PV_Output": [p_pv],
@@ -642,22 +647,22 @@ class OptControllerStochastic(ControllerBaseProcess):
                     for key, value in p_ev.items():
                         ev_id = ev_park.get_hosted_ev(key)
                         if ev_id:
-                            results_publish[key+"/p_ev"] = {"bn":"chargers/"+key, "n":ev_id+"/p_ev", "v":[value]}
+                            results_publish[key + "/p_ev"] = {"bn": "chargers/" + key, "n": ev_id + "/p_ev",
+                                                              "v": [value]}
 
                     for key, value in socs.items():
                         ev_id = ev_park.get_hosted_ev(key)
                         if ev_id:
                             results_publish[key + "/SoC"] = {"bn": "chargers/" + key, "n": ev_id + "/SoC", "v": [value]}
 
-                    self.logger.debug("results_publish "+str(results_publish))
+                    self.logger.debug("results_publish " + str(results_publish))
                     self.output.publish_data(self.id, results_publish, self.dT_in_seconds)
                     self.monitor.send_monitor_ping(self.control_frequency)
 
                     # erasing files from pyomo
-                    #self.erase_pyomo_files(self.pyomo_path)
-                    
-                    #ev_park = None
-                    
+                    # self.erase_pyomo_files(self.pyomo_path)
+
+                    # ev_park = None
 
                     count += 1
                     if self.repetition > 0 and count >= self.repetition:
@@ -671,7 +676,7 @@ class OptControllerStochastic(ControllerBaseProcess):
                         self.logger.info("Optimization thread going to sleep for " + str(sleep_time) + " seconds")
                         for i in range(sleep_time):
                             time.sleep(1)
-                            if self.redisDB.get_bool(self.stop_signal_key): #or self.stopRequest.isSet():
+                            if self.redisDB.get_bool(self.stop_signal_key):  # or self.stopRequest.isSet():
                                 break
                             if self.redisDB.get("End ofw") == "True":
                                 break
@@ -679,14 +684,15 @@ class OptControllerStochastic(ControllerBaseProcess):
     @staticmethod
     @timeoutable((None, None), timeout_param="time_out")
     def create_instance_and_solve(data_dict, ess_decision_domain, min_value, max_value, vac_decision_domain,
-                                  vac_decision_domain_n, max_vac_soc_states, max_power_charging_station, timestep, single_ev, solver_name,
+                                  vac_decision_domain_n, max_vac_soc_states, max_power_charging_station, timestep,
+                                  single_ev, solver_name,
                                   absolute_path, ini_ess_soc, ini_vac_soc, position=None):
 
         try:
             feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
 
             if single_ev:
-                
+
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
                     # self.logger.debug("min_value "+str(min_value))
@@ -694,7 +700,6 @@ class OptControllerStochastic(ControllerBaseProcess):
                     if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                         feasible_Pess.append(p_ESS)
 
-                
                 feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                 if position == 1:
                     # When decided charging with p_VAC
@@ -702,19 +707,19 @@ class OptControllerStochastic(ControllerBaseProcess):
                         # if the final vac_SoC is within the specified domain
                         index = np.searchsorted(vac_decision_domain_n, max_vac_soc_states - ini_vac_soc)
                         feasible_Pvac = vac_decision_domain[0:index + 1]
-                        #if len(feasible_Pvac) > 1:
-                            #if 0 in feasible_Pvac:
-                                #feasible_Pvac.remove(0)
+                        # if len(feasible_Pvac) > 1:
+                        # if 0 in feasible_Pvac:
+                        # feasible_Pvac.remove(0)
                 else:
                     feasible_Pvac.append(0)
-        
+
             else:
 
                 for p_ESS in ess_decision_domain:  # When decided charging with p_ESS
                     compare_value = ini_ess_soc - p_ESS
                     if min_value <= compare_value <= max_value:  # if the final ess_SoC is within the specified domain
                         feasible_Pess.append(p_ESS)
-                #print("ini_ess_soc "+str(ini_ess_soc)+" feasible p_ESS " + str(feasible_Pess))
+                # print("ini_ess_soc "+str(ini_ess_soc)+" feasible p_ESS " + str(feasible_Pess))
 
                 feasible_Pvac = []  # Feasible charge powers to VAC under the given conditions
                 # When decided charging with p_VAC
@@ -724,7 +729,6 @@ class OptControllerStochastic(ControllerBaseProcess):
                     feasible_Pvac = vac_decision_domain[0:index + 1]
 
                 # self.logger.debug("feasible p_VAC " + str(feasible_Pvac))
-
 
             data_dict[None]["Feasible_ESS_Decisions"] = {None: feasible_Pess}
             data_dict[None]["Feasible_VAC_Decisions"] = {None: feasible_Pvac}
@@ -736,24 +740,26 @@ class OptControllerStochastic(ControllerBaseProcess):
             data_dict[None]["Recharge"] = {None: position}
 
             final_ev_soc = ini_vac_soc - data_dict[None]["Unit_Consumption_Assumption"][None]
-            
+
             if final_ev_soc < data_dict[None]["VAC_States_Min"][None]:
                 final_ev_soc = data_dict[None]["VAC_States_Min"][None]
-            #logger.debug("Max_Charging_Power_kW "+str(max_power_charging_station))
+            # logger.debug("Max_Charging_Power_kW "+str(max_power_charging_station))
 
             data_dict[None]["final_ev_soc"] = {None: final_ev_soc}
 
             pv = data_dict[None]["P_PV"][timestep]
             load = data_dict[None]["P_Load"][timestep]
-            
+
             if "ESS_Control" in data_dict[None].keys():
                 gesscon = data_dict[None]["ESS_Control"][timestep]
             else:
                 gesscon = None
-                
-            v = str(timestep) + "_" + str(ini_ess_soc) + "_" + str(ini_vac_soc)+" load "+str(load)+" pv "+str(pv)+\
-                " gesscon "+str(gesscon) + " feasible_Pvac "+str(feasible_Pvac) + " feasible_Pess "+str(feasible_Pess)
-                #" Behavior "+str(data_dict[None]["Behavior_Model"])
+
+            v = str(timestep) + "_" + str(ini_ess_soc) + "_" + str(ini_vac_soc) + " load " + str(load) + " pv " + str(
+                pv) + \
+                " gesscon " + str(gesscon) + " feasible_Pvac " + str(feasible_Pvac) + " feasible_Pess " + str(
+                feasible_Pess)
+            # " Behavior "+str(data_dict[None]["Behavior_Model"])
 
             my_dict = {}
             ctr = 0
@@ -766,38 +772,38 @@ class OptControllerStochastic(ControllerBaseProcess):
                         if solver_name == "gurobi":
                             optsolver.options['IterationLimit'] = 1000
                             optsolver.options['TimeLimit'] = 3
-                            
+
                     except Exception as e:
-                        print("optsolver didn't load. "+str(e))
+                        print("optsolver didn't load. " + str(e))
                         continue
-    
+
                     try:
                         mod = __import__(absolute_path, fromlist=['Model'])
-                        #mod = importlib.import_module(absolute_path)
+                        # mod = importlib.import_module(absolute_path)
                     except Exception as e:
-                        print("class import didn't work. "+str(e))
+                        print("class import didn't work. " + str(e))
                         continue
-    
+
                     my_class = getattr(mod, 'Model')
                     try:
                         instance = my_class.model.create_instance(data_dict)
                     except Exception as e:
-                        print("instance could not be created. "+str(e))
+                        print("instance could not be created. " + str(e))
                         continue
-    
+
                     try:
                         result = optsolver.solve(instance)
                     except Exception as e:
-                        print("Solving the model did not work on pyomo. "+str(e))
+                        print("Solving the model did not work on pyomo. " + str(e))
                         continue
-    
+
                     if result is None:
                         print("result is none for " + str(v) + " repeat")
                         continue
                     elif (result.solver.status == SolverStatus.ok) and (
                             result.solver.termination_condition == TerminationCondition.optimal):
                         instance.solutions.load_from(result)
-    
+
                         # * if solved get the values in dict
                         for v1 in instance.component_objects(Var, active=True):
                             # self.logger.debug("Variable in the optimization: " + str(v))
@@ -806,7 +812,7 @@ class OptControllerStochastic(ControllerBaseProcess):
                             try:
                                 # Try and add to the dictionary by key ref
                                 if str(v1) == "Value_output":
-                                    #print("Value_output " +str(varobject.get_values()))
+                                    # print("Value_output " +str(varobject.get_values()))
                                     my_dict[str(v1)] = varobject.get_values()
                                 else:
                                     for index in varobject:
@@ -815,22 +821,22 @@ class OptControllerStochastic(ControllerBaseProcess):
                                     my_dict[str(v1)] = var_list
                             except Exception as e:
                                 print("error reading result " + str(e))
-    
+
                         if single_ev:
                             combined_key = (timestep, ini_ess_soc, ini_vac_soc, position)
                         else:
                             combined_key = (timestep, ini_ess_soc, ini_vac_soc)
-    
+
                         Decision = {combined_key: {}}
                         if len(my_dict) >= 4:
                             Decision[combined_key]['Grid'] = my_dict["P_GRID_OUTPUT"][0]
                             Decision[combined_key]['PV'] = my_dict["P_PV_OUTPUT"][0]
                             Decision[combined_key]['ESS'] = my_dict["P_ESS_OUTPUT"][0]
                             Decision[combined_key]['VAC'] = my_dict["P_VAC_OUTPUT"][0]
-    
+
                         Value = {combined_key: {}}
                         Value[combined_key] = instance.obj.expr()
-    
+
                         return (Decision, Value)
                     elif result.solver.termination_condition == TerminationCondition.infeasible:
                         # do something about it? or exit?
@@ -852,7 +858,4 @@ class OptControllerStochastic(ControllerBaseProcess):
             print("--ERROR-- Result not found after " + str(ctr) + " repetitions")
             return (None, None)
         except Exception as e:
-            print("--Exception--"+str(e))
-            
-        
-
+            print("--Exception--" + str(e))

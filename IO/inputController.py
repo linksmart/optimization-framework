@@ -224,58 +224,24 @@ class InputController:
                         self.logger.debug("bucket not available " + str(name))
                 except Exception as e:
                     self.logger.error("error getting sample " + str(name) + " " + str(e))
-    
-    def get_data_single(self, redisDB):
-        # redisDB.set(Constants.get_data_flow_key(self.id), True)
-        success = False
-        read_data = None
-        while not success:
-            if redisDB.get("End ofw") == "True":
-                break
-            self.logger.debug("Starting getting single data")
-            current_bucket = self.get_current_bucket()
-            self.logger.info("Get input single data for bucket " + str(current_bucket))
-            try:
-                read_data = {}
-                bucket_available = False
-                for name, DataReceiverObject in self.generic_data_receiver.items():
-                    data, bucket_available, last_time = DataReceiverObject.get_current_bucket_data(steps=1)
-                    if not bucket_available:
-                        self.logger.error("No data available for the bucket")
-                        break
-                    read_data[name] = next(iter(data[name].values()))
-                if bucket_available:
-                    success = True
-                else:
-                    read_data = None
-            except Exception as e:
-                self.logger.error(
-                    "Error occured while getting single data for bucket " + str(current_bucket) + ". " + str(e))
-        
-        return read_data
-    
+
     def get_data(self, preprocess, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         
         # self.logger.info("sleep for data")
         # time.sleep(100)
-        timeout_exception = True
-        while timeout_exception:
-            success = False
-            executor = concurrent.futures.ThreadPoolExecutor()#(max_workers=3)
+        success = False
+        with concurrent.futures.ThreadPoolExecutor() as executor:
             while not success:
                 if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
-                    timeout_exception = False
                     break
                 self.logger.debug("Starting getting data")
                 current_bucket = self.get_current_bucket()
                 self.logger.info("Get input data for bucket " + str(current_bucket))
                 self.logger.debug("optimization_data before getting new values " + str(self.optimization_data))
                 try:
-                    
-        
                     futures = []
-                
+
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
                                                    self.internal_receiver, [], [], current_bucket,
                                                    self.horizon_in_steps))
@@ -291,43 +257,19 @@ class InputController:
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
                                                    self.generic_data_receiver, [], [], current_bucket,
                                                    self.horizon_in_steps))
-                    
-                    try:
-            
-                        for future in concurrent.futures.as_completed(futures):#,timeout=30):
-                            try:
-                                success, read_data, mqtt_timer = future.result()
-                                self.logger.debug("Success flag for future in wait data: " + str(success))
-                                if success:
-                                    self.update_data(read_data)
-                                    self.mqtt_timer.update(mqtt_timer)
-                                    timeout_exception = False
-                                else:
-                                    self.logger.error("Success flag is False")
-                                    timeout_exception = True
-                                    break
-                            except Exception as exc:
-                                self.logger.error("input fetch data caused an exception: " + str(exc))
-                                timeout_exception = True
-                                break
-                    except Exception as e:
-                        self.logger.error("Timeout in getting data. " + str(e))
-                        timeout_exception = True
-                        #self.logger.error("Executor shutdown in getting data")
-                        #executor.shutdown(wait=False)
+
+                    for future in concurrent.futures.as_completed(futures):#,timeout=30):
+                        success, read_data, mqtt_timer = future.result()
+                        self.logger.debug("Success flag for future in wait data: " + str(success))
+                        if success:
+                            self.update_data(read_data)
+                            self.mqtt_timer.update(mqtt_timer)
+                        else:
+                            self.logger.error("Success flag is False")
+                            break
                 except Exception as e:
                     self.logger.error("Error occured while getting data for bucket " + str(current_bucket) + ". " + str(e))
-                    timeout_exception = True
 
-            self.logger.error("Executor shutdown")
-            executor.shutdown(wait=True)
-            if timeout_exception:
-                self.logger.debug("timeout_exception flag "+str(timeout_exception))
-                continue
-            else:
-                self.logger.debug("timeout_exception flag " + str(timeout_exception))
-                break
-            
         if preprocess:
             self.inputPreprocess.preprocess(self.optimization_data, self.mqtt_timer)
         redisDB.set(Constants.get_data_flow_key(self.id), False)

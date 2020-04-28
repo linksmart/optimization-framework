@@ -3,9 +3,10 @@ Created on Jun 27 17:36 2018
 
 @author: nishit
 """
-
+import threading
 import time
 from abc import ABC, abstractmethod
+from queue import Queue
 
 from random import randrange
 
@@ -19,7 +20,9 @@ from IO.redisDB import RedisDB
 class DataReceiver(ABC):
 
     def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None, prepare_topic_qos=True, sub_pub=False):
-        super().__init__()
+        super(DataReceiver, self).__init__()
+        self.q_bdr = Queue(maxsize=0)
+        self.q_dr = Queue(maxsize=0)
         self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
         self.internal = internal
@@ -46,6 +49,8 @@ class DataReceiver(ABC):
                 self.init_mqtt(self.topics)
         elif self.channel == "ZMQ":
             self.init_zmq(self.topics)
+        self.data_sync_thread_dr = None
+        #self.data_sync_thread_dr = threading.Thread(target=self.data_sync_dr).start()
 
     def setup(self):
         if self.internal:
@@ -137,22 +142,23 @@ class DataReceiver(ABC):
     def get_data_update(self):
         return self.data_update
 
-    def set_data_update(self, data_received):
-        self.logger.debug("data_received " + str(data_received)+ " for " + str(self.topics))
-        self.data_update = True
-    
+    def set_data_update(self, data_update):
+        self.data_update = data_update
+
     def get_mqtt_data(self, require_updated, clearData):
         if require_updated == 1 and not self.data:
             require_updated = 0
         ctr = 0
-
+        self.read_from_bdr()
         while require_updated == 0 and not self.get_data_update() and not self.stop_request and not self.redisDB.get("End ofw") == "True":
-            if ctr >= 45:
+            if ctr >= 9:
                 ctr = 0
-                self.logger.debug("self.data_update "+str(self.get_data_update()))
-                self.logger.debug("wait for data "+str(self.topics))
+                self.logger.debug("wait for data "+str(self.topics)+str(self.get_data_update())+
+                                  " "+str(self.stop_request)+" "+str(self.redisDB.get("End ofw") == "True"))
             ctr += 1
-            time.sleep(0.1)
+            time.sleep(0.5)
+            self.read_from_bdr()
+        self.write_to_dr()
         return self.get_and_update_data(clearData)
 
     def exit(self):
@@ -166,7 +172,7 @@ class DataReceiver(ABC):
         except Exception as e:
             self.logger.warning(str(e))
 
-    def get_zmq_msg(self, clearData, generic_name):
+    def get_zmq_msg(self, clearData):
         while True and not self.stop_request:
             self.logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
@@ -175,7 +181,7 @@ class DataReceiver(ABC):
                 self.on_msg_received(message)
                 break
             time.sleep(1)
-        return self.get_and_update_data(clearData, generic_name)
+        return self.get_and_update_data(clearData)
 
     def get_and_update_data(self, clearData):
         new_data = self.data.copy()
@@ -202,3 +208,41 @@ class DataReceiver(ABC):
         elif self.channel == "ZMQ":
             data = self.get_zmq_msg(clearData)
         return data
+
+    def data_sync_dr(self):
+        while not self.stop_request and not not self.redisDB.get("End ofw") == "True":
+            self.read_from_bdr()
+            time.sleep(1)
+
+    def read_from_bdr(self):
+        if not self.q_bdr.empty():
+            try:
+                new_data = self.q_bdr.get_nowait()
+                self.logger.debug("new data "+str(new_data))
+                self.q_bdr.task_done()
+                if "data_update" in new_data.keys():
+                    self.data_update = new_data["data_update"]
+                if "first_time" in new_data.keys():
+                    self.first_time = new_data["first_time"]
+                if "last_time" in new_data.keys():
+                    self.last_time = new_data["last_time"]
+                if "data" in new_data.keys():
+                    self.data = new_data["data"]
+            except Exception:
+                self.logger.error("Queue empty")
+        else:
+            self.logger.debug("bdr Queue empty")
+
+    def write_to_dr(self):
+        try:
+            new_data = {
+                "BaseDataReceiver": {
+                "data_update" : self.data_update,
+                "first_time": self.first_time,
+                "last_time" : self.last_time,
+                "data" : self.data.copy()
+                }
+            }
+            self.q_dr.put(new_data)
+        except Exception as e:
+            self.logger.error(e)

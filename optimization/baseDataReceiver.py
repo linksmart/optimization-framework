@@ -4,10 +4,13 @@ Created on Aug 13 11:03 2018
 @author: nishit
 """
 import json
+import threading
 from abc import ABC, abstractmethod
 
 import datetime
 import time
+from queue import Queue
+
 from math import floor
 
 import os
@@ -22,6 +25,13 @@ from utils_intern.timeSeries import TimeSeries
 class BaseDataReceiver(DataReceiver, ABC):
 
     def __init__(self, internal, topic_params, config, generic_name, id, buffer, dT, base_value_flag):
+        self.first_time = 0
+        self.last_time = 0
+        self.emptyValue = {}
+        self.data = self.emptyValue.copy()
+        self.data_update = False
+
+
         self.id = id
         self.redisDB = RedisDB()
         self.logger = MessageLogger.get_logger(__name__, id)
@@ -56,8 +66,10 @@ class BaseDataReceiver(DataReceiver, ABC):
         self.bucket_index = False
         self.length = 1
 
+
+
         try:
-            super().__init__(internal, topic_params, config, id=id)
+            super(BaseDataReceiver, self).__init__(internal, topic_params, config, id=id)
         except Exception as e:
             self.redisDB.set("Error mqtt" + id, True)
             self.logger.error(e)
@@ -69,74 +81,32 @@ class BaseDataReceiver(DataReceiver, ABC):
                 self.data.update(formated_data)
                 self.set_data_update(True)
                 self.last_time = time.time()
+        self.data_sync_thread_bdr = threading.Thread(target=self.data_sync_bdr).start()
 
-        
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+            print_details = False
             if "chargers" in payload:
                 self.logger.debug("data received for charger = "+str(payload))
-            elif "P_PV" in payload:
-                self.logger.debug("data received for PV = " + str(payload))
-            elif "P_Load" in payload:
-                self.logger.debug("data received for Load = " + str(payload))
+            elif '\"n\": \"P_PV\"' in payload or '\"n\": \"P_Load\"' in payload:
+                self.logger.debug("data received for pv or pload = " + str(payload))
+                print_details = True
             senml_data = json.loads(payload)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("senml_data "+str(senml_data))
             #self.logger.debug("senml_data "+str(senml_data))
             formated_data = self.add_formated_data(senml_data)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("formated_data "+str(formated_data))
             if self.reuseable:
                 self.save_data(formated_data)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("Updating data")
             self.data.update(formated_data)
-            self.logger.debug("self.data "+str(self.data))
             self.set_data_update(True)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("data_update " + str(self.get_data_update()))
             self.last_time = time.time()
+            if print_details:
+                self.logger.debug("in pv, "+str(self.data_update)+" "+str(self.get_data_update())
+                                  +" "+str(self.data))
+            self.write_to_bdr()
         except Exception as e:
             self.logger.error(e)
-    
-    def get_data_update(self):
-        return self.redisDB.get_bool("data_update_" + str(self.id)+"_"+str(self.generic_name))
-        #return self.data_updated_receiver
 
-    def set_data_update(self, data_received):
-        self.logger.debug("data_received BaseDataReceiver " + str(data_received)+" for "+str(self.generic_name))
-        self.redisDB.set("data_update_" + str(self.id)+"_"+str(self.generic_name), data_received)
-        #self.data_updated_receiver = data_received
-        
-    def get_mqtt_data(self, require_updated, clearData):
-        if require_updated == 1 and not self.data:
-            require_updated = 0
-        ctr = 0
-
-        while require_updated == 0 and not self.get_data_update() and not self.stop_request and not self.redisDB.get("End ofw") == "True":
-            if ctr >= 45:
-                ctr = 0
-                self.logger.debug("self.data_update in baseDataReceiver "+str(self.get_data_update()))
-                self.logger.debug("wait for data in baseDataReceiver "+str(self.topics))
-            ctr += 1
-            time.sleep(0.1)
-        return self.get_and_update_data_receiver(clearData)
-    
-    def get_data(self, require_updated=0, clearData=False):
-        return self.get_mqtt_data(require_updated, clearData)
-    
-    def get_and_update_data_receiver(self, clearData):
-        new_data = self.data.copy()
-        self.logger.debug("self.data BaseDataReceiver "+str(self.data))
-        self.logger.debug("new_data BaseDataReceiver" + str(new_data))
-        self.set_data_update(False)
-        self.logger.debug("clearData " + str(clearData))
-        if clearData:
-            self.clear_data()
-        self.logger.debug("new_data in BaseDataReceiver "+str(new_data))
-        return new_data
-    
     def save_data(self, formated_data):
         keys = list(formated_data.keys())
         sorted(keys)
@@ -255,7 +225,6 @@ class BaseDataReceiver(DataReceiver, ABC):
         else:
             data = self.get_data(require_updated=1)
 
-        self.logger.debug("Out of getting data for "+str(self.generic_name))
         if not self.redisDB.get("End ofw") == "True":
             self.logger.debug(str(self.generic_name) + " data from mqtt is : "+ json.dumps(data, indent=4))
             self.logger.debug(str(self.generic_name) + " steps: "+str(steps) + " length: "+str(self.length))
@@ -341,3 +310,41 @@ class BaseDataReceiver(DataReceiver, ABC):
         bucket = self.time_to_bucket(datetime.datetime.now().timestamp())
         self.logger.debug("current b = "+str(bucket))
         return self.get_bucket_aligned_data(bucket, steps, wait_for_data, check_bucket_change)
+
+    def data_sync_bdr(self):
+        while not self.stop_request and not not self.redisDB.get("End ofw") == "True":
+            self.read_from_dr()
+            time.sleep(1)
+
+    def read_from_dr(self):
+        if not self.q_dr.empty():
+            try:
+                new_data = self.q_dr.get_nowait()
+                self.logger.debug("new data "+str(new_data))
+                self.q_dr.task_done()
+                if "data_update" in new_data.keys():
+                    self.data_update = new_data["data_update"]
+                if "first_time" in new_data.keys():
+                    self.first_time = new_data["first_time"]
+                if "last_time" in new_data.keys():
+                    self.last_time = new_data["last_time"]
+                if "data" in new_data.keys():
+                    self.data = new_data["data"]
+            except Exception:
+                self.logger.error("Queue empty")
+        else:
+            self.logger.debug("bdr Queue empty")
+
+    def write_to_bdr(self):
+        try:
+            new_data = {
+                "BaseDataReceiver": {
+                "data_update" : self.data_update,
+                "first_time": self.first_time,
+                "last_time" : self.last_time,
+                "data" : self.data.copy()
+                }
+            }
+            self.q_bdr.put(new_data)
+        except Exception as e:
+            self.logger.error(e)
