@@ -137,18 +137,19 @@ class DataReceiver(ABC):
     def get_data_update(self):
         return self.data_update
 
-    def set_data_update(self, data_update):
-        self.data_update = data_update
+    def set_data_update(self, data_received):
+        self.logger.debug("data_received " + str(data_received)+ " for " + str(self.topics))
+        self.data_update = True
     
     def get_mqtt_data(self, require_updated, clearData):
         if require_updated == 1 and not self.data:
             require_updated = 0
         ctr = 0
 
-        while require_updated == 0 and not self.data_update and not self.stop_request and not self.redisDB.get("End ofw") == "True":
+        while require_updated == 0 and not self.get_data_update() and not self.stop_request and not self.redisDB.get("End ofw") == "True":
             if ctr >= 45:
                 ctr = 0
-                self.logger.debug("self.data_update "+str(self.data_update))
+                self.logger.debug("self.data_update "+str(self.get_data_update()))
                 self.logger.debug("wait for data "+str(self.topics))
             ctr += 1
             time.sleep(0.1)
@@ -165,7 +166,7 @@ class DataReceiver(ABC):
         except Exception as e:
             self.logger.warning(str(e))
 
-    def get_zmq_msg(self, clearData):
+    def get_zmq_msg(self, clearData, generic_name):
         while True and not self.stop_request:
             self.logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
@@ -174,11 +175,11 @@ class DataReceiver(ABC):
                 self.on_msg_received(message)
                 break
             time.sleep(1)
-        return self.get_and_update_data(clearData)
+        return self.get_and_update_data(clearData, generic_name)
 
     def get_and_update_data(self, clearData):
         new_data = self.data.copy()
-        self.data_update = False
+        self.set_data_update(False)
         if clearData:
             self.clear_data()
         self.logger.debug("new_data "+str(new_data))
