@@ -8,7 +8,6 @@ import json
 import os
 
 import datetime
-import time
 import concurrent.futures
 from math import floor
 
@@ -19,8 +18,6 @@ from optimization.genericDataReceiver import GenericDataReceiver
 from optimization.genericEventDataReceiver import GenericEventDataReceiver
 from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
-
-from pebble import ProcessPool, ProcessExpired
 
 
 class InputController:
@@ -37,7 +34,7 @@ class InputController:
         self.dT_in_seconds = dT_in_seconds
         self.id = id
         self.prediction_mqtt_flags = {}
-        self.non_prediction_mqtt_flags = {}
+        self.pv_prediction_mqtt_flags = {}
         self.external_mqtt_flags = {}
         self.preprocess_mqtt_flags = {}
         self.event_mqtt_flags = {}
@@ -71,13 +68,13 @@ class InputController:
                 self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name, self.id,
                                                                    self.required_buffer_data, self.dT_in_seconds)
         
-        self.logger.debug("non_prediction_mqtt_flags " + str(self.non_prediction_mqtt_flags))
-        for name, flag in self.non_prediction_mqtt_flags.items():
+        self.logger.debug("pv_prediction_mqtt_flags " + str(self.pv_prediction_mqtt_flags))
+        for name, flag in self.pv_prediction_mqtt_flags.items():
             if flag:
-                non_prediction_topic = config.get("IO", "forecast.topic")
-                non_prediction_topic = json.loads(non_prediction_topic)
-                non_prediction_topic["topic"] = non_prediction_topic["topic"] + name
-                self.internal_receiver[name] = GenericDataReceiver(True, non_prediction_topic, config, name, self.id,
+                pv_prediction_topic = config.get("IO", "forecast.topic")
+                pv_prediction_topic = json.loads(pv_prediction_topic)
+                pv_prediction_topic["topic"] = pv_prediction_topic["topic"] + name
+                self.internal_receiver[name] = GenericDataReceiver(True, pv_prediction_topic, config, name, self.id,
                                                                    self.required_buffer_data, self.dT_in_seconds)
         # ESS data
         self.external_data_receiver = {}
@@ -159,8 +156,8 @@ class InputController:
         self.prediction_names = self.input_config_parser.get_prediction_names()
         self.set_mqtt_flags(self.prediction_names, self.prediction_mqtt_flags)
         
-        self.non_prediction_names = self.input_config_parser.get_non_prediction_names()
-        self.set_mqtt_flags(self.non_prediction_names, self.non_prediction_mqtt_flags)
+        self.pv_prediction_names = self.input_config_parser.get_pv_prediction_names()
+        self.set_mqtt_flags(self.pv_prediction_names, self.pv_prediction_mqtt_flags)
         
         self.external_names = self.input_config_parser.get_external_names()
         self.set_mqtt_flags(self.external_names, self.external_mqtt_flags)
@@ -224,36 +221,7 @@ class InputController:
                         self.logger.debug("bucket not available " + str(name))
                 except Exception as e:
                     self.logger.error("error getting sample " + str(name) + " " + str(e))
-    
-    def get_data_single(self, redisDB):
-        # redisDB.set(Constants.get_data_flow_key(self.id), True)
-        success = False
-        read_data = None
-        while not success:
-            if redisDB.get("End ofw") == "True":
-                break
-            self.logger.debug("Starting getting single data")
-            current_bucket = self.get_current_bucket()
-            self.logger.info("Get input single data for bucket " + str(current_bucket))
-            try:
-                read_data = {}
-                bucket_available = False
-                for name, DataReceiverObject in self.generic_data_receiver.items():
-                    data, bucket_available, last_time = DataReceiverObject.get_current_bucket_data(steps=1)
-                    if not bucket_available:
-                        self.logger.error("No data available for the bucket")
-                        break
-                    read_data[name] = next(iter(data[name].values()))
-                if bucket_available:
-                    success = True
-                else:
-                    read_data = None
-            except Exception as e:
-                self.logger.error(
-                    "Error occured while getting single data for bucket " + str(current_bucket) + ". " + str(e))
-        
-        return read_data
-    
+
     def get_data(self, preprocess, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         
@@ -279,7 +247,7 @@ class InputController:
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
                                                    self.internal_receiver, [], [], current_bucket,
                                                    self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.non_prediction_mqtt_flags,
+                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.pv_prediction_mqtt_flags,
                                                    self.internal_receiver, [], [], current_bucket,
                                                    self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,

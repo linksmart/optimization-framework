@@ -16,41 +16,26 @@ class Source(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, mqtt: MQTT=None, predict: bool=None, preprocess: bool=None, event: bool=None, sampling: bool=None):  # noqa: E501
+    def __init__(self, mqtt: MQTT=None, option: str=None):  # noqa: E501
         """Source - a model defined in Swagger
 
         :param mqtt: The mqtt of this Source.  # noqa: E501
         :type mqtt: MQTT
-        :param predict: The predict of this Source.  # noqa: E501
-        :type predict: bool
-        :param preprocess: The preprocess of this Source.  # noqa: E501
-        :type preprocess: bool
-        :param event: The event of this Source.  # noqa: E501
-        :type event: bool
-        :param sampling: The sampling of this Source.  # noqa: E501
-        :type sampling: bool
+        :param option: The option of this Source.  # noqa: E501
+        :type option: str
         """
         self.swagger_types = {
             'mqtt': MQTT,
-            'predict': bool,
-            'preprocess': bool,
-            'event': bool,
-            'sampling': bool
+            'option': str
         }
 
         self.attribute_map = {
             'mqtt': 'mqtt',
-            'predict': 'predict',
-            'preprocess': 'preprocess',
-            'event': 'event',
-            'sampling': 'sampling'
+            'option': 'option'
         }
 
         self._mqtt = mqtt
-        self._predict = predict
-        self._preprocess = preprocess
-        self._event = event
-        self._sampling = sampling
+        self._option = option
 
     @classmethod
     def from_dict(cls, dikt) -> 'Source':
@@ -85,85 +70,30 @@ class Source(Model):
         self._mqtt = mqtt
 
     @property
-    def predict(self) -> bool:
-        """Gets the predict of this Source.
+    def option(self) -> str:
+        """Gets the option of this Source.
 
+        option of the type of input  # noqa: E501
 
-        :return: The predict of this Source.
-        :rtype: bool
+        :return: The option of this Source.
+        :rtype: str
         """
-        return self._predict
+        return self._option
 
-    @predict.setter
-    def predict(self, predict: bool):
-        """Sets the predict of this Source.
+    @option.setter
+    def option(self, option: str):
+        """Sets the option of this Source.
 
+        option of the type of input  # noqa: E501
 
-        :param predict: The predict of this Source.
-        :type predict: bool
+        :param option: The option of this Source.
+        :type option: str
         """
+        allowed_values = ["predict", "preprocess", "event", "sampling", "pv_predict"]  # noqa: E501
+        if option not in allowed_values:
+            raise ValueError(
+                "Invalid value for `option` ({0}), must be one of {1}"
+                .format(option, allowed_values)
+            )
 
-        self._predict = predict
-
-    @property
-    def preprocess(self) -> bool:
-        """Gets the preprocess of this Source.
-
-
-        :return: The preprocess of this Source.
-        :rtype: bool
-        """
-        return self._preprocess
-
-    @preprocess.setter
-    def preprocess(self, preprocess: bool):
-        """Sets the preprocess of this Source.
-
-
-        :param preprocess: The preprocess of this Source.
-        :type preprocess: bool
-        """
-
-        self._preprocess = preprocess
-
-    @property
-    def event(self) -> bool:
-        """Gets the event of this Source.
-
-
-        :return: The event of this Source.
-        :rtype: bool
-        """
-        return self._event
-
-    @event.setter
-    def event(self, event: bool):
-        """Sets the event of this Source.
-
-
-        :param event: The event of this Source.
-        :type event: bool
-        """
-
-        self._event = event
-
-    @property
-    def sampling(self) -> bool:
-        """Gets the sampling of this Source.
-
-
-        :return: The sampling of this Source.
-        :rtype: bool
-        """
-        return self._sampling
-
-    @sampling.setter
-    def sampling(self, sampling: bool):
-        """Sets the sampling of this Source.
-
-
-        :param sampling: The sampling of this Source.
-        :type sampling: bool
-        """
-
-        self._sampling = sampling
+        self._option = option

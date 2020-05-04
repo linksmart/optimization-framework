@@ -330,7 +330,7 @@ def framework_start(id, startOFW):  # noqa: E501
                         else:
                             response_msg = "System could not start"
                             response_code = 400
-                    except (InvalidModelException, MissingKeysException, InvalidMQTTHostException) as e:
+                    except (InvalidModelException, MissingKeysException, InvalidMQTTHostException, KeyError) as e:
                         logger.error("Error " + str(e))
                         redis_db.set("run:" + id, "stopped")
                         response_msg = str(e)

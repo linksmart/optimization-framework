@@ -148,7 +148,7 @@ class ThreadFactory:
                     # self.prediction_threads[prediction_name].start()
 
         self.non_prediction_threads = {}
-        self.non_prediction_names = input_config_parser.get_non_prediction_names()
+        self.non_prediction_names = input_config_parser.get_pv_prediction_names()
         if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:
             for non_prediction_name in self.non_prediction_names:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)

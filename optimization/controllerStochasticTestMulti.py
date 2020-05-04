@@ -15,7 +15,7 @@ import numpy as np
 import psutil
 from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
-from stopit import threading_timeoutable as timeoutable  #doctest: +SKIP
+from stopit import threading_timeoutable as timeoutable  # doctest: +SKIP
 
 import pyutilib.subprocess.GlobalData
 import importlib.machinery
@@ -29,9 +29,10 @@ from utils_intern.utilFunctions import UtilFunctions
 
 pyutilib.subprocess.GlobalData.DEFINE_SIGNAL_HANDLERS_DEFAULT = False
 
-ins_dict  = {}
+ins_dict = {}
 
-class OptControllerStochastic(ControllerBaseProcess):
+
+class OptControllerStochastic(ControllerBaseThread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type, single_ev):
@@ -39,7 +40,7 @@ class OptControllerStochastic(ControllerBaseProcess):
         self.number_of_workers = config.getint("SolverSection", "stochastic.multi.workers", fallback=6)
         self.number_of_gunicorn_workers = config.getint("IO", "number.of.gunicorn.workers", fallback=-1)
         self.stochastic_timeout = config.getint("SolverSection", "stochastic.timeout.sec", fallback=60)
-        super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
+        super(OptControllerStochastic, self).__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
 

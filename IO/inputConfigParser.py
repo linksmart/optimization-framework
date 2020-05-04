@@ -27,13 +27,13 @@ class InputConfigParser:
         self.generic_file_names = []
         # self.defined_prediction_names = ["P_Load", "P_Load_R", "P_Load_S", "P_Load_T", "Q_Load_R", "Q_Load_S", "Q_Load_T", "Q_Load"]
         self.defined_prediction_names = []
-        self.defined_non_prediction_names = ["P_PV"]
+        self.defined_pv_prediction_names = ["P_PV"]
         self.defined_external_names = ["SoC_Value"]
         self.defined_preprocess_names = []
         self.defined_event_names = []
         self.defined_sampling_names = []
         self.prediction_names = []
-        self.non_prediction_names = []
+        self.pv_prediction_names = []
         self.external_names = []
         self.preprocess_names = []
         self.event_names = []
@@ -54,22 +54,20 @@ class InputConfigParser:
 
     def read_mqtt_flags(self, value2, name):
         if isinstance(value2, dict):
-            if "predict" in value2.keys():
-                predict = bool(value2["predict"])
-                if predict:
-                    self.defined_prediction_names.append(name)
-            if "preprocess" in value2.keys():
-                preprocess = bool(value2["preprocess"])
-                if preprocess:
-                    self.defined_preprocess_names.append(name)
-            if "event" in value2.keys():
-                event = bool(value2["event"])
-                if event:
-                    self.defined_event_names.append(name)
-            if "sampling" in value2.keys():
-                sampling = bool(value2["sampling"])
-                if sampling:
-                    self.defined_sampling_names.append(name)
+            for key, value in value2.items():
+                if "option" in key:
+                    if value == "predict":
+                        self.defined_prediction_names.append(name)
+                    elif value == "pv_predict":
+                        self.defined_pv_prediction_names.append(name)
+                    elif value == "preprocess":
+                        self.defined_preprocess_names.append(name)
+                    elif value == "event":
+                        self.defined_event_names.append(name)
+                    elif value == "sampling":
+                        self.defined_sampling_names.append(name)
+                elif "mqtt" != key:
+                    raise KeyError(str(key) + " is invalid. Input as 'option: str' allowed with mqtt")
 
     def extract_mqtt_params(self):
         for key, value in self.input_config_mqtt.items():
@@ -89,8 +87,8 @@ class InputConfigParser:
     def add_name_to_list(self, key):
         if key in self.defined_prediction_names:
             self.prediction_names.append(key)
-        elif key in self.defined_non_prediction_names:
-            self.non_prediction_names.append(key)
+        elif key in self.defined_pv_prediction_names:
+            self.pv_prediction_names.append(key)
         elif key in self.defined_external_names:
             self.external_names.append(key)
         elif key in self.defined_preprocess_names:
@@ -180,8 +178,8 @@ class InputConfigParser:
     def get_prediction_names(self):
         return self.prediction_names
 
-    def get_non_prediction_names(self):
-        return self.non_prediction_names
+    def get_pv_prediction_names(self):
+        return self.pv_prediction_names
 
     def get_external_names(self):
         return self.external_names
@@ -213,7 +211,7 @@ class InputConfigParser:
     def check_keys_for_completeness(self):
         all_keys = []
         all_keys.extend(self.prediction_names)
-        all_keys.extend(self.non_prediction_names)
+        all_keys.extend(self.pv_prediction_names)
         all_keys.extend(self.external_names)
         all_keys.extend(self.generic_names)
         all_keys.extend(self.preprocess_names)

@@ -57,7 +57,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         self.length = 1
 
         try:
-            super().__init__(internal, topic_params, config, id=id)
+            super(BaseDataReceiver, self).__init__(internal, topic_params, config, id=id)
         except Exception as e:
             self.redisDB.set("Error mqtt" + id, True)
             self.logger.error(e)
@@ -74,68 +74,24 @@ class BaseDataReceiver(DataReceiver, ABC):
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+            print_details = False
             if "chargers" in payload:
                 self.logger.debug("data received for charger = "+str(payload))
-            elif "P_PV" in payload:
-                self.logger.debug("data received for PV = " + str(payload))
-            elif "P_Load" in payload:
-                self.logger.debug("data received for Load = " + str(payload))
+            elif '\"n\": \"P_PV\"' in payload or '\"n\": \"P_Load\"' in payload:
+                self.logger.debug("data received for pv or pload = " + str(payload))
+                print_details = True
             senml_data = json.loads(payload)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("senml_data "+str(senml_data))
-            #self.logger.debug("senml_data "+str(senml_data))
             formated_data = self.add_formated_data(senml_data)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("formated_data "+str(formated_data))
             if self.reuseable:
                 self.save_data(formated_data)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("Updating data")
             self.data.update(formated_data)
-            self.logger.debug("self.data "+str(self.data))
             self.set_data_update(True)
-            if "P_PV" in payload or "P_Load" in payload:
-                self.logger.debug("data_update " + str(self.get_data_update()))
             self.last_time = time.time()
+            if print_details:
+                self.logger.debug("in pv/pload, "+str(self.data_update)+" "+str(self.get_data_update())
+                                  +" "+str(self.data))
         except Exception as e:
             self.logger.error(e)
-    
-    def get_data_update(self):
-        return self.redisDB.get_bool("data_update_" + str(self.id)+"_"+str(self.generic_name))
-        #return self.data_updated_receiver
-
-    def set_data_update(self, data_received):
-        self.logger.debug("data_received BaseDataReceiver " + str(data_received)+" for "+str(self.generic_name))
-        self.redisDB.set("data_update_" + str(self.id)+"_"+str(self.generic_name), data_received)
-        #self.data_updated_receiver = data_received
-        
-    def get_mqtt_data(self, require_updated, clearData):
-        if require_updated == 1 and not self.data:
-            require_updated = 0
-        ctr = 0
-
-        while require_updated == 0 and not self.get_data_update() and not self.stop_request and not self.redisDB.get("End ofw") == "True":
-            if ctr >= 45:
-                ctr = 0
-                self.logger.debug("self.data_update in baseDataReceiver "+str(self.get_data_update()))
-                self.logger.debug("wait for data in baseDataReceiver "+str(self.topics))
-            ctr += 1
-            time.sleep(0.1)
-        return self.get_and_update_data_receiver(clearData)
-    
-    def get_data(self, require_updated=0, clearData=False):
-        return self.get_mqtt_data(require_updated, clearData)
-    
-    def get_and_update_data_receiver(self, clearData):
-        new_data = self.data.copy()
-        self.logger.debug("self.data BaseDataReceiver "+str(self.data))
-        self.logger.debug("new_data BaseDataReceiver" + str(new_data))
-        self.set_data_update(False)
-        self.logger.debug("clearData " + str(clearData))
-        if clearData:
-            self.clear_data()
-        self.logger.debug("new_data in BaseDataReceiver "+str(new_data))
-        return new_data
     
     def save_data(self, formated_data):
         keys = list(formated_data.keys())
@@ -255,7 +211,6 @@ class BaseDataReceiver(DataReceiver, ABC):
         else:
             data = self.get_data(require_updated=1)
 
-        self.logger.debug("Out of getting data for "+str(self.generic_name))
         if not self.redisDB.get("End ofw") == "True":
             self.logger.debug(str(self.generic_name) + " data from mqtt is : "+ json.dumps(data, indent=4))
             self.logger.debug(str(self.generic_name) + " steps: "+str(steps) + " length: "+str(self.length))

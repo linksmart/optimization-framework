@@ -722,6 +722,7 @@ definitions:
       priority:
         type: "integer"
         format: "int32"
+        default: -1
     example:
       control_frequency: 60
       horizon_in_steps: 24
@@ -767,51 +768,51 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
       Q_Load_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
       P_Load_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
       Q_Load_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
       P_Load_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
       Q_Load:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
       meta:
-        pf_Load: 0.9
+        pf_Load: 0.90000000000000002220446049250313080847263336181640625
       P_Load:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
       Q_Load_R:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "predict"
   metaLoad:
     type: "object"
     properties:
@@ -821,7 +822,7 @@ definitions:
         minimum: 0
         maximum: 1
     example:
-      pf_Load: 0.9
+      pf_Load: 0.90000000000000002220446049250313080847263336181640625
   PV:
     type: "object"
     properties:
@@ -850,25 +851,25 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
       Q_PV_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
       Q_PV_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
       Q_PV:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
       meta:
         PV_Inv_Max_Power: 1300
         City: "Bonn"
@@ -878,25 +879,25 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
       P_PV_S:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
       P_PV_T:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
       Q_PV_R:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "pv_predict"
   PV_Output:
     type: "object"
     properties:
@@ -1004,11 +1005,11 @@ definitions:
           topic: "topic_name"
       meta:
         ESS_Max_Discharge_Power: 2500
-        ESS_Max_SoC: 0.9
-        ESS_Charging_Eff: 0.9
-        ESS_Min_SoC: 0.2
+        ESS_Max_SoC: 0.90000000000000002220446049250313080847263336181640625
+        ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
+        ESS_Min_SoC: 0.200000000000000011102230246251565404236316680908203125
         ESS_Max_Charge_Power: 2500
-        ESS_Discharging_Eff: 0.85
+        ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
         ESS_Capacity: 3560
   ESS_Output:
     type: "object"
@@ -1060,11 +1061,11 @@ definitions:
         maximum: 1
     example:
       ESS_Max_Discharge_Power: 2500
-      ESS_Max_SoC: 0.9
-      ESS_Charging_Eff: 0.9
-      ESS_Min_SoC: 0.2
+      ESS_Max_SoC: 0.90000000000000002220446049250313080847263336181640625
+      ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
+      ESS_Min_SoC: 0.200000000000000011102230246251565404236316680908203125
       ESS_Max_Charge_Power: 2500
-      ESS_Discharging_Eff: 0.85
+      ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
       ESS_Capacity: 3560
   grid:
     type: "object"
@@ -1182,14 +1183,10 @@ definitions:
     properties:
       mqtt:
         $ref: "#/definitions/MQTT"
-      predict:
-        type: "boolean"
-      preprocess:
-        type: "boolean"
-      event:
-        type: "boolean"
-      sampling:
-        type: "boolean"
+      option:
+        type: "string"
+        enum: ["predict", "preprocess", "event", "sampling", "pv_predict"]
+        description: "option of the type of input"
     description: "Selection between MQTT or file mode inputs or outputs"
     example:
       mqtt:
@@ -1197,9 +1194,7 @@ definitions:
         host: "hostname"
         topic: "topic_name"
         detachable: true
-      predict: true
-      preprocess: true
-      sampling: true
+      option: "predict"
   SourceESS:
     type: "object"
     properties:
@@ -1311,64 +1306,64 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         custom_name_2:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "preprocess"
       load:
         P_Load_R:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         Q_Load_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         P_Load_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         Q_Load_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         P_Load_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         Q_Load:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         meta:
-          pf_Load: 0.9
+          pf_Load: 0.90000000000000002220446049250313080847263336181640625
         P_Load:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
         Q_Load_R:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "predict"
       ESS:
         SoC_Value:
           mqtt:
@@ -1377,11 +1372,11 @@ definitions:
             topic: "topic_name"
         meta:
           ESS_Max_Discharge_Power: 2500
-          ESS_Max_SoC: 0.9
-          ESS_Charging_Eff: 0.9
-          ESS_Min_SoC: 0.2
+          ESS_Max_SoC: 0.90000000000000002220446049250313080847263336181640625
+          ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
+          ESS_Min_SoC: 0.200000000000000011102230246251565404236316680908203125
           ESS_Max_Charge_Power: 2500
-          ESS_Discharging_Eff: 0.85
+          ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
           ESS_Capacity: 3560
       grid:
         meta:
@@ -1395,25 +1390,25 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
         Q_PV_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
         Q_PV_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
         Q_PV:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
         meta:
           PV_Inv_Max_Power: 1300
           City: "Bonn"
@@ -1423,25 +1418,25 @@ definitions:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
         P_PV_S:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
         P_PV_T:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
         Q_PV_R:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          predict: true
+          option: "pv_predict"
       global_control:
         ESS_Control:
           mqtt:
@@ -1460,9 +1455,9 @@ definitions:
           Unit_Consumption_Assumption: 2.5
           Unit_Drop_Penalty: 1
         ev1:
-          Battery_Capacity_kWh: 18.7
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
         ev2:
-          Battery_Capacity_kWh: 18.7
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
       chargers:
         charger1:
           Max_Charging_Power_kW: 7
@@ -1472,13 +1467,13 @@ definitions:
               host: "hostname"
               topic: "topic_name"
               detachable: "true"
-            preprocess: true
+            option: "preprocess"
           recharge:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            event: true
+            option: "event"
         charger2:
           Max_Charging_Power_kW: 7
           SoC:
@@ -1487,22 +1482,22 @@ definitions:
               host: "hostname"
               topic: "topic_name"
               detachable: "true"
-            preprocess: true
+            option: "preprocess"
           recharge:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            event: true
+            option: "event"
       uncertainity:
         meta:
           monte_carlo_repetition: 10000
         Plugged_Time:
-          mean: 18.76
-          std: 1.3
+          mean: 18.760000000000001563194018672220408916473388671875
+          std: 1.3000000000000000444089209850062616169452667236328125
         Unplugged_Time:
-          mean: 7.32
-          std: 0.78
+          mean: 7.32000000000000028421709430404007434844970703125
+          std: 0.7800000000000000266453525910037569701671600341796875
         ESS_States:
           Min: 0
           Max: 100
@@ -1544,38 +1539,38 @@ definitions:
         - 1300
       load:
         P_Load_R:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
         Q_Load_T:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
         P_Load_S:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
         Q_Load_S:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
         P_Load_T:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
         Q_Load:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
         P_Load:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
         Q_Load_R:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
       ESS:
         SoC_Value: 41
         meta:
           ESS_Max_Discharge_Power: 2500
           ESS_Max_SoC: 90
-          ESS_Charging_Eff: 0.9
+          ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
           ESS_Min_SoC: 20
           ESS_Max_Charge_Power: 2500
-          ESS_Discharging_Eff: 0.85
+          ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
           ESS_Capacity: 3560
       grid:
         meta:
@@ -1585,11 +1580,11 @@ definitions:
           Max_Voltage_Drop: 10
       photovoltaic:
         P_PV:
-        - 705.4
-        - 305.6
+        - 705.3999999999999772626324556767940521240234375
+        - 305.6000000000000227373675443232059478759765625
       global_control:
         ESS_Control:
-        - 1300.2
+        - 1300.200000000000045474735088646411895751953125
         - 1200.5
         meta:
           GlobalTargetWeight: 1
@@ -1603,27 +1598,27 @@ definitions:
           Unit_Drop_Penalty: 1
           VAC_SoC_Value_override: 20
         ev1:
-          Battery_Capacity_kWh: 18.7
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
         ev2:
-          Battery_Capacity_kWh: 18.7
+          Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
       chargers:
         charger1:
           Max_Charging_Power_kW: 7
           Hosted_EV: "ev1"
-          SoC: 0.2
+          SoC: 0.200000000000000011102230246251565404236316680908203125
         charger2:
           Max_Charging_Power_kW: 7
           Hosted_EV: "ev2"
-          SoC: 0.2
+          SoC: 0.200000000000000011102230246251565404236316680908203125
       uncertainity:
         meta:
           monte_carlo_repetition: 10000
         Plugged_Time:
-          mean: 18.76
-          std: 1.3
+          mean: 18.760000000000001563194018672220408916473388671875
+          std: 1.3000000000000000444089209850062616169452667236328125
         Unplugged_Time:
-          mean: 7.32
-          std: 0.78
+          mean: 7.32000000000000028421709430404007434844970703125
+          std: 0.7800000000000000266453525910037569701671600341796875
         ESS_States:
           Min: 0
           Max: 100
@@ -1855,7 +1850,7 @@ definitions:
         $ref: "#/definitions/metaGloablControl"
     example:
       ESS_Control:
-      - 1300.2
+      - 1300.200000000000045474735088646411895751953125
       - 1200.5
       meta:
         GlobalTargetWeight: 1
@@ -1873,8 +1868,8 @@ definitions:
         $ref: "#/definitions/metaPV"
     example:
       P_PV:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
   Load_File:
     type: "object"
     properties:
@@ -1914,29 +1909,29 @@ definitions:
         $ref: "#/definitions/metaLoad"
     example:
       P_Load_R:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
       Q_Load_T:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
       P_Load_S:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
       Q_Load_S:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
       P_Load_T:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
       Q_Load:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
       P_Load:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
       Q_Load_R:
-      - 705.4
-      - 305.6
+      - 705.3999999999999772626324556767940521240234375
+      - 305.6000000000000227373675443232059478759765625
   ESS_File:
     type: "object"
     required:
@@ -1953,10 +1948,10 @@ definitions:
       meta:
         ESS_Max_Discharge_Power: 2500
         ESS_Max_SoC: 90
-        ESS_Charging_Eff: 0.9
+        ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
         ESS_Min_SoC: 20
         ESS_Max_Charge_Power: 2500
-        ESS_Discharging_Eff: 0.85
+        ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
         ESS_Capacity: 3560
   GenericOutput:
     type: "object"
@@ -2007,13 +2002,13 @@ definitions:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "preprocess"
       custom_name_2:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        predict: true
+        option: "sampling"
     additionalProperties:
       $ref: "#/definitions/Source"
   Generic_Files:
@@ -2043,7 +2038,7 @@ definitions:
         type: "number"
         format: "float"
     example:
-      start_time: 0.8008282
+      start_time: 0.8008281999999999900552438703016377985477447509765625
       config:
         control_frequency: 60
         horizon_in_steps: 24
@@ -2063,7 +2058,7 @@ definitions:
     example:
       status:
         key:
-          start_time: 0.8008282
+          start_time: 0.8008281999999999900552438703016377985477447509765625
           config:
             control_frequency: 60
             horizon_in_steps: 24
@@ -2103,64 +2098,64 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "preprocess"
           custom_name_2:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
         load:
           P_Load_R:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           Q_Load_T:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           P_Load_S:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           Q_Load_S:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           P_Load_T:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           Q_Load:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           meta:
-            pf_Load: 0.9
+            pf_Load: 0.90000000000000002220446049250313080847263336181640625
           P_Load:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           Q_Load_R:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
         ESS:
           SoC_Value:
             mqtt:
@@ -2169,11 +2164,11 @@ definitions:
               topic: "topic_name"
           meta:
             ESS_Max_Discharge_Power: 2500
-            ESS_Max_SoC: 0.9
-            ESS_Charging_Eff: 0.9
-            ESS_Min_SoC: 0.2
+            ESS_Max_SoC: 0.90000000000000002220446049250313080847263336181640625
+            ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
+            ESS_Min_SoC: 0.200000000000000011102230246251565404236316680908203125
             ESS_Max_Charge_Power: 2500
-            ESS_Discharging_Eff: 0.85
+            ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
             ESS_Capacity: 3560
         grid:
           meta:
@@ -2187,25 +2182,25 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           Q_PV_S:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           Q_PV_T:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           Q_PV:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           meta:
             PV_Inv_Max_Power: 1300
             City: "Bonn"
@@ -2215,32 +2210,31 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           P_PV_S:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           P_PV_T:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           Q_PV_R:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
         global_control:
           ESS_Control:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
       "78qwer415s":
         generic:
           custom_name_1:
@@ -2248,20 +2242,20 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           custom_name_2:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "event"
         load:
           Q_Load:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
           meta:
             pf_Load: 0.90000000000000002220446049250313080847263336181640625
           P_Load:
@@ -2269,7 +2263,7 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "predict"
         ESS:
           SoC_Value:
             mqtt:
@@ -2278,11 +2272,11 @@ definitions:
               topic: "topic_name"
           meta:
             ESS_Max_Discharge_Power: 2500
-            ESS_Max_SoC: 0.9
-            ESS_Charging_Eff: 0.9
-            ESS_Min_SoC: 0.2
+            ESS_Max_SoC: 0.90000000000000002220446049250313080847263336181640625
+            ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
+            ESS_Min_SoC: 0.200000000000000011102230246251565404236316680908203125
             ESS_Max_Charge_Power: 2500
-            ESS_Discharging_Eff: 0.85
+            ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
             ESS_Capacity: 3560
         grid:
           meta:
@@ -2296,13 +2290,13 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: false
+            option: "pv_predict"
           Q_PV:
             mqtt:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: true
+            option: "pv_predict"
           meta:
             PV_Inv_Max_Power: 1300
             City: "Bonn"
@@ -2313,7 +2307,6 @@ definitions:
               qos: 1
               host: "hostname"
               topic: "topic_name"
-            predict: false
     additionalProperties:
       $ref: "#/definitions/MQTTInputSource"
   FileOutputAll:
@@ -2329,38 +2322,38 @@ definitions:
           - 1300
         load:
           P_Load_R:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           Q_Load_T:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           P_Load_S:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           Q_Load_S:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           P_Load_T:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           Q_Load:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           P_Load:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           Q_Load_R:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
         ESS:
           SoC_Value: 41
           meta:
             ESS_Max_Discharge_Power: 2500
             ESS_Max_SoC: 90
-            ESS_Charging_Eff: 0.9
+            ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
             ESS_Min_SoC: 20
             ESS_Max_Charge_Power: 2500
-            ESS_Discharging_Eff: 0.85
+            ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
             ESS_Capacity: 3560
         grid:
           meta:
@@ -2370,29 +2363,29 @@ definitions:
             Max_Voltage_Drop: 10
         photovoltaic:
           P_PV:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
         global_control:
           ESS_Control:
-          - 1300.2
+          - 1300.200000000000045474735088646411895751953125
           - 1200.5
       "45dsf785s":
         load:
           Q_Load:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
           P_Load:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
         ESS:
           SoC_Value: 41
           meta:
             ESS_Max_Discharge_Power: 2500
             ESS_Max_SoC: 90
-            ESS_Charging_Eff: 0.9
+            ESS_Charging_Eff: 0.90000000000000002220446049250313080847263336181640625
             ESS_Min_SoC: 20
             ESS_Max_Charge_Power: 2500
-            ESS_Discharging_Eff: 0.85
+            ESS_Discharging_Eff: 0.84999999999999997779553950749686919152736663818359375
             ESS_Capacity: 3560
         grid:
           meta:
@@ -2402,11 +2395,11 @@ definitions:
             Max_Voltage_Drop: 10
         photovoltaic:
           P_PV:
-          - 705.4
-          - 305.6
+          - 705.3999999999999772626324556767940521240234375
+          - 305.6000000000000227373675443232059478759765625
         global_control:
           ESS_Control:
-          - 1300.2
+          - 1300.200000000000045474735088646411895751953125
           - 1200.5
     additionalProperties:
       $ref: "#/definitions/FileInputSource"
@@ -2444,9 +2437,9 @@ definitions:
         Unit_Drop_Penalty: 1
         VAC_SoC_Value_override: 20
       ev1:
-        Battery_Capacity_kWh: 18.7
+        Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
       ev2:
-        Battery_Capacity_kWh: 18.7
+        Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
     additionalProperties:
       $ref: "#/definitions/ev"
   ev:
@@ -2456,7 +2449,7 @@ definitions:
         type: "number"
         format: "float"
     example:
-      Battery_Capacity_kWh: 18.7
+      Battery_Capacity_kWh: 18.699999999999999289457264239899814128875732421875
   ev_meta:
     type: "object"
     properties:
@@ -2479,11 +2472,11 @@ definitions:
       charger1:
         Max_Charging_Power_kW: 7
         Hosted_EV: "ev1"
-        SoC: 0.2
+        SoC: 0.200000000000000011102230246251565404236316680908203125
       charger2:
         Max_Charging_Power_kW: 7
         Hosted_EV: "ev2"
-        SoC: 0.2
+        SoC: 0.200000000000000011102230246251565404236316680908203125
     additionalProperties:
       $ref: "#/definitions/charger"
   charger:
@@ -2502,7 +2495,7 @@ definitions:
     example:
       Max_Charging_Power_kW: 7
       Hosted_EV: "ev1"
-      SoC: 0.2
+      SoC: 0.200000000000000011102230246251565404236316680908203125
   uncertainity_File:
     type: "object"
     properties:
@@ -2520,11 +2513,11 @@ definitions:
       meta:
         monte_carlo_repetition: 10000
       Plugged_Time:
-        mean: 18.76
-        std: 1.3
+        mean: 18.760000000000001563194018672220408916473388671875
+        std: 1.3000000000000000444089209850062616169452667236328125
       Unplugged_Time:
-        mean: 7.32
-        std: 0.78
+        mean: 7.32000000000000028421709430404007434844970703125
+        std: 0.7800000000000000266453525910037569701671600341796875
       ESS_States:
         Min: 0
         Max: 100
@@ -2552,13 +2545,13 @@ definitions:
             host: "hostname"
             topic: "topic_name"
             detachable: "true"
-          preprocess: true
+          option: "preprocess"
         recharge:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          event: true
+          option: "event"
       charger2:
         Max_Charging_Power_kW: 7
         SoC:
@@ -2567,13 +2560,13 @@ definitions:
             host: "hostname"
             topic: "topic_name"
             detachable: "true"
-          preprocess: true
+          option: "preprocess"
         recharge:
           mqtt:
             qos: 1
             host: "hostname"
             topic: "topic_name"
-          event: true
+          option: "event"
     additionalProperties:
       $ref: "#/definitions/charger_mqtt"
   charger_mqtt:
@@ -2594,13 +2587,13 @@ definitions:
           host: "hostname"
           topic: "topic_name"
           detachable: "true"
-        preprocess: true
+        option: "preprocess"
       recharge:
         mqtt:
           qos: 1
           host: "hostname"
           topic: "topic_name"
-        event: true
+        option: "event"
   uncertainity_File_Plugged_Time:
     properties:
       mean:
