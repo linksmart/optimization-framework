@@ -155,12 +155,12 @@ def dataset_input_put(id, dataset):  # noqa: E501
                     logger.info("data source saved into memory")
 
                 store_data(dataset, id, "file")
-                return "Data source registered"
+                return "Data source registered", 200
         except Exception as e:
             logger.error("Invalid data " + str(e))
-            return str(e).replace("\"", "")
+            return str(e).replace("\"", ""), 400
     else:
-        return 'Data is not in json format'
+        return 'Data is not in json format', 400
 
 
 def delete_data_source_all(id):  # noqa: E501
@@ -176,13 +176,13 @@ def delete_data_source_all(id):  # noqa: E501
     result_file = delete_data(id, "Input.registry.file", "file")
     result_mqtt = delete_data(id, "Input.registry.mqtt", "mqtt")
     if result_file == "error" or result_mqtt == "error":
-        return "error"
+        return "error", 400
     elif result_file == "success" or result_mqtt == "success":
-        return "success"
+        return "success", 200
     elif result_file == "Id not existing" and result_mqtt == "Id not existing":
         return "Id not existing"
     else:
-        return "error"
+        return "error", 400
 
 
 def delete_dataset_registry(id):  # noqa: E501
@@ -295,9 +295,9 @@ def dataset_input_source(File_Input_Source):  # noqa: E501
             return "Instance created", 201, {'Location': str(id)}
         except Exception as e:
             logger.error("Invalid data " + str(e))
-            return str(e).replace("\"", "")
+            return str(e).replace("\"", ""), 400
     else:
-        return 'Data is not in json format'
+        return 'Data is not in json format', 400
 
 
 def get_data_source_values(id):  # noqa: E501
@@ -324,7 +324,7 @@ def get_data_source_values(id):  # noqa: E501
             return response
     except Exception as e:
         logger.error("error reading registry " + str(e))
-    return "error"
+    return None
 
 
 def get_mqtt_data_source_values(id):  # noqa: E501
@@ -408,12 +408,12 @@ def mqtt_input_put(id, dataset):  # noqa: E501
                     logger.info("data source saved into memory")
 
                 # store_data(dataset, id, "mqtt")
-                return "Data source registered"
+                return "Data source registered", 200
         except Exception as e:
             logger.error("Invalid data " + str(e))
-            return str(e).replace("\"", "")
+            return str(e).replace("\"", ""), 400
     else:
-        return 'Data is not in json format'
+        return 'Data is not in json format', 400
 
 
 def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
@@ -455,10 +455,10 @@ def mqtt_input_source(MQTT_Input_Source):  # noqa: E501
             return "Instance created", 201, {'Location': str(id)}
             # return jsonify({'Data-Source-Id': str(id)})
         except Exception as e:
-            logger.error("Invalid data " + str(e))
+            logger.error("Invalid data " + str(e)), 400
             return str(e).replace("\"", "")
     else:
-        return 'Data is not in json format'
+        return 'Data is not in json format', 400
 
 
 def get_all_data_source_values():  # noqa: E501
