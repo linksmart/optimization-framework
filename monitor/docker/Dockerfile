@@ -50,7 +50,7 @@ RUN pip3 install -U pyzmq==18.0.1
 RUN pip3 install -U senml==0.1.0
 RUN pip3 install -U redis==2.10.6
 RUN pip3 install -U requests==2.21.0
-
+RUN pip3 install -U pyyaml==5.3.1
 #RUN pip3 install -U docker-compose
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

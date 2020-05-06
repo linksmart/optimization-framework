@@ -12,6 +12,8 @@ import os
 from subprocess import Popen, PIPE
 import shlex
 
+import yaml
+
 from monitor.status import Status
 from utils_intern.messageLogger import MessageLogger
 
@@ -25,6 +27,7 @@ class InstanceMonitor:
         self.config = config
         self.docker_file_names = self.get_docker_file_names()
         if len(self.docker_file_names) > 0:
+            self.docker_components = self.get_docker_file_components()
             self.topic_params = json.loads(config.get("IO", "monitor.mqtt.topic"))
             self.check_frequency = config.getint("IO", "monitor.frequency.sec", fallback=60)
             self.allowed_delay_count = config.getfloat("IO", "allowed.delay.count", fallback=2)
@@ -69,6 +72,17 @@ class InstanceMonitor:
         if len(docker_file_name) == 0:
             self.logger.error("Please register a service name = docker-compose-file path in properties file under section Docker_File")
         return docker_file_name
+
+    def get_docker_file_components(self):
+        docker_components = {}
+        for service, file in self.docker_file_names.items():
+            with open(file, "r") as f:
+                data = yaml.load(f, Loader=yaml.FullLoader)
+                services = data["services"]
+                services = list(services.keys())
+                docker_components[service] = services
+        self.logger.info("Docker components : "+str(docker_components))
+        return docker_components
 
     def start_service(self, service, msg):
         command_to_write="docker-compose -f " + self.docker_file_names[service] + " up -d"
@@ -143,13 +157,16 @@ class InstanceMonitor:
         self.logger.debug("Trying to save the logs")
         try:
             if self.service_status[service] and not self.log_persisted[service]:
-                log_path = os.path.join("/usr/src/app/monitor/resources/",
-                                        "log_" + str(service) + "_" + str(int(time.time())) + ".log")
-                command_to_write = "docker logs " + str(service)
-                self.logger.debug("Command: " + str(command_to_write))
-                self.execute_command_output(command_to_write, log_path)
+                components = self.docker_components[service]
+                for component in components:
+                    if component not in ["redis", "mosquitto"]:
+                        log_path = os.path.join("/usr/src/app/monitor/resources/",
+                                                "log_" + str(component) + "_" + str(int(time.time())) + ".log")
+                        command_to_write = "docker logs " + str(component)
+                        self.logger.debug("Command: " + str(command_to_write))
+                        self.execute_command_output(command_to_write, log_path)
+                        time.sleep(30)
                 self.log_persisted[service] = True
-                time.sleep(30)
         except Exception as e:
             self.logger.error("Problems while storing logs. " + str(e))
 
