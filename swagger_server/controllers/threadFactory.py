@@ -192,7 +192,7 @@ class ThreadFactory:
                 self.stopOptControllerThread()
                 self.redisDB.set("run:" + self.id, "stopped")
                 self.logger.error("Optimization object could not be started")
-                return 1
+                return 2
         except Exception as e:
             self.logger.error(e)
             return 1

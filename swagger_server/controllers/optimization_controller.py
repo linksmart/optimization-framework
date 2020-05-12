@@ -137,6 +137,26 @@ class CommandController:
             logger.info("running status " + str(self.running))
             logger.debug("Command controller start finished")
             return 0
+        elif msg == 2:
+            self.set_isRunning(id, False)
+            logger.debug("Flag isRunning set to False")
+            meta_data = {"id": id,
+                         "model": self.model_name,
+                         "control_frequency": self.control_frequency,
+                         "horizon_in_steps": self.horizon_in_steps,
+                         "dT_in_seconds": self.dT_in_seconds,
+                         "repetition": self.repetition,
+                         "solver": self.solver,
+                         "optimization_type": self.optimization_type,
+                         "single_ev": self.single_ev,
+                         "priority": self.priority,
+                         "ztarttime": time.time()}
+            IDStatusManager.persist_id(id, True, meta_data, self.redisDB)
+            self.factory[id].stopOptControllerThread()
+            self.redisDB.set("run:" + id, "stopped")
+            logger.error("Command controller start could not be finished")
+            # logger.debug("System stopped succesfully")
+            return 1
         else:
             self.set_isRunning(id, False)
             logger.debug("Flag isRunning set to False")

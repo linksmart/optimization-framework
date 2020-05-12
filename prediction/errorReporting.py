@@ -14,6 +14,7 @@ from senml import senml
 
 from IO.ConfigParserUtils import ConfigParserUtils
 from IO.dataPublisher import DataPublisher
+from IO.redisDB import RedisDB
 from prediction.predictionDataManager import PredictionDataManager
 from prediction.rawDataReader import RawDataReader
 from utils_intern.messageLogger import MessageLogger
@@ -38,10 +39,15 @@ class ErrorReporting(DataPublisher):
         self.error_result_file_path = error_result_file_path
         self.output_config = output_config
         self.topic_params = topic_params
-        if self.update_topic_params():
-            super().__init__(False, self.topic_params, config, control_frequency, id)
-        else:
-            super().__init__(True, self.topic_params, config, control_frequency, id)
+        redisDB = RedisDB()
+        try:
+            if self.update_topic_params():
+                super().__init__(False, self.topic_params, config, control_frequency, id)
+            else:
+                super().__init__(True, self.topic_params, config, control_frequency, id)
+        except Exception as e:
+            redisDB.set("Error mqtt" + self.id, True)
+            self.logger.error(e)
 
     def update_topic_params(self):
         mqtt_params = ConfigParserUtils.extract_mqtt_params_output(self.output_config, "error_calculation", True)
