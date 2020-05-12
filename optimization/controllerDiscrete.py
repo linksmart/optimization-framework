@@ -23,12 +23,14 @@ class OptControllerDiscrete(ControllerBaseThread):
 
     def __init__(self, id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                  config, horizon_in_steps, dT_in_seconds, optimization_type):
-
+        self.infeasibility_repetition_count = config.getint("SolverSection", "discrete.infeasibility.repeat.count", fallback=2)
         super().__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
 
     def optimize(self, count, solver_name, model_path):
+        infeasibility_repeated = 0
         while not self.redisDB.get_bool(self.stop_signal_key):# and not self.stopRequest.isSet():
+            repeat_flag = False
             action_handle_map = {}
             start_time_total = time.time()
             self.logger.info("waiting for data")
@@ -91,16 +93,26 @@ class OptControllerDiscrete(ControllerBaseThread):
             elif result.solver.termination_condition == TerminationCondition.infeasible:
                 # do something about it? or exit?
                 self.logger.info("Termination condition is infeasible")
+                repeat_flag = True
             elif result.solver.termination_condition == TerminationCondition.maxIterations:
                 # do something about it? or exit?
                 self.logger.info("Termination condition is maxIteration limit")
+                repeat_flag = True
             elif result.solver.termination_condition == TerminationCondition.maxTimeLimit:
                 # do something about it? or exit?
                 self.logger.info("Termination condition is maxTimeLimit")
+                repeat_flag = True
             else:
                 self.logger.info("Nothing fits")
 
             self.erase_pyomo_files(self.pyomo_path)
+
+            if repeat_flag:
+                infeasibility_repeated += 1
+                if infeasibility_repeated <= self.infeasibility_repetition_count:
+                    continue
+
+            infeasibility_repeated = 0
 
             count += 1
             if self.repetition > 0 and count >= self.repetition:
