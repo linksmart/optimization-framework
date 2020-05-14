@@ -14,9 +14,10 @@ logger = MessageLogger.get_logger_parent()
 class ConfigParserUtils:
 
     @staticmethod
-    def get_mqtt(value):
-        if isinstance(value, dict) and Constants.mqtt in value.keys():
-            mqtt_dict = value[Constants.mqtt]
+    def get_mqtt(mqtt_dict):
+        if isinstance(mqtt_dict, dict):
+            if Constants.mqtt in mqtt_dict.keys():
+                mqtt_dict = mqtt_dict[Constants.mqtt]
             host = ConfigParserUtils.read_value("host", mqtt_dict, None)
             topic = ConfigParserUtils.read_value("topic", mqtt_dict, None)
             qos = ConfigParserUtils.read_value("qos", mqtt_dict, 0)
