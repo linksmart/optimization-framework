@@ -4,6 +4,8 @@ from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
+from swagger_server.models.charger_recharge import ChargerRecharge  # noqa: F401,E501
+from swagger_server.models.charger_so_c import ChargerSoC  # noqa: F401,E501
 
 from swagger_server.models.base_model_ import Model
 from swagger_server import util
@@ -15,7 +17,7 @@ class Charger(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, max_charging_power_k_w: float=None, hosted_ev: str=None, so_c: float=None):  # noqa: E501
+    def __init__(self, max_charging_power_k_w: float=None, hosted_ev: str=None, so_c: ChargerSoC=None, recharge: ChargerRecharge=None):  # noqa: E501
         """Charger - a model defined in Swagger
 
         :param max_charging_power_k_w: The max_charging_power_k_w of this Charger.  # noqa: E501
@@ -23,23 +25,28 @@ class Charger(Model):
         :param hosted_ev: The hosted_ev of this Charger.  # noqa: E501
         :type hosted_ev: str
         :param so_c: The so_c of this Charger.  # noqa: E501
-        :type so_c: float
+        :type so_c: ChargerSoC
+        :param recharge: The recharge of this Charger.  # noqa: E501
+        :type recharge: ChargerRecharge
         """
         self.swagger_types = {
             'max_charging_power_k_w': float,
             'hosted_ev': str,
-            'so_c': float
+            'so_c': ChargerSoC,
+            'recharge': ChargerRecharge
         }
 
         self.attribute_map = {
             'max_charging_power_k_w': 'Max_Charging_Power_kW',
             'hosted_ev': 'Hosted_EV',
-            'so_c': 'SoC'
+            'so_c': 'SoC',
+            'recharge': 'recharge'
         }
 
         self._max_charging_power_k_w = max_charging_power_k_w
         self._hosted_ev = hosted_ev
         self._so_c = so_c
+        self._recharge = recharge
 
     @classmethod
     def from_dict(cls, dikt) -> 'Charger':
@@ -95,26 +102,43 @@ class Charger(Model):
         self._hosted_ev = hosted_ev
 
     @property
-    def so_c(self) -> float:
+    def so_c(self) -> ChargerSoC:
         """Gets the so_c of this Charger.
 
 
         :return: The so_c of this Charger.
-        :rtype: float
+        :rtype: ChargerSoC
         """
         return self._so_c
 
     @so_c.setter
-    def so_c(self, so_c: float):
+    def so_c(self, so_c: ChargerSoC):
         """Sets the so_c of this Charger.
 
 
         :param so_c: The so_c of this Charger.
-        :type so_c: float
+        :type so_c: ChargerSoC
         """
-        if so_c is not None and so_c > 1:  # noqa: E501
-            raise ValueError("Invalid value for `so_c`, must be a value less than or equal to `1`")  # noqa: E501
-        if so_c is not None and so_c < 0:  # noqa: E501
-            raise ValueError("Invalid value for `so_c`, must be a value greater than or equal to `0`")  # noqa: E501
 
         self._so_c = so_c
+
+    @property
+    def recharge(self) -> ChargerRecharge:
+        """Gets the recharge of this Charger.
+
+
+        :return: The recharge of this Charger.
+        :rtype: ChargerRecharge
+        """
+        return self._recharge
+
+    @recharge.setter
+    def recharge(self, recharge: ChargerRecharge):
+        """Sets the recharge of this Charger.
+
+
+        :param recharge: The recharge of this Charger.
+        :type recharge: ChargerRecharge
+        """
+
+        self._recharge = recharge

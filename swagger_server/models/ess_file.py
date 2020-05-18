@@ -16,26 +16,15 @@ class ESSFile(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, so_c_value: float=None, meta: MetaESS=None):  # noqa: E501
+    def __init__(self):  # noqa: E501
         """ESSFile - a model defined in Swagger
 
-        :param so_c_value: The so_c_value of this ESSFile.  # noqa: E501
-        :type so_c_value: float
-        :param meta: The meta of this ESSFile.  # noqa: E501
-        :type meta: MetaESS
         """
         self.swagger_types = {
-            'so_c_value': float,
-            'meta': MetaESS
         }
 
         self.attribute_map = {
-            'so_c_value': 'SoC_Value',
-            'meta': 'meta'
         }
-
-        self._so_c_value = so_c_value
-        self._meta = meta
 
     @classmethod
     def from_dict(cls, dikt) -> 'ESSFile':
@@ -47,51 +36,3 @@ class ESSFile(Model):
         :rtype: ESSFile
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def so_c_value(self) -> float:
-        """Gets the so_c_value of this ESSFile.
-
-
-        :return: The so_c_value of this ESSFile.
-        :rtype: float
-        """
-        return self._so_c_value
-
-    @so_c_value.setter
-    def so_c_value(self, so_c_value: float):
-        """Sets the so_c_value of this ESSFile.
-
-
-        :param so_c_value: The so_c_value of this ESSFile.
-        :type so_c_value: float
-        """
-        if so_c_value is None:
-            raise ValueError("Invalid value for `so_c_value`, must not be `None`")  # noqa: E501
-        if so_c_value is not None and so_c_value > 100:  # noqa: E501
-            raise ValueError("Invalid value for `so_c_value`, must be a value less than or equal to `100`")  # noqa: E501
-        if so_c_value is not None and so_c_value < 0:  # noqa: E501
-            raise ValueError("Invalid value for `so_c_value`, must be a value greater than or equal to `0`")  # noqa: E501
-
-        self._so_c_value = so_c_value
-
-    @property
-    def meta(self) -> MetaESS:
-        """Gets the meta of this ESSFile.
-
-
-        :return: The meta of this ESSFile.
-        :rtype: MetaESS
-        """
-        return self._meta
-
-    @meta.setter
-    def meta(self, meta: MetaESS):
-        """Sets the meta of this ESSFile.
-
-
-        :param meta: The meta of this ESSFile.
-        :type meta: MetaESS
-        """
-
-        self._meta = meta

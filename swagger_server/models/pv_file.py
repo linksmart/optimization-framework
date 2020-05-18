@@ -16,26 +16,15 @@ class PVFile(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, p_pv: List[float]=None, meta: MetaPV=None):  # noqa: E501
+    def __init__(self):  # noqa: E501
         """PVFile - a model defined in Swagger
 
-        :param p_pv: The p_pv of this PVFile.  # noqa: E501
-        :type p_pv: List[float]
-        :param meta: The meta of this PVFile.  # noqa: E501
-        :type meta: MetaPV
         """
         self.swagger_types = {
-            'p_pv': List[float],
-            'meta': MetaPV
         }
 
         self.attribute_map = {
-            'p_pv': 'P_PV',
-            'meta': 'meta'
         }
-
-        self._p_pv = p_pv
-        self._meta = meta
 
     @classmethod
     def from_dict(cls, dikt) -> 'PVFile':
@@ -47,47 +36,3 @@ class PVFile(Model):
         :rtype: PVFile
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def p_pv(self) -> List[float]:
-        """Gets the p_pv of this PVFile.
-
-
-        :return: The p_pv of this PVFile.
-        :rtype: List[float]
-        """
-        return self._p_pv
-
-    @p_pv.setter
-    def p_pv(self, p_pv: List[float]):
-        """Sets the p_pv of this PVFile.
-
-
-        :param p_pv: The p_pv of this PVFile.
-        :type p_pv: List[float]
-        """
-        if p_pv is None:
-            raise ValueError("Invalid value for `p_pv`, must not be `None`")  # noqa: E501
-
-        self._p_pv = p_pv
-
-    @property
-    def meta(self) -> MetaPV:
-        """Gets the meta of this PVFile.
-
-
-        :return: The meta of this PVFile.
-        :rtype: MetaPV
-        """
-        return self._meta
-
-    @meta.setter
-    def meta(self, meta: MetaPV):
-        """Sets the meta of this PVFile.
-
-
-        :param meta: The meta of this PVFile.
-        :type meta: MetaPV
-        """
-
-        self._meta = meta

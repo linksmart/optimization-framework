@@ -15,7 +15,7 @@ class MQTT(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, host: str=None, topic: str=None, qos: int=None, port: int=None, username: str=None, password: str=None, ca_cert_path: str=None, insecure: bool=None, detachable: bool=None, reuseable: bool=None):  # noqa: E501
+    def __init__(self, host: str=None, topic: str=None, qos: int=None, port: int=None, username: str=None, password: str=None, ca_cert_path: str=None, insecure: bool=None, detachable: bool=None, reuseable: bool=None, option: str=None):  # noqa: E501
         """MQTT - a model defined in Swagger
 
         :param host: The host of this MQTT.  # noqa: E501
@@ -38,6 +38,8 @@ class MQTT(Model):
         :type detachable: bool
         :param reuseable: The reuseable of this MQTT.  # noqa: E501
         :type reuseable: bool
+        :param option: The option of this MQTT.  # noqa: E501
+        :type option: str
         """
         self.swagger_types = {
             'host': str,
@@ -49,7 +51,8 @@ class MQTT(Model):
             'ca_cert_path': str,
             'insecure': bool,
             'detachable': bool,
-            'reuseable': bool
+            'reuseable': bool,
+            'option': str
         }
 
         self.attribute_map = {
@@ -62,7 +65,8 @@ class MQTT(Model):
             'ca_cert_path': 'ca_cert_path',
             'insecure': 'insecure',
             'detachable': 'detachable',
-            'reuseable': 'reuseable'
+            'reuseable': 'reuseable',
+            'option': 'option'
         }
 
         self._host = host
@@ -75,6 +79,7 @@ class MQTT(Model):
         self._insecure = insecure
         self._detachable = detachable
         self._reuseable = reuseable
+        self._option = option
 
     @classmethod
     def from_dict(cls, dikt) -> 'MQTT':
@@ -306,3 +311,32 @@ class MQTT(Model):
         """
 
         self._reuseable = reuseable
+
+    @property
+    def option(self) -> str:
+        """Gets the option of this MQTT.
+
+        option of the type of input  # noqa: E501
+
+        :return: The option of this MQTT.
+        :rtype: str
+        """
+        return self._option
+
+    @option.setter
+    def option(self, option: str):
+        """Sets the option of this MQTT.
+
+        option of the type of input  # noqa: E501
+
+        :param option: The option of this MQTT.
+        :type option: str
+        """
+        allowed_values = ["predict", "preprocess", "event", "sampling", "pv_predict"]  # noqa: E501
+        if option not in allowed_values:
+            raise ValueError(
+                "Invalid value for `option` ({0}), must be one of {1}"
+                .format(option, allowed_values)
+            )
+
+        self._option = option

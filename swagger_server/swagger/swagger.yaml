@@ -280,33 +280,6 @@ paths:
         "500":
           description: "Internal server error"
       x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
-  /inputs/all/{id}:
-    delete:
-      tags:
-      - "inputs"
-      summary: "Deletes loaded data by id"
-      description: ""
-      operationId: "delete_data_source_all"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "Id of the data source to be deleted"
-        required: true
-        type: "string"
-      responses:
-        "200":
-          description: "OK"
-        "400":
-          description: "Bad request"
-        "405":
-          description: "Invalid input"
-        "500":
-          description: "Internal server error"
-      x-swagger-router-controller: "swagger_server.controllers.inputs_controller"
   /outputs/mqtt/{id}:
     get:
       tags:
@@ -588,8 +561,8 @@ definitions:
         $ref: "#/definitions/ev_File"
       chargers:
         $ref: "#/definitions/chargers_File"
-      uncertainity:
-        $ref: "#/definitions/uncertainity_File"
+      uncertainty:
+        $ref: "#/definitions/uncertainty_File"
     example:
       generic:
         custom_1:
@@ -665,7 +638,8 @@ definitions:
             ESS_Max_Charge_Power: 2500
             ESS_Discharging_Eff: 0.84999
             ESS_Capacity: 3560
-        - datalist: 41
+        - datalist:
+          - 41
           meta:
             ESS_Max_Discharge_Power: 2500
             ESS_Max_SoC: 90
@@ -754,12 +728,14 @@ definitions:
           Max_Charging_Power_kW: 7
           Hosted_EV: "ev1"
           SoC:
-            datalist: 0.200000000000
+            datalist:
+            - 0.200000000000
         charger2:
           Max_Charging_Power_kW: 7
           Hosted_EV: "ev2"
           SoC:
-            daatset: 0.200000
+            datalist:
+            - 0.200000
         charger3:
           Max_Charging_Power_kW: 7
           SoC:
@@ -775,7 +751,7 @@ definitions:
               host: "hostname"
               topic: "topic_name"
               option: "event"
-      uncertainity:
+      uncertainty:
         meta:
           monte_carlo_repetition: 10000
         Plugged_Time:
@@ -987,19 +963,19 @@ definitions:
             ESS_Max_Charge_Power: 2500
             ESS_Discharging_Eff: 0.84999
             ESS_Capacity: 3560
-  uncertainity_File:
+  uncertainty_File:
     type: "object"
     properties:
       meta:
-        $ref: "#/definitions/uncertainity_meta"
+        $ref: "#/definitions/uncertainty_meta"
       Plugged_Time:
-        $ref: "#/definitions/uncertainity_File_Plugged_Time"
+        $ref: "#/definitions/uncertainty_File_Plugged_Time"
       Unplugged_Time:
-        $ref: "#/definitions/uncertainity_File_Plugged_Time"
+        $ref: "#/definitions/uncertainty_File_Plugged_Time"
       ESS_States:
-        $ref: "#/definitions/uncertainity_File_ESS_States"
+        $ref: "#/definitions/uncertainty_File_ESS_States"
       VAC_States:
-        $ref: "#/definitions/uncertainity_File_ESS_States"
+        $ref: "#/definitions/uncertainty_File_ESS_States"
     example:
       meta:
         monte_carlo_repetition: 10000
@@ -1024,12 +1000,14 @@ definitions:
         Max_Charging_Power_kW: 7
         Hosted_EV: "ev1"
         SoC:
-          datalist: 0.200000000000
+          datalist:
+          - 0.200000000000
       charger2:
         Max_Charging_Power_kW: 7
         Hosted_EV: "ev2"
         SoC:
-          datalist: 0.200000
+          datalist:
+          - 0.200000
       charger3:
         Max_Charging_Power_kW: 7
         SoC:
@@ -1484,6 +1462,7 @@ definitions:
       Hosted_EV:
         type: "string"
       SoC:
+        type: "object"
         properties:
           datalist:
             type: "array"
@@ -1495,6 +1474,7 @@ definitions:
           mqtt:
             $ref: "#/definitions/MQTT"
       recharge:
+        type: "object"
         properties:
           datalist:
             type: "integer"
@@ -1507,7 +1487,7 @@ definitions:
       Max_Charging_Power_kW: 7
       Hosted_EV: "ev1"
       SoC: 0.200000000000000011102230246251565404236316680908203125
-  uncertainity_File_Plugged_Time:
+  uncertainty_File_Plugged_Time:
     properties:
       mean:
         type: "number"
@@ -1515,7 +1495,7 @@ definitions:
       std:
         type: "number"
         format: "float"
-  uncertainity_File_ESS_States:
+  uncertainty_File_ESS_States:
     properties:
       Min:
         type: "integer"
@@ -1646,7 +1626,7 @@ definitions:
       Min_Voltage_Drop: 5
       P_Grid_Max_Export_Power: 1550
       Max_Voltage_Drop: 10
-  uncertainity_meta:
+  uncertainty_meta:
     type: "object"
     properties:
       monte_carlo_repetition:
