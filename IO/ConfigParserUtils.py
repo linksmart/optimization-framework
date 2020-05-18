@@ -28,13 +28,14 @@ class ConfigParserUtils:
             insecure = ConfigParserUtils.read_value("insecure", mqtt_dict, False)
             detachable = ConfigParserUtils.read_value("detachable", mqtt_dict, False)
             reuseable = ConfigParserUtils.read_value("reuseable", mqtt_dict, False)
+            option = ConfigParserUtils.read_value("option", mqtt_dict, None)
             if ca_cert_path:
                 ca_cert_path = os.path.join("/usr/src/app", ca_cert_path)
 
             if host is not None and topic is not None:
                 return {"host": host, "topic": topic, "qos": qos, "mqtt.port": port, "username": username,
                         "password": password, "ca_cert_path": ca_cert_path, "insecure": insecure,
-                        "detachable": detachable, "reuseable": reuseable}
+                        "detachable": detachable, "reuseable": reuseable, "option": option}
             else:
                 return None
         else:

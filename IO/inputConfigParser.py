@@ -16,12 +16,11 @@ from utils_intern.messageLogger import MessageLogger
 
 class InputConfigParser:
 
-    def __init__(self, input_config_file, input_config_mqtt, model_name, id, optimization_type, persist_path, restart):
+    def __init__(self, input_config, model_name, id, optimization_type, persist_path, restart):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
-        self.input_config_file = input_config_file
-        self.input_config_mqtt = input_config_mqtt
+        self.input_config = input_config
         self.base, self.derived = ModelDerivedParameters.get_derived_parameter_mapping(model_name, optimization_type)
         self.mqtt_params = {}
         self.generic_names = []
@@ -38,10 +37,12 @@ class InputConfigParser:
         self.preprocess_names = []
         self.event_names = []
         self.sampling_names = []
+        self.dual_source_names = []
         self.set_params = {}
-        self.extract_mqtt_params()
         self.car_park = None
         self.simulator = None
+
+        #self.extract_mqtt_params()
         self.optimization_params = self.extract_optimization_values()
         self.restart = restart
         if restart:
@@ -50,7 +51,7 @@ class InputConfigParser:
         self.logger.info("generic names = " + str(self.generic_names))
 
     def extract_mqtt_params(self):
-        for key, value in self.input_config_mqtt.items():
+        for key, value in self.input_config.items():
             self.extract_mqtt_params_level(value)
         self.logger.info("params = " + str(self.mqtt_params))
 
@@ -72,52 +73,68 @@ class InputConfigParser:
             elif isinstance(value2, dict):
                 self.extract_mqtt_params_level(value2, base=base + key2 + "/")
 
-    def read_mqtt_flags(self, value2, name):
-        print(value2, name)
-        if isinstance(value2, dict):
-            for key, value in value2.items():
-                if "option" in key:
-                    if value == "predict":
-                        self.defined_prediction_names.append(name)
-                    elif value == "pv_predict":
-                        self.defined_pv_prediction_names.append(name)
-                    elif value == "preprocess":
-                        self.defined_preprocess_names.append(name)
-                    elif value == "event":
-                        self.defined_event_names.append(name)
-                    elif value == "sampling":
-                        self.defined_sampling_names.append(name)
-                elif "mqtt" != key and "meta" != key:
-                    raise KeyError(str(key) + " is invalid. Input as 'option: str' allowed with mqtt")
+    def read_mqtt_flags(self, mqtt, indexed_name):
+        if isinstance(mqtt, dict):
+            if "option" in mqtt.keys():
+                value = mqtt["option"]
+                if value == "predict":
+                    self.defined_prediction_names.append(indexed_name)
+                elif value == "pv_predict":
+                    self.defined_pv_prediction_names.append(indexed_name)
+                elif value == "preprocess":
+                    self.defined_preprocess_names.append(indexed_name)
+                elif value == "event":
+                    self.defined_event_names.append(indexed_name)
+                elif value == "sampling":
+                    self.defined_sampling_names.append(indexed_name)
+
+    def get_indexed_name(self, name, index):
+        return (name, index)
 
     def extract_optimization_values(self):
         data = {}
-        for input_config in [self.input_config_file, self.input_config_mqtt]:
-            for k, v in input_config.items():
-                if isinstance(v, dict):
-                    for k1, v1 in v.items():
-                        if k1 == Constants.meta:
-                            for k2, v2 in v1.items():
-                                self.add_value_to_data(data, k2, v2)
-                        elif k1 == Constants.SoC_Value and not isinstance(v1, dict):
-                            self.add_value_to_data(data, k1, v1)
-                        elif isinstance(v1, list):
-                            self.add_name_to_list(k1)
-                            self.extract_set_info(k1, v1)
-                        elif k == "generic" and not isinstance(v1, dict):
-                            self.logger.debug("Generic single value")
-                            self.add_value_to_data(data, k1, v1)
-                        elif isinstance(v1, dict):
-                            # data[k + "/" + k1] = v1
-                            data[k1] = self.remove_mqtt_source(v1)
-                        else:
-                            try:
-                                v1 = float(v1)
-                            except ValueError:
-                                pass
-                            if isinstance(v1, float) and v1.is_integer():
-                                v1 = int(v1)
-                            data[k1] = {None: v1}
+        for header, header_value in self.input_config.items():
+            if isinstance(header_value, dict):
+                for name, name_value in header_value.items():
+                    if name == Constants.meta:
+                        for k2, v2 in name_value.items():
+                            self.add_value_to_data(data, k2, v2)
+                    elif isinstance(name_value, list):
+                        for i, list_item in enumerate(name_value):
+                            indexed_name = self.get_indexed_name(name, i)
+                            if "datalist" in list_item.keys() and "mqtt" in list_item.keys():
+                                mqtt = list_item["mqtt"]
+                                mqtt = ConfigParserUtils.get_mqtt(mqtt)
+                                if mqtt is not None:
+                                    self.read_mqtt_flags(mqtt, indexed_name)
+                                    self.dual_source_names.append(indexed_name)
+                                self.add_name_to_list(indexed_name)
+                            elif "mqtt" in list_item.keys():
+                                mqtt = list_item["mqtt"]
+                                mqtt = ConfigParserUtils.get_mqtt(mqtt)
+                                if mqtt is not None:
+                                    self.read_mqtt_flags(mqtt, indexed_name)
+                                    self.add_name_to_list(indexed_name)
+                            elif "datalist" in list_item.keys():
+                                self.add_name_to_list(indexed_name)
+                            if "meta" in list_item.keys():
+                                for meta_key, meta_value in list_item["meta"].items():
+                                    self.add_value_to_data(data, meta_key, meta_value)
+                        self.extract_set_info(name, name_value)
+                    elif header == "generic" and not isinstance(name_value, dict):
+                        self.logger.debug("Generic single value")
+                        self.add_value_to_data(data, name, name_value)
+                    elif isinstance(name_value, dict):
+                        # data[k + "/" + k1] = v1
+                        data[name] = self.remove_mqtt_source(name_value)
+                    else:
+                        try:
+                            name_value = float(name_value)
+                        except ValueError:
+                            pass
+                        if isinstance(name_value, float) and name_value.is_integer():
+                            name_value = int(name_value)
+                        data[name] = {None: name_value}
         #         pprint.pprint(data, indent=4)
         return data
 
@@ -163,16 +180,19 @@ class InputConfigParser:
             data[k] = {None: v}
 
     def extract_set_info(self, key, value):
-        if isinstance(value, list):
-            count = len(value)
-            if self.model_variables[key]["type"] == "Param":
-                indexing = self.model_variables[key]["indexing"]
-                if len(indexing) == count:
-                    for index in indexing:
-                        if index not in self.set_params.keys():
-                            self.set_params[index] = count
-                else:
-                    print("error")
+        try:
+            if isinstance(value, list):
+                count = len(value)
+                if self.model_variables[key]["type"] == "Param":
+                    indexing = self.model_variables[key]["indexing"]
+                    if len(indexing) == count:
+                        for index in indexing:
+                            if index not in self.set_params.keys():
+                                self.set_params[index] = count
+                    else:
+                        print("error")
+        except Exception as e:
+            print("error")
 
     def remove_mqtt_source(self, v1):
         if isinstance(v1, dict):
