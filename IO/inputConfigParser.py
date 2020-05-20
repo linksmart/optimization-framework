@@ -22,71 +22,42 @@ class InputConfigParser:
         self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
         self.input_config = input_config
         self.base, self.derived = ModelDerivedParameters.get_derived_parameter_mapping(model_name, optimization_type)
-        self.mqtt_params = {}
         self.generic_names = []
-        self.generic_file_names = []
-        self.defined_prediction_names = []
-        self.defined_pv_prediction_names = ["P_PV"]
-        self.defined_external_names = ["SoC_Value"]
-        self.defined_preprocess_names = []
-        self.defined_event_names = []
-        self.defined_sampling_names = []
         self.prediction_names = []
         self.pv_prediction_names = []
-        self.external_names = []
         self.preprocess_names = []
         self.event_names = []
         self.sampling_names = []
-        self.dual_source_names = []
         self.set_params = {}
+        self.name_params = {}
         self.car_park = None
         self.simulator = None
 
-        #self.extract_mqtt_params()
         self.optimization_params = self.extract_optimization_values()
         self.restart = restart
         if restart:
             self.read_persisted_data(persist_path)
         self.logger.debug("optimization_params: " + str(self.optimization_params))
-        self.logger.info("generic names = " + str(self.generic_names))
+        self.logger.debug("name_params: " + str(self.name_params))
 
-    def extract_mqtt_params(self):
-        for key, value in self.input_config.items():
-            self.extract_mqtt_params_level(value)
-        self.logger.info("params = " + str(self.mqtt_params))
-
-    def extract_mqtt_params_level(self, value, base=""):
+    def extract_mqtt_and_datalist_params(self, value, base=""):
+        extracted = False
         for key2, value2 in value.items():
-            mqtt = ConfigParserUtils.get_mqtt(value2)
-            if base == "P_PV/":
-                print("§", key2, value2, mqtt)
-            if mqtt is not None:
-                self.read_mqtt_flags(value2, base + key2)
-                self.mqtt_params[base + key2] = mqtt.copy()
-                self.add_name_to_list(base + key2)
-            elif len(base) == 0 and isinstance(value2, list):
-                print("1 "+str(key2))
-                for mqtts in value2:
-                    print(mqtts)
-                    self.extract_mqtt_params_level(mqtts, base=base + key2 + "/")
-                self.extract_set_info(key2, value2)
-            elif isinstance(value2, dict):
-                self.extract_mqtt_params_level(value2, base=base + key2 + "/")
-
-    def read_mqtt_flags(self, mqtt, indexed_name):
-        if isinstance(mqtt, dict):
-            if "option" in mqtt.keys():
-                value = mqtt["option"]
-                if value == "predict":
-                    self.defined_prediction_names.append(indexed_name)
-                elif value == "pv_predict":
-                    self.defined_pv_prediction_names.append(indexed_name)
-                elif value == "preprocess":
-                    self.defined_preprocess_names.append(indexed_name)
-                elif value == "event":
-                    self.defined_event_names.append(indexed_name)
-                elif value == "sampling":
-                    self.defined_sampling_names.append(indexed_name)
+            if base == "":
+                name = key2
+            else:
+                name = base + "/" + key2
+            if isinstance(value2, dict):
+                if not self.extract_name_params(name, value2):
+                    extracted = extracted or self.extract_mqtt_and_datalist_params(value2, base=name)
+                else:
+                    extracted = True
+            else:
+                if base not in self.name_params.keys():
+                    self.name_params[base] = {}
+                self.name_params[base][key2] = value2
+                extracted = True
+        return extracted
 
     def get_indexed_name(self, name, index):
         return (name, index)
@@ -102,65 +73,75 @@ class InputConfigParser:
                     elif isinstance(name_value, list):
                         for i, list_item in enumerate(name_value):
                             indexed_name = self.get_indexed_name(name, i)
-                            if "datalist" in list_item.keys() and "mqtt" in list_item.keys():
-                                mqtt = list_item["mqtt"]
-                                mqtt = ConfigParserUtils.get_mqtt(mqtt)
-                                if mqtt is not None:
-                                    self.read_mqtt_flags(mqtt, indexed_name)
-                                    self.dual_source_names.append(indexed_name)
-                                self.add_name_to_list(indexed_name)
-                            elif "mqtt" in list_item.keys():
-                                mqtt = list_item["mqtt"]
-                                mqtt = ConfigParserUtils.get_mqtt(mqtt)
-                                if mqtt is not None:
-                                    self.read_mqtt_flags(mqtt, indexed_name)
-                                    self.add_name_to_list(indexed_name)
-                            elif "datalist" in list_item.keys():
-                                self.add_name_to_list(indexed_name)
-                            if "meta" in list_item.keys():
-                                for meta_key, meta_value in list_item["meta"].items():
-                                    self.add_value_to_data(data, meta_key, meta_value)
+                            self.extract_name_params(indexed_name, list_item)
                         self.extract_set_info(name, name_value)
                     elif header == "generic" and not isinstance(name_value, dict):
                         self.logger.debug("Generic single value")
                         self.add_value_to_data(data, name, name_value)
                     elif isinstance(name_value, dict):
-                        # data[k + "/" + k1] = v1
-                        data[name] = self.remove_mqtt_source(name_value)
+                        if not self.extract_mqtt_and_datalist_params(name_value, base=name):
+                            data[name] = self.remove_mqtt_and_datalist(name_value)
                     else:
-                        try:
-                            name_value = float(name_value)
-                        except ValueError:
-                            pass
-                        if isinstance(name_value, float) and name_value.is_integer():
-                            name_value = int(name_value)
-                        data[name] = {None: name_value}
-        #         pprint.pprint(data, indent=4)
+                        data[name] = {None: self.type_cast_value(name_value)}
         return data
 
-    def add_name_to_list(self, key):
-        if key in self.defined_prediction_names:
-            self.prediction_names.append(key)
-        elif key in self.defined_pv_prediction_names:
-            self.pv_prediction_names.append(key)
-        elif key in self.defined_external_names:
-            self.external_names.append(key)
-        elif key in self.defined_preprocess_names:
-            self.preprocess_names.append(key)
-        elif key in self.defined_event_names:
-            self.event_names.append(key)
-        elif key in self.defined_sampling_names:
-            self.sampling_names.append(key)
-        else:
-            self.generic_names.append(key)
+    def extract_name_params(self, indexed_name, data_dict):
+        extracted = False
+        self.name_params[indexed_name] = {}
+        if "mqtt" in data_dict.keys():
+            mqtt = data_dict["mqtt"]
+            mqtt = ConfigParserUtils.get_mqtt(mqtt)
+            if mqtt is not None:
+                self.name_params[indexed_name]["mqtt"] = mqtt.copy()
+                option = mqtt["option"]
+                self.add_name_to_list(indexed_name, option)
+                extracted = True
+        if "datalist" in data_dict.keys():
+            self.name_params[indexed_name]["datalist"] = self.get_file_name(indexed_name)
+            self.add_name_to_list(indexed_name)
+            extracted = True
+        if "meta" in data_dict.keys():
+            for meta_key, meta_value in data_dict["meta"].items():
+                meta_value = self.type_cast_value(meta_value)
+                self.name_params[indexed_name][meta_key] = meta_value
+        for key, value in data_dict.items():
+            if key not in ["mqtt", "datalist", "meta"]:
+                print(key)
+                self.name_params[indexed_name][key] = value
+        return extracted
 
-    def add_value_to_data(self, data, k, v):
+    def get_file_name(self, indexed_name):
+        if isinstance(indexed_name, str):
+            file_name = indexed_name.replace("/", "~") + ".txt"
+        else:
+            file_name = indexed_name[0] + "~" + str(indexed_name[1]) + ".txt"
+        return file_name
+
+    def add_name_to_list(self, indexed_name, option=None):
+        if option == "predict":
+            self.prediction_names.append(indexed_name)
+        elif option == "pv_predict":
+            self.pv_prediction_names.append(indexed_name)
+        elif option == "preprocess":
+            self.preprocess_names.append(indexed_name)
+        elif option == "event":
+            self.event_names.append(indexed_name)
+        elif option == "sampling":
+            self.sampling_names.append(indexed_name)
+        else:
+            self.generic_names.append(indexed_name)
+
+    def type_cast_value(self, v):
         try:
             v = float(v)
         except ValueError:
             pass
         if isinstance(v, float) and v.is_integer():
             v = int(v)
+        return v
+
+    def add_value_to_data(self, data, k, v):
+        v = self.type_cast_value(v)
         if k in self.model_variables.keys():
             if self.model_variables[k]["type"] == "Set":
                 self.set_params[k] = v
@@ -183,24 +164,23 @@ class InputConfigParser:
         try:
             if isinstance(value, list):
                 count = len(value)
-                if self.model_variables[key]["type"] == "Param":
+                if key in self.model_variables.keys() and self.model_variables[key]["type"] == "Param":
                     indexing = self.model_variables[key]["indexing"]
-                    if len(indexing) == count:
-                        for index in indexing:
-                            if index not in self.set_params.keys():
-                                self.set_params[index] = count
-                    else:
-                        print("error")
+                    for index in indexing:
+                        if index not in self.set_params.keys():
+                            self.set_params[index] = count
         except Exception as e:
             print("error")
 
-    def remove_mqtt_source(self, v1):
+    def remove_mqtt_and_datalist(self, v1):
         if isinstance(v1, dict):
             if "mqtt" in v1.keys():
                 return {}
+            elif "datalist" in v1.keys():
+                return []
             else:
                 for k2 in v1.keys():
-                    v1[k2] = self.remove_mqtt_source(v1[k2])
+                    v1[k2] = self.remove_mqtt_and_datalist(v1[k2])
                 return v1
         else:
             return v1
@@ -230,11 +210,39 @@ class InputConfigParser:
         else:
             self.logger.debug("Persisted path does not exist: " + str(persist_path))
 
+    def convert_name_params_to_model_params(self):
+        name_model_params = {}
+        for key in self.name_params.keys():
+            if isinstance(key, str):
+                name_model_params[key] = 1
+            else:
+                name = key[0]
+                if name not in name_model_params.keys():
+                    name_model_params[name] = 1
+                else:
+                    name_model_params[name] = name_model_params[name] + 1
+        return name_model_params
+
+    def check_com(self):
+        not_available_keys = []
+        name_model_params = self.convert_name_params_to_model_params()
+        all_keys = []
+        all_keys.extend(self.optimization_params.keys())
+        all_keys.append(self.set_params.keys())
+        for key, value in self.model_variables.items():
+            if value["type"] == "Set":
+                if key not in all_keys:
+                    not_available_keys.append(key)
+            elif value["type"] == "param":
+                if not (key in name_model_params.keys() and len(value["indexing"]) == name_model_params[key]):
+                    not_available_keys.append(key)
+
+
+
     def check_keys_for_completeness(self):
         all_keys = []
         all_keys.extend(self.prediction_names)
         all_keys.extend(self.pv_prediction_names)
-        all_keys.extend(self.external_names)
         all_keys.extend(self.generic_names)
         all_keys.extend(self.preprocess_names)
         all_keys.extend(self.optimization_params.keys())
@@ -258,7 +266,7 @@ class InputConfigParser:
         return self.restart
 
     def get_forecast_flag(self, topic):
-        if topic in self.mqtt_params:
+        if topic in self.name_params.keys() and "mqtt" in self.name_params[topic]:
             return True
         else:
             return False
@@ -271,9 +279,6 @@ class InputConfigParser:
 
     def get_pv_prediction_names(self):
         return self.pv_prediction_names
-
-    def get_external_names(self):
-        return self.external_names
 
     def get_preprocess_names(self):
         return self.preprocess_names
@@ -291,7 +296,7 @@ class InputConfigParser:
             return "empty"
 
     def get_params(self, topic):
-        return self.mqtt_params[topic]
+        return self.name_params[topic]["mqtt"]
 
     def get_optimization_values(self):
         return self.optimization_params

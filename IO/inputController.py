@@ -12,7 +12,6 @@ import concurrent.futures
 from math import floor
 
 from IO.inputPreprocess import InputPreprocess
-from optimization.SoCValueDataReceiver import SoCValueDataReceiver
 from optimization.baseValueDataReceiver import BaseValueDataReceiver
 from optimization.genericDataReceiver import GenericDataReceiver
 from optimization.genericEventDataReceiver import GenericEventDataReceiver
@@ -27,7 +26,6 @@ class InputController:
         self.stop_request = False
         self.optimization_data = {}
         self.input_config_parser = input_config_parser
-        self.logger.debug("Config parser: " + str(self.input_config_parser))
         self.config = config
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -46,9 +44,9 @@ class InputController:
         self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config)
         self.event_data = {}
         self.restart = self.input_config_parser.get_restart_value()
-        self.parse_input_config()
         self.set_timestep_data()
-        
+        self.parse_input_config()
+
         sec_in_day = 24 * 60 * 60
         self.steps_in_day = floor(sec_in_day / dT_in_seconds)
         self.required_buffer_data = 0
@@ -56,78 +54,38 @@ class InputController:
         while horizon_sec > 0:
             self.required_buffer_data += self.steps_in_day
             horizon_sec = horizon_sec - sec_in_day
-        
-        self.internal_receiver = {}
-        self.logger.debug("prediction_mqtt_flags " + str(self.prediction_mqtt_flags))
-        for name, flag in self.prediction_mqtt_flags.items():
-            if flag:
-                """ should be prediction topic instead of load"""
-                prediction_topic = config.get("IO", "forecast.topic")
-                prediction_topic = json.loads(prediction_topic)
-                prediction_topic["topic"] = prediction_topic["topic"] + name
-                self.internal_receiver[name] = GenericDataReceiver(True, prediction_topic, config, name, self.id,
-                                                                   self.required_buffer_data, self.dT_in_seconds)
-        
-        self.logger.debug("pv_prediction_mqtt_flags " + str(self.pv_prediction_mqtt_flags))
-        for name, flag in self.pv_prediction_mqtt_flags.items():
-            if flag:
-                pv_prediction_topic = config.get("IO", "forecast.topic")
-                pv_prediction_topic = json.loads(pv_prediction_topic)
-                pv_prediction_topic["topic"] = pv_prediction_topic["topic"] + name
-                self.internal_receiver[name] = GenericDataReceiver(True, pv_prediction_topic, config, name, self.id,
-                                                                   self.required_buffer_data, self.dT_in_seconds)
-        # ESS data
-        self.external_data_receiver = {}
-        self.logger.debug("external_mqtt_flags " + str(self.external_mqtt_flags))
-        for name, flag in self.external_mqtt_flags.items():
-            if flag:
-                if name == "SoC_Value":
-                    params = self.input_config_parser.get_params(name)
-                    self.logger.debug("params for MQTT SoC_Value: " + str(params))
-                    self.external_data_receiver[name] = SoCValueDataReceiver(False, params, config, name, self.id,
-                                                                             self.required_buffer_data,
-                                                                             self.dT_in_seconds)
-        
-        self.preprocess_data_receiver = {}
-        self.logger.debug("preprocess_mqtt_flags " + str(self.preprocess_mqtt_flags))
-        for name, flag in self.preprocess_mqtt_flags.items():
-            if flag:
-                params = self.input_config_parser.get_params(name)
-                self.logger.debug("params for MQTT " + name + " : " + str(params))
-                self.preprocess_data_receiver[name] = BaseValueDataReceiver(False, params, config, name, self.id,
-                                                                            self.required_buffer_data,
-                                                                            self.dT_in_seconds)
-        
-        self.logger.debug("event_mqtt_flags " + str(self.event_mqtt_flags))
-        for name, flag in self.event_mqtt_flags.items():
-            if flag:
-                params = self.input_config_parser.get_params(name)
-                self.logger.debug("params for MQTT generic event " + name + " : " + str(params))
-                self.external_data_receiver[name] = GenericEventDataReceiver(False, params, config, name, self.id,
-                                                                             self.inputPreprocess.event_received)
-        
-        self.sampling_data_receiver = {}
-        self.logger.debug("sampling_mqtt_flags " + str(self.sampling_mqtt_flags))
-        for name, flag in self.sampling_mqtt_flags.items():
-            if flag:
-                params = self.input_config_parser.get_params(name)
-                self.logger.debug("params for MQTT sampling " + name + " : " + str(params))
-                self.sampling_data_receiver[name] = GenericDataReceiver(False, params, config, name, self.id,
-                                                                        self.required_buffer_data, self.dT_in_seconds)
-        
-        self.generic_data_receiver = {}
-        
-        self.logger.debug("generic_data_mqtt_flags " + str(self.generic_data_mqtt_flags))
-        if len(self.generic_data_mqtt_flags) > 0:
-            for generic_name, mqtt_flag in self.generic_data_mqtt_flags.items():
-                if mqtt_flag:
-                    params = self.input_config_parser.get_params(generic_name)
-                    self.generic_data_receiver[generic_name] = GenericDataReceiver(False, params, config, generic_name,
-                                                                                   self.id, self.required_buffer_data,
-                                                                                   self.dT_in_seconds)
 
-        # self.logger.debug("optimization data new: " + str(self.optimization_data))
-    
+
+        self.data_receivers = {}
+        self.event_data_receiver = {}
+        self.sampling_data_receiver = {}
+        for name, value in self.input_config_parser.name_params.keys():
+            if "mqtt" in value.keys():
+                params = value["mqtt"]
+                option = params["option"]
+                if option in ["predict", "pv_predict"]:
+                    prediction_topic = config.get("IO", "forecast.topic")
+                    prediction_topic = json.loads(prediction_topic)
+                    prediction_topic["topic"] = prediction_topic["topic"] + name
+                    self.data_receivers[name] = GenericDataReceiver(True, prediction_topic, config, name, self.id,
+                                                                       self.required_buffer_data, self.dT_in_seconds)
+                elif option == "preprocess":
+                    self.logger.debug("params for preprocess " + name + " : " + str(params))
+                    self.data_receivers[name] = BaseValueDataReceiver(False, params, config, name, self.id,
+                                                                                self.required_buffer_data,
+                                                                                self.dT_in_seconds)
+                elif option == "event":
+                    self.event_data_receiver[name] = GenericEventDataReceiver(False, params, config, name, self.id,
+                                             self.inputPreprocess.event_received)
+                elif option in "sampling":
+                    self.sampling_data_receiver[name] = GenericDataReceiver(False, params, config, name, self.id,
+                                                                    self.required_buffer_data,
+                                                                    self.dT_in_seconds)
+                else:
+                    self.data_receivers[name] = GenericDataReceiver(False, params, config, name, self.id,
+                                                                    self.required_buffer_data,
+                                                                    self.dT_in_seconds)
+
     def set_timestep_data(self):
         self.optimization_data["N"] = {None: [0]}
         self.optimization_data["dT"] = {None: self.dT_in_seconds}
@@ -150,38 +108,9 @@ class InputController:
     def parse_input_config(self):
         data = self.input_config_parser.get_optimization_values()
         self.logger.debug("param data: " + str(data))
-        
         self.optimization_data.update(data)
-        
-        self.prediction_names = self.input_config_parser.get_prediction_names()
-        self.set_mqtt_flags(self.prediction_names, self.prediction_mqtt_flags)
-        
-        self.pv_prediction_names = self.input_config_parser.get_pv_prediction_names()
-        self.set_mqtt_flags(self.pv_prediction_names, self.pv_prediction_mqtt_flags)
-        
-        self.external_names = self.input_config_parser.get_external_names()
-        self.set_mqtt_flags(self.external_names, self.external_mqtt_flags)
-        
-        self.preprocess_names = self.input_config_parser.get_preprocess_names()
-        self.set_mqtt_flags(self.preprocess_names, self.preprocess_mqtt_flags)
-        
-        self.event_names = self.input_config_parser.get_event_names()
-        self.set_mqtt_flags(self.event_names, self.event_mqtt_flags)
-        
-        self.sampling_names = self.input_config_parser.get_sampling_names()
-        self.set_mqtt_flags(self.sampling_names, self.sampling_mqtt_flags)
-        
-        self.generic_names = self.input_config_parser.get_generic_data_names()
-        self.set_mqtt_flags(self.generic_names, self.generic_data_mqtt_flags)
-        
         self.logger.debug("optimization data: " + str(self.optimization_data))
-    
-    def set_mqtt_flags(self, names, mqtt_flags):
-        self.logger.debug("names = " + str(names))
-        if names is not None and len(names) > 0:
-            for name in names:
-                mqtt_flags[name] = self.input_config_parser.get_forecast_flag(name)
-    
+
     def read_input_data(self, id, topic, file):
         """"/ usr / src / app / optimization / resources / 95c38e56d913 / p_load.txt"""
         data = {}
@@ -206,9 +135,7 @@ class InputController:
     # TODO add support for file data set as well
     def get_sample(self, name, redisDB):
         self.logger.debug("name " + str(name))
-        self.logger.debug("Sampling_names " + str(self.sampling_names))
-        self.logger.debug("sampling_mqtt_flags " + str(self.sampling_mqtt_flags[name]))
-        if name in self.sampling_names and self.sampling_mqtt_flags[name]:
+        if name in self.sampling_data_receiver.keys():
             while True:
                 try:
                     if redisDB.get("End ofw") == "True":
@@ -243,21 +170,9 @@ class InputController:
                     
         
                     futures = []
-                
+
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
-                                                   self.internal_receiver, [], [], current_bucket,
-                                                   self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.pv_prediction_mqtt_flags,
-                                                   self.internal_receiver, [], [], current_bucket,
-                                                   self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,
-                                                   self.external_data_receiver, [], ["SoC_Value"], current_bucket,
-                                                   self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.preprocess_mqtt_flags,
-                                                   self.preprocess_data_receiver, [], ["SoC_Value"], current_bucket,
-                                                   self.horizon_in_steps))
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.generic_data_mqtt_flags,
-                                                   self.generic_data_receiver, [], [], current_bucket,
+                                                   self.data_receivers, current_bucket,
                                                    self.horizon_in_steps))
                     
                     try:
@@ -303,8 +218,7 @@ class InputController:
             self.restart = False
         return {None: self.optimization_data.copy()}
     
-    def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, mqtt_exception_list, file_exception_list, current_bucket,
-                                 number_of_steps):
+    def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, current_bucket, number_of_steps):
         try:
             self.logger.debug("mqtt flags " + str(mqtt_flags))
             self.logger.info("current bucket = " + str(current_bucket))
@@ -316,27 +230,25 @@ class InputController:
                 for name, mqtt_flag in mqtt_flags.items():
                     if mqtt_flag:
                         self.logger.debug("mqtt True " + str(name))
-                        if name not in mqtt_exception_list:
-                            data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket,
-                                                                                                        number_of_steps)  # self.horizon_in_steps)
-                            self.logger.debug("Received data " + str(data))
-                            mqtt_timer[name] = last_time
-                            self.logger.debug("mqtt_timer " + str(mqtt_timer))
-                            self.logger.debug("Bucket available " + str(bucket_available) + " for " + str(name))
-                            if not bucket_available:
-                                data_available_for_bucket = False
-                                self.logger.info(
-                                    str(name) + " data for bucket " + str(current_bucket) + " not available")
-                                break
-                            data = self.set_indexing(data)
-                            self.logger.debug("Indexed data " + str(data))
-                            if (self.restart and last_time > 0) or not self.restart:
-                                new_data.update(data)
+                        data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket,
+                                                                                                    number_of_steps)  # self.horizon_in_steps)
+                        self.logger.debug("Received data " + str(data))
+                        mqtt_timer[name] = last_time
+                        self.logger.debug("mqtt_timer " + str(mqtt_timer))
+                        self.logger.debug("Bucket available " + str(bucket_available) + " for " + str(name))
+                        if not bucket_available:
+                            data_available_for_bucket = False
+                            self.logger.info(
+                                str(name) + " data for bucket " + str(current_bucket) + " not available")
+                            break
+                        data = self.set_indexing(data)
+                        self.logger.debug("Indexed data " + str(data))
+                        if (self.restart and last_time > 0) or not self.restart:
+                            new_data.update(data)
                     else:
                         self.logger.debug("file name: " + str(name))
-                        if name not in file_exception_list:
-                            data = self.read_input_data(self.id, name, name + ".txt")
-                            new_data.update(data)
+                        data = self.read_input_data(self.id, name, name + ".txt")
+                        new_data.update(data)
             self.logger.debug(
                 "data_available_for_bucket: " + str(data_available_for_bucket) + " for " + str(mqtt_flags))
             return (data_available_for_bucket, new_data, mqtt_timer)
