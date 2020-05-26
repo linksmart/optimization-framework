@@ -5,6 +5,7 @@ Created on Aug 31 12:02 2018
 """
 import os
 
+from optimization.ModelException import InvalidModelException
 from utils_intern.messageLogger import MessageLogger
 logger = MessageLogger.get_logger_parent()
 
@@ -24,7 +25,7 @@ class ModelParamsInfo:
 
     @staticmethod
     def pos_and_type_of_var(line, pos_of_equal):
-        types = ["Set", "Param", "Var"]
+        types = ["Set", "Param"]
         for type in types:
             if type in line:
                 pos_of_type = line.find(type + "(")
@@ -38,7 +39,8 @@ class ModelParamsInfo:
                         pos_of_comma = line.find(",")
                         while pos_of_comma != -1:
                             set_name = line[start: pos_of_comma].strip()
-                            set_names.append(set_name.replace("model.", ""))
+                            if "=" not in set_name and "model." in set_name:
+                                set_names.append(set_name.replace("model.", ""))
                             start = pos_of_comma + 1
                             pos_of_comma = line.find(",", pos_of_comma + 1)
                     return type_name, set_names
@@ -65,6 +67,9 @@ class ModelParamsInfo:
                         var_name = line[pos_of_model + len("model."): pos_of_eq].strip()
                         type_name, indexing = ModelParamsInfo.pos_and_type_of_var(line, pos_of_eq)
                         if type_name is not None:
+                            if len(indexing) > 2:
+                                raise InvalidModelException("model component "+var_name+
+                                                            " has more indices than 2 "+str(indexing))
                             var_map[var_name] = {"type": type_name, "indexing": indexing}
                             if type_name == "Param":
                                 param_key_list.append(var_name)

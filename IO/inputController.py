@@ -9,6 +9,8 @@ import os
 
 import datetime
 import concurrent.futures
+import time
+
 from math import floor
 
 from IO.inputPreprocess import InputPreprocess
@@ -20,17 +22,18 @@ from utils_intern.messageLogger import MessageLogger
 
 
 class InputController:
-    
+
     def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
-        self.optimization_data = {}
         self.input_config_parser = input_config_parser
         self.config = config
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
         self.id = id
+
+        self.optimization_data = self.init_optimization_data()
         self.prediction_mqtt_flags = {}
         self.pv_prediction_mqtt_flags = {}
         self.external_mqtt_flags = {}
@@ -40,12 +43,16 @@ class InputController:
         self.generic_data_mqtt_flags = {}
         self.generic_names = None
         self.mqtt_timer = {}
+        self.event_data = {}
+
+        self.restart = self.input_config_parser.get_restart_value()
+
         mqtt_time_threshold = float(self.config.get("IO", "mqtt.detach.threshold", fallback=180))
         self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config)
-        self.event_data = {}
-        self.restart = self.input_config_parser.get_restart_value()
-        self.set_timestep_data()
-        self.parse_input_config()
+
+        data = self.input_config_parser.get_optimization_values()
+        self.optimization_data.update(data)
+        self.logger.debug("optimization data: " + str(self.optimization_data))
 
         sec_in_day = 24 * 60 * 60
         self.steps_in_day = floor(sec_in_day / dT_in_seconds)
@@ -54,7 +61,6 @@ class InputController:
         while horizon_sec > 0:
             self.required_buffer_data += self.steps_in_day
             horizon_sec = horizon_sec - sec_in_day
-
 
         self.data_receivers = {}
         self.event_data_receiver = {}
@@ -68,51 +74,37 @@ class InputController:
                     prediction_topic = json.loads(prediction_topic)
                     prediction_topic["topic"] = prediction_topic["topic"] + name
                     self.data_receivers[name] = GenericDataReceiver(True, prediction_topic, config, name, self.id,
-                                                                       self.required_buffer_data, self.dT_in_seconds)
+                                                                    self.required_buffer_data, self.dT_in_seconds)
                 elif option == "preprocess":
                     self.logger.debug("params for preprocess " + name + " : " + str(params))
                     self.data_receivers[name] = BaseValueDataReceiver(False, params, config, name, self.id,
-                                                                                self.required_buffer_data,
-                                                                                self.dT_in_seconds)
+                                                                      self.required_buffer_data,
+                                                                      self.dT_in_seconds)
                 elif option == "event":
                     self.event_data_receiver[name] = GenericEventDataReceiver(False, params, config, name, self.id,
-                                             self.inputPreprocess.event_received)
+                                                                              self.inputPreprocess.event_received)
                 elif option in "sampling":
                     self.sampling_data_receiver[name] = GenericDataReceiver(False, params, config, name, self.id,
-                                                                    self.required_buffer_data,
-                                                                    self.dT_in_seconds)
+                                                                            self.required_buffer_data,
+                                                                            self.dT_in_seconds)
                 else:
                     self.data_receivers[name] = GenericDataReceiver(False, params, config, name, self.id,
                                                                     self.required_buffer_data,
                                                                     self.dT_in_seconds)
+            elif "datalist" in value.keys():
+                self.data_receivers[name] = value["datalist"]
 
-    def set_timestep_data(self):
-        self.optimization_data["N"] = {None: [0]}
-        self.optimization_data["dT"] = {None: self.dT_in_seconds}
-        
-        T = self.get_array(self.horizon_in_steps)
-        self.optimization_data["T"] = {None: T}
-        
+    def init_optimization_data(self):
+        data = {}
         set_params = self.input_config_parser.get_set_params()
         if len(set_params) > 0:
             for key, value in set_params.items():
-                v = self.get_array(value)
-                self.optimization_data[key] = {None: v}
-    
-    def get_array(self, len):
-        a = []
-        for i in range(len):
-            a.append(i)
-        return a
-    
-    def parse_input_config(self):
-        data = self.input_config_parser.get_optimization_values()
-        self.logger.debug("param data: " + str(data))
-        self.optimization_data.update(data)
-        self.logger.debug("optimization data: " + str(self.optimization_data))
+                v = self.input_config_parser.get_array(value)
+                data[key] = {None: v}
+        return data
 
-    def read_input_data(self, id, topic, file):
-        """"/ usr / src / app / optimization / resources / 95c38e56d913 / p_load.txt"""
+    def read_input_data(self, id, name, file):
+        """"/ usr / src / app / optimization / resources / 95c38e56d913 / file / p_load.txt"""
         data = {}
         path = os.path.join("/usr/src/app", "optimization/resources", str(id), "file", file)
         self.logger.debug("Data path: " + str(path))
@@ -127,11 +119,11 @@ class InputController:
             data[i] = float(row)
             i += 1
         if len(data) == 0:
-            self.logger.error("Data file empty " + topic)
+            self.logger.error("Data file empty " + name)
             return {}
         else:
-            return {topic: data}
-    
+            return {name: data}
+
     # TODO add support for file data set as well
     def get_sample(self, name, redisDB):
         self.logger.debug("name " + str(name))
@@ -151,111 +143,69 @@ class InputController:
 
     def get_data(self, preprocess, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
-        
         # self.logger.info("sleep for data")
         # time.sleep(100)
-        timeout_exception = True
-        while timeout_exception:
-            success = False
-            executor = concurrent.futures.ThreadPoolExecutor()#(max_workers=3)
-            while not success:
-                if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
-                    timeout_exception = False
-                    break
-                self.logger.debug("Starting getting data")
-                current_bucket = self.get_current_bucket()
-                self.logger.info("Get input data for bucket " + str(current_bucket))
-                self.logger.debug("optimization_data before getting new values " + str(self.optimization_data))
+        success = False
+        while not success:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
                 try:
-                    
-        
+                    if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
+                        break
+                    current_bucket, _ = self.get_current_bucket()
+                    self.logger.info("Get input data for bucket " + str(current_bucket))
                     futures = []
-
-                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.prediction_mqtt_flags,
-                                                   self.data_receivers, current_bucket,
-                                                   self.horizon_in_steps))
-                    
-                    try:
-            
-                        for future in concurrent.futures.as_completed(futures):#,timeout=30):
-                            try:
-                                success, read_data, mqtt_timer = future.result()
-                                self.logger.debug("Success flag for future in wait data: " + str(success))
-                                if success:
-                                    self.update_data(read_data)
-                                    self.mqtt_timer.update(mqtt_timer)
-                                    timeout_exception = False
-                                else:
-                                    self.logger.error("Success flag is False")
-                                    timeout_exception = True
-                                    break
-                            except Exception as exc:
-                                self.logger.error("input fetch data caused an exception: " + str(exc))
-                                timeout_exception = True
-                                break
-                    except Exception as e:
-                        self.logger.error("Timeout in getting data. " + str(e))
-                        timeout_exception = True
-                        #self.logger.error("Executor shutdown in getting data")
-                        #executor.shutdown(wait=False)
+                    for name, receiver in self.data_receivers.items():
+                        futures.append(executor.submit(self.fetch_mqtt_and_file_data, name, receiver, current_bucket,
+                                                       self.horizon_in_steps))
+                    time.sleep(15)
+                    # The returned iterator raises a concurrent.futures.TimeoutError if __next__() is called and
+                    # the result isn’t available after timeout seconds from the original call to as_completed()
+                    for future in concurrent.futures.as_completed(futures, timeout=20):
+                        success, read_data, mqtt_timer = future.result()
+                        if success:
+                            self.update_data(read_data)
+                            self.mqtt_timer.update(mqtt_timer)
+                        else:
+                            self.logger.error("Success flag is False")
+                            break
                 except Exception as e:
-                    self.logger.error("Error occured while getting data for bucket " + str(current_bucket) + ". " + str(e))
-                    timeout_exception = True
-
-            self.logger.error("Executor shutdown")
-            executor.shutdown(wait=True)
-            if timeout_exception:
-                self.logger.debug("timeout_exception flag "+str(timeout_exception))
-                continue
-            else:
-                self.logger.debug("timeout_exception flag " + str(timeout_exception))
-                break
-            
+                    self.logger.error(
+                        "Error occured while getting data for bucket " + str(current_bucket) + ". " + str(e))
         if preprocess:
             self.inputPreprocess.preprocess(self.optimization_data, self.mqtt_timer)
         redisDB.set(Constants.get_data_flow_key(self.id), False)
         if self.restart:
             self.restart = False
         return {None: self.optimization_data.copy()}
-    
-    def fetch_mqtt_and_file_data(self, mqtt_flags, receivers, current_bucket, number_of_steps):
+
+    def fetch_mqtt_and_file_data(self, name, receiver, current_bucket, number_of_steps):
         try:
-            self.logger.debug("mqtt flags " + str(mqtt_flags))
             self.logger.info("current bucket = " + str(current_bucket))
             data_available_for_bucket = True
             new_data = {}
             mqtt_timer = {}
-            
-            if mqtt_flags is not None:
-                for name, mqtt_flag in mqtt_flags.items():
-                    if mqtt_flag:
-                        self.logger.debug("mqtt True " + str(name))
-                        data, bucket_available, last_time = receivers[name].get_bucket_aligned_data(current_bucket,
-                                                                                                    number_of_steps)  # self.horizon_in_steps)
-                        self.logger.debug("Received data " + str(data))
-                        mqtt_timer[name] = last_time
-                        self.logger.debug("mqtt_timer " + str(mqtt_timer))
-                        self.logger.debug("Bucket available " + str(bucket_available) + " for " + str(name))
-                        if not bucket_available:
-                            data_available_for_bucket = False
-                            self.logger.info(
-                                str(name) + " data for bucket " + str(current_bucket) + " not available")
-                            break
-                        data = self.set_indexing(data)
-                        self.logger.debug("Indexed data " + str(data))
-                        if (self.restart and last_time > 0) or not self.restart:
-                            new_data.update(data)
-                    else:
-                        self.logger.debug("file name: " + str(name))
-                        data = self.read_input_data(self.id, name, name + ".txt")
+            if isinstance(receiver, str):
+                self.logger.debug("file name: " + str(receiver))
+                data = self.read_input_data(self.id, name, receiver)
+                new_data.update(data)
+            else:
+                self.logger.debug("mqtt True " + str(name))
+                data, bucket_available, last_time = receiver.get_bucket_aligned_data(current_bucket,
+                                                                                     number_of_steps)  # self.horizon_in_steps)
+                self.logger.debug("Bucket available " + str(bucket_available) + " for " + str(name))
+                if bucket_available:
+                    self.logger.debug("Received data " + str(data))
+                    mqtt_timer[name] = last_time
+                    data = self.set_indexing(data)
+                    self.logger.debug("Indexed data " + str(data))
+                    if (self.restart and last_time > 0) or not self.restart:
                         new_data.update(data)
-            self.logger.debug(
-                "data_available_for_bucket: " + str(data_available_for_bucket) + " for " + str(mqtt_flags))
+                data_available_for_bucket = bucket_available
             return (data_available_for_bucket, new_data, mqtt_timer)
         except Exception as e:
             self.logger.error("error in fetch_mqtt_and_file_data for " + str(e))
             raise e
-    
+
     def update_data(self, data):
         self.logger.info("data for update : " + str(data))
         self.logger.debug("Length of data for update: " + str(len(data)))
@@ -273,23 +223,21 @@ class InputController:
             else:
                 new_data[k] = v_new
                 self.optimization_data.update(data)
-    
+
     def Stop(self):
         self.stop_request = True
-        self.logger.debug("internal receiver exit start")
-        self.exit_receiver(self.internal_receiver)
-        self.logger.debug("external receiver exit start")
-        self.exit_receiver(self.external_data_receiver)
-        self.logger.debug("generic receiver exit start")
-        self.exit_receiver(self.generic_data_receiver)
+        self.logger.debug("data receiver exit start")
+        self.exit_receiver(self.data_receivers)
+        self.logger.debug("event receiver exit start")
+        self.exit_receiver(self.event_data_receiver)
         self.logger.debug("sample receiver exit start")
         self.exit_receiver(self.sampling_data_receiver)
-    
+
     def exit_receiver(self, receiver):
         if receiver is not None:
             for name in receiver.keys():
                 receiver[name].exit()
-    
+
     def set_indexing(self, data):
         new_data = {}
         for name, value in data.items():
@@ -302,11 +250,19 @@ class InputController:
                         new_data[name] = {None: v}
         data.update(new_data)
         return data
-    
+
     def get_current_bucket(self):
         start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         current_time = datetime.datetime.now()
-        bucket = floor((current_time - start_of_day).total_seconds() / self.dT_in_seconds)
+        time_since_start = (current_time - start_of_day).total_seconds()
+        bucket = floor(time_since_start / self.dT_in_seconds)
         if bucket >= self.steps_in_day:
             bucket = self.steps_in_day - 1
-        return bucket
+        next_bucket = bucket + 1
+        next_bucket_time = next_bucket * self.dT_in_seconds
+        time_till_next_bucket = next_bucket_time - time_since_start
+        if time_till_next_bucket < 30:
+            time.sleep(time_till_next_bucket)
+            bucket = next_bucket
+            time_till_next_bucket = self.dT_in_seconds
+        return bucket, time_till_next_bucket

@@ -16,7 +16,7 @@ from utils_intern.messageLogger import MessageLogger
 
 class InputConfigParser:
 
-    def __init__(self, input_config, model_name, id, optimization_type, persist_path, restart):
+    def __init__(self, input_config, model_name, id, optimization_type, dT_in_seconds, horizon_in_steps, persist_path, restart):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.model_name = model_name
         self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
@@ -33,12 +33,22 @@ class InputConfigParser:
         self.car_park = None
         self.simulator = None
 
-        self.optimization_params = self.extract_optimization_values()
+        data = {"dT": {None: dT_in_seconds},
+                "T": self.get_array(horizon_in_steps)}
+        self.optimization_params = self.extract_optimization_values(data)
+        self.meta_values = self.extract_meta_values()
+
         self.restart = restart
         if restart:
             self.read_persisted_data(persist_path)
         self.logger.debug("optimization_params: " + str(self.optimization_params))
         self.logger.debug("name_params: " + str(self.name_params))
+
+    def get_array(self, len):
+        a = []
+        for i in range(len):
+            a.append(i)
+        return a
 
     def extract_mqtt_and_datalist_params(self, value, base=""):
         extracted = False
@@ -62,8 +72,7 @@ class InputConfigParser:
     def get_indexed_name(self, name, index):
         return (name, index)
 
-    def extract_optimization_values(self):
-        data = {}
+    def extract_optimization_values(self, data):
         for header, header_value in self.input_config.items():
             if isinstance(header_value, dict):
                 for name, name_value in header_value.items():
@@ -166,9 +175,10 @@ class InputConfigParser:
                 count = len(value)
                 if key in self.model_variables.keys() and self.model_variables[key]["type"] == "Param":
                     indexing = self.model_variables[key]["indexing"]
-                    for index in indexing:
-                        if index not in self.set_params.keys():
-                            self.set_params[index] = count
+                    if len(indexing) == 2:
+                        set_name = indexing[0]
+                        if set_name not in self.set_params.keys():
+                            self.set_params[set_name] = count
         except Exception as e:
             print("error")
 
@@ -210,55 +220,54 @@ class InputConfigParser:
         else:
             self.logger.debug("Persisted path does not exist: " + str(persist_path))
 
+    def extract_meta_values(self):
+        meta_values = {}
+        for name, params in self.name_params.items():
+            if not isinstance(name, str):
+                index = name[1]
+                for key, value in params.items():
+                    if key not in ["mqtt", "datalist"]:
+                        indexed_name = self.get_indexed_name(key, index)
+                        meta_values[indexed_name] = value
+        return meta_values
+
     def convert_name_params_to_model_params(self):
         name_model_params = {}
-        for key in self.name_params.keys():
-            if isinstance(key, str):
-                name_model_params[key] = 1
-            else:
-                name = key[0]
-                if name not in name_model_params.keys():
-                    name_model_params[name] = 1
+        for params in [self.name_params, self.meta_values]:
+            for key in params.keys():
+                if isinstance(key, str):
+                    name_model_params[key] = 1
                 else:
-                    name_model_params[name] = name_model_params[name] + 1
+                    name = key[0]
+                    if name not in name_model_params.keys():
+                        name_model_params[name] = 1
+                    else:
+                        name_model_params[name] = name_model_params[name] + 1
         return name_model_params
 
-    def check_com(self):
+    def check_keys_for_completeness(self):
         not_available_keys = []
         name_model_params = self.convert_name_params_to_model_params()
         all_keys = []
         all_keys.extend(self.optimization_params.keys())
-        all_keys.append(self.set_params.keys())
-        for key, value in self.model_variables.items():
-            if value["type"] == "Set":
-                if key not in all_keys:
-                    not_available_keys.append(key)
-            elif value["type"] == "param":
-                if not (key in name_model_params.keys() and len(value["indexing"]) == name_model_params[key]):
-                    not_available_keys.append(key)
-
-
-
-    def check_keys_for_completeness(self):
-        all_keys = []
-        all_keys.extend(self.prediction_names)
-        all_keys.extend(self.pv_prediction_names)
-        all_keys.extend(self.generic_names)
-        all_keys.extend(self.preprocess_names)
-        all_keys.extend(self.optimization_params.keys())
         all_keys.extend(self.set_params.keys())
-        all_keys.append("dT")
-        all_keys.append("T")
-        all_keys.append("Max_Charging_Power_kW")
-        self.logger.info("model_variables : " + str(self.model_variables))
-        self.logger.info("all_keys : " + str(all_keys))
-        not_available_keys = []
-        for key in self.model_variables.keys():
-            if key not in all_keys and self.model_variables[key]["type"] in ["Set",
-                                                                             "Param"] and key not in self.derived:
-                not_available_keys.append(key)
+        for key, value in self.model_variables.items():
+            if key not in self.derived:
+                if value["type"] == "Set":
+                    if key not in all_keys:
+                        not_available_keys.append(key)
+                elif value["type"] == "Param":
+                    if key not in name_model_params.keys() and key not in all_keys:
+                        not_available_keys.append(key)
+                    elif key in name_model_params.keys():
+                        indexing = value["indexing"]
+                        if (len(indexing) == 1 and indexing[0] != "T" and indexing[0] in self.set_params.keys()
+                                and self.set_params[indexing[0]] != name_model_params[key]) or \
+                            (len(indexing) == 2 and indexing[1] in self.set_params.keys()
+                                and self.set_params[indexing[1]] != name_model_params[key]):
+                            not_available_keys.append(key)
         for key in self.base:
-            if key not in all_keys:
+            if key not in all_keys and key not in name_model_params.keys():
                 not_available_keys.append(key)
         return not_available_keys
 
