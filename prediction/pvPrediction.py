@@ -23,7 +23,8 @@ from utils_intern.utilFunctions import UtilFunctions
 
 class PVPrediction(threading.Thread):
 
-    def __init__(self, config, output_config, input_config_parser, id, control_frequency, horizon_in_steps, dT_in_seconds, generic_name):
+    def __init__(self, config, output_config, input_config_parser, id, control_frequency, horizon_in_steps,
+                 dT_in_seconds, mqtt_params, generic_name, index):
         super().__init__()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.logger.debug("PV prediction class")
@@ -39,6 +40,7 @@ class PVPrediction(threading.Thread):
         self.dT_in_seconds = dT_in_seconds
         self.old_predictions = {}
         self.output_config = output_config
+        self.mqtt_params = mqtt_params
         self.raw_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id,
                                                     "raw_data_" + str(generic_name) + ".csv")
 
@@ -49,20 +51,22 @@ class PVPrediction(threading.Thread):
                                                    "error_data_" + str(generic_name) + ".csv")
 
         self.redisDB = RedisDB()
-        raw_pv_data_topic = input_config_parser.get_params(generic_name)
-        opt_values = input_config_parser.get_optimization_values()
+        meta_values = input_config_parser.get_meta_values()
 
         city = "Bonn"
         country = "Germany"
+        city_key = ("City", index)
+        country_key = ("Country", index)
+        PV_Inv_Max_Power_key = ("PV_Inv_Max_Power", index)
         try:
-            city = opt_values["City"][None]
-            country = opt_values["Country"][None]
+            city = meta_values[city_key]
+            country = meta_values[country_key]
         except Exception:
-            self.logger.error("City or country not present in pv meta")
+            self.logger.error("City or country not present in " + str(generic_name) + " meta")
 
         location = {"city":city,"country":country}
 
-        self.maxPV = float(opt_values["PV_Inv_Max_Power"][None])
+        self.maxPV = float(meta_values[PV_Inv_Max_Power_key])
         pv_forecast_topic = config.get("IO", "forecast.topic")
         pv_forecast_topic = json.loads(pv_forecast_topic)
         pv_forecast_topic["topic"] = pv_forecast_topic["topic"] + self.generic_name
@@ -72,7 +76,7 @@ class PVPrediction(threading.Thread):
         self.max_file_size_mins = config.getint("IO", "pv.raw.data.file.size", fallback=10800)
 
         from prediction.rawLoadDataReceiver import RawLoadDataReceiver
-        self.raw_data = RawLoadDataReceiver(raw_pv_data_topic, config, 1, 1, self.raw_data_file_container,
+        self.raw_data = RawLoadDataReceiver(self.mqtt_params, config, 1, 1, self.raw_data_file_container,
                                             generic_name, self.id, False, self.max_file_size_mins)
 
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, 60,

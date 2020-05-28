@@ -92,76 +92,59 @@ class ThreadFactory:
 
         try:
             # Reads the registry/input and stores it into an object
-            path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Input.registry.file")
+            path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Input.registry")
             if not os.path.exists(path):
-                input_config_file = {}
+                input_config = {}
                 self.logger.debug("Not Input.registry.file present")
             else:
                 with open(path, "r") as file:
-                    input_config_file = json.loads(file.read())
+                    input_config = json.loads(file.read())
                 self.logger.debug("Input.registry.file found")
         except Exception as e:
             self.logger.error("Input file not found")
-            input_config_file = {}
-            self.logger.error(e)
-
-        try:
-            # Reads the registry/input and stores it into an object
-            path = os.path.join(os.getcwd(), "optimization/resources", str(self.id), "Input.registry.mqtt")
-            if not os.path.exists(path):
-                input_config_mqtt = {}
-                self.logger.debug("Not Input.registry.mqtt present")
-            else:
-                with open(path, "r") as file:
-                    input_config_mqtt = json.loads(file.read())
-                self.logger.debug("Input.registry.mqtt found")
-        except Exception as e:
-            self.logger.error("Input file not found")
-            input_config_mqtt = {}
+            input_config = {}
             self.logger.error(e)
 
         persist_base_path = config.get("IO", "persist.base.file.path")
         persist_base_path = os.path.join(os.getcwd(), persist_base_path, str(self.id), Constants.persisted_folder_name)
-        input_config_parser = InputConfigParser(input_config_file, input_config_mqtt, self.model_name, self.id,
-                                                self.optimization_type, persist_base_path, self.restart)
+        input_config_parser = InputConfigParser(input_config, self.model_name, self.id, self.optimization_type,
+                                                self.dT_in_seconds, self.horizon_in_steps,
+                                                persist_base_path, self.restart)
 
         missing_keys = input_config_parser.check_keys_for_completeness()
         if len(missing_keys) > 0:
             raise MissingKeysException("Data source for following keys not declared: " + str(missing_keys))
 
         self.prediction_threads = {}
-        self.prediction_names = input_config_parser.get_prediction_names()
-        if self.prediction_names is not None and len(self.prediction_names) > 0:
-            for prediction_name in self.prediction_names:
-                flag = input_config_parser.get_forecast_flag(prediction_name)
-                if flag:
-                    self.logger.info("Creating prediction controller thread for topic " + str(prediction_name))
-                    topic_param = input_config_parser.get_params(prediction_name)
+        self.pv_prediction_threads = {}
+        for indexed_name, value in input_config_parser.name_params.items():
+            if "mqtt" in value.keys():
+                name = indexed_name[0]
+                index = indexed_name[1]
+                name_with_index = name + "~" + str(index)
+                params = value["mqtt"]
+                option = params["option"]
+                if option == "predict":
+                    self.logger.info("Creating prediction controller thread for topic " + str(name_with_index))
                     parameters = json.dumps(
                         {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
-                         "topic_param": topic_param, "dT_in_seconds": self.dT_in_seconds})
-                    self.redisDB.set("train:" + self.id + ":" + prediction_name, parameters)
-                    self.prediction_threads[prediction_name] = LoadPrediction(config, self.control_frequency,
-                                                                              self.horizon_in_steps, prediction_name,
-                                                                              topic_param, self.dT_in_seconds, self.id,
-                                                                              True, output_config)
-                    # self.prediction_threads[prediction_name].start()
-
-        self.non_prediction_threads = {}
-        self.non_prediction_names = input_config_parser.get_pv_prediction_names()
-        if self.non_prediction_names is not None and len(self.non_prediction_names) > 0:
-            for non_prediction_name in self.non_prediction_names:
-                flag = input_config_parser.get_forecast_flag(non_prediction_name)
-                if flag:
-                    if non_prediction_name == "P_PV":
-                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, output_config,
-                                                                                        input_config_parser,
-                                                                                        self.id,
-                                                                                        self.control_frequency,
-                                                                                        self.horizon_in_steps,
-                                                                                        self.dT_in_seconds,
-                                                                                        non_prediction_name)
-                        self.non_prediction_threads[non_prediction_name].start()
+                         "topic_param": params, "dT_in_seconds": self.dT_in_seconds})
+                    self.redisDB.set("train:" + self.id + ":" + name_with_index, parameters)
+                    self.prediction_threads[indexed_name] = LoadPrediction(config, self.control_frequency,
+                                                                                self.horizon_in_steps,
+                                                                                name_with_index,
+                                                                                params, self.dT_in_seconds,
+                                                                                self.id, True, output_config)
+                elif option == "pv_predict":
+                    self.pv_prediction_threads[indexed_name] = PVPrediction(config, output_config,
+                                                                                  input_config_parser,
+                                                                                  self.id,
+                                                                                  self.control_frequency,
+                                                                                  self.horizon_in_steps,
+                                                                                  self.dT_in_seconds,
+                                                                                  params,
+                                                                                  name_with_index, index)
+                    self.pv_prediction_threads[indexed_name].start()
 
         # Initializing constructor of the optimization controller thread
         if self.optimization_type == "MPC":
@@ -203,7 +186,7 @@ class ThreadFactory:
             for name, obj in self.prediction_threads.items():
                 self.redisDB.remove("train:" + self.id + ":" + name)
                 obj.Stop()
-            for name, obj in self.non_prediction_threads.items():
+            for name, obj in self.pv_prediction_threads.items():
                 obj.Stop()
             self.logger.info("Stopping optimization controller thread")
             self.opt.Stop()

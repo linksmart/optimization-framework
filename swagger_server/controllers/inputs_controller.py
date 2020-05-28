@@ -127,19 +127,37 @@ def store_datalists(File_Input_Source, id):
     for header, header_data in input_all.items():
         logger.debug("Header: " + str(header))
         if is_datalist_header(header):
-            for name, name_list in header_data.items():
+            for name, name_dict in header_data.items():
                 if name != "meta":
-                    logger.debug("Data in " + str(name) + " is " + str(name_list))
-                    for i, item in enumerate(name_list):
+                    logger.debug("Data in " + str(name) + " is " + str(name_dict))
+                    for i, item in enumerate(name_dict):
                         if "datalist" in item.keys():
                             value = item["datalist"]
+                            logger.debug("datalist = "+str(value))
                             file_name = str(name) + "~" + str(i) + ".txt"
                             path = os.path.join(os.getcwd(), "optimization/resources", str(id), "file",
                                                 file_name)
                             logger.debug("Path where the data is stored" + str(path))
                             with open(path, 'w') as outfile:
-                                outfile.write(str(value))
+                                for v in value:
+                                    outfile.write(str(v) + "\n")
                             logger.info("input data saved into memory: " + str(file_name))
+        elif header == "chargers":
+            for i, (name, name_dict) in enumerate(header_data.items()):
+                logger.debug("Data in " + str(name) + " is " + str(name_dict))
+                for key, item in name_dict.items():
+                    if isinstance(item, dict) and "datalist" in item.keys():
+                        value = item["datalist"]
+                        logger.debug("datalist = "+str(value))
+                        file_name = str(i) + "~" + str(name) + "~" + str(key) + ".txt"
+                        path = os.path.join(os.getcwd(), "optimization/resources", str(id), "file",
+                                            file_name)
+                        logger.debug("Path where the data is stored" + str(path))
+                        with open(path, 'w') as outfile:
+                            for v in value:
+                                outfile.write(str(v) + "\n")
+                        logger.info("input data saved into memory: " + str(file_name))
+
 
 
 def get_data_source_values(id):  # noqa: E501

@@ -34,8 +34,9 @@ class InputConfigParser:
         self.simulator = None
 
         data = {"dT": {None: dT_in_seconds},
-                "T": self.get_array(horizon_in_steps)}
+                "T": {None: self.get_array(horizon_in_steps)}}
         self.optimization_params = self.extract_optimization_values(data)
+        self.convert_string_key_to_tuple()
         self.meta_values = self.extract_meta_values()
 
         self.restart = restart
@@ -52,7 +53,7 @@ class InputConfigParser:
 
     def extract_mqtt_and_datalist_params(self, value, base=""):
         extracted = False
-        for key2, value2 in value.items():
+        for i, (key2, value2) in enumerate(value.items()):
             if base == "":
                 name = key2
             else:
@@ -75,7 +76,7 @@ class InputConfigParser:
     def extract_optimization_values(self, data):
         for header, header_value in self.input_config.items():
             if isinstance(header_value, dict):
-                for name, name_value in header_value.items():
+                for j, (name, name_value) in enumerate(header_value.items()):
                     if name == Constants.meta:
                         for k2, v2 in name_value.items():
                             self.add_value_to_data(data, k2, v2)
@@ -88,7 +89,8 @@ class InputConfigParser:
                         self.logger.debug("Generic single value")
                         self.add_value_to_data(data, name, name_value)
                     elif isinstance(name_value, dict):
-                        if not self.extract_mqtt_and_datalist_params(name_value, base=name):
+                        indexed_name = str(j) + "~" + name
+                        if not self.extract_mqtt_and_datalist_params(name_value, base=indexed_name):
                             data[name] = self.remove_mqtt_and_datalist(name_value)
                     else:
                         data[name] = {None: self.type_cast_value(name_value)}
@@ -180,7 +182,25 @@ class InputConfigParser:
                         if set_name not in self.set_params.keys():
                             self.set_params[set_name] = count
         except Exception as e:
-            print("error")
+            print("error"+str(e))
+
+    def convert_string_key_to_tuple(self):
+        new_data = {}
+        keys_replaced = []
+        for key, value in self.name_params.items():
+            try:
+                if isinstance(key, str):
+                    keys = key.split("~")
+                    index = int(keys[0])
+                    name = keys[1]
+                    indexed_name = self.get_indexed_name(name, index)
+                    new_data[indexed_name] = value
+                    keys_replaced.append(key)
+            except Exception as e:
+                print("error "+str(e))
+        for key in keys_replaced:
+            self.name_params.pop(key)
+        self.name_params.update(new_data)
 
     def remove_mqtt_and_datalist(self, v1):
         if isinstance(v1, dict):
@@ -223,7 +243,10 @@ class InputConfigParser:
     def extract_meta_values(self):
         meta_values = {}
         for name, params in self.name_params.items():
-            if not isinstance(name, str):
+            if isinstance(name, str):
+
+                pass
+            else:
                 index = name[1]
                 for key, value in params.items():
                     if key not in ["mqtt", "datalist"]:
@@ -299,10 +322,23 @@ class InputConfigParser:
         return self.sampling_names
 
     def get_variable_index(self, name):
+        if not isinstance(name, str):
+            name = name[0]
         if name in self.model_variables:
             return self.model_variables[name]["indexing"]
         else:
-            return "empty"
+            return []
+
+    def get_index_set_length(self, name):
+        indexing = self.get_variable_index(name)
+        if len(indexing) == 2:
+            set_name = indexing[0]
+            if set_name in self.set_params.keys():
+                set_length = self.set_params[set_name]
+                return set_name, set_length
+            else:
+                raise KeyError(set_name + " not in set params")
+        return None, None
 
     def get_params(self, topic):
         return self.name_params[topic]["mqtt"]
@@ -312,3 +348,6 @@ class InputConfigParser:
 
     def get_set_params(self):
         return self.set_params
+
+    def get_meta_values(self):
+        return self.meta_values
