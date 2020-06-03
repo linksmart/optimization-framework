@@ -37,6 +37,7 @@ class TrainModel:
         model.add(LSTM(hidden_size, stateful=True,
                        batch_input_shape=(batch_size, num_timesteps, 1),
                        return_sequences=True))
+        model.add(Dropout(0.3))
         model.add(LSTM(hidden_size, stateful=True))
         model.add(Dense(output_size))
         adam = k.optimizers.Adam(lr=0.01)
