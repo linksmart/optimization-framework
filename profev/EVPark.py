@@ -71,6 +71,16 @@ class EVPark:
             if charger.max_charging_power_kw:
                 old_charger.max_charging_power_kw = charger.max_charging_power_kw
 
+    def update_charger_for_key(self, charger_id, soc=None, hosted_ev=None):
+        if charger_id in self.chargers.keys():
+            self.chargers[charger_id].plug(hosted_ev, soc)
+        # check hosted ev in other chargers to unplug
+        if hosted_ev:
+            for charger_id2, charger_dict in self.chargers.items():
+                if charger_id != charger_id2:
+                    if charger_dict.hosted_ev == hosted_ev:
+                        charger_dict.unplug()
+
     def remove_ev(self, ev):
         pass
 
@@ -123,7 +133,7 @@ class EVPark:
             # break
         return cap
 
-    # TODO: include all evs for calculation
+    # TODO: include all evs for calculation, all check logic
     def calculate_vac_soc_value(self, vac_soc_value_override=None):
         # default = 0.4
         vac_soc_value = 0

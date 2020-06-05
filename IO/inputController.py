@@ -35,17 +35,19 @@ class InputController:
         self.mqtt_timer = {}
         self.event_data = {}
         self.optimization_data = self.init_set_params()
+        data = self.input_config_parser.get_optimization_values()
+        self.optimization_data.update(data)
         self.restart = self.input_config_parser.get_restart_value()
         self.steps_in_day, self.required_buffer_data = self.calculate_required_buffer()
 
         mqtt_time_threshold = float(self.config.get("IO", "mqtt.detach.threshold", fallback=180))
-        self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config)
+        self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config,
+                                               self.input_config_parser.name_params,
+                                               data)
 
         self.data_receivers, self.event_data_receivers, self.sampling_data_receivers = self.initialize_data_receivers()
-
-        data = self.input_config_parser.get_optimization_values()
-        self.optimization_data.update(data)
         self.logger.debug("optimization data: " + str(self.optimization_data))
+
 
     def initialize_data_receivers(self):
         data_receivers = {}
@@ -168,7 +170,7 @@ class InputController:
                 except Exception as e:
                     self.logger.error(
                         "Error occured while getting data for bucket " + str(current_bucket) + ". " + str(e))
-        self.logger.info(self.optimization_data)
+        self.logger.info("opt data: "+json.dumps(self.optimization_data, indent=True))
         if preprocess:
             self.inputPreprocess.preprocess(self.optimization_data, self.mqtt_timer)
         redisDB.set(Constants.get_data_flow_key(self.id), False)
@@ -221,30 +223,20 @@ class InputController:
             name = indexed_name[0]
             index = indexed_name[1]
             set_name, set_length = self.input_config_parser.get_index_set_length(name)
+            self.logger.info("set name "+str(set_name)+" "+str(set_length))
+            new_data = {}
             if set_name:
-               new_data = self.get_array_of_none(set_length)
                new_data[index] = v_new
-            else:
-                new_data = {}
             if name in self.optimization_data.keys():
-                v_old = self.optimization_data[name]
-                if isinstance(v_old, list):
-                    if len(v_old) == set_length:
-                        for i, s in enumerate(v_old):
-                            if i != index:
-                                new_data[i] = s
-                        self.optimization_data[name] = new_data
-                elif isinstance(v_old, dict) and isinstance(v_new, dict):
-                    new_data.update(v_old)
-                    new_data.update(v_new)
-                    self.optimization_data[name] = new_data
-                else:
-                    new_data[name] = v_new
-                    self.optimization_data.update(new_data)
+                old_data = self.optimization_data[name]
+                if isinstance(old_data, dict):
+                    old_data.update(new_data)
+                    self.optimization_data[name] = old_data
             else:
                 if len(new_data) == 0:
-                    new_data[name] = v_new
-                self.optimization_data.update(new_data)
+                    self.optimization_data[name] = v_new
+                else:
+                    self.optimization_data[name] = new_data
 
     def Stop(self):
         self.stop_request = True

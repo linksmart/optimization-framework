@@ -30,6 +30,12 @@ class ChargingStation:
             self.plugged = True
             if self.recharge_start_time is None:
                 self.recharge_start_time = time.time()
+        elif self.hosted_ev is not None and soc:
+            self.soc = soc
+            self.plugged = True
+            if self.recharge_start_time is None:
+                self.recharge_start_time = time.time()
+
 
     def unplug(self):
         print("Unplugging ev "+str(self.hosted_ev)+" from charging station "+str(self.charger_id))
