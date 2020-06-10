@@ -38,13 +38,11 @@ class LoadPrediction:
         if self.num_timesteps > 60:
             self.num_timesteps = 60
         """
-        self.num_timesteps = 24
+        self.input_size = 1440
         self.hidden_size = 100
         self.batch_size = 1
         self.num_epochs = 10  # 10
-        self.output_size = int(self.horizon_in_steps-1)
-        if self.output_size < 1:
-            self.output_size = 1
+        self.output_size = 1440  # or should be 1439?
         self.id = id
         
         dir_data = os.path.join("/usr/src/app", "prediction/resources", self.id)
@@ -66,7 +64,7 @@ class LoadPrediction:
         self.training_thread = None
         self.raw_data = None
 
-        total_mins = int(float(self.num_timesteps * self.dT_in_seconds)/60.0) + 1
+        total_mins = int(float(self.input_size * self.dT_in_seconds) / 60.0) + 1
 
         if self.predictionFlag:
 
@@ -106,16 +104,16 @@ class LoadPrediction:
             self.startTraining()
 
     def startTraining(self):
-        self.training_thread = Training(self.control_frequency, self.horizon_in_steps, self.num_timesteps,
+        self.training_thread = Training(self.control_frequency, self.horizon_in_steps, self.input_size,
                                         self.hidden_size, self.batch_size, self.num_epochs,
                                         self.raw_data_file_container, self.processingData, self.model_file_container,
-                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds, 
+                                        self.model_file_container_train, self.topic_name, self.id, self.dT_in_seconds,
                                         self.output_size, self.max_training_samples, self.max_raw_data_to_read,
                                         self.model_file_container_temp, self.logger)
         self.training_thread.start()
 
     def startPrediction(self):
-        self.prediction_thread = Prediction(60, self.horizon_in_steps, self.num_timesteps,
+        self.prediction_thread = Prediction(60, self.horizon_in_steps, self.input_size,
                                             self.hidden_size, self.batch_size, self.num_epochs,
                                             self.raw_data, self.processingData, self.model_file_container_temp,
                                             self.model_file_container, self.q, self.topic_name, self.id,
@@ -152,18 +150,18 @@ class Training(threading.Thread):
     - After training is completed, copy the model_train.h5 to model.h5
     """
 
-    def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs,
+    def __init__(self, control_frequency, horizon_in_steps, input_size, hidden_size, batch_size, num_epochs,
                  raw_data_file, processingData, model_file_container, model_file_container_train, topic_name, id,
                  dT_in_seconds, output_size, max_training_samples, max_raw_data_to_read,
                  model_file_container_temp, log):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
-        self.num_timesteps = num_timesteps
+        self.input_size = input_size
         self.hidden_size = hidden_size
         self.batch_size = batch_size
         self.num_epochs = num_epochs  # 10
-        self.min_training_size = num_timesteps + output_size + 5
+        self.min_training_size = input_size + output_size
         self.model_file_container = model_file_container
         self.model_file_container_train = model_file_container_train
         self.model_file_container_temp = model_file_container_temp
@@ -195,12 +193,12 @@ class Training(threading.Thread):
                     # at-most last 5 days' data
                     data = RawDataReader.get_raw_data(self.raw_data_file, self.topic_name, self.max_raw_data_to_read)  #7200 = 5 days data
                     self.logger.debug("raw data ready " + str(len(data)))
-                    data, merged = self.processingData.expand_and_resample_into_blocks(data, self.dT_in_seconds, self.horizon_in_steps,
-                                                                               self.num_timesteps, self.output_size)
+                    data, merged = self.processingData.expand_and_resample_into_blocks(data, 60, self.input_size,
+                                                                                       self.input_size, self.output_size)
                     if self.sufficient_data_available(data):
                         self.trained = True
                         self.logger.info("start training")
-                        Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.num_timesteps,
+                        Xtrain, Ytrain = self.processingData.preprocess_data_train(data, self.input_size,
                                                                                    self.output_size, self.max_training_samples)
                         self.logger.info("pre proc done")
                         try:
@@ -208,7 +206,7 @@ class Training(threading.Thread):
                                 from prediction.trainModel import TrainModel
                                 trainModel = TrainModel(self.stop_request_status)
                                 trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
-                                                 self.num_timesteps, self.output_size, self.model_file_container_train)
+                                                 self.input_size, self.output_size, self.model_file_container_train)
                                 copyfile(self.model_file_container_train, self.model_file_container)
                                 copyfile(self.model_file_container_train, self.model_file_container_temp)
                                 self.logger.info("trained successfully")
@@ -254,13 +252,13 @@ class Prediction(threading.Thread):
         else load model_temp.h5 from disk (temp pre-trained model)
     - predict for next horizon points (eg. 24 predictions)
     """
-    def __init__(self, control_frequency, horizon_in_steps, num_timesteps, hidden_size, batch_size, num_epochs, raw_data, processingData,
+    def __init__(self, control_frequency, horizon_in_steps, input_size, hidden_size, batch_size, num_epochs, raw_data, processingData,
                  model_file_container_temp, model_file_container, q, topic_name, id, dT_in_seconds, output_size, log,
                  prediction_data_file_container):
         super().__init__()
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
-        self.num_timesteps = num_timesteps
+        self.input_size = input_size
         self.hidden_size = hidden_size
         self.dT_in_seconds = dT_in_seconds
         self.batch_size = batch_size
@@ -273,8 +271,8 @@ class Prediction(threading.Thread):
         self.redisDB = RedisDB()
         self.stopRequest = threading.Event()
         from prediction.Models import Models
-        self.models = Models(self.num_timesteps, self.hidden_size, self.batch_size, self.model_file_container,
-                        self.model_file_container_temp)
+        self.models = Models(self.input_size, self.hidden_size, self.batch_size, self.model_file_container,
+                             self.model_file_container_temp)
         self.topic_name = topic_name
         self.id = id
         self.output_size = output_size
@@ -292,13 +290,13 @@ class Prediction(threading.Thread):
             try:
                 data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
                 self.logger.debug("len data = " + str(len(data)))
-                data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
+                data = TimeSeries.expand_and_resample(data, 60)
                 self.logger.debug("len resample data = " + str(len(data)))
                 true_data = data
                 if len(data) > 0:
-                    data = self.processingData.append_mock_data(data, self.num_timesteps, self.dT_in_seconds)
+                    data = self.processingData.append_mock_data(data, self.input_size, 60)
                     self.logger.debug("len appended data = " + str(len(data)))
-                if len(data) > self.num_timesteps:
+                if len(data) > self.input_size:
                     st = time.time()
                     test_predictions = []
                     model, model_temp, temp_flag, graph = self.models.get_model(self.id+"_"+self.topic_name)
@@ -308,7 +306,7 @@ class Prediction(threading.Thread):
                     predicted_flag = False
                     if model is not None:
                         self.logger.debug("pred input "+str(data))
-                        Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.num_timesteps, self.output_size)
+                        Xtest, scaling, latest_timestamp = self.processingData.preprocess_data_predict(data, self.input_size, self.output_size)
                         try:
                             self.logger.debug("model present, so predicting data for "+str(self.id)+" "+str(self.topic_name))
                             from prediction.predictModel import PredictModel
@@ -330,7 +328,7 @@ class Prediction(threading.Thread):
                             continue
                     if not predicted_flag:
                         self.logger.info("prediction model is none, extending the known values")
-                        test_predictions = self.processingData.get_regression_values(true_data, self.num_timesteps, self.output_size + 1, self.dT_in_seconds)
+                        test_predictions = self.processingData.get_regression_values(true_data, self.input_size, self.output_size + 1, self.dT_in_seconds)
                         self.q.put(test_predictions)
 
                     self.logger.debug(str(self.topic_name)+" predictions " + str(len(test_predictions)))

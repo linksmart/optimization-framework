@@ -75,8 +75,8 @@ class ProcessingData:
         result = {}
         for pred in data:
             result[startTime] = pred
-            startTime += datetime.timedelta(seconds=delta)
-        return result
+            startTime += datetime.timedelta(seconds=60)
+        return TimeSeries.expand_and_resample(result, delta, True)
 
     def append_mock_data(self, data, num_timesteps, dT):
         l = len(data)
@@ -157,15 +157,15 @@ class ProcessingData:
         else:
             return [], False
 
-    def preprocess_data_train(self, blocks, num_timesteps, output_size, sp):
+    def preprocess_data_train(self, blocks, input_size, output_size, sp):
         x_list = []
         y_list = []
-        look_back = num_timesteps
+        look_back = input_size
         num_features = 1
         count = 0
         for raw_data in blocks:
             # Loading Data
-            if len(raw_data) >= num_timesteps + output_size + 5:
+            if len(raw_data) >= input_size + output_size:
                 # raw_data = raw_data[-7200:]
                 latest_timestamp = raw_data[-1:][0][0]
                 logger.debug(latest_timestamp)
@@ -189,7 +189,7 @@ class ProcessingData:
                 scaler = MinMaxScaler(feature_range=(0, 1), copy=False)
                 data = scaler.fit_transform(data)
 
-                nb_samples = data.shape[0] - num_timesteps - output_size
+                nb_samples = data.shape[0] - input_size - output_size + 1
                 logger.info("nb samples = "+str(nb_samples))
                 x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
                 y_train_reshaped = np.zeros((nb_samples, output_size))
