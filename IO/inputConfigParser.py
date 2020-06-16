@@ -38,7 +38,7 @@ class InputConfigParser:
         self.optimization_params = self.extract_optimization_values(data)
         self.convert_string_key_to_tuple()
         self.meta_values = self.extract_meta_values()
-
+        self.add_meta_values_to_opt_params()
         self.restart = restart
         if restart:
             self.read_persisted_data(persist_path)
@@ -293,6 +293,22 @@ class InputConfigParser:
             if key not in all_keys and key not in name_model_params.keys():
                 not_available_keys.append(key)
         return not_available_keys
+
+    def add_meta_values_to_opt_params(self):
+        new_data = {}
+        for key, value in self.meta_values.items():
+            name = key[0]
+            index = key[1]
+            indexing = self.get_variable_index(name)
+            if len(indexing) > 0:
+                if name in new_data.keys():
+                    new_data[name].update({int(index): value})
+                else:
+                    new_data[name] = {int(index):value}
+            else:
+                new_data[name] = {None: value}
+        self.optimization_params.update(new_data)
+
 
     def get_restart_value(self):
         return self.restart

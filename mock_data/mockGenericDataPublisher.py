@@ -44,6 +44,11 @@ class MockGenericDataPublisher(DataPublisher):
             self.data_type = mock_params["mock_data_type"]
         elif self.source == "constant":
             self.constant_value = mock_params["mock_constant"]
+        if mock_params["base_name"] is not None:
+            self.base = senml.SenMLMeasurement()
+            self.base.name = mock_params["base_name"]
+        else:
+            self.base = None
 
     def get_data(self):
         try:
@@ -80,7 +85,7 @@ class MockGenericDataPublisher(DataPublisher):
                     meas.name = self.generic_name
                     meas_list.append(meas)
                     current_time += self.delta_time
-                doc = senml.SenMLDocument(meas_list)
+                doc = senml.SenMLDocument(meas_list, base=self.base)
                 val = doc.to_json()
                 val = json.dumps(val)
                 logger.debug("Sent MQTT:" + str(val))

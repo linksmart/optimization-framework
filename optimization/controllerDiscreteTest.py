@@ -35,7 +35,7 @@ class OptControllerDiscrete(ControllerBaseThread):
             action_handle_map = {}
             start_time_total = time.time()
             self.logger.info("waiting for data")
-            data_dict = self.input.get_data(preprocess=False, redisDB=self.redisDB)  # blocking call
+            data_dict = self.input.get_data(redisDB=self.redisDB)  # blocking call
             self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
             if self.redisDB.get_bool(self.stop_signal_key):# or self.stopRequest.isSet():
                 break

@@ -23,7 +23,7 @@ from utils_intern.messageLogger import MessageLogger
 
 class InputController:
 
-    def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds):
+    def __init__(self, id, input_config_parser, config, control_frequency, horizon_in_steps, dT_in_seconds, preprocess):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
         self.input_config_parser = input_config_parser
@@ -32,6 +32,7 @@ class InputController:
         self.horizon_in_steps = horizon_in_steps
         self.dT_in_seconds = dT_in_seconds
         self.id = id
+        self.preprocess = preprocess
         self.mqtt_timer = {}
         self.event_data = {}
         self.optimization_data = self.init_set_params()
@@ -40,10 +41,11 @@ class InputController:
         self.restart = self.input_config_parser.get_restart_value()
         self.steps_in_day, self.required_buffer_data = self.calculate_required_buffer()
 
-        mqtt_time_threshold = float(self.config.get("IO", "mqtt.detach.threshold", fallback=180))
-        self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config,
-                                               self.input_config_parser.name_params,
-                                               data)
+        if self.preprocess:
+            mqtt_time_threshold = float(self.config.get("IO", "mqtt.detach.threshold", fallback=180))
+            self.inputPreprocess = InputPreprocess(self.id, mqtt_time_threshold, config,
+                                                   self.input_config_parser.name_params,
+                                                   data)
 
         self.data_receivers, self.event_data_receivers, self.sampling_data_receivers = self.initialize_data_receivers()
         self.logger.debug("optimization data: " + str(self.optimization_data))
@@ -74,7 +76,7 @@ class InputController:
                 elif option == "event":
                     event_data_receivers[indexed_name] = GenericEventDataReceiver(False, params, self.config, name_with_index, self.id,
                                                                               self.inputPreprocess.event_received)
-                elif option in "sampling":
+                elif option == "sampling":
                     sampling_data_receivers[indexed_name] = GenericDataReceiver(False, params, self.config, name_with_index, self.id,
                                                                             self.required_buffer_data,
                                                                             self.dT_in_seconds)
@@ -140,39 +142,41 @@ class InputController:
                 except Exception as e:
                     self.logger.error("error getting sample " + str(name) + " " + str(e))
 
-    def get_data(self, preprocess, redisDB):
+    def get_data(self, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         # self.logger.info("sleep for data")
         # time.sleep(100)
-        success = False
-        while not success:
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+        if len(self.data_receivers) > 0:
+            success = False
+            while not success:
                 try:
-                    if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
-                        break
-                    current_bucket, _ = self.get_current_bucket()
-                    self.logger.info("Get input data for bucket " + str(current_bucket))
-                    futures = []
-                    for name, receiver in self.data_receivers.items():
-                        futures.append(executor.submit(self.fetch_mqtt_and_file_data, name, receiver, current_bucket,
-                                                       self.horizon_in_steps))
-                    time.sleep(15)
-                    # The returned iterator raises a concurrent.futures.TimeoutError if __next__() is called and
-                    # the result isn’t available after timeout seconds from the original call to as_completed()
-                    for future in concurrent.futures.as_completed(futures, timeout=20):
-                        success, read_data, mqtt_timer = future.result()
-                        if success:
-                            self.update_data(read_data)
-                            self.mqtt_timer.update(mqtt_timer)
-                        else:
-                            self.logger.error("Success flag is False")
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        if redisDB.get("End ofw") == "True" or redisDB.get_bool("opt_stop_" + self.id):
                             break
+                        current_bucket, time_till_next_bucket = self.get_current_bucket()
+                        per_future_wait_time = time_till_next_bucket/len(self.data_receivers) - 2
+                        self.logger.info("Get input data for bucket " + str(current_bucket))
+                        futures = []
+                        for name, receiver in self.data_receivers.items():
+                            futures.append(executor.submit(self.fetch_mqtt_and_file_data, name, receiver, current_bucket,
+                                                           self.horizon_in_steps))
+                        # The returned iterator raises a concurrent.futures.TimeoutError if __next__() is called and
+                        # the result isn’t available after timeout seconds from the original call to as_completed()
+                        for future in concurrent.futures.as_completed(futures, timeout=per_future_wait_time):
+                            success, read_data, mqtt_timer = future.result()
+                            if success:
+                                self.update_data(read_data)
+                                self.mqtt_timer.update(mqtt_timer)
+                            else:
+                                self.logger.error("Success flag is False")
+                                break
                 except Exception as e:
+                    success = False
                     self.logger.error(
-                        "Error occured while getting data for bucket " + str(current_bucket) + ". " + str(e))
-        self.logger.info("opt data: "+json.dumps(self.optimization_data, indent=True))
-        if preprocess:
-            self.inputPreprocess.preprocess(self.optimization_data, self.mqtt_timer)
+                        "Error occured while getting data for bucket " + str(current_bucket) + " " + str(e))
+            self.logger.info("opt data: "+json.dumps(self.optimization_data))
+            if self.preprocess:
+                self.inputPreprocess.preprocess(self.optimization_data, self.mqtt_timer)
         redisDB.set(Constants.get_data_flow_key(self.id), False)
         if self.restart:
             self.restart = False
@@ -200,13 +204,13 @@ class InputController:
                         data_value = value
                         break
                     data_value = self.set_indexing(data_value, name)
-                    self.logger.debug("Indexed data " + str(data))
-                    if (self.restart and last_time > 0) or not self.restart:
+                    self.logger.debug("Indexed data " + str(data_value))
+                    if not self.restart or (self.restart and last_time > 0):
                         data = {name: data_value}
                 data_available_for_bucket = bucket_available
             return (data_available_for_bucket, data, mqtt_timer)
         except Exception as e:
-            self.logger.error("error in fetch_mqtt_and_file_data for " + str(e))
+            self.logger.error("error in fetch_mqtt_and_file_data for " + str(name)+ " " + str(e))
             raise e
 
     def get_array_of_none(self, length):
@@ -255,11 +259,15 @@ class InputController:
     # TODO:make changes
     def set_indexing(self, data_value, name):
         indexing = self.input_config_parser.get_variable_index(name)
+        self.logger.debug("set index: "+str(name)+" "+str(indexing)+" "+str(data_value))
         # default indexing will be set to "index" in baseDataReceiver
         if len(indexing) == 0:
-            if len(data_value) >= 1:
-                if isinstance(data_value, dict):
+            if len(data_value) >= 1 and isinstance(data_value, dict):
+                if 0 in data_value.keys():
                     return {None: data_value[0]}  # 0 is the key
+                else:
+                    for key, value in data_value.items():
+                        return {None: value}
         return data_value
 
     def get_current_bucket(self):

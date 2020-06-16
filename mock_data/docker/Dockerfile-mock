@@ -1,6 +1,7 @@
 
 # Use an official Python runtime as a parent image
 FROM garagon/ipopt:V0.2
+#FROM garagon/solvers:amd_v7
 
 # Set the working directory to usr/src/app
 RUN mkdir -p /usr/src/app
@@ -29,6 +30,7 @@ WORKDIR /usr/src/app
 COPY IO/dataPublisher.py /usr/src/app/IO/dataPublisher.py
 COPY IO/MQTTClient.py /usr/src/app/IO/MQTTClient.py
 COPY IO/ZMQClient.py /usr/src/app/IO/ZMQClient.py
+COPY IO/ConfigParserUtils.py /usr/src/app/IO/ConfigParserUtils.py
 COPY mock_data /usr/src/app/mock_data
 COPY mockdata.py /usr/src/app/
 COPY config /usr/src/app/config

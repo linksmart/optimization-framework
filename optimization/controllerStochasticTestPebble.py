@@ -212,7 +212,7 @@ class OptControllerStochastic(ControllerBaseThread):
             start_time_total = time.time()
             self.logger.debug("number of workers = " + str(self.number_of_workers))
             self.logger.info("waiting for data")
-            data_dict = self.input.get_data(preprocess=True, redisDB=self.redisDB)  # blocking call
+            data_dict = self.input.get_data(redisDB=self.redisDB)  # blocking call
             self.logger.debug("data_dict after waiting data "+str(data_dict))
 
             if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":# or self.stopRequest.isSet():

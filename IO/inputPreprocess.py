@@ -107,7 +107,6 @@ class InputPreprocess:
         self.charger_unplug_event = []
 
     def preprocess(self, data_dict, mqtt_timer):
-        self.logger.info("data_dict = " + str(data_dict))
         self.data_dict = data_dict
         self.last_timesamps = mqtt_timer
         self.logger.info("mqtt timer = " + str(mqtt_timer))

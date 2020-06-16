@@ -73,14 +73,17 @@ class ControllerBase(ABC):
         self.redisDB.set(self.stop_signal_key, False)
         self.redisDB.set(self.finish_status_key, False)
         self.repetition_completed = False
-        self.preprocess = False
+        if optimization_type == "stochastic":
+            self.preprocess = True
+        else:
+            self.preprocess = False
         self.input = None
         self.output = None
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.output = OutputController(self.id, self.output_config)
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.input = InputController(self.id, self.input_config_parser, config, self.control_frequency,
-                                         self.horizon_in_steps, self.dT_in_seconds)
+                                         self.horizon_in_steps, self.dT_in_seconds, self.preprocess)
         self.monitor = MonitorPub(config, id)
 
     # Importint a class dynamically
