@@ -140,7 +140,7 @@ class DataReceiver(ABC):
     def set_data_update(self, data_update):
         self.data_update = data_update
 
-    def get_mqtt_data(self, require_updated, clearData):
+    def get_mqtt_data(self, require_updated, clear_data):
         if require_updated == 1 and not self.data:
             require_updated = 0
         ctr = 0
@@ -150,7 +150,7 @@ class DataReceiver(ABC):
                 self.logger.debug("wait for data "+str(self.topics))
             ctr += 1
             time.sleep(0.5)
-        return self.get_and_update_data(clearData)
+        return self.get_and_update_data(clear_data)
 
     def exit(self):
         self.stop_request = True
@@ -163,7 +163,7 @@ class DataReceiver(ABC):
         except Exception as e:
             self.logger.warning(str(e))
 
-    def get_zmq_msg(self, clearData):
+    def get_zmq_msg(self, clear_data):
         while True and not self.stop_request:
             self.logger.debug("get zmq msg")
             flag, topic, message = self.zmq.receive_message()
@@ -172,30 +172,39 @@ class DataReceiver(ABC):
                 self.on_msg_received(message)
                 break
             time.sleep(1)
-        return self.get_and_update_data(clearData)
+        return self.get_and_update_data(clear_data)
 
-    def get_and_update_data(self, clearData):
+    def get_and_update_data(self, clear_data):
         new_data = self.data.copy()
         self.set_data_update(False)
-        if clearData:
-            self.clear_data()
+        if clear_data:
+            self.clear_data(clear_data)
         self.logger.debug("new_data "+str(new_data))
         return new_data
 
-    def clear_data(self):
+    def clear_data(self, clear_data):
+        value = None
+        if isinstance(clear_data, str) and isinstance(self.data, dict) and \
+                clear_data in self.data.keys():
+            value = self.data[clear_data]
         self.data = self.emptyValue.copy()
+        if value:
+            self.data[clear_data] = value
 
-    def get_data(self, require_updated=0, clearData=False):
+    def get_data(self, require_updated=0, clear_data=None):
         """
 
-        :param require_updated: 0 -> wait for new data
-                                1 -> wait for new data if no prev data
-                                2 -> return prev data, even if empty
+        :param  require_updated:    0 -> wait for new data
+                                    1 -> wait for new data if no prev data
+                                    2 -> return prev data, even if empty
+                clear_data:         dict_key -> delete everything else apart from the
+                                                given key
+                                    bool -> clear everything if True
         :return:
         """
         data = {}
         if self.channel == "MQTT":
-            data = self.get_mqtt_data(require_updated, clearData)
+            data = self.get_mqtt_data(require_updated, clear_data)
         elif self.channel == "ZMQ":
-            data = self.get_zmq_msg(clearData)
+            data = self.get_zmq_msg(clear_data)
         return data

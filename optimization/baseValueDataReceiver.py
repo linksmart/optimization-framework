@@ -30,8 +30,10 @@ class BaseValueDataReceiver(BaseDataReceiver):
             gen_name = None
             if event is not None and charger_name is not None:
                 gen_name = charger_name+"/"+event
-            if gen_name == self.generic_name:
+            self.logger.debug("bv "+str(gen_name)+" "+str(self.generic_name)+" "+str(self.name))
+            if gen_name == self.name:
                 base = base.split("/")[-1]
+                self.logger.debug("charger bv "+str(base)+" "+str(data))
                 return {base: data}
             else:
                 #self.logger.debug("other charger data, so ignore "+str(gen_name)+ " - "+str(self.generic_name))

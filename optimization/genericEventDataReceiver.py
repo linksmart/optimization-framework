@@ -27,7 +27,7 @@ class GenericEventDataReceiver(BaseEventDataReceiver):
             gen_name = None
             if event is not None and charger_name is not None:
                 gen_name = charger_name + "/" + event
-            if gen_name == self.generic_name:
+            if gen_name == self.name:
                 base = base.split("/")[-1]
                 return {base: data}
             else:

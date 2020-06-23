@@ -19,12 +19,22 @@ class BaseEventDataReceiver(DataReceiver, ABC):
         redisDB = RedisDB()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.generic_name = generic_name
+        self.name, self.name_index = self.generic_name_split(generic_name)
         self.event_callback = event_callback
         try:
             super().__init__(internal, topic_params, config, id=id)
         except Exception as e:
-            redisDB.set("Error mqtt" + self.id, True)
+            redisDB.set("Error mqtt" + str(self.id), True)
             self.logger.error(e)
+
+    def generic_name_split(self, generic_name):
+        if "~" in generic_name:
+            s = generic_name.split("~")
+            name = s[0]
+            index = s[1]
+            return name, index
+        else:
+            return generic_name, 0
 
     def on_msg_received(self, payload):
         try:

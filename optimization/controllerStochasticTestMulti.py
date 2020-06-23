@@ -350,9 +350,7 @@ class OptControllerStochastic(ControllerBaseThread):
                         self.logger.error("Calculation of ProcessPool failed"+ str(e))
                         loop_fail = True
                         for f in futures:
-                            if f.cancel():
-                                self.logger.debug("future "+str(f)+" cancelled")
-                            else:
+                            if not f.cancel():
                                 self.logger.error("future " + str(f) + " not cancelled")
 
                         self.logger.error("Executor shutdown")
@@ -370,9 +368,7 @@ class OptControllerStochastic(ControllerBaseThread):
                     if loop_fail:
                         self.logger.error("ERROR: Optimization calculation was not possible. Process will be repeated")
                         for f in futures:
-                            if f.cancel():
-                                self.logger.debug("future "+str(f)+" cancelled")
-                            else:
+                            if not f.cancel():
                                 self.logger.error("future " + str(f) + " not cancelled")
 
                         self.logger.error("Executor shutdown")

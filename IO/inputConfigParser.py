@@ -43,6 +43,7 @@ class InputConfigParser:
         if restart:
             self.read_persisted_data(persist_path)
         self.logger.debug("optimization_params: " + str(self.optimization_params))
+        print(self.optimization_params)
         self.logger.debug("name_params: " + str(self.name_params))
 
     def get_array(self, len):

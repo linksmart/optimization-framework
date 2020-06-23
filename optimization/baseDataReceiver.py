@@ -26,6 +26,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         self.redisDB = RedisDB()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.generic_name = generic_name
+        self.name, self.name_index = self.generic_name_split(generic_name)
         self.buffer = buffer
         self.dT = dT
         self.base_value_flag = base_value_flag
@@ -70,7 +71,15 @@ class BaseDataReceiver(DataReceiver, ABC):
                 self.set_data_update(True)
                 self.last_time = time.time()
 
-        
+    def generic_name_split(self, generic_name):
+        if "~" in generic_name:
+            s = generic_name.split("~")
+            name = s[0]
+            index = s[1]
+            return name, index
+        else:
+            return generic_name, 0
+
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
@@ -200,7 +209,7 @@ class BaseDataReceiver(DataReceiver, ABC):
         elif self.detachable and not self.value_used_once:
             data = self.get_data(require_updated=2)
         elif self.detachable:
-            data = self.get_data(require_updated=2, clearData=True)
+            data = self.get_data(require_updated=2, clear_data=True)
         elif self.reuseable:
             data = self.get_data(require_updated=1)
         elif wait_for_data:
@@ -227,7 +236,6 @@ class BaseDataReceiver(DataReceiver, ABC):
                     day = "0"
                 if day is None and self.detachable:
                     self.logger.debug("Ignoring day for detachable for " + str(self.generic_name))
-                    pass
                 elif day is None:
                     bucket_available = False
                     self.logger.debug("Setting bucket available to False. Day is None for " + str(self.generic_name))

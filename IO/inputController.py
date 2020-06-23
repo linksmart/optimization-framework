@@ -38,6 +38,7 @@ class InputController:
         self.optimization_data = self.init_set_params()
         data = self.input_config_parser.get_optimization_values()
         self.optimization_data.update(data)
+        self.logger.debug("optimization data 1: " + str(self.optimization_data))
         self.restart = self.input_config_parser.get_restart_value()
         self.steps_in_day, self.required_buffer_data = self.calculate_required_buffer()
 
@@ -48,7 +49,7 @@ class InputController:
                                                    data)
 
         self.data_receivers, self.event_data_receivers, self.sampling_data_receivers = self.initialize_data_receivers()
-        self.logger.debug("optimization data: " + str(self.optimization_data))
+        self.logger.debug("optimization data 2: " + str(self.optimization_data))
 
 
     def initialize_data_receivers(self):
@@ -144,8 +145,8 @@ class InputController:
 
     def get_data(self, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
-        # self.logger.info("sleep for data")
-        # time.sleep(100)
+        self.logger.info("sleep for data")
+        time.sleep(100)
         if len(self.data_receivers) > 0:
             success = False
             while not success:
@@ -203,7 +204,8 @@ class InputController:
                     for key, value in received_data.items():
                         data_value = value
                         break
-                    data_value = self.set_indexing(data_value, name)
+                    if not isinstance(receiver, BaseValueDataReceiver):
+                        data_value = self.set_indexing(data_value, name)
                     self.logger.debug("Indexed data " + str(data_value))
                     if not self.restart or (self.restart and last_time > 0):
                         data = {name: data_value}
