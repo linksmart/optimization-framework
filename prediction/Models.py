@@ -63,6 +63,7 @@ class Models:
         if loaded:
             return self.model_temp, self.graph
 
+        logger.debug("try pre trained model for "+str(id_topic)+" "+str(self.model_base is None))
         self.model_base, self.graph, loaded = self.check_and_get_model(self.model_base, self.graph,
                                                                        self.model_weights_path_base, predict)
         if loaded:
@@ -70,7 +71,7 @@ class Models:
         return None, None
 
     def check_and_get_model(self, model, graph, model_weights_path, predict, force_load=False):
-        if model is not None and not force_load:
+        if model is not None and graph is not None and not force_load:
             return model, graph, True
         else:
             """Load model"""

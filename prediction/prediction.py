@@ -53,7 +53,7 @@ class Prediction(MachineLearning, threading.Thread):
                                                        60, self.topic_name, self.id,
                                                        self.horizon_in_steps, self.dT_in_seconds)
         self.load_forecast_pub.start()
-        """
+
         error_topic_params = config.get("IO", "error.topic")
         error_topic_params = json.loads(error_topic_params)
         error_topic_params["topic"] = error_topic_params["topic"] + self.topic_name
@@ -62,7 +62,7 @@ class Prediction(MachineLearning, threading.Thread):
                                               self.raw_data_file_container, error_topic_params,
                                               self.error_result_file_path, self.output_config)
         self.error_reporting.start()
-        """
+
         self.old_predictions = []
         self.prediction_save_thread = threading.Thread(target=self.save_to_file_cron)
         self.prediction_save_thread.start()
@@ -86,7 +86,7 @@ class Prediction(MachineLearning, threading.Thread):
                     test_predictions = []
                     model, graph = self.models.get_model(self.id + "_" + self.topic_name, True)
                     predicted_flag = False
-                    if model is not None:
+                    if model is not None and graph is not None:
                         Xtest, Xmax, Xmin, latest_timestamp = self.processingData.preprocess_data_predict(data,
                                                                                                           self.input_size)
                         try:
