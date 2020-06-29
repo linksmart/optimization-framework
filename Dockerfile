@@ -68,6 +68,7 @@ RUN pip3 install -U stopit==1.1.2
 RUN pip3 install connexion[swagger-ui]
 RUN pip3 install -U Pebble==4.5.1
 RUN pip3 install -U treelib
+RUN pip3 install -U tsfresh==0.16.0
 USER garagon
 
 WORKDIR /usr/src/app
@@ -96,7 +97,7 @@ RUN echo "GUROBI_HOME=$GUROBI_HOME" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> /usr/src/app/utils_intern/env_var.txt
 RUN echo "GRB_LICENSE_FILE=$GRB_LICENSE_FILE" >> /usr/src/app/utils_intern/env_var.txt
 
-RUN chown -R garagon /usr/src/app/
+#RUN chown -R garagon /usr/src/app/
 
-USER garagon
+#USER garagon
 

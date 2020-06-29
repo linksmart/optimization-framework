@@ -9,7 +9,8 @@ import json
 import time
 
 from config.configUpdater import ConfigUpdater
-from prediction.loadPrediction import LoadPrediction
+from prediction.machineLearning import MachineLearning
+from prediction.training import Training
 
 training_threads = {}
 
@@ -27,10 +28,9 @@ def check_training(config, logger, redisDB):
                     value = redisDB.get(key)
                     value = json.loads(value)
                     logger.info("creating new training thread for topic " + prediction_name)
-                    training_threads[key] = LoadPrediction(config, value["control_frequency"],
-                                                           value["horizon_in_steps"],
-                                                           prediction_name, value["topic_param"],
-                                                           value["dT_in_seconds"], id, False, None)
+                    training_threads[key] = Training(config, value["horizon_in_steps"], prediction_name,
+                                                     value["dT_in_seconds"], id)
+                    training_threads[key].start()
                 elif key in training_threads.keys() and key not in keys:
                     logger.info("stoping training thread for topic " + key)
                     training_threads[key].Stop()
@@ -55,5 +55,5 @@ if __name__ == '__main__':
     config_path_default = "/usr/src/app/config/trainingConfig.properties"
     config, logger = ConfigUpdater.get_config_and_logger("training", config_path_default, config_path)
 
-    redisDB = clear_redis(logger) #  need to relook
+    redisDB = clear_redis(logger)  # need to relook
     check_training(config, logger, redisDB)

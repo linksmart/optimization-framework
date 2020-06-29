@@ -4,6 +4,7 @@ Created on Okt 04 13:51 2018
 @author: nishit
 """
 import os
+import time
 
 from senml import senml
 
@@ -106,3 +107,54 @@ class RawDataReader:
                 except Exception as e:
                     logger.error("Exception in formating line " + str(row) + " " + str(e))
         return new_data
+
+    @staticmethod
+    def save_to_file(file_path, topic_name, minute_data, max_file_size_mins=-1, overwrite=False):
+        try:
+            logger.info("Saving raw data to file " + str(file_path))
+            if overwrite:
+                old_data = []
+            else:
+                old_data = RawDataReader.read_from_file(file_path, topic_name)
+            for item in minute_data:
+                line = ','.join(map(str, item[:2])) + "\n"
+                old_data.append(line)
+            if max_file_size_mins > 0:
+                old_data = old_data[-max_file_size_mins:]
+            update_data = []
+            for i, line in enumerate(old_data):
+                c = line.count(",")
+                if c == 2:
+                    s = line.split(",")
+                    m = s[1]
+                    mv = m[:-12]
+                    mt = m[-12:]
+                    l1 = [float(s[0]), float(mv)]
+                    l1 = ','.join(map(str, l1[:2])) + "\n"
+                    l2 = [float(mt), float(s[2].replace("\n", ""))]
+                    l2 = ','.join(map(str, l2[:2])) + "\n"
+                    update_data.append([i, l1, l2])
+                elif c != 1:
+                    update_data.append([i, None, None])
+            shift = 0
+            for d in update_data:
+                if d[1] is not None and d[2] is not None:
+                    old_data.pop(d[0] + shift)
+                    old_data.insert(d[0] + shift, d[1])
+                    old_data.insert(d[0] + shift + 1, d[2])
+                    shift += 1
+                else:
+                    old_data.pop(d[0] + shift)
+                    shift -= 1
+            with open(file_path, 'w+') as file:
+                file.writelines(old_data)
+            file.close()
+            return []
+        except Exception as e:
+            logger.error("failed to save_to_file " + str(e))
+            return minute_data
+
+    @staticmethod
+    def removed_data_before_timestamp(file_path, topic_name, lastest_timestamp):
+        data = RawDataReader.get_raw_data_by_time(file_path, topic_name, lastest_timestamp, time.time())
+        RawDataReader.save_to_file(file_path, topic_name, data, overwrite=True)

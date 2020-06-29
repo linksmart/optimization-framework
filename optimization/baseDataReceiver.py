@@ -77,9 +77,6 @@ class BaseDataReceiver(DataReceiver, ABC):
             print_details = False
             if "chargers" in payload:
                 self.logger.debug("data received for charger = "+str(payload))
-            elif '\"n\": \"P_PV\"' in payload or '\"n\": \"P_Load\"' in payload:
-                self.logger.debug("data received for pv or pload = " + str(payload))
-                print_details = True
             senml_data = json.loads(payload)
             formated_data = self.add_formated_data(senml_data)
             if self.reuseable:
@@ -87,9 +84,6 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.data.update(formated_data)
             self.set_data_update(True)
             self.last_time = time.time()
-            if print_details:
-                self.logger.debug("in pv/pload, "+str(self.data_update)+" "+str(self.get_data_update())
-                                  +" "+str(self.data))
         except Exception as e:
             self.logger.error(e)
     

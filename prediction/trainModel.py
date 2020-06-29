@@ -1,7 +1,5 @@
 from math import sqrt
 
-from keras.layers import Dropout
-
 from utils_intern.messageLogger import MessageLogger
 logger = MessageLogger.get_logger_parent()
 
@@ -10,7 +8,7 @@ class TrainModel:
     def __init__(self, callback_stop_request):
         self.callback_stop_request = callback_stop_request
 
-    def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, num_timesteps, output_size, model_weights_path):
+    def train(self, Xtrain, Ytrain, num_epochs, batch_size, hidden_size, input_size, output_size, model_weights_path, model):
         """
         Creates a new model, compiles it and then trains it
         """
@@ -25,24 +23,26 @@ class TrainModel:
         from keras.models import Sequential
         from keras.layers import Dense
         from keras.layers import LSTM
+        from keras.layers import Dropout
         from keras import backend as K
         import tensorflow as tf
-        K.clear_session()
 
-        session_conf = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
-        sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph(), config=session_conf)
-        K.set_session(sess)
+        if model is None:
+            K.clear_session()
+            session_conf = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)
 
-        model = Sequential()
-        model.add(LSTM(hidden_size, stateful=True,
-                       batch_input_shape=(batch_size, num_timesteps, 1),
-                       return_sequences=True))
-        model.add(Dropout(0.3))
-        model.add(LSTM(hidden_size, stateful=True))
-        model.add(Dense(output_size))
-        adam = k.optimizers.Adam(lr=0.01)
-        model.compile(loss="mean_squared_error", optimizer=adam,
-                      metrics=["mean_squared_error"])
+            sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph(), config=session_conf)
+            K.set_session(sess)
+            model = Sequential()
+            model.add(LSTM(hidden_size, stateful=True,
+                           batch_input_shape=(batch_size, input_size, 1),
+                           return_sequences=True))
+            model.add(Dropout(0.3))
+            model.add(LSTM(hidden_size, stateful=True))
+            model.add(Dense(output_size))
+            adam = k.optimizers.Adam(lr=0.01)
+            model.compile(loss="mean_squared_error", optimizer=adam,
+                          metrics=["mean_squared_error"])
 
         logger.info(model.summary())
         # define reduceLROnPlateau and early stopping callback
@@ -84,6 +84,7 @@ class TrainModel:
         from keras.models import Sequential
         from keras.layers import Dense
         from keras.layers import LSTM
+        from keras.layers import Dropout
         from keras import backend as K
         import tensorflow as tf
         K.clear_session()

@@ -74,46 +74,6 @@ class RawLoadDataReceiver(DataReceiver):
         except Exception as e:
             logger.error(e)
 
-    def save_to_file(self):
-        try:
-            logger.info("Saving raw data to file "+str(self.file_path))
-            old_data = RawDataReader.read_from_file(self.file_path, self.topic_name)
-            for item in self.minute_data:
-                line = ','.join(map(str, item[:2])) + "\n"
-                old_data.append(line)
-            old_data = old_data[-self.max_file_size_mins:]
-            update_data = []
-            for i, line in enumerate(old_data):
-                c = line.count(",")
-                if c == 2:
-                    s = line.split(",")
-                    m = s[1]
-                    mv = m[:-12]
-                    mt = m[-12:]
-                    l1 = [float(s[0]), float(mv)]
-                    l1 = ','.join(map(str, l1[:2])) + "\n"
-                    l2 = [float(mt), float(s[2].replace("\n",""))]
-                    l2 = ','.join(map(str, l2[:2])) + "\n"
-                    update_data.append([i, l1, l2])
-                elif c != 1:
-                    update_data.append([i, None, None])
-            shift = 0
-            for d in update_data:
-                if d[1] is not None and d[2] is not None:
-                    old_data.pop(d[0] + shift)
-                    old_data.insert(d[0] + shift, d[1])
-                    old_data.insert(d[0] + shift + 1, d[2])
-                    shift += 1
-                else:
-                    old_data.pop(d[0] + shift)
-                    shift -= 1
-            with open(self.file_path, 'w+') as file:
-                    file.writelines(old_data)
-            file.close()
-            self.minute_data = []
-        except Exception as e:
-            logger.error("failed to save_to_file "+ str(e))
-
     def get_raw_data(self, train=False, topic_name=None):
         if train:
             data = RawDataReader.read_from_file(self.file_path, topic_name)
@@ -131,8 +91,9 @@ class RawLoadDataReceiver(DataReceiver):
     def save_to_file_cron(self):
         self.logger.debug("Started save file cron")
         while True and not self.stop_request:
-            self.save_to_file()
-            time.sleep(UtilFunctions.get_sleep_secs(2,0,0))
+            self.minute_data = RawDataReader.save_to_file(self.file_path, self.topic_name, self.minute_data,
+                                                          self.max_file_size_mins)
+            time.sleep(UtilFunctions.get_sleep_secs(1,0,0))
 
     def load_data(self):
         data = RawDataReader.get_raw_data(self.file_path, self.topic_name, self.buffer)

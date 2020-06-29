@@ -57,6 +57,8 @@ RUN pip3 install -U keras
 RUN pip3 install -U redis==2.10.6
 RUN pip3 install -U senml==0.1.0
 #RUN pip3 install -U numpy==1.14.3
+RUN pip3 install -U tsfresh==0.16.0
+RUN pip3 install -U stopit==1.1.2
 
 WORKDIR /usr/src/app
 
