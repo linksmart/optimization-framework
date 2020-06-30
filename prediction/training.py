@@ -44,16 +44,19 @@ class Training(MachineLearning, threading.Thread):
                 data, merged = self.processingData.expand_and_resample_into_blocks(data, 60, self.input_size,
                                                                                    self.output_size)
                 if self.sufficient_data_available(data):
-                    self.logger.info("start training")
+                    self.logger.info("start training, wait for lock")
                     trained = False
-                    Xtrain, Ytrain, lastest_input_timestep_data_point = self.processingData.preprocess_data_train(data,
-                                                                                self.input_size,
-                                                                                self.output_size, self.model_data_dT,
-                                                                                self.max_training_samples)
-                    self.logger.info("pre proc done")
-                    model, graph = self.models.get_model(self.id + "_" + self.topic_name, False)
+                    lastest_input_timestep_data_point = 0
                     try:
                         if self.redisDB.get_lock(self.training_lock_key, self.id + "_" + self.topic_name):
+                            self.logger.info("lock granted")
+                            Xtrain, Ytrain, lastest_input_timestep_data_point = self.processingData.preprocess_data_train(
+                                data,
+                                self.input_size,
+                                self.output_size, self.model_data_dT,
+                                self.max_training_samples)
+                            self.logger.info("pre proc done")
+                            model, graph = self.models.get_model(self.id + "_" + self.topic_name, False)
                             from prediction.trainModel import TrainModel
                             trainModel = TrainModel(self.stop_request_status)
                             trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,

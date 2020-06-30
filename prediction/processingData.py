@@ -11,7 +11,6 @@ import numpy as np
 
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import MinMaxScaler
-from tsfresh.feature_extraction.feature_calculators import quantile
 
 from utils_intern.messageLogger import MessageLogger
 from utils_intern.timeSeries import TimeSeries
@@ -53,7 +52,8 @@ class ProcessingData:
 
         flat_list = [item for sublist in data for item in sublist]
         # Quantile Normalization
-        quant = quantile(flat_list, 0.75)
+        s = pd.Series(flat_list)
+        quant = s.quantile(0.75)
         Xmin = np.amin(data)
         Xmax = quant
         X_std = (data - Xmin) / (Xmax - Xmin)
@@ -61,11 +61,11 @@ class ProcessingData:
 
         look_back = num_timesteps
         num_features = 1
-        logger.info("data dim = " + str(data.shape))
+        logger.debug("data dim = " + str(data.shape))
         logger.debug("input shape = " + str(num_timesteps))
         nb_samples = data.shape[0] - num_timesteps + 1
         if nb_samples > 0:
-            logger.error("nb samples is "+str(nb_samples))
+            logger.debug("nb samples is "+str(nb_samples))
             x_train_reshaped = np.zeros((nb_samples, look_back, num_features))
             for i in range(nb_samples):
                 y_position_start = i + look_back
@@ -210,7 +210,8 @@ class ProcessingData:
 
                 flat_list = [item for sublist in data for item in sublist]
                 # Quantile Normalization
-                quant = quantile(flat_list, 0.75)
+                s = pd.Series(flat_list)
+                quant = s.quantile(0.75)
                 Xmin = np.amin(data)
                 Xmax = quant
                 X_std = (data - Xmin) / (Xmax - Xmin)
@@ -261,7 +262,7 @@ class ProcessingData:
         logger.debug("fixing data size upper limit to " + str(sp))
         Xtrain, Ytrain = Xtrain[-sp:], Ytrain[-sp:]
         # TODO: check the capacity of RPi to operate with more data size
-        lastest_input_timestep_data_point -= (output_size * dT)
+        lastest_input_timestep_data_point -= ((input_size+output_size) * dT)
         return Xtrain, Ytrain, lastest_input_timestep_data_point
 
     def get_regression_values(self, train_data, input_size, output_size, dT):

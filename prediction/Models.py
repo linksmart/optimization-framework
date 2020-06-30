@@ -84,15 +84,15 @@ class Models:
     @timeoutable((None, None), timeout_param='load_timeout')
     def load_saved_model(self, path, predict):
         try:
-            # os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'
-            # os.environ['OMP_NUM_THREAD'] = '8'
-            # os.environ['KERAS_BACKEND'] = 'theano'
-            from keras.models import load_model
-            from keras import backend as K
-            import tensorflow as tf
             model, graph = None, None
             logger.debug("trying to load model from path " + str(path))
             if os.path.exists(path):
+                # os.environ['THEANO_FLAGS'] = 'device=cpu,openmp=True'
+                # os.environ['OMP_NUM_THREAD'] = '8'
+                # os.environ['KERAS_BACKEND'] = 'theano'
+                from keras.models import load_model
+                from keras import backend as K
+                import tensorflow as tf
                 logger.info("Loading model from disk from path = " + str(path))
                 K.clear_session()
                 session_conf = tf.compat.v1.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2)

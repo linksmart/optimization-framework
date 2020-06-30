@@ -287,8 +287,8 @@ class InputController:
                     self.logger.error("Error occured while getting data for bucket " + str(current_bucket) + ". " + str(e))
                     timeout_exception = True
 
-            self.logger.error("Executor shutdown")
             executor.shutdown(wait=True)
+            self.logger.info("input controller executor pool shutdown")
             if timeout_exception:
                 self.logger.debug("timeout_exception flag "+str(timeout_exception))
                 continue

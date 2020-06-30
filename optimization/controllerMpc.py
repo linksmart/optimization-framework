@@ -37,6 +37,9 @@ class OptControllerMPC(ControllerBaseThread):
             start_time = time.time()
             try:
                 optsolver = SolverFactory(solver_name)
+                if solver_name == "ipopt":
+                    optsolver.options['max_iter'] = self.solver_ipopt_max_iteration
+                    optsolver.options['max_cpu_time'] = self.solver_ipopt_timeout
                 spec = importlib.util.spec_from_file_location(model_path, model_path)
                 module = spec.loader.load_module(spec.name)
                 my_class = getattr(module, 'Model')
