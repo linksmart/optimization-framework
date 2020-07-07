@@ -159,6 +159,7 @@ class Radiation:
 
     def filter_next_horizon_hrs(self, timestamp):
         index, timestamp = self.get_row_by_time(timestamp)
+        index = index % len(self.base_data)
         range = self.horizon_hours
         carry = range - (len(self.base_data) - index)
         if carry < 0:

@@ -27,13 +27,17 @@ class Training(MachineLearning, threading.Thread):
         self.training_lock_key = "training_lock"
         self.frequency = config.getint("IO", "training.frequency.sec", fallback=86400)  # one day
         self.min_training_size = self.input_size + self.output_size
+        self.initial_wait_time = config.getint("IO", "training.initial.wait.sec", fallback=0)
         # samples given to ml model
         self.max_training_samples = config.getint("IO", "max.training.samples", fallback=250)
         # number of data points to read from file
         self.max_raw_data_to_read = config.getint("IO", "max.raw.data.samples", fallback=7200)
         self.logger.debug("max_training_samples " + str(self.max_training_samples))
 
+
     def run(self):
+        # initial wait
+        time.sleep(self.initial_wait_time)
         while not self.stopRequest.is_set():
             try:
                 # get raw data from file
