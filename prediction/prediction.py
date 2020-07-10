@@ -106,6 +106,7 @@ class Prediction(MachineLearning, threading.Thread):
                             test_predictions = self.processingData.postprocess_data(test_predictions, latest_timestamp,
                                                                                     self.dT_in_seconds,
                                                                                     self.horizon_in_steps, Xmax, Xmin)
+                            self.logger.debug("predictions values Xmax "+str(Xmax)+" Xmin "+str(Xmin))
                             self.q.put(test_predictions)
                             self.old_predictions.append(test_predictions)
 

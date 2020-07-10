@@ -75,7 +75,7 @@ class Models:
             return model, graph, True
         else:
             """Load model"""
-            model, graph = self.load_saved_model(model_weights_path, predict, load_timeout=30)
+            model, graph = self.load_saved_model(model_weights_path, predict, load_timeout=60)
             if model is not None:
                 return model, graph, True
             else:

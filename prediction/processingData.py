@@ -56,6 +56,8 @@ class ProcessingData:
         quant = s.quantile(0.75)
         Xmin = np.amin(data)
         Xmax = quant
+        if Xmax <= Xmin:
+            Xmax = Xmin + 0.001
         X_std = (data - Xmin) / (Xmax - Xmin)
         data = X_std * (self.max - self.min) + self.min
 
