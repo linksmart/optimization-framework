@@ -154,15 +154,14 @@ class ThreadFactory:
             for non_prediction_name in self.non_prediction_names:
                 flag = input_config_parser.get_forecast_flag(non_prediction_name)
                 if flag:
-                    if non_prediction_name == "P_PV":
-                        self.non_prediction_threads[non_prediction_name] = PVPrediction(config, output_config,
-                                                                                        input_config_parser,
-                                                                                        self.id,
-                                                                                        self.control_frequency,
-                                                                                        self.horizon_in_steps,
-                                                                                        self.dT_in_seconds,
-                                                                                        non_prediction_name)
-                        self.non_prediction_threads[non_prediction_name].start()
+                    self.non_prediction_threads[non_prediction_name] = PVPrediction(config, output_config,
+                                                                                    input_config_parser,
+                                                                                    self.id,
+                                                                                    self.control_frequency,
+                                                                                    self.horizon_in_steps,
+                                                                                    self.dT_in_seconds,
+                                                                                    non_prediction_name)
+                    self.non_prediction_threads[non_prediction_name].start()
 
         # Initializing constructor of the optimization controller thread
         if self.optimization_type == "MPC":
