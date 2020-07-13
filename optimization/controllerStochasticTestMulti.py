@@ -42,7 +42,8 @@ class OptControllerStochastic(ControllerBaseThread):
         self.stochastic_timeout = config.getint("SolverSection", "stochastic.timeout.sec", fallback=60)
         super(OptControllerStochastic, self).__init__(id, solver_name, model_path, control_frequency, repetition, output_config, input_config_parser,
                          config, horizon_in_steps, dT_in_seconds, optimization_type)
-
+        self.solver_params = {"ipopt":{"iterations":self.solver_ipopt_max_iteration, "timeout":self.solver_ipopt_timeout},
+                              "gurobi":{"iterations":self.solver_gurobi_max_iteration, "timeout":self.solver_gurobi_timeout}}
 
 
     def get_values(self, T, ess_soc_states, vac_soc_states, position_states, max_number_of_cars):
@@ -315,7 +316,7 @@ class OptControllerStochastic(ControllerBaseThread):
                                     executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                     ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                     vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, True,
-                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, position, time_out=self.stochastic_timeout))
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, self.solver_params, position, time_out=self.stochastic_timeout))
 
                         else:
                             self.logger.debug("Entering to ProcessPoolExecutor")
@@ -325,7 +326,7 @@ class OptControllerStochastic(ControllerBaseThread):
                                     executor.submit(OptControllerStochastic.create_instance_and_solve, data_dict,
                                                     ess_decision_domain, min_value, max_value, vac_decision_domain,
                                                     vac_decision_domain_n, max_vac_soc_states, ev_park.total_charging_stations_power, timestep, False,
-                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, time_out=self.stochastic_timeout))
+                                                    solver_name, model_path, ini_ess_soc, ini_vac_soc, self.solver_params, time_out=self.stochastic_timeout))
 
                         try:
                             self.logger.debug("Entering to futures")
@@ -681,7 +682,7 @@ class OptControllerStochastic(ControllerBaseThread):
     @timeoutable((None, None), timeout_param="time_out")
     def create_instance_and_solve(data_dict, ess_decision_domain, min_value, max_value, vac_decision_domain,
                                   vac_decision_domain_n, max_vac_soc_states, max_power_charging_station, timestep, single_ev, solver_name,
-                                  absolute_path, ini_ess_soc, ini_vac_soc, position=None):
+                                  absolute_path, ini_ess_soc, ini_vac_soc, solver_params, position=None):
 
         try:
             feasible_Pess = []  # Feasible charge powers to ESS under the given conditions
@@ -765,8 +766,8 @@ class OptControllerStochastic(ControllerBaseThread):
                     try:
                         optsolver = SolverFactory(solver_name)
                         if solver_name == "gurobi":
-                            optsolver.options['IterationLimit'] = 1000
-                            optsolver.options['TimeLimit'] = 3
+                            optsolver.options['IterationLimit'] = solver_params["gurobi"]["iterations"]
+                            optsolver.options['TimeLimit'] = solver_params["gurobi"]["timeout"]
                             
                     except Exception as e:
                         print("optsolver didn't load. "+str(e))

@@ -11,7 +11,8 @@ from optimization.controllerDiscrete import OptControllerDiscrete
 from optimization.controllerMpc import OptControllerMPC
 from optimization.controllerStochasticTestMulti import OptControllerStochastic
 #from optimization.controllerStochasticTestPebble import OptControllerStochastic
-from prediction.loadPrediction import LoadPrediction
+from prediction.machineLearning import MachineLearning
+from prediction.prediction import Prediction
 from prediction.pvPrediction import PVPrediction
 from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
@@ -141,11 +142,11 @@ class ThreadFactory:
                         {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
                          "topic_param": topic_param, "dT_in_seconds": self.dT_in_seconds})
                     self.redisDB.set("train:" + self.id + ":" + prediction_name, parameters)
-                    self.prediction_threads[prediction_name] = LoadPrediction(config, self.control_frequency,
-                                                                              self.horizon_in_steps, prediction_name,
-                                                                              topic_param, self.dT_in_seconds, self.id,
-                                                                              True, output_config)
-                    # self.prediction_threads[prediction_name].start()
+                    self.prediction_threads[prediction_name] = Prediction(config, self.control_frequency,
+                                                                               self.horizon_in_steps, prediction_name,
+                                                                               topic_param, self.dT_in_seconds, self.id,
+                                                                               output_config)
+                    self.prediction_threads[prediction_name].start()
 
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_pv_prediction_names()
