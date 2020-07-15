@@ -37,7 +37,7 @@ class MachineLearning:
                                                       "model_temp_" + str(topic_name) + ".h5")
         self.model_file_container_train = os.path.join(base_path, self.id,
                                                        "model_train_" + str(topic_name) + ".h5")
-        self.model_file_container_base = os.path.join(base_path, "model_base.h5")
+        self.model_file_container_base = os.path.join("/usr/src/app/prediction/model", "model_base.h5")
 
         self.processingData = ProcessingData()
         self.redisDB = RedisDB()
