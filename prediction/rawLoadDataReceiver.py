@@ -39,9 +39,11 @@ class RawLoadDataReceiver(DataReceiver):
         self.minute_data = []
         self.topic_name = topic_name
         self.max_file_size_mins = max_file_size_mins
+        self.save_cron_freq = config.getint("IO", "raw.data.file.save.frequency.sec", fallback=3600)
+
         if load_file_data:
             self.load_data()
-        self.file_save_thread = threading.Thread(target=self.save_to_file_cron)
+        self.file_save_thread = threading.Thread(target=self.save_to_file_cron, args=(self.save_cron_freq,))
         self.file_save_thread.start()
 
     def on_msg_received(self, payload):
@@ -88,12 +90,12 @@ class RawLoadDataReceiver(DataReceiver):
             self.buffer_data = self.buffer_data[-self.buffer:]
             return self.buffer_data
 
-    def save_to_file_cron(self):
+    def save_to_file_cron(self, repeat_seconds):
         self.logger.debug("Started save file cron")
         while True and not self.stop_request:
             self.minute_data = RawDataReader.save_to_file(self.file_path, self.topic_name, self.minute_data,
                                                           self.max_file_size_mins)
-            time.sleep(UtilFunctions.get_sleep_secs(1,0,0))
+            time.sleep(UtilFunctions.get_sleep_secs(0,0,repeat_seconds))
 
     def load_data(self):
         data = RawDataReader.get_raw_data(self.file_path, self.topic_name, self.buffer)
