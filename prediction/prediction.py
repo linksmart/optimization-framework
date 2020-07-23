@@ -94,8 +94,10 @@ class Prediction(MachineLearning, threading.Thread):
                                 "model present, so predicting data for " + str(self.id) + " " + str(self.topic_name))
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
+                            prediction_time = time.time()
                             test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
-                            self.logger.debug("Prediction successful for " + str(self.id) + " " + str(self.topic_name))
+                            self.logger.debug("Prediction successful for " + str(self.id) + " " + str(self.topic_name) +
+                                              " which took "+str(time.time()-prediction_time) + " seconds")
                             predicted_flag = True
                         except Exception as e:
                             predicted_flag = False

@@ -63,9 +63,11 @@ class Training(MachineLearning, threading.Thread):
                             model, graph = self.models.get_model(self.id + "_" + self.topic_name, False)
                             from prediction.trainModel import TrainModel
                             trainModel = TrainModel(self.stop_request_status)
+                            train_time = time.time()
                             trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
                                              self.input_size, self.output_size, self.model_file_container_train,
                                              model)
+                            self.logger.debug("Training time "+str(time.time()-train_time))
                             copyfile(self.model_file_container_train, self.model_file_container)
                             copyfile(self.model_file_container_train, self.model_file_container_temp)
                             trained = True
