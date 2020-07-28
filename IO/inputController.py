@@ -35,6 +35,7 @@ class InputController:
         self.id = id
         self.prediction_mqtt_flags = {}
         self.pv_prediction_mqtt_flags = {}
+        self.pv_lstm_mqtt_flags = {}
         self.external_mqtt_flags = {}
         self.preprocess_mqtt_flags = {}
         self.event_mqtt_flags = {}
@@ -76,6 +77,16 @@ class InputController:
                 pv_prediction_topic["topic"] = pv_prediction_topic["topic"] + name
                 self.internal_receiver[name] = GenericDataReceiver(True, pv_prediction_topic, config, name, self.id,
                                                                    self.required_buffer_data, self.dT_in_seconds)
+
+        self.logger.debug("pv_lstm_mqtt_flags " + str(self.pv_lstm_mqtt_flags))
+        for name, flag in self.pv_lstm_mqtt_flags.items():
+            if flag:
+                pv_lstm_topic = config.get("IO", "forecast.topic")
+                pv_lstm_topic = json.loads(pv_lstm_topic)
+                pv_lstm_topic["topic"] = pv_lstm_topic["topic"] + name
+                self.internal_receiver[name] = GenericDataReceiver(True, pv_lstm_topic, config, name, self.id,
+                                                                   self.required_buffer_data, self.dT_in_seconds)
+
         # ESS data
         self.external_data_receiver = {}
         self.logger.debug("external_mqtt_flags " + str(self.external_mqtt_flags))
@@ -158,6 +169,9 @@ class InputController:
         
         self.pv_prediction_names = self.input_config_parser.get_pv_prediction_names()
         self.set_mqtt_flags(self.pv_prediction_names, self.pv_prediction_mqtt_flags)
+
+        self.pv_lstm_names = self.input_config_parser.get_pv_lstm_names()
+        self.set_mqtt_flags(self.pv_lstm_names, self.pv_lstm_mqtt_flags)
         
         self.external_names = self.input_config_parser.get_external_names()
         self.set_mqtt_flags(self.external_names, self.external_mqtt_flags)
@@ -248,6 +262,9 @@ class InputController:
                                                    self.internal_receiver, [], [], current_bucket,
                                                    self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.pv_prediction_mqtt_flags,
+                                                   self.internal_receiver, [], [], current_bucket,
+                                                   self.horizon_in_steps))
+                    futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.pv_lstm_mqtt_flags,
                                                    self.internal_receiver, [], [], current_bucket,
                                                    self.horizon_in_steps))
                     futures.append(executor.submit(self.fetch_mqtt_and_file_data, self.external_mqtt_flags,

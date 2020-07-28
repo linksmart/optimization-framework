@@ -82,6 +82,15 @@ class RawDataReader:
         data = RawDataReader.read_from_file(file_path, topic_name)
         if data_length is not None and len(data) > data_length:
             data = data[-data_length:]
+        if len(data) > 0:
+            indexes = []
+            for i,v in enumerate(data):
+                if "inf" in str(v).lower() or "nan" in str(v).lower():
+                    indexes.append(i)
+            logger.debug("len indexes " + str(len(indexes)))
+            indexes.sort(reverse=True)
+            for index in indexes:
+                data.pop(index)
         return RawDataReader.format_data(data)
 
     @staticmethod

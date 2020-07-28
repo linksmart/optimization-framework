@@ -72,7 +72,7 @@ class PVPrediction(threading.Thread):
         self.max_file_size_mins = config.getint("IO", "pv.raw.data.file.size", fallback=10800)
 
         from prediction.rawLoadDataReceiver import RawLoadDataReceiver
-        self.raw_data = RawLoadDataReceiver(raw_pv_data_topic, config, 1, 1, self.raw_data_file_container,
+        self.raw_data = RawLoadDataReceiver(raw_pv_data_topic, config, 1, self.raw_data_file_container,
                                             generic_name, self.id, False, self.max_file_size_mins)
 
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, 60,
@@ -112,7 +112,7 @@ class PVPrediction(threading.Thread):
             self.logger.debug("pv prediction data flow true")
             try:
                 start = time.time()
-                data = self.raw_data.get_raw_data(train=False)
+                data = self.raw_data.get_raw_data()
                 self.logger.debug("pv data in run is "+str(data))
                 if len(data) > 0:
                     value = data[0][1]

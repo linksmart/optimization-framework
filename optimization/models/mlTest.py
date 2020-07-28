@@ -8,14 +8,8 @@ class Model:
     model.T = Set()  # Index Set for time steps of optimization horizon
 
     # definition of the load
-    model.P_Load = Param(model.T, within=Reals)  # Active power demand
+    model.P_PV = Param(model.T, within=Reals)  # Active power demand
 
-
-    model.Load_copy = Var(within=Reals)
-
-
-    def con_rule_load(model):
-        return model.Load_copy == model.P_Load[0] / 1000
     ###########################################################################
     #######                         OBJECTIVE                           #######
     ###########################################################################

@@ -1185,7 +1185,7 @@ definitions:
         $ref: "#/definitions/MQTT"
       option:
         type: "string"
-        enum: ["predict", "preprocess", "event", "sampling", "pv_predict"]
+        enum: ["predict", "preprocess", "event", "sampling", "pv_predict", "pv_predict_lstm"]
         description: "option of the type of input"
     description: "Selection between MQTT or file mode inputs or outputs"
     example:

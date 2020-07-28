@@ -27,12 +27,14 @@ class InputConfigParser:
         self.generic_file_names = []
         self.defined_prediction_names = []
         self.defined_pv_prediction_names = []
+        self.defined_pv_lstm_names = []
         self.defined_external_names = ["SoC_Value"]
         self.defined_preprocess_names = []
         self.defined_event_names = []
         self.defined_sampling_names = []
         self.prediction_names = []
         self.pv_prediction_names = []
+        self.pv_lstm_names = []
         self.external_names = []
         self.preprocess_names = []
         self.event_names = []
@@ -65,6 +67,8 @@ class InputConfigParser:
                         self.defined_event_names.append(name)
                     elif value == "sampling":
                         self.defined_sampling_names.append(name)
+                    elif value == "pv_predict_lstm":
+                        self.defined_pv_lstm_names.append(name)
                 elif "mqtt" != key:
                     raise KeyError(str(key) + " is invalid. Input as 'option: str' allowed with mqtt")
 
@@ -96,6 +100,8 @@ class InputConfigParser:
             self.event_names.append(key)
         elif key in self.defined_sampling_names:
             self.sampling_names.append(key)
+        elif key in self.defined_pv_lstm_names:
+            self.pv_lstm_names.append(key)
         else:
             self.generic_names.append(key)
 
@@ -180,6 +186,9 @@ class InputConfigParser:
     def get_pv_prediction_names(self):
         return self.pv_prediction_names
 
+    def get_pv_lstm_names(self):
+        return self.pv_lstm_names
+
     def get_external_names(self):
         return self.external_names
 
@@ -211,6 +220,7 @@ class InputConfigParser:
         all_keys = []
         all_keys.extend(self.prediction_names)
         all_keys.extend(self.pv_prediction_names)
+        all_keys.extend(self.pv_lstm_names)
         all_keys.extend(self.external_names)
         all_keys.extend(self.generic_names)
         all_keys.extend(self.preprocess_names)

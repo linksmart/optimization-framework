@@ -70,12 +70,3 @@ class PVForecastPublisher(DataPublisher):
         meas.name = self.topic
         return meas
 
-    def find_closest_prev_timestamp(self, data, date):
-        closest = 0
-        for i, item in enumerate(data, 0):
-            if item[0] <= date:
-                closest = i
-            else:
-                break
-        return closest
-

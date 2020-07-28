@@ -26,10 +26,13 @@ class PredictModel:
         rmse = sqrt(score)
         print("\nMSE: {:.3f}, RMSE: {:.3f}".format(score, rmse))
 
-    def predict_next_horizon(self, model, Xvals, model_batch_size, graph):
+    def predict_next_horizon(self, model, Xvals, model_batch_size, graph, type):
         with graph.as_default():
             pred = self.predict(model, Xvals, model_batch_size)
-        pred = np.append(np.array(Xvals[0][-1:]), pred)
+        if type == "load":
+            pred = np.append(np.array(Xvals[0][-1:]), pred)
+        elif type == "pv":
+            pred = np.append(np.array(Xvals["real"][0][-1:]), pred)
         return pred
 
     def save_to_file(self, input, output, raw_data):

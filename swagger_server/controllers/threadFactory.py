@@ -130,6 +130,9 @@ class ThreadFactory:
         if len(missing_keys) > 0:
             raise MissingKeysException("Data source for following keys not declared: " + str(missing_keys))
 
+        opt_values = input_config_parser.get_optimization_values()
+        self.redisDB.set(self.id+":opt_values", json.dumps(opt_values))
+
         self.prediction_threads = {}
         self.prediction_names = input_config_parser.get_prediction_names()
         if self.prediction_names is not None and len(self.prediction_names) > 0:
@@ -140,13 +143,32 @@ class ThreadFactory:
                     topic_param = input_config_parser.get_params(prediction_name)
                     parameters = json.dumps(
                         {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
-                         "topic_param": topic_param, "dT_in_seconds": self.dT_in_seconds})
+                         "topic_param": topic_param, "dT_in_seconds": self.dT_in_seconds, "type": "load"})
                     self.redisDB.set("train:" + self.id + ":" + prediction_name, parameters)
+                    opt_values = input_config_parser.get_optimization_values()
                     self.prediction_threads[prediction_name] = Prediction(config, self.control_frequency,
                                                                                self.horizon_in_steps, prediction_name,
                                                                                topic_param, self.dT_in_seconds, self.id,
-                                                                               output_config)
+                                                                               output_config, "load", opt_values)
                     self.prediction_threads[prediction_name].start()
+
+        self.pv_lstm_names = input_config_parser.get_pv_lstm_names()
+        if self.pv_lstm_names is not None and len(self.pv_lstm_names) > 0:
+            for pv_lstm_name in self.pv_lstm_names:
+                flag = input_config_parser.get_forecast_flag(pv_lstm_name)
+                if flag:
+                    self.logger.info("Creating pv lstm controller thread for topic " + str(pv_lstm_name))
+                    topic_param = input_config_parser.get_params(pv_lstm_name)
+                    parameters = json.dumps(
+                        {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
+                         "topic_param": topic_param, "dT_in_seconds": self.dT_in_seconds, "type": "pv"})
+                    self.redisDB.set("train:" + self.id + ":" + pv_lstm_name, parameters)
+                    opt_values = input_config_parser.get_optimization_values()
+                    self.prediction_threads[pv_lstm_name] = Prediction(config, self.control_frequency,
+                                                                          self.horizon_in_steps, pv_lstm_name,
+                                                                          topic_param, self.dT_in_seconds, self.id,
+                                                                          output_config, "pv", opt_values)
+                    self.prediction_threads[pv_lstm_name].start()
 
         self.non_prediction_threads = {}
         self.non_prediction_names = input_config_parser.get_pv_prediction_names()

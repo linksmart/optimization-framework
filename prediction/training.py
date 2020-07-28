@@ -19,19 +19,19 @@ class Training(MachineLearning, threading.Thread):
     - After training is completed, copy the model_train.h5 to model_base.h5
     """
 
-    def __init__(self, config, horizon_in_steps, topic_name, dT_in_seconds, id):
-        super(Training, self).__init__(horizon_in_steps, topic_name, dT_in_seconds, id)
+    def __init__(self, config, horizon_in_steps, topic_name, dT_in_seconds, id, type, opt_values):
+        super(Training, self).__init__(config, horizon_in_steps, topic_name, dT_in_seconds, id, type, opt_values)
 
         self.today = datetime.datetime.now().day
         self.stopRequest = threading.Event()
         self.training_lock_key = "training_lock"
-        self.frequency = config.getint("IO", "training.frequency.sec", fallback=86400)  # one day
+        self.frequency = config.getint("IO", str(self.type)+".training.frequency.sec", fallback=86400)  # one day
         self.min_training_size = self.input_size + self.output_size
-        self.initial_wait_time = config.getint("IO", "training.initial.wait.sec", fallback=0)
+        self.initial_wait_time = config.getint("IO", str(self.type)+".training.initial.wait.sec", fallback=0)
         # samples given to ml model
-        self.max_training_samples = config.getint("IO", "max.training.samples", fallback=250)
+        self.max_training_samples = config.getint("IO", str(self.type)+".max.training.samples", fallback=250)
         # number of data points to read from file
-        self.max_raw_data_to_read = config.getint("IO", "max.raw.data.samples", fallback=7200)
+        self.max_raw_data_to_read = config.getint("IO", str(self.type)+".max.raw.data.samples", fallback=7200)
         self.logger.debug("max_training_samples " + str(self.max_training_samples))
 
 
@@ -54,19 +54,27 @@ class Training(MachineLearning, threading.Thread):
                     try:
                         if self.redisDB.get_lock(self.training_lock_key, self.id + "_" + self.topic_name):
                             self.logger.info("lock granted")
-                            Xtrain, Ytrain, lastest_input_timestep_data_point = self.processingData.preprocess_data_train(
-                                data,
-                                self.input_size,
-                                self.output_size, self.model_data_dT,
-                                self.max_training_samples)
+                            if self.type == "load":
+                                Xtrain, Ytrain, lastest_input_timestep_data_point = self.processingData.preprocess_data_train_load(
+                                    data, self.model_data_dT, self.input_size, self.output_size,
+                                    self.max_training_samples)
+                            elif self.type == "pv":
+                                Xtrain, Ytrain, lastest_input_timestep_data_point = self.processingData.preprocess_data_train_pv(
+                                    data, self.model_data_dT, self.input_size, self.input_size_hist, self.output_size,
+                                    self.max_training_samples)
                             self.logger.info("pre proc done")
                             model, graph = self.models.get_model(self.id + "_" + self.topic_name, False)
                             from prediction.trainModel import TrainModel
                             trainModel = TrainModel(self.stop_request_status)
                             train_time = time.time()
-                            trainModel.train(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
-                                             self.input_size, self.output_size, self.model_file_container_train,
-                                             model)
+                            if self.type == "load":
+                                trainModel.train_load(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
+                                                      self.input_size, self.output_size, self.model_file_container_train,
+                                                      model)
+                            elif self.type == "pv":
+                                trainModel.train_pv(Xtrain, Ytrain, self.num_epochs, self.batch_size, self.hidden_size,
+                                                    self.input_size, self.input_size_hist, self.output_size,
+                                                    self.model_file_container_train, model)
                             self.logger.debug("Training time "+str(time.time()-train_time))
                             copyfile(self.model_file_container_train, self.model_file_container)
                             copyfile(self.model_file_container_train, self.model_file_container_temp)

@@ -21,7 +21,7 @@ logger = MessageLogger.get_logger_parent()
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id, load_file_data, max_file_size_mins):
+    def __init__(self, topic_params, config, buffer, save_path, topic_name, id, load_file_data, max_file_size_mins):
         self.file_path = save_path
         redisDB = RedisDB()
         try:
@@ -31,7 +31,6 @@ class RawLoadDataReceiver(DataReceiver):
             logger.error(e)
         self.buffer_data = []
         self.buffer = buffer
-        self.training_data_size = training_data_size
         self.current_minute = None
         self.id = id
         self.sum = 0
@@ -76,19 +75,13 @@ class RawLoadDataReceiver(DataReceiver):
         except Exception as e:
             logger.error(e)
 
-    def get_raw_data(self, train=False, topic_name=None):
-        if train:
-            data = RawDataReader.read_from_file(self.file_path, topic_name)
-            if len(data) > self.training_data_size:
-                data = data[-self.training_data_size:]
-            return RawDataReader.format_data(data)
-        else:
-            data = self.get_data(0, True)
-            self.logger.debug(str(self.topic_name)+"value from mqtt for prediction input = "+str(data))
-            for item in data:
-                self.buffer_data.append(item)
-            self.buffer_data = self.buffer_data[-self.buffer:]
-            return self.buffer_data
+    def get_raw_data(self):
+        data = self.get_data(0, True)
+        self.logger.debug(str(self.topic_name)+"value from mqtt for prediction input = "+str(data))
+        for item in data:
+            self.buffer_data.append(item)
+        self.buffer_data = self.buffer_data[-self.buffer:]
+        return self.buffer_data
 
     def save_to_file_cron(self, repeat_seconds):
         self.logger.debug("Started save file cron")

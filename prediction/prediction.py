@@ -5,7 +5,7 @@ import threading
 import time
 from queue import Queue
 
-from optimization.loadForecastPublisher import LoadForecastPublisher
+from optimization.forecastPublisher import ForecastPublisher
 from prediction.errorReporting import ErrorReporting
 from prediction.machineLearning import MachineLearning
 from prediction.predictionDataManager import PredictionDataManager
@@ -25,8 +25,8 @@ class Prediction(MachineLearning, threading.Thread):
     """
 
     def __init__(self, config, control_frequency, horizon_in_steps, topic_name, topic_param, dT_in_seconds, id,
-                 output_config):
-        super(Prediction, self).__init__(horizon_in_steps, topic_name, dT_in_seconds, id)
+                 output_config, type, opt_values):
+        super(Prediction, self).__init__(config, horizon_in_steps, topic_name, dT_in_seconds, id, type, opt_values)
 
         self.stopRequest = threading.Event()
         self.control_frequency = 60
@@ -37,22 +37,22 @@ class Prediction(MachineLearning, threading.Thread):
         self.error_result_file_path = os.path.join("/usr/src/app", "prediction/resources", self.id,
                                                    "error_data_" + str(topic_name) + ".csv")
 
-        self.max_file_size_mins = config.getint("IO", "load.raw.data.file.size", fallback=10800)
+        self.max_file_size_mins = config.getint("IO", str(self.type)+".raw.data.file.size", fallback=10800)
 
-        total_mins = int(float(self.input_size * self.dT_in_seconds) / 60.0) + 1
-        self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins, self.horizon_in_steps * 25,
+        total_mins = int(float(self.input_size * self.model_data_dT) / 60.0) + 1
+        self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins,
                                             self.raw_data_file_container, self.topic_name, self.id, True,
                                             self.max_file_size_mins)
 
         self.q = Queue(maxsize=0)
 
-        load_forecast_topic = config.get("IO", "forecast.topic")
-        load_forecast_topic = json.loads(load_forecast_topic)
-        load_forecast_topic["topic"] = load_forecast_topic["topic"] + self.topic_name
-        self.load_forecast_pub = LoadForecastPublisher(load_forecast_topic, config, self.q,
-                                                       60, self.topic_name, self.id,
-                                                       self.horizon_in_steps, self.dT_in_seconds)
-        self.load_forecast_pub.start()
+        forecast_topic = config.get("IO", "forecast.topic")
+        forecast_topic = json.loads(forecast_topic)
+        forecast_topic["topic"] = forecast_topic["topic"] + self.topic_name
+        self.forecast_pub = ForecastPublisher(forecast_topic, config, self.q,
+                                              60, self.topic_name, self.id,
+                                              self.horizon_in_steps, self.dT_in_seconds)
+        self.forecast_pub.start()
 
         error_topic_params = config.get("IO", "error.topic")
         error_topic_params = json.loads(error_topic_params)
@@ -73,7 +73,7 @@ class Prediction(MachineLearning, threading.Thread):
                 time.sleep(30)
                 continue
             try:
-                data = self.raw_data.get_raw_data(train=False, topic_name=self.topic_name)
+                data = self.raw_data.get_raw_data()
                 self.logger.debug("len data = " + str(len(data)))
                 data = TimeSeries.expand_and_resample(data, 60)
                 self.logger.debug("len resample data = " + str(len(data)))
@@ -87,15 +87,20 @@ class Prediction(MachineLearning, threading.Thread):
                     model, graph = self.models.get_model(self.id + "_" + self.topic_name, True)
                     predicted_flag = False
                     if model is not None and graph is not None:
-                        Xtest, Xmax, Xmin, latest_timestamp = self.processingData.preprocess_data_predict(data,
-                                                                                                          self.input_size)
+                        if self.type == "load":
+                            Xtest, Xmax, Xmin, latest_timestamp = self.processingData.preprocess_data_predict_load(data,
+                                                                                                              self.input_size)
+                        else:
+                            Xtest, Xmax, Xmin, latest_timestamp = self.processingData.preprocess_data_predict_pv(data,
+                                                                                                              self.input_size,
+                                                                                                              self.input_size_hist)
                         try:
                             self.logger.debug(
                                 "model present, so predicting data for " + str(self.id) + " " + str(self.topic_name))
                             from prediction.predictModel import PredictModel
                             predictModel = PredictModel(self.stop_request_status)
                             prediction_time = time.time()
-                            test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph)
+                            test_predictions = predictModel.predict_next_horizon(model, Xtest, self.batch_size, graph, self.type)
                             self.logger.debug("Prediction successful for " + str(self.id) + " " + str(self.topic_name) +
                                               " which took "+str(time.time()-prediction_time) + " seconds")
                             predicted_flag = True
@@ -142,9 +147,9 @@ class Prediction(MachineLearning, threading.Thread):
 
     def Stop(self):
         self.logger.info("start prediction thread exit")
-        if self.load_forecast_pub:
+        if self.forecast_pub:
             self.logger.info("Stopping load forecast thread")
-            self.load_forecast_pub.Stop()
+            self.forecast_pub.Stop()
         if self.error_reporting:
             self.error_reporting.Stop()
         if self.raw_data:
