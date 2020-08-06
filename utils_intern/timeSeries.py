@@ -48,6 +48,45 @@ class TimeSeries:
         return new_data
 
     @staticmethod
+    def expand_and_resample_reversed(raw_data, dT, append_next_dT=False):
+        if TimeSeries.valid_time_series(raw_data):
+            if append_next_dT:
+                raw_data = TimeSeries.append_next_dT_value(raw_data, dT)
+            step = float(dT)
+            j = 0
+            new_data = []
+            if j <= len(raw_data):
+                start_time = raw_data[j][0]
+                start_value = raw_data[j][1]
+                new_data.append([start_time, start_value])
+                prev_time = start_time
+                prev_value = start_value
+                required_diff = step
+                j += 1
+                while j < len(raw_data):
+                    end_time = raw_data[j][0]
+                    end_value = raw_data[j][1]
+                    diff_sec = end_time - prev_time
+                    if diff_sec >= required_diff:
+                        ratio = required_diff / diff_sec
+                        inter_time = prev_time + required_diff
+                        inter_value = prev_value + (end_value - prev_value) * ratio
+                        new_data.append([inter_time, inter_value])
+                        prev_time = inter_time
+                        prev_value = inter_value
+                        required_diff = step
+                    else:
+                        required_diff -= diff_sec
+                        prev_time = end_time
+                        prev_value = end_value
+                        j += 1
+            else:
+                new_data = raw_data
+        else:
+            new_data = raw_data
+        return new_data
+
+    @staticmethod
     def append_next_dT_value(raw_data, dT):
         if len(raw_data) > 1:
             new_data = []

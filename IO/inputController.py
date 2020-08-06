@@ -63,7 +63,7 @@ class InputController:
             if "mqtt" in value.keys():
                 params = value["mqtt"]
                 option = params["option"]
-                if option in ["predict", "pv_predict"]:
+                if option in ["predict", "pv_predict", "pv_predict_lstm"]:
                     prediction_topic = self.config.get("IO", "forecast.topic")
                     prediction_topic = json.loads(prediction_topic)
                     prediction_topic["topic"] = prediction_topic["topic"] + name_with_index

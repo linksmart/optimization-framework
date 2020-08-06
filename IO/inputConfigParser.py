@@ -22,12 +22,6 @@ class InputConfigParser:
         self.model_variables, self.param_key_list = ModelParamsInfo.get_model_param(self.model_name)
         self.input_config = input_config
         self.base, self.derived = ModelDerivedParameters.get_derived_parameter_mapping(model_name, optimization_type)
-        self.generic_names = []
-        self.prediction_names = []
-        self.pv_prediction_names = []
-        self.preprocess_names = []
-        self.event_names = []
-        self.sampling_names = []
         self.set_params = {}
         self.name_params = {}
         self.car_park = None
@@ -105,12 +99,9 @@ class InputConfigParser:
             mqtt = ConfigParserUtils.get_mqtt(mqtt)
             if mqtt is not None:
                 self.name_params[indexed_name]["mqtt"] = mqtt.copy()
-                option = mqtt["option"]
-                self.add_name_to_list(indexed_name, option)
                 extracted = True
         if "datalist" in data_dict.keys():
             self.name_params[indexed_name]["datalist"] = self.get_file_name(indexed_name)
-            self.add_name_to_list(indexed_name)
             extracted = True
         if "meta" in data_dict.keys():
             for meta_key, meta_value in data_dict["meta"].items():
@@ -128,20 +119,6 @@ class InputConfigParser:
         else:
             file_name = indexed_name[0] + "~" + str(indexed_name[1]) + ".txt"
         return file_name
-
-    def add_name_to_list(self, indexed_name, option=None):
-        if option == "predict":
-            self.prediction_names.append(indexed_name)
-        elif option == "pv_predict":
-            self.pv_prediction_names.append(indexed_name)
-        elif option == "preprocess":
-            self.preprocess_names.append(indexed_name)
-        elif option == "event":
-            self.event_names.append(indexed_name)
-        elif option == "sampling":
-            self.sampling_names.append(indexed_name)
-        else:
-            self.generic_names.append(indexed_name)
 
     def type_cast_value(self, v):
         try:
@@ -319,24 +296,6 @@ class InputConfigParser:
             return True
         else:
             return False
-
-    def get_generic_data_names(self):
-        return self.generic_names
-
-    def get_prediction_names(self):
-        return self.prediction_names
-
-    def get_pv_prediction_names(self):
-        return self.pv_prediction_names
-
-    def get_preprocess_names(self):
-        return self.preprocess_names
-
-    def get_event_names(self):
-        return self.event_names
-
-    def get_sampling_names(self):
-        return self.sampling_names
 
     def get_variable_index(self, name):
         if not isinstance(name, str):

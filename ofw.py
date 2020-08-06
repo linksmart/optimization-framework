@@ -128,12 +128,12 @@ def setup():
     return (logger, redisDB, config)
 
 def copy_pv_files():
-    pv_path = "/usr/src/app/optimization/pv_data"
+    pv_path = "/usr/src/app/utils/pv_data"
     if os.path.exists(pv_path):
         for file in os.listdir(pv_path):
             file_path = os.path.join(pv_path, file)
             if os.path.isfile(file_path) and ".txt" in file:
-                shutil.copyfile(file_path, os.path.join("/usr/src/app/optimization/resources", file))
+                shutil.copyfile(file_path, os.path.join("/usr/src/app/prediction/resources", file))
 
 def copy_models():
     models_path = "/usr/src/app/optimization/resources/models"

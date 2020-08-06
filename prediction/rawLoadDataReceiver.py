@@ -21,7 +21,7 @@ logger = MessageLogger.get_logger_parent()
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, training_data_size, save_path, topic_name, id, load_file_data, max_file_size_mins):
+    def __init__(self, topic_params, config, buffer, save_path, topic_name, id, load_file_data, max_file_size_mins):
         self.file_path = save_path
         redisDB = RedisDB()
         try:
@@ -31,7 +31,6 @@ class RawLoadDataReceiver(DataReceiver):
             logger.error(e)
         self.buffer_data = []
         self.buffer = buffer
-        self.training_data_size = training_data_size
         self.current_minute = None
         self.id = id
         self.sum = 0
@@ -39,9 +38,11 @@ class RawLoadDataReceiver(DataReceiver):
         self.minute_data = []
         self.topic_name = topic_name
         self.max_file_size_mins = max_file_size_mins
+        self.save_cron_freq = config.getint("IO", "raw.data.file.save.frequency.sec", fallback=3600)
+
         if load_file_data:
             self.load_data()
-        self.file_save_thread = threading.Thread(target=self.save_to_file_cron)
+        self.file_save_thread = threading.Thread(target=self.save_to_file_cron, args=(self.save_cron_freq,))
         self.file_save_thread.start()
 
     def on_msg_received(self, payload):
@@ -74,65 +75,20 @@ class RawLoadDataReceiver(DataReceiver):
         except Exception as e:
             logger.error(e)
 
-    def save_to_file(self):
-        try:
-            logger.info("Saving raw data to file "+str(self.file_path))
-            old_data = RawDataReader.read_from_file(self.file_path, self.topic_name)
-            for item in self.minute_data:
-                line = ','.join(map(str, item[:2])) + "\n"
-                old_data.append(line)
-            old_data = old_data[-self.max_file_size_mins:]
-            update_data = []
-            for i, line in enumerate(old_data):
-                c = line.count(",")
-                if c == 2:
-                    s = line.split(",")
-                    m = s[1]
-                    mv = m[:-12]
-                    mt = m[-12:]
-                    l1 = [float(s[0]), float(mv)]
-                    l1 = ','.join(map(str, l1[:2])) + "\n"
-                    l2 = [float(mt), float(s[2].replace("\n",""))]
-                    l2 = ','.join(map(str, l2[:2])) + "\n"
-                    update_data.append([i, l1, l2])
-                elif c != 1:
-                    update_data.append([i, None, None])
-            shift = 0
-            for d in update_data:
-                if d[1] is not None and d[2] is not None:
-                    old_data.pop(d[0] + shift)
-                    old_data.insert(d[0] + shift, d[1])
-                    old_data.insert(d[0] + shift + 1, d[2])
-                    shift += 1
-                else:
-                    old_data.pop(d[0] + shift)
-                    shift -= 1
-            with open(self.file_path, 'w+') as file:
-                    file.writelines(old_data)
-            file.close()
-            self.minute_data = []
-        except Exception as e:
-            logger.error("failed to save_to_file "+ str(e))
+    def get_raw_data(self):
+        data = self.get_data(0, True)
+        self.logger.debug(str(self.topic_name)+"value from mqtt for prediction input = "+str(data))
+        for item in data:
+            self.buffer_data.append(item)
+        self.buffer_data = self.buffer_data[-self.buffer:]
+        return self.buffer_data
 
-    def get_raw_data(self, train=False, topic_name=None):
-        if train:
-            data = RawDataReader.read_from_file(self.file_path, topic_name)
-            if len(data) > self.training_data_size:
-                data = data[-self.training_data_size:]
-            return RawDataReader.format_data(data)
-        else:
-            data = self.get_data(0, True)
-            self.logger.debug(str(self.topic_name)+"value from mqtt for prediction input = "+str(data))
-            for item in data:
-                self.buffer_data.append(item)
-            self.buffer_data = self.buffer_data[-self.buffer:]
-            return self.buffer_data
-
-    def save_to_file_cron(self):
+    def save_to_file_cron(self, repeat_seconds):
         self.logger.debug("Started save file cron")
         while True and not self.stop_request:
-            self.save_to_file()
-            time.sleep(UtilFunctions.get_sleep_secs(2,0,0))
+            self.minute_data = RawDataReader.save_to_file(self.file_path, self.topic_name, self.minute_data,
+                                                          self.max_file_size_mins)
+            time.sleep(UtilFunctions.get_sleep_secs(0,0,repeat_seconds))
 
     def load_data(self):
         data = RawDataReader.get_raw_data(self.file_path, self.topic_name, self.buffer)

@@ -332,7 +332,7 @@ class MQTT(Model):
         :param option: The option of this MQTT.
         :type option: str
         """
-        allowed_values = ["predict", "preprocess", "event", "sampling", "pv_predict"]  # noqa: E501
+        allowed_values = ["predict", "preprocess", "event", "sampling", "pv_predict", "pv_predict_lstm"]  # noqa: E501
         if option not in allowed_values:
             raise ValueError(
                 "Invalid value for `option` ({0}), must be one of {1}"

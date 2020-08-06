@@ -11,7 +11,8 @@ from optimization.controllerDiscrete import OptControllerDiscrete
 from optimization.controllerMpc import OptControllerMPC
 from optimization.controllerStochasticTestMulti import OptControllerStochastic
 #from optimization.controllerStochasticTestPebble import OptControllerStochastic
-from prediction.loadPrediction import LoadPrediction
+from prediction.machineLearning import MachineLearning
+from prediction.prediction import Prediction
 from prediction.pvPrediction import PVPrediction
 from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
@@ -115,6 +116,9 @@ class ThreadFactory:
         if len(missing_keys) > 0:
             raise MissingKeysException("Data source for following keys not declared: " + str(missing_keys))
 
+        opt_values = input_config_parser.get_optimization_values()
+        self.redisDB.set(self.id+":opt_values", json.dumps(opt_values))
+
         self.prediction_threads = {}
         self.pv_prediction_threads = {}
         for indexed_name, value in input_config_parser.name_params.items():
@@ -128,13 +132,13 @@ class ThreadFactory:
                     self.logger.info("Creating prediction controller thread for topic " + str(name_with_index))
                     parameters = json.dumps(
                         {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
-                         "topic_param": params, "dT_in_seconds": self.dT_in_seconds})
+                         "topic_param": params, "dT_in_seconds": self.dT_in_seconds, "type": "load"})
                     self.redisDB.set("train:" + self.id + ":" + name_with_index, parameters)
-                    self.prediction_threads[indexed_name] = LoadPrediction(config, self.control_frequency,
-                                                                                self.horizon_in_steps,
-                                                                                name_with_index,
-                                                                                params, self.dT_in_seconds,
-                                                                                self.id, True, output_config)
+                    self.prediction_threads[indexed_name] = Prediction(config, self.control_frequency,
+                                                                              self.horizon_in_steps, name_with_index,
+                                                                              params, self.dT_in_seconds, self.id,
+                                                                             output_config, "load", opt_values)
+                    self.prediction_threads[indexed_name].start()
                 elif option == "pv_predict":
                     self.pv_prediction_threads[indexed_name] = PVPrediction(config, output_config,
                                                                                   input_config_parser,
@@ -145,6 +149,18 @@ class ThreadFactory:
                                                                                   params,
                                                                                   name_with_index, index)
                     self.pv_prediction_threads[indexed_name].start()
+                elif option == "pv_predict_lstm":
+                    self.logger.info("Creating prediction controller thread for topic " + str(name_with_index))
+                    parameters = json.dumps(
+                        {"control_frequency": self.control_frequency, "horizon_in_steps": self.horizon_in_steps,
+                         "topic_param": params, "dT_in_seconds": self.dT_in_seconds, "type": "pv"})
+                    self.redisDB.set("train:" + self.id + ":" + name_with_index, parameters)
+                    self.prediction_threads[indexed_name] = Prediction(config, self.control_frequency,
+                                                                       self.horizon_in_steps, name_with_index,
+                                                                       params, self.dT_in_seconds, self.id,
+                                                                       output_config, "pv", opt_values)
+                    self.prediction_threads[indexed_name].start()
+
 
         # Initializing constructor of the optimization controller thread
         if self.optimization_type == "MPC":

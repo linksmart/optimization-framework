@@ -93,9 +93,6 @@ class BaseDataReceiver(DataReceiver, ABC):
             self.data.update(formated_data)
             self.set_data_update(True)
             self.last_time = time.time()
-            if print_details:
-                self.logger.debug("in pv/pload, "+str(self.data_update)+" "+str(self.get_data_update())
-                                  +" "+str(self.data))
         except Exception as e:
             self.logger.error(e)
     

@@ -81,6 +81,15 @@ class Radiation:
             data = TimeSeries.expand_and_resample(data, self.dT_in_seconds, False)
             return data
 
+    # values from api are sampled at 55 min mark every hour,
+    # and we assume it to be for next hr (5min shift)
+    def get_complete_data(self):
+        if len(self.base_data) == 0:
+            self.fetch_base_data()
+        if len(self.base_data) > 0:
+            data = self.append_timestamp(self.base_data.copy(), self.start_date.timestamp())
+            return data
+
     def update_location_info(self):
         if not self.location_found:
             lat, lon = self.location_data.get_city_coordinate(self.city, self.country)
@@ -159,6 +168,7 @@ class Radiation:
 
     def filter_next_horizon_hrs(self, timestamp):
         index, timestamp = self.get_row_by_time(timestamp)
+        index = index % len(self.base_data)
         range = self.horizon_hours
         carry = range - (len(self.base_data) - index)
         if carry < 0:

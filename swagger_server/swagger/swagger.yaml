@@ -1136,7 +1136,7 @@ definitions:
         type: "boolean"
       option:
         type: "string"
-        enum: ["predict", "preprocess", "event", "sampling", "pv_predict"]
+        enum: ["predict", "preprocess", "event", "sampling", "pv_predict", "pv_predict_lstm"]
         description: "option of the type of input"
     example:
       qos: 1

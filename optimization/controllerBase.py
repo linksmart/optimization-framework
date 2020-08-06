@@ -79,6 +79,10 @@ class ControllerBase(ABC):
             self.preprocess = False
         self.input = None
         self.output = None
+        self.solver_ipopt_max_iteration = config.getint("SolverSection", "solver.ipopt.max.iteration", fallback=1000)
+        self.solver_ipopt_timeout = config.getint("SolverSection", "solver.ipopt.timeout", fallback=120)
+        self.solver_gurobi_max_iteration = config.getint("SolverSection", "solver.gurobi.max.iteration", fallback=1000)
+        self.solver_gurobi_timeout = config.getint("SolverSection", "solver.gurobi.timeout", fallback=3)
         if "False" in self.redisDB.get("Error mqtt" + self.id):
             self.output = OutputController(self.id, self.output_config)
         if "False" in self.redisDB.get("Error mqtt" + self.id):

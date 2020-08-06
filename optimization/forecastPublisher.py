@@ -15,7 +15,7 @@ from utils_intern.constants import Constants
 from utils_intern.messageLogger import MessageLogger
 
 
-class LoadForecastPublisher(DataPublisher):
+class ForecastPublisher(DataPublisher):
 
     def __init__(self, internal_topic_params, config, queue, publish_frequency, topic, id, horizon_in_steps,
                  dT_in_seconds):
