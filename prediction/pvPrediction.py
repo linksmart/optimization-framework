@@ -11,6 +11,7 @@ import threading
 import time
 from queue import Queue
 
+from IO.influxDBmanager import InfluxDBManager
 from IO.radiation import Radiation
 from IO.redisDB import RedisDB
 from optimization.pvForecastPublisher import PVForecastPublisher
@@ -39,6 +40,7 @@ class PVPrediction(threading.Thread):
         self.dT_in_seconds = dT_in_seconds
         self.old_predictions = {}
         self.output_config = output_config
+        self.influxDB = InfluxDBManager()
         self.raw_data_file_container = os.path.join("/usr/src/app", "prediction/resources", self.id,
                                                     "raw_data_" + str(generic_name) + ".csv")
 
@@ -71,9 +73,10 @@ class PVPrediction(threading.Thread):
 
         self.max_file_size_mins = config.getint("IO", "pv.raw.data.file.size", fallback=10800)
 
+        self.copy_prediction_file_data_to_influx()
         from prediction.rawLoadDataReceiver import RawLoadDataReceiver
         self.raw_data = RawLoadDataReceiver(raw_pv_data_topic, config, 1, self.raw_data_file_container,
-                                            generic_name, self.id, False, self.max_file_size_mins)
+                                            generic_name, self.id, False, self.max_file_size_mins, self.influxDB)
 
         self.pv_forecast_pub = PVForecastPublisher(pv_forecast_topic, config, id, 60,
                                                    horizon_in_steps, dT_in_seconds, self.q)
@@ -89,7 +92,7 @@ class PVPrediction(threading.Thread):
         self.error_reporting = ErrorReporting(config, id, generic_name, dT_in_seconds, control_frequency,
                                               horizon_in_steps, self.prediction_data_file_container,
                                               self.raw_data_file_container, error_topic_params,
-                                              self.error_result_file_path, self.output_config)
+                                              self.error_result_file_path, self.output_config, self.influxDB)
         self.error_reporting.start()
 
     def Stop(self):
@@ -190,9 +193,17 @@ class PVPrediction(threading.Thread):
     def save_to_file_cron(self):
         self.logger.debug("Started save file cron")
         while True and not self.stopRequest.is_set():
-            self.old_predictions = PredictionDataManager.save_predictions_dict_to_file(self.old_predictions,
-                                                                                  self.horizon_in_steps,
-                                                                                  self.prediction_data_file_container,
-                                                                                  self.generic_name)
+            self.old_predictions = PredictionDataManager.save_predictions_dict_to_influx(self.influxDB,
+                                                                                         self.old_predictions,
+                                                                                          self.horizon_in_steps,
+                                                                                          self.generic_name, self.id)
             time.sleep(UtilFunctions.get_sleep_secs(1,0,0))
             #time.sleep(UtilFunctions.get_sleep_secs(0, 2, 0))
+
+    def copy_prediction_file_data_to_influx(self):
+        data_file = PredictionDataManager.get_prediction_data(self.prediction_data_file_container, self.generic_name)
+        if len(data_file) > 0:
+            data = PredictionDataManager.save_predictions_dict_to_influx(self.influxDB, data_file,
+                                                                    self.horizon_in_steps, self.generic_name, self.id)
+            if len(data) == 0:
+                PredictionDataManager.del_predictions_to_file(self.prediction_data_file_container, self.generic_name)

@@ -23,7 +23,7 @@ RUN apt-get update -y && apt-get install -y \
 
 
 #RUN apt-get update -y && apt-get install -y \
-#	gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev python3-scipy python3-h5py python3-numpy libatlas-dev  python3-pandas python3-sklearn
+#	gcc build-essential gfortran libatlas-base-dev gfortran libblas-dev liblapack-dev libatlas-base-dev wget libpng-dev python3-pip python3-dev python3-setuptools libhdf5-serial-dev python3-scipy python3-h5py python3-numpy libatlas-dev python3-sklearn
 
 
 RUN pip3 install --upgrade setuptools==41.0.0
@@ -47,6 +47,8 @@ RUN pip3 install -U numpy==1.14.5
 RUN pip3 install -U stopit==1.1.2
 RUN pip3 install -U Pebble==4.5.1
 RUN pip3 install -U treelib
+RUN pip3 install -U pandas==0.21.1
+RUN pip3 install -U influxdb
 
 # Set the working directory to usr/src/app
 #RUN mkdir -p /usr/src/app

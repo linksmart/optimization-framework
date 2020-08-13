@@ -38,7 +38,7 @@ class Models:
         self.last_loaded_path = None
         logger.info("paths = " + str(self.model_weights_path))
 
-    def get_model(self, id_topic, predict):
+    def get_model(self, id_topic, predict, redisDB):
         """
             manages which model to load
             If model_base.h5 present in disk
@@ -54,32 +54,42 @@ class Models:
                 model_updated = True
 
         self.model, self.graph, loaded = self.check_and_get_model(self.model, self.graph, self.model_weights_path,
-                                                                  predict, force_load=model_updated)
+                                                                  predict, redisDB, id_topic, force_load=model_updated)
         if loaded:
             return self.model, self.graph
 
         self.model_temp, self.graph, loaded = self.check_and_get_model(self.model_temp, self.graph,
-                                                                       self.model_weights_path_temp, predict)
+                                                                       self.model_weights_path_temp, predict, redisDB,
+                                                                       id_topic)
         if loaded:
             return self.model_temp, self.graph
 
         logger.debug("try pre trained model for "+str(id_topic)+" "+str(self.model_base is None))
         self.model_base, self.graph, loaded = self.check_and_get_model(self.model_base, self.graph,
-                                                                       self.model_weights_path_base, predict)
+                                                                       self.model_weights_path_base, predict, redisDB,
+                                                                       id_topic)
         if loaded:
             return self.model_base, self.graph
         return None, None
 
-    def check_and_get_model(self, model, graph, model_weights_path, predict, force_load=False):
+    def check_and_get_model(self, model, graph, model_weights_path, predict, redisDB, id_topic, force_load=False):
         if model is not None and graph is not None and not force_load:
             return model, graph, True
         else:
             """Load model"""
-            model, graph = self.load_saved_model(model_weights_path, predict, load_timeout=60)
-            if model is not None:
-                return model, graph, True
-            else:
-                return model, graph, False
+            if redisDB.get_lock("ml_model_rw", "load_"+str(id_topic), log=True):
+                try:
+                    model, graph = self.load_saved_model(model_weights_path, predict, redisDB, load_timeout=60)
+                    if model is not None:
+                        return model, graph, True
+                    else:
+                        return model, graph, False
+                except Exception as e:
+                    pass
+                finally:
+                    redisDB.release_lock("ml_model_rw", "load_"+str(id_topic), log=True)
+                    return model, graph, False
+
 
     @timeoutable((None, None), timeout_param='load_timeout')
     def load_saved_model(self, path, predict):

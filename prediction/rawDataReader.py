@@ -3,6 +3,7 @@ Created on Okt 04 13:51 2018
 
 @author: nishit
 """
+import datetime
 import os
 import time
 
@@ -164,6 +165,53 @@ class RawDataReader:
             return minute_data
 
     @staticmethod
+    def del_file(file_path, topic_name):
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            logger.error("failed to del_to_file " + str(e)+" "+str(topic_name))
+
+    @staticmethod
     def removed_data_before_timestamp(file_path, topic_name, lastest_timestamp):
         data = RawDataReader.get_raw_data_by_time(file_path, topic_name, lastest_timestamp, time.time())
         RawDataReader.save_to_file(file_path, topic_name, data, overwrite=True)
+
+    @staticmethod
+    def save_to_influx(influxdb, topic_name, minute_data, id):
+        try:
+            logger.info("Saving raw data to influx " + str(topic_name))
+            json_body = influxdb.timeseries_list_to_influx_json(minute_data, topic_name, "raw", id)
+            if not influxdb.write(json_body):
+                return minute_data
+            else:
+                return []
+        except Exception as e:
+            logger.error("failed to save_to_influx " + str(e))
+            return minute_data
+
+    @staticmethod
+    def get_raw_data_influx(influxdb, topic_name, id, data_length=None):
+        start_time = None
+        if data_length:
+            start_time = datetime.datetime.now() - datetime.timedelta(minutes=data_length+720) # half day extra
+        data = influxdb.read(topic_name, "raw", instance_id=id, start_time=start_time)
+        if data_length is not None and len(data) > data_length:
+            data = data[-data_length:]
+        if len(data) > 0:
+            indexes = []
+            for i, v in enumerate(data):
+                if "inf" in str(v).lower() or "nan" in str(v).lower():
+                    indexes.append(i)
+            logger.debug("len indexes " + str(len(indexes)))
+            indexes.sort(reverse=True)
+            for index in indexes:
+                data.pop(index)
+        return data
+
+    @staticmethod
+    def get_raw_data_by_time_influx(influxdb, topic_name, start_time, end_time, id):
+        new_data = []
+        if start_time < end_time:
+            new_data = influxdb.read(topic_name, "raw", instance_id=id, start_time=start_time, end_time=end_time)
+        return new_data

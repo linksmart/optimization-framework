@@ -16,6 +16,18 @@ services:
       options:
         max-size: "10m"
         max-file: "10"
+  influx:
+    image: influxdb:latest
+    container_name: "influx_S4G"
+    ports:
+      - "8086:8086"
+    volumes:
+      - ../optimization-framework/prediction/resources:/var/lib/influxdb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
   ofw:
     build:
       context: ""
@@ -25,6 +37,7 @@ services:
       - "8080:8080"
     depends_on:
       - redis
+      - influx
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/prediction/resources
       - ../optimization-framework/optimization/resources:/usr/src/app/optimization/resources
@@ -42,6 +55,7 @@ services:
     build:
       context: ""
       dockerfile: mock_data/docker/Dockerfile-mock
+    image: garagon/optimization:amd_mock
     volumes:
       - ../optimization-framework/mock_data/resources:/usr/src/app/mock_data/resources
     logging:
@@ -57,6 +71,7 @@ services:
     image: garagon/optimization:amd_training
     depends_on:
       - redis
+      - influx
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/prediction/resources
     logging:
@@ -92,4 +107,3 @@ services:
         max-size: "10m"
         max-file: "10"
     command: ["exec","python3", "-u", "monitor.py"]
-

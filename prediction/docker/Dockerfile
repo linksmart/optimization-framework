@@ -60,6 +60,7 @@ RUN pip3 install -U senml==0.1.0
 RUN pip3 install -U stopit==1.1.2
 RUN pip3 install -U treelib
 RUN pip3 install -U requests==2.22.0
+RUN pip3 install -U influxdb
 
 WORKDIR /usr/src/app
 

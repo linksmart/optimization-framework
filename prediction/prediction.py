@@ -39,10 +39,12 @@ class Prediction(MachineLearning, threading.Thread):
 
         self.max_file_size_mins = config.getint("IO", str(self.type)+".raw.data.file.size", fallback=10800)
 
+        self.copy_prediction_file_data_to_influx()
+
         total_mins = int(float(self.input_size * self.model_data_dT) / 60.0) + 1
         self.raw_data = RawLoadDataReceiver(topic_param, config, total_mins,
                                             self.raw_data_file_container, self.topic_name, self.id, True,
-                                            self.max_file_size_mins)
+                                            self.max_file_size_mins, self.influxDB)
 
         self.q = Queue(maxsize=0)
 
@@ -60,7 +62,7 @@ class Prediction(MachineLearning, threading.Thread):
         self.error_reporting = ErrorReporting(config, id, topic_name, dT_in_seconds, control_frequency,
                                               horizon_in_steps, self.prediction_data_file_container,
                                               self.raw_data_file_container, error_topic_params,
-                                              self.error_result_file_path, self.output_config)
+                                              self.error_result_file_path, self.output_config, self.influxDB)
         self.error_reporting.start()
 
         self.old_predictions = []
@@ -84,7 +86,7 @@ class Prediction(MachineLearning, threading.Thread):
                 if len(data) > self.input_size:
                     st = time.time()
                     test_predictions = []
-                    model, graph = self.models.get_model(self.id + "_" + self.topic_name, True)
+                    model, graph = self.models.get_model(self.id + "_" + self.topic_name, True, self.redisDB)
                     predicted_flag = False
                     if model is not None and graph is not None:
                         if self.type == "load":
@@ -139,11 +141,19 @@ class Prediction(MachineLearning, threading.Thread):
     def save_to_file_cron(self):
         self.logger.debug("Started save file cron")
         while True and not self.stopRequest.is_set():
-            self.old_predictions = PredictionDataManager.save_predictions_to_file(self.old_predictions,
-                                                                                  self.horizon_in_steps,
-                                                                                  self.prediction_data_file_container,
-                                                                                  self.topic_name)
+            self.old_predictions = PredictionDataManager.save_predictions_to_influx(self.influxDB,
+                                                                                     self.old_predictions,
+                                                                                      self.horizon_in_steps,
+                                                                                      self.topic_name, self.id)
             time.sleep(UtilFunctions.get_sleep_secs(1, 0, 0))
+
+    def copy_prediction_file_data_to_influx(self):
+        data_file = PredictionDataManager.get_prediction_data(self.prediction_data_file_container, self.topic_name)
+        if len(data_file) > 0:
+            data = PredictionDataManager.save_predictions_dict_to_influx(self.influxDB, data_file,
+                                                                    self.horizon_in_steps, self.topic_name, self.id)
+            if len(data) == 0:
+                PredictionDataManager.del_predictions_to_file(self.prediction_data_file_container, self.topic_name)
 
     def Stop(self):
         self.logger.info("start prediction thread exit")

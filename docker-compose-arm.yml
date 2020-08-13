@@ -64,6 +64,18 @@ services:
       options:
         max-size: "10m"
         max-file: "10"
+  influx:
+    image: influxdb:latest
+    container_name: "influx_S4G"
+    ports:
+      - "8086:8086"
+    volumes:
+      - ../optimization-framework/prediction/resources:/var/lib/influxdb
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
   ofw:
     build:
       context: ""
@@ -74,6 +86,7 @@ services:
       - "8080:8080"
     depends_on:
       - redis
+      - influx
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/prediction/resources
       - ../optimization-framework/optimization/resources:/usr/src/app/optimization/resources
@@ -109,6 +122,7 @@ services:
     image: garagon/optimization:arm_training
     depends_on:
       - redis
+      - influx
     volumes:
       - ../optimization-framework/prediction/resources:/usr/src/app/prediction/resources
     logging:

@@ -70,7 +70,7 @@ class MockData:
                     mgdp.start()
                     self.publishers[section] = mgdp
             except Exception as e:
-                logger.error(e)
+                logger.error("mockdata start error "+str(e))
 
     def stopMockDataPublisherThreads(self):
         if self.publishers is not None:

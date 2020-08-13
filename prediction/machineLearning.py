@@ -1,5 +1,6 @@
 import os
 
+from IO.influxDBmanager import InfluxDBManager
 from IO.radiation import Radiation
 from IO.redisDB import RedisDB
 from prediction.Models import Models
@@ -20,6 +21,7 @@ class MachineLearning:
         self.type = type
 
         self.redisDB = RedisDB()
+        self.influxDB = InfluxDBManager()
 
         if self.type == "load":
             self.model_data_dT = 60
