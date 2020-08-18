@@ -42,6 +42,7 @@ COPY prediction /usr/src/app/prediction
 COPY IO/redisDB.py /usr/src/app/IO/redisDB.py
 COPY IO/radiation.py /usr/src/app/IO/radiation.py
 COPY IO/locationData.py /usr/src/app/IO/locationData.py
+COPY IO/influxDBmanager.py /usr/src/app/IO/influxDBmanager.py
 COPY utils /usr/src/app/utils
 COPY config /usr/src/app/config
 COPY utils_intern /usr/src/app/utils_intern

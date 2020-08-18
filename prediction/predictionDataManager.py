@@ -191,7 +191,7 @@ class PredictionDataManager:
                 pred_data = []
                 for start_time, result in predictions.items():
                     data = []
-                    logger.debug("°°° "+str(start_time)+" "+str(result))
+                    #logger.debug("°°° "+str(start_time)+" "+str(result))
                     for i in range(horizon_in_steps):
                         value = result[i]
                         data.append(str(value).replace("\n","").strip())
@@ -216,4 +216,4 @@ class PredictionDataManager:
                 json_body = influxdb.timeseries_list_to_influx_json(empty_data, topic_name, "prediction", id)
                 influxdb.write(json_body)
         except Exception as e:
-            logger.error("failed to save_predictions_to_file " + str(e))
+            logger.error("failed to del_predictions_from_influx " + str(e))
