@@ -39,6 +39,7 @@ class MockData:
                         mock_params["mqtt_topic"] = json.loads(mqtt_topic)
                     base_name = config.get(section, "base.name", fallback=None)
                     mock_params["base_name"] = base_name
+                    logger.info("sectin "+str(section)+ " bn "+str(base_name))
                     mock_source = config.get(section, "mock.source", fallback="random")
                     if mock_source == "file":
                         mock_file_path = config.get(section, "mock.file.path")

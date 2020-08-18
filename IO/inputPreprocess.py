@@ -49,6 +49,7 @@ class InputPreprocess:
         for k, v in self.name_params.items():
             name = k[0]
             if self.is_ev(v):
+                self.logger.debug("is ev "+str(v))
                 ev = name
                 ev_dict = v
                 battery_capacity = ev_dict.get("Battery_Capacity_kWh", None)
@@ -57,7 +58,7 @@ class InputPreprocess:
                 if ev_data_from_file is not None:
                     if ev in ev_data_from_file.keys():
                         soc = ev_data_from_file[ev]
-                self.logger.debug("soc " + str(soc) + " ev_no_base " + str(ev))
+                self.logger.debug("file data soc " + str(soc) + " ev_no_base " + str(ev))
                 self.ev_park.add_ev(ev, battery_capacity, soc)
             elif self.is_charger(v):
                 charger = name
@@ -194,13 +195,12 @@ class InputPreprocess:
 
     def update_charger_classes(self):
         charger_time = []
-        charger_keys = []
         for k, v in self.data_dict.items():
             charger = self.get_key_base(k)
             if charger in self.ev_park.chargers.keys():
                 last_timestamp = self.get_last_timestamp(k)
-                charger_time.append([k, last_timestamp])
-                charger_keys.append(k)
+                if last_timestamp > -1:
+                    charger_time.append([k, last_timestamp])
 
         # sort so the newest data get most preference
         charger_time.sort(key=lambda x: x[1])
@@ -208,25 +208,22 @@ class InputPreprocess:
             charger = self.get_key_base(k)
             key = self.remove_key_base(k)  # soc or hosted ev
             values = self.data_dict[k]
-
-            self.logger.debug("charger " + str(charger) + " last timestamp: " + str(last_timestamp))
+            self.logger.debug("charger " + str(charger) + " last timestamp: " + str(last_timestamp)+ " "+
+                              str(key)+" "+str(values))
             if key == "SoC":
-                value = None
-                for i, v in values.items():
-                    value = v
-
                 soc = None
                 hosted_ev = None
-                if isinstance(value, dict):
-                    for attr, v in value.items():
+                if isinstance(values, dict):
+                    for attr, v in values.items():
                         if attr == "SoC":
                             soc = v
                         elif attr == "Hosted_EV":
                             hosted_ev = v
-                elif isinstance(value, int) or isinstance(value, float):
-                    soc = value
+                elif isinstance(values, int) or isinstance(values, float):
+                    soc = values
 
-                self.logger.debug("charger " + str(charger) + "key " + str(key)+ " value " + str(value))
+                self.logger.debug("charger " + str(charger) + "key " + str(key)+ " value " + str(soc)+ " hosted ev "+
+                                  str(hosted_ev))
                 self.ev_park.update_charger_for_key(charger, soc, hosted_ev)
 
     def read_data(self, filepath):

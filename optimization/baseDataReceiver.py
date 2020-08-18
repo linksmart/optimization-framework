@@ -83,8 +83,7 @@ class BaseDataReceiver(DataReceiver, ABC):
     def on_msg_received(self, payload):
         try:
             self.start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-            print_details = False
-            if "chargers" in payload:
+            if "charger" in payload:
                 self.logger.debug("data received for charger = "+str(payload))
             senml_data = json.loads(payload)
             formated_data = self.add_formated_data(senml_data)
