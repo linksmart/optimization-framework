@@ -13,7 +13,7 @@ from IO.dataReceiver import DataReceiver
 
 class Status(DataReceiver):
     def __init__(self, internal, topic_params, config):
-        super().__init__(internal, topic_params, config)
+        super().__init__(internal, topic_params, config, connect_check_flag=True)
 
     def on_msg_received(self, payload):
         senml_data = json.loads(payload)

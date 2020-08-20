@@ -177,8 +177,10 @@ class PredictionDataManager:
                     pred_data.append([start_time, values])
                 json_body = influxdb.timeseries_list_to_influx_json(pred_data, topic_name, "prediction", id)
                 if not influxdb.write(json_body):
+                    logger.debug("saved predictions to influx")
                     return predictions
                 else:
+                    logger.debug("couldn't save predictions to influx")
                     return []
         except Exception as e:
             logger.error("failed to save_predictions_to_influx " + str(e))
