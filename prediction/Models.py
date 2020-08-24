@@ -79,7 +79,7 @@ class Models:
             """Load model"""
             if redisDB.get_lock("ml_model_rw", "load_"+str(id_topic), log=True):
                 try:
-                    model, graph = self.load_saved_model(model_weights_path, predict, redisDB, load_timeout=60)
+                    model, graph = self.load_saved_model(model_weights_path, predict, load_timeout=60)
                     if model is not None:
                         return model, graph, True
                     else:
