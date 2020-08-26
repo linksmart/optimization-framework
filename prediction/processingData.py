@@ -20,6 +20,7 @@ logger = MessageLogger.get_logger_parent()
 
 class ProcessingData:
 
+    #pv hist data is 2016 data
     def __init__(self, type, hist_data=None):
         self.new_df = None
         self.max = 1

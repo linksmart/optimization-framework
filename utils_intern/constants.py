@@ -34,6 +34,8 @@ class Constants:
     recharge_event_disconnect = 1
 
     redis_host = None
+    influx_host = None
+    influx_retention = "49h"
 
     persisted_folder_name = "persisted"
 

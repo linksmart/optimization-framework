@@ -5,6 +5,7 @@ import time
 
 from shutil import copyfile
 
+from IO.influxDBmanager import InfluxDBManager
 from prediction.machineLearning import MachineLearning
 from utils_intern.utilFunctions import UtilFunctions
 
@@ -34,7 +35,6 @@ class Training(MachineLearning, threading.Thread):
         self.max_raw_data_to_read = config.getint("IO", str(self.type)+".max.raw.data.samples", fallback=7200)
         self.logger.debug("max_training_samples " + str(self.max_training_samples))
 
-
     def run(self):
         # initial wait
         time.sleep(self.initial_wait_time)
@@ -42,7 +42,7 @@ class Training(MachineLearning, threading.Thread):
             try:
                 # get raw data from file
                 from prediction.rawDataReader import RawDataReader
-                data = RawDataReader.get_raw_data(self.raw_data_file_container, self.topic_name,
+                data = RawDataReader.get_raw_data_influx(self.influxDB, self.topic_name, self.id,
                                                   self.max_raw_data_to_read)
                 self.logger.debug("raw data ready " + str(len(data)))
                 data, merged = self.processingData.expand_and_resample_into_blocks(data, 60, self.input_size,
@@ -63,7 +63,7 @@ class Training(MachineLearning, threading.Thread):
                                     data, self.model_data_dT, self.input_size, self.input_size_hist, self.output_size,
                                     self.max_training_samples)
                             self.logger.info("pre proc done")
-                            model, graph = self.models.get_model(self.id + "_" + self.topic_name, False)
+                            model, graph = self.models.get_model(self.id + "_" + self.topic_name, False, self.redisDB)
                             from prediction.trainModel import TrainModel
                             trainModel = TrainModel(self.stop_request_status)
                             train_time = time.time()
@@ -76,19 +76,26 @@ class Training(MachineLearning, threading.Thread):
                                                     self.input_size, self.input_size_hist, self.output_size,
                                                     self.model_file_container_train, model)
                             self.logger.debug("Training time "+str(time.time()-train_time))
-                            copyfile(self.model_file_container_train, self.model_file_container)
-                            copyfile(self.model_file_container_train, self.model_file_container_temp)
-                            trained = True
-                            self.logger.info("trained successfully")
+                            if self.redisDB.get_lock("ml_model_rw", "copy_"+str(self.id) + "_" + self.topic_name, log=True):
+                                try:
+                                    copyfile(self.model_file_container_train, self.model_file_container)
+                                    copyfile(self.model_file_container_train, self.model_file_container_temp)
+                                    trained = True
+                                    self.logger.info("trained successfully")
+                                except Exception as e:
+                                    print("error copying trained model "+str(e))
+                                finally:
+                                    self.redisDB.release_lock("ml_model_rw", "copy_"+str(self.id) + "_" + self.topic_name, log=True)
                     except Exception as e:
                         trained = False
                         self.logger.error("error training model " + str(e))
                     finally:
                         self.redisDB.release_lock(self.training_lock_key, self.id + "_" + self.topic_name)
                     if trained:
-                        self.logger.info("remove used raw data")
-                        RawDataReader.removed_data_before_timestamp(self.raw_data_file_container, self.topic_name,
-                                                  lastest_input_timestep_data_point)
+                        pass
+                        #self.logger.info("remove used raw data")
+                        #RawDataReader.removed_data_before_timestamp(self.raw_data_file_container, self.topic_name,
+                                                  #lastest_input_timestep_data_point)
                     time.sleep(UtilFunctions.get_sleep_secs(0, 0, self.frequency))
                 else:
                     time.sleep(600)

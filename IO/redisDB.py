@@ -62,24 +62,27 @@ class RedisDB:
     def key_exists(self, key):
         return self.redis_db.exists(key)
 
-    def get_lock(self, key, value):
+    def get_lock(self, key, value, log=False):
         status = self.get(key, "False")
         while status is not "False":
             status = self.get(key, "False")
             time.sleep(0.5)
         if not self.key_exists(key):
             self.set(key, value)
-            #logger.debug("lock granted to "+str(value))
+            if log:
+                logger.debug("lock granted to "+str(value))
             return True
         else:
-            logger.debug("lock not granted to " + str(value))
+            if log:
+                logger.debug("lock not granted to " + str(value))
             return False
 
-    def release_lock(self, key, value):
+    def release_lock(self, key, value, log=False):
         status = self.get(key, "False")
         if status == value:
             self.remove(key)
-            #logger.debug("lock release from " + str(value))
+            if log:
+                logger.debug("lock release from " + str(value))
 
     def get_start_time(self):
         return float(self.redis_db.get("time"))

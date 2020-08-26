@@ -96,7 +96,6 @@ class MockGenericDataPublisher(DataPublisher):
     def read_file_data(self, file_path):
         with open(file_path, "r") as f:
             file_lines = f.readlines()
-        logger.debug("file_lines: "+str(file_lines))
         if any(";" in s for s in file_lines):
             timed_vals = []
             # format the file according to val;time

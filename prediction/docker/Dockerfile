@@ -60,6 +60,7 @@ RUN pip3 install -U senml==0.1.0
 RUN pip3 install -U stopit==1.1.2
 RUN pip3 install -U treelib
 RUN pip3 install -U requests==2.22.0
+RUN pip3 install -U influxdb
 
 WORKDIR /usr/src/app
 
@@ -68,6 +69,7 @@ COPY prediction /usr/src/app/prediction
 COPY IO/redisDB.py /usr/src/app/IO/redisDB.py
 COPY IO/radiation.py /usr/src/app/IO/radiation.py
 COPY IO/locationData.py /usr/src/app/IO/locationData.py
+COPY IO/influxDBmanager.py /usr/src/app/IO/influxDBmanager.py
 COPY utils /usr/src/app/utils
 COPY utils_intern /usr/src/app/utils_intern
 COPY config /usr/src/app/config

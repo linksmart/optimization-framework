@@ -25,7 +25,7 @@ class ErrorReporting(DataPublisher):
 
     def __init__(self, config, id, topic_name, dT_in_seconds, control_frequency, horizon_in_steps,
                  prediction_data_file_container, raw_data_file_container, topic_params, error_result_file_path,
-                 output_config):
+                 output_config, influxDB):
         self.logger = MessageLogger.get_logger(__name__, id)
         self.control_frequency = control_frequency
         self.horizon_in_steps = horizon_in_steps
@@ -39,6 +39,7 @@ class ErrorReporting(DataPublisher):
         self.error_result_file_path = error_result_file_path
         self.output_config = output_config
         self.topic_params = topic_params
+        self.influxDB = influxDB
         redisDB = RedisDB()
         try:
             if self.update_topic_params():
@@ -69,13 +70,13 @@ class ErrorReporting(DataPublisher):
             if counter is not None:
                 self.logger.info("error calculation stats: "+str(counter))
             if len(results) > 0:
-                self.save_to_file(results)
-                PredictionDataManager.del_predictions_from_file(prediction_keys, self.prediction_data_file_container,
-                                                                self.topic_name)
+                self.save_to_influx(results)
+                #del_predictions_from_file(prediction_keys, self.prediction_data_file_container,
+                #                                                self.topic_name)
                 return self.to_senml(results)
             else:
-                PredictionDataManager.del_predictions_from_file(deletion_keys, self.prediction_data_file_container,
-                                                                self.topic_name)
+                #PredictionDataManager.del_predictions_from_file(deletion_keys, self.prediction_data_file_container,
+                #                                               self.topic_name)
                 return None
         except Exception as e:
             self.logger.error("error computing error report data " + str(e))
@@ -96,7 +97,7 @@ class ErrorReporting(DataPublisher):
         return json.dumps(val)
 
     def get_senml_meas(self, value, time, name):
-        if not isinstance(time, float):
+        if not isinstance(time, float) and not isinstance(time, int) and isinstance(time, datetime.datetime):
             time = float(time.timestamp())
         meas = senml.SenMLMeasurement()
         meas.time = time
@@ -118,6 +119,17 @@ class ErrorReporting(DataPublisher):
         except Exception as e:
             self.logger.error("error adding to file "+str(self.error_result_file_path)+ " "+ str(e))
 
+    def save_to_influx(self, results):
+        try:
+            json_body = self.influxDB.timeseries_dict_to_influx_json(results, self.topic_name, self.id)
+            if self.influxDB.write(json_body):
+                self.logger.debug("saved error cal to influx")
+            else:
+                self.logger.debug("could not save error cal to influx")
+        except Exception as e:
+            self.logger.error("error adding to influx"+str(e))
+
+
     def format_predicted_data(self, start_time, values):
         if start_time is not None and values is not None:
             start_of_day = self.get_start_of_the_day(start_time)
@@ -134,7 +146,7 @@ class ErrorReporting(DataPublisher):
     def read_raw_data(self, start_time):
         start_of_day = self.get_start_of_the_day(start_time)
         end_time = start_time + self.dT_in_seconds*self.horizon_in_steps
-        data = self.raw_data.get_raw_data_by_time(self.raw_data_file_container, self.topic_name, start_time, end_time)
+        data = self.raw_data.get_raw_data_by_time_influx(self.influxDB, self.topic_name, start_time, end_time, self.id)
         data = TimeSeries.expand_and_resample(data, self.dT_in_seconds)
         #data = data[:-1]
         data = data[:self.horizon_in_steps]
@@ -158,9 +170,8 @@ class ErrorReporting(DataPublisher):
         timestamp = self.get_timestamp() - time_delay
         self.logger.debug("start_time "+str(timestamp))
         results = {}
-        predicitons = PredictionDataManager.get_predictions_before_timestamp(self.prediction_data_file_container,
-                                                                             self.topic_name, timestamp)
-        #self.logger.debug("count of predictions = "+str(len(predicitons)))
+        predicitons = PredictionDataManager.get_predictions_before_timestamp_influx(self.influxDB,
+                                                                             self.topic_name, timestamp, self.id)
         counter = {
             "predictions": len(predicitons),
             "length_mismatch": 0,
@@ -171,6 +182,11 @@ class ErrorReporting(DataPublisher):
             "correct": 0
         }
         pred_del_keys = []
+        predicitons_dict = {}
+        if isinstance(predicitons, list):
+            for t, v in predicitons:
+                predicitons_dict[t] = v
+            predicitons = predicitons_dict
         for start_time, prediction in predicitons.items():
             predicted_data = self.format_predicted_data(start_time, prediction)
             if start_time is not None and predicted_data is not None:

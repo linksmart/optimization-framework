@@ -18,7 +18,8 @@ from IO.redisDB import RedisDB
 
 class DataReceiver(ABC):
 
-    def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None, prepare_topic_qos=True, sub_pub=False):
+    def __init__(self, internal, topic_params, config, emptyValue={}, id=None, section=None, prepare_topic_qos=True,
+                 sub_pub=False, connect_check_flag=False):
         super(DataReceiver, self).__init__()
         self.logger = MessageLogger.get_logger(__name__, id)
         self.stop_request = False
@@ -26,6 +27,7 @@ class DataReceiver(ABC):
         self.topic_params = topic_params
         self.prepare_topic_qos = prepare_topic_qos
         self.emptyValue = emptyValue
+        self.connect_check_flag = connect_check_flag
         self.data = self.emptyValue.copy()
         self.data_update = False
         self.config = config
@@ -116,7 +118,8 @@ class DataReceiver(ABC):
             self.client_id = "client_receive" + str(randrange(100000)) + str(time.time()).replace(".","")
             self.mqtt = MQTTClient(str(self.host), self.port, self.client_id, username=self.host_params["username"],
                                    password=self.host_params["password"], ca_cert_path=self.host_params["ca_cert_path"],
-                                   set_insecure=self.host_params["insecure_flag"], id=self.id)
+                                   set_insecure=self.host_params["insecure_flag"], id=self.id,
+                                   connect_check_flag=self.connect_check_flag)
 
             self.mqtt.subscribe_to_topics(topic_qos, self.on_msg_received)
             self.logger.info("successfully subscribed")

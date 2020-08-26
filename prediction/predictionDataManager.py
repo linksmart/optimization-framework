@@ -99,6 +99,14 @@ class PredictionDataManager:
         return predictions
 
     @staticmethod
+    def del_predictions_to_file(prediction_data_file_container, topic_name):
+        try:
+            if os.path.exists(prediction_data_file_container):
+                os.remove(prediction_data_file_container)
+        except Exception as e:
+            logger.error("failed to del_predictions_to_file " + str(e) +" " + str(topic_name))
+
+    @staticmethod
     def save_predictions_dict_to_file(predictions, horizon_in_steps, prediction_data_file_container, topic_name):
         try:
             if len(predictions) > 0:
@@ -141,4 +149,73 @@ class PredictionDataManager:
                 with open(prediction_data_file_container, 'w+') as file:
                     file.writelines(old_data)
         except Exception as e:
-            logger.error("failed to save_predictions_to_file " + str(e))
+            logger.error("failed to del_predictions_to_file " + str(e))
+
+    @staticmethod
+    def get_predictions_before_timestamp_influx(influxdb, topic_name, end_time, id):
+        new_data = []
+        if end_time:
+            new_data = influxdb.read(topic_name, "prediction", instance_id=id, end_time=end_time)
+        return new_data
+
+    @staticmethod
+    def save_predictions_to_influx(influxdb, predictions, horizon_in_steps, topic_name, id):
+        try:
+            if len(predictions) > 0:
+                pred_data = []
+                for prediction in predictions:
+                    result = prediction.items()
+                    result = sorted(result)
+                    start_time = float(result[0][0].timestamp())
+                    data = []
+                    for i in range(horizon_in_steps):
+                        value = result[i][1]
+                        if value < 0:
+                            value = 0
+                        data.append(str(value))
+                    values = ",".join(data)
+                    pred_data.append([start_time, values])
+                json_body = influxdb.timeseries_list_to_influx_json(pred_data, topic_name, "prediction", id)
+                if not influxdb.write(json_body):
+                    logger.debug("saved predictions to influx")
+                    return predictions
+                else:
+                    logger.debug("couldn't save predictions to influx")
+                    return []
+        except Exception as e:
+            logger.error("failed to save_predictions_to_influx " + str(e))
+        return predictions
+
+    @staticmethod
+    def save_predictions_dict_to_influx(influxdb, predictions, horizon_in_steps, topic_name, id):
+        try:
+            if len(predictions) > 0:
+                pred_data = []
+                for start_time, result in predictions.items():
+                    data = []
+                    #logger.debug("°°° "+str(start_time)+" "+str(result))
+                    for i in range(horizon_in_steps):
+                        value = result[i]
+                        data.append(str(value).replace("\n","").strip())
+                    values = ",".join(data)
+                    pred_data.append([start_time, values])
+                json_body = influxdb.timeseries_list_to_influx_json(pred_data, topic_name, "prediction", id)
+                if not influxdb.write(json_body):
+                    return predictions
+                else:
+                    return {}
+        except Exception as e:
+            logger.error("failed to save_predictions_dict_to_influx " + str(e))
+        return predictions
+
+    @staticmethod
+    def del_predictions_from_influx(influxdb, start_times, topic_name, id):
+        try:
+            if len(start_times) > 0:
+                empty_data = []
+                for start_time in start_times:
+                    empty_data.append([start_time, ""])
+                json_body = influxdb.timeseries_list_to_influx_json(empty_data, topic_name, "prediction", id)
+                influxdb.write(json_body)
+        except Exception as e:
+            logger.error("failed to del_predictions_from_influx " + str(e))

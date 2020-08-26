@@ -32,7 +32,7 @@ class MonitorPub:
     def init_mqtt(self):
         try:
             client_id = "client_publish" + str(randrange(100000)) + str(time.time()).replace(".", "")
-            self.mqtt = MQTTClient(str(self.host), self.port, client_id, id=self.id)
+            self.mqtt = MQTTClient(str(self.host), self.port, client_id, id=self.id, connect_check_flag=True)
             self.logger.info("successfully subscribed")
         except Exception as e:
             self.logger.error(e)
@@ -42,6 +42,7 @@ class MonitorPub:
             if self.mqtt:
                 msg = self.to_senml(control_frequency)
                 self.mqtt.publish(self.topic, msg, qos=self.qos)
+                self.logger.debug("published monitor ping")
             else:
                 self.logger.warning("mqtt not initialized")
         except Exception as e:

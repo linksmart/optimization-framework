@@ -10,6 +10,7 @@ import threading
 import time
 
 from IO.dataReceiver import DataReceiver
+from IO.influxDBmanager import InfluxDBManager
 from IO.redisDB import RedisDB
 from prediction.rawDataReader import RawDataReader
 
@@ -21,7 +22,8 @@ logger = MessageLogger.get_logger_parent()
 
 class RawLoadDataReceiver(DataReceiver):
 
-    def __init__(self, topic_params, config, buffer, save_path, topic_name, id, load_file_data, max_file_size_mins):
+    def __init__(self, topic_params, config, buffer, save_path, topic_name, id, load_file_data, max_file_size_mins,
+                 influxDB):
         self.file_path = save_path
         redisDB = RedisDB()
         try:
@@ -29,6 +31,7 @@ class RawLoadDataReceiver(DataReceiver):
         except Exception as e:
             redisDB.set("Error mqtt" + self.id, True)
             logger.error(e)
+        self.influxDB = influxDB
         self.buffer_data = []
         self.buffer = buffer
         self.current_minute = None
@@ -39,7 +42,7 @@ class RawLoadDataReceiver(DataReceiver):
         self.topic_name = topic_name
         self.max_file_size_mins = max_file_size_mins
         self.save_cron_freq = config.getint("IO", "raw.data.file.save.frequency.sec", fallback=3600)
-
+        self.copy_file_data_to_influx()
         if load_file_data:
             self.load_data()
         self.file_save_thread = threading.Thread(target=self.save_to_file_cron, args=(self.save_cron_freq,))
@@ -86,10 +89,18 @@ class RawLoadDataReceiver(DataReceiver):
     def save_to_file_cron(self, repeat_seconds):
         self.logger.debug("Started save file cron")
         while True and not self.stop_request:
-            self.minute_data = RawDataReader.save_to_file(self.file_path, self.topic_name, self.minute_data,
-                                                          self.max_file_size_mins)
-            time.sleep(UtilFunctions.get_sleep_secs(0,0,repeat_seconds))
+            #self.minute_data = RawDataReader.save_to_file(self.file_path, self.topic_name, self.minute_data,
+            #                                              self.max_file_size_mins)
+            self.minute_data = RawDataReader.save_to_influx(self.influxDB, self.topic_name, self.minute_data, self.id)
+            time.sleep(UtilFunctions.get_sleep_secs(0,0,repeat_seconds)+10)
 
     def load_data(self):
-        data = RawDataReader.get_raw_data(self.file_path, self.topic_name, self.buffer)
+        data = RawDataReader.get_raw_data_influx(self.influxDB, self.topic_name, self.id, self.buffer)
         self.buffer_data = data.copy()
+
+    def copy_file_data_to_influx(self):
+        data_file = RawDataReader.get_raw_data(self.file_path, self.topic_name)
+        if len(data_file) > 0:
+            data = RawDataReader.save_to_influx(self.influxDB, self.topic_name, data_file, self.id)
+            if len(data) == 0:
+                RawDataReader.del_file(self.file_path, self.topic_name)

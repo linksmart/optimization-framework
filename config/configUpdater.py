@@ -66,7 +66,7 @@ class ConfigUpdater:
         config.optionxform = str
         config.read(destination_config_path)
 
-        ConfigUpdater.set_redis_host(config)
+        ConfigUpdater.set_constant_values(config)
 
         log_level = config.get("IO", "log.level", fallback="DEBUG")
         logger = MessageLogger.set_and_get_logger_parent(id="", level=log_level, parent=parent)
@@ -87,6 +87,21 @@ class ConfigUpdater:
         return config
 
     @staticmethod
-    def set_redis_host(config):
-        host = config.get("IO", "redis.host")
-        Constants.redis_host = host
+    def set_constant_values(config):
+        try:
+            redis_host = config.get("IO", "redis.host")
+            Constants.redis_host = redis_host
+        except Exception as e:
+            logging.info("redis host not in config")
+        try:
+            influx_host = config.get("IO", "influx.host")
+            Constants.influx_host = influx_host
+        except Exception as e:
+            logging.info("influx host not in config")
+        try:
+            influx_retention = config.get("IO", "influx.retention")
+            Constants.influx_retention = influx_retention
+        except Exception as e:
+            logging.info("influx retention not in config")
+
+

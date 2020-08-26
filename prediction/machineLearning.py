@@ -1,5 +1,6 @@
 import os
 
+from IO.influxDBmanager import InfluxDBManager
 from IO.radiation import Radiation
 from IO.redisDB import RedisDB
 from prediction.Models import Models
@@ -20,6 +21,7 @@ class MachineLearning:
         self.type = type
 
         self.redisDB = RedisDB()
+        self.influxDB = InfluxDBManager()
 
         if self.type == "load":
             self.model_data_dT = 60
@@ -42,6 +44,7 @@ class MachineLearning:
             country = "Germany"
             self.logger.info("opt va "+str(opt_values))
             try:
+                #TODO: doesnt work for input list
                 if "City" in opt_values.keys() and "Country" in opt_values.keys():
                     for k, v in opt_values["City"].items():
                         city = v

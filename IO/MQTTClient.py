@@ -1,4 +1,5 @@
 import os
+import threading
 
 import paho.mqtt.client as mqtt
 import time
@@ -8,8 +9,9 @@ from utils_intern.messageLogger import MessageLogger
 class MQTTClient:
 
     def __init__(self, host, mqttPort, client_id, keepalive=60, username=None, password=None, ca_cert_path=None,
-                 set_insecure=False, id=None):
+                 set_insecure=False, id=None, connect_check_flag=False):
         self.logger = MessageLogger.get_logger(__name__, id)
+        self.exit = False
         self.host = host
         self.port = int(mqttPort)
         self.keepalive = keepalive
@@ -39,23 +41,21 @@ class MQTTClient:
         self.client.on_subscribe = self.on_subscribe
         self.client.on_disconnect = self.on_disconnect
 
-        self.logger.info("Trying to connect to the MQTT broker "+str(self.host)+" "+str(self.port))
+        self.connect_to_mqtt()
+
+        if connect_check_flag:
+            self.check_connect_thread = threading.Thread(target=self.check_conection).start()
+
+    def connect_to_mqtt(self):
+        self.logger.info("Trying to connect to the MQTT broker " + str(self.host) + " " + str(self.port))
         try:
             self.client.connect(self.host, self.port, self.keepalive)
+            self.client.loop_start()
         except Exception as e:
             self.connected = False
-            msg = "Invalid MQTT host "+str(self.host)+" "+str(self.port)
-            self.logger.error("Error connecting client "+str(self.host)+" "+str(self.port) + " " + str(e))
+            msg = "Invalid MQTT host " + str(self.host) + " " + str(self.port)
+            self.logger.error("Error connecting client " + str(self.host) + " " + str(self.port) + " " + str(e))
             raise InvalidMQTTHostException(msg)
-
-        #self.client.loop_forever()
-        self.client.loop_start()
-
-        # Blocking call that processes network traffic, dispatches callbacks and
-        # handles reconnecting.
-        # Other loop*() functions are available that give a threaded interface and a
-        # manual interface.
-
 
     def on_connect(self, client, userdata, flags, rc):
         self.logger.info("Connected with result code " + str(rc))
@@ -69,6 +69,7 @@ class MQTTClient:
     def on_disconnect(self, *args):
         self.logger.error("Disconnected to broker")
         self.logger.info(str(args))
+        self.connected = False
 
     def on_message(self,client, userdata, message):
         msg = message.payload.decode()
@@ -100,6 +101,7 @@ class MQTTClient:
         self.receivedMessages.append(mid)
 
     def MQTTExit(self):
+        self.exit = True
         self.logger.debug("Disconnecting MQTT")
         self.client.disconnect()
         self.logger.debug("Disconnected from the MQTT clients")
@@ -154,6 +156,15 @@ class MQTTClient:
             self.topic_sub_ack.remove(mid)
         return False
 
+    def check_conection(self):
+        while not self.exit:
+            self.logger.debug("monitor mqtt status "+str(self.connected))
+            if not self.connected:
+                try:
+                    self.connect_to_mqtt()
+                except Exception as e:
+                    pass
+            time.sleep(60)
 
 class InvalidMQTTHostException(Exception):
     def __init__(self, msg):
