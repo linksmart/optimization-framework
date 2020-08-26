@@ -116,7 +116,8 @@ class ThreadFactory:
         if len(missing_keys) > 0:
             raise MissingKeysException("Data source for following keys not declared: " + str(missing_keys))
 
-        opt_values = input_config_parser.get_optimization_values()
+        #opt_values = input_config_parser.get_optimization_values()
+        opt_values = input_config_parser.get_name_params()
         self.redisDB.set(self.id+":opt_values", json.dumps(opt_values))
 
         self.prediction_threads = {}

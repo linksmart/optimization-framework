@@ -325,5 +325,8 @@ class InputConfigParser:
     def get_set_params(self):
         return self.set_params
 
+    def get_name_params(self):
+        return self.name_params
+
     def get_meta_values(self):
         return self.meta_values
