@@ -97,7 +97,7 @@ class ErrorReporting(DataPublisher):
         return json.dumps(val)
 
     def get_senml_meas(self, value, time, name):
-        if not isinstance(time, float):
+        if not isinstance(time, float) and not isinstance(time, int) and isinstance(time, datetime.datetime):
             time = float(time.timestamp())
         meas = senml.SenMLMeasurement()
         meas.time = time
