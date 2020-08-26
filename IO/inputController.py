@@ -146,7 +146,7 @@ class InputController:
     def get_data(self, redisDB):
         redisDB.set(Constants.get_data_flow_key(self.id), True)
         self.logger.info("sleep for data")
-        time.sleep(100)
+        #time.sleep(100)
         if len(self.data_receivers) > 0:
             success = False
             while not success:
@@ -181,7 +181,22 @@ class InputController:
         redisDB.set(Constants.get_data_flow_key(self.id), False)
         if self.restart:
             self.restart = False
-        return {None: self.optimization_data.copy()}
+        return {None: self.input_data_list_reformating(self.optimization_data.copy())}
+
+    def input_data_list_reformating(self, data):
+        #max 2 sets
+        for k, v in data.items():
+            if isinstance(v, dict):
+                new_v = {}
+                for k1, v1 in v.items():
+                    if k1 is not None and isinstance(k1, int) and isinstance(v1, dict):
+                        for k1, v1 in v.items():
+                            for k2, v2 in v1.items():
+                                new_v[k1, k2] = v2
+                if len(new_v) > 0:
+                    data[k] = new_v
+        return data
+
 
     def fetch_mqtt_and_file_data(self, name, receiver, current_bucket, number_of_steps):
         try:

@@ -45,18 +45,15 @@ class MachineLearning:
             self.logger.info("opt va "+str(opt_values))
             try:
                 if "~" in topic_name:
-                    n = topic_name.split("~")[0]
-                    ind = int(topic_name.split("~")[1])
-                    indexed_name = (n,ind)
-                    if indexed_name in opt_values.keys():
-                        values = opt_values[indexed_name]
+                    if topic_name in opt_values.keys():
+                        values = opt_values[topic_name]
                         if "City" in values.keys() and "Country" in values.keys():
                             city = values["City"]
                             country = values["Country"]
                         else:
                             self.logger.error("City or country not present in pv meta for indexed name "+str(indexed_name))
                     else:
-                        self.logger.error("indexed name " + str(indexed_name)+ " not present in opt values")
+                        self.logger.error("indexed name " + str(topic_name)+ " not present in opt values")
                 elif "City" in opt_values.keys() and "Country" in opt_values.keys():
                     for k, v in opt_values["City"].items():
                         city = v

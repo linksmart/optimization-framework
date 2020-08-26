@@ -262,10 +262,16 @@ class InputConfigParser:
                         not_available_keys.append(key)
                     elif key in name_model_params.keys():
                         indexing = value["indexing"]
+                        #TODO: need to verfiy
+                        """
                         if (len(indexing) == 1 and indexing[0] != "T" and indexing[0] in self.set_params.keys()
                                 and self.set_params[indexing[0]] != name_model_params[key]) or \
                             (len(indexing) == 2 and indexing[1] in self.set_params.keys()
                                 and self.set_params[indexing[1]] != name_model_params[key]):
+                            not_available_keys.append(key)
+                        """
+                        if (len(indexing) > 0 and indexing[0] != "T" and indexing[0] in self.set_params.keys()
+                                and self.set_params[indexing[0]] != name_model_params[key]):
                             not_available_keys.append(key)
         for key in self.base:
             if key not in all_keys and key not in name_model_params.keys():
@@ -330,3 +336,10 @@ class InputConfigParser:
 
     def get_meta_values(self):
         return self.meta_values
+
+    def get_name_params_with_string_keys(self):
+        new_params = {}
+        for k, v in new_params.items():
+            name_with_index = k[0] + "~" + str(k[1])
+            new_params[name_with_index] = v
+        return new_params

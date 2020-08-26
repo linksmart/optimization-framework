@@ -65,12 +65,12 @@ class OptControllerMPC(ControllerBaseThread):
                     for v in instance.component_objects(Var, active=True):
                         # self.logger.debug("Variable in the optimization: "+ str(v))
                         varobject = getattr(instance, str(v))
-                        var_list = []
+                        var_dict = {}
                         try:
                             # Try and add to the dictionary by key ref
                             for index in varobject:
-                                var_list.append(varobject[index].value)
-                            my_dict[str(v)] = var_list
+                                var_dict[index] = varobject[index].value
+                            my_dict[str(v)] = var_dict
                         except Exception as e:
                             self.logger.error(e)
                             # Append new index to currently existing items

@@ -35,10 +35,9 @@ class OptControllerDiscrete(ControllerBaseThread):
             start_time_total = time.time()
             self.logger.info("waiting for data")
             data_dict = self.input.get_data(redisDB=self.redisDB)  # blocking call
-            self.logger.debug("Data is: " + json.dumps(data_dict, indent=4))
+            self.logger.debug("Data is: " + str(data_dict))
             if self.redisDB.get_bool(self.stop_signal_key) or self.redisDB.get("End ofw") == "True":
                 break
-
             start_time = time.time()
             # Creating an optimization instance with the referenced model
             try:
@@ -46,13 +45,11 @@ class OptControllerDiscrete(ControllerBaseThread):
                 if solver_name == "ipopt":
                     optsolver.options['max_iter'] = self.solver_ipopt_max_iteration
                     optsolver.options['max_cpu_time'] = self.solver_ipopt_timeout
-                    
                 #spec = importlib.util.spec_from_file_location(model_path, model_path)
                 #module = spec.loader.load_module(spec.name)
                 mod = __import__(model_path, fromlist=['Model'])
                 my_class = getattr(mod, 'Model')
                 self.logger.debug("Creating an optimization instance")
-
                 cnt = 0
                 instance = my_class.model.create_instance(data_dict)
                 self.logger.debug("instance constructed: " + str(instance.is_constructed())+" in count "+str(cnt))
@@ -60,7 +57,6 @@ class OptControllerDiscrete(ControllerBaseThread):
 
             except Exception as e:
                 self.logger.error(e)
-
 
             start_time = time.time() - start_time
             self.logger.info("Time to run optimizer = " + str(start_time) + " sec.")
@@ -75,12 +71,12 @@ class OptControllerDiscrete(ControllerBaseThread):
                     for v in instance.component_objects(Var, active=True):
                         # self.logger.debug("Variable in the optimization: "+ str(v))
                         varobject = getattr(instance, str(v))
-                        var_list = []
+                        var_dict = {}
                         try:
                             # Try and add to the dictionary by key ref
                             for index in varobject:
-                                var_list.append(varobject[index].value)
-                            my_dict[str(v)] = var_list
+                                var_dict[index] = varobject[index].value
+                            my_dict[str(v)] = var_dict
                         except Exception as e:
                             self.logger.error(e)
                             # Append new index to currently existing items

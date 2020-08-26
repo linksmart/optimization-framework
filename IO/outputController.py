@@ -55,7 +55,9 @@ class OutputController:
             self.logger.error(e)
 
     def publish_data(self, id, data, dT):
-        self.logger.debug("output data : "+ json.dumps(data, indent=4))
+        self.logger.debug("output data : "+ str(data))
+        data = self.convert_to_nested_dict(data)
+        self.logger.debug("output data list converted : " + str(data))
         current_time = int(time.time())
         try:
             senml_data = self.senml_message_format(data, current_time, dT)
@@ -122,6 +124,38 @@ class OutputController:
                 doc = senml.SenMLDocument(meas_list, base=base)
                 new_data[key] = doc.to_json()
         # self.logger.debug("Topic MQTT Senml message: "+str(new_data))
+        return new_data
+
+    def convert_to_nested_dict(self, data):
+        new_data = {}
+        for key, value in data.items():
+            if isinstance(value, dict):
+                is_multi_index = False
+                is_single_index = False
+                for k, v in value.items():
+                    if isinstance(k, tuple):
+                        is_multi_index = True
+                    elif isinstance(k, int):
+                        is_single_index = True
+                    break
+                if is_multi_index:
+                    datalist = {}
+                    for k, v in value.items():
+                        i, _ = k
+                        if i not in datalist.keys():
+                            datalist[i] = []
+                        datalist[i].append(v)
+                    for k, v in datalist.items():
+                        new_data[key+"~"+str(k)] = v
+                elif is_single_index:
+                    datalist = []
+                    for k, v in value.items():
+                        datalist.append(v)
+                    new_data[key] = datalist
+                else:
+                    new_data[key] = value
+            else:
+                new_data[key] = value
         return new_data
 
     def get_bn_n_val(self, key, value):
