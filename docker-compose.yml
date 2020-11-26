@@ -32,7 +32,7 @@ services:
     build:
       context: ""
       dockerfile: Dockerfile
-    image: garagon/optimization:amd
+    image: garagon/optimization:amd_fit
     ports:
       - "8080:8080"
     depends_on:

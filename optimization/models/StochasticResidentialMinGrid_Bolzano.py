@@ -167,7 +167,6 @@ class Model:
             essSoC = -p_ess + model.Initial_ESS_SoC  # Transition between ESS SOC states are always deterministic
             # vacSoC = p_vac + model.Initial_VAC_SoC  # # Transition between EV SOC states are deterministic when the car is at home now
             vacSoC = 0 + model.final_ev_soc
-
             # Extra penalty for dropping below predefined ev_minSoC limit
             penalty_for_negative_soc_home = (model.VAC_States_Min - model.final_ev_soc) / 100 * model.Unit_Drop_Penalty * model.VAC_Capacity if model.final_ev_soc < model.VAC_States_Min else 0
             ## penalty_for_negative_soc_away = (model.VAC_States_Min - model.final_ev_soc) / 100 * model.Unit_Drop_Penalty * model.VAC_Capacity if final_ev_soc < model.VAC_States_Min else 0
@@ -192,6 +191,6 @@ class Model:
     model.rule_future_cost = Constraint(rule=con_future_cost)
 
     def objrule1(model):
-        return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + model.future_cost
+        return model.P_GRID_OUTPUT * model.P_GRID_OUTPUT + model
 
     model.obj = Objective(rule=objrule1, sense=minimize)

@@ -41,7 +41,7 @@ class Model:
 	##################################       VARIABLES             #################################
 	################################################################################################
 
-	model.P_Grid_Output = Var(model.T, within=Reals, bounds=(-model.P_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
+	model.P_Grid_Output = Var(model.T, within=Reals, bounds=(-model.Q_Grid_Max_Export_Power, model.P_Grid_Max_Export_Power))
 	model.P_PV_Output = Var(model.T, within=NonNegativeReals, bounds=(0, model.PV_Inv_Max_Power))  # initialize=iniVal)
 	model.P_ESS_Output = Var(model.T, within=Reals, bounds=(-model.ESS_Max_Charge_Power, model.ESS_Max_Discharge_Power))  # ,initialize=iniSoC)
 	model.SoC_ESS = Var(model.T_SoC, within=NonNegativeReals, bounds=(model.ESS_Min_SoC, model.ESS_Max_SoC))

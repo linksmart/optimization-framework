@@ -63,7 +63,8 @@ RUN pip3 install -U sklearn==0.0
 RUN pip3 install -U Pyro4==4.78
 
 RUN pip3 install -U xlrd==1.2.0
-RUN pip3 install -U pyomo==5.6.9
+RUN pip3 install -U pyomo
+#==5.6.9
 RUN pip3 install -U stopit==1.1.2
 RUN pip3 install connexion[swagger-ui]
 RUN pip3 install -U Pebble==4.5.1
